@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_5
+// func_key: src_mbedtls_pkcs7_43
+// c_function: PKCS7_VerifySignerSignature
+// rust_file: src_mbedtls_pkcs7.rs
+// rust_signature: pub extern "C" fn PKCS7_VerifySignerSignature(pkcs7: *const crate::types::Pkcs7, calcDigest: crate::types::PKCS7_CalcDigest) -> i32
+// c_first_line: int32_t PKCS7_VerifySignerSignature(const Pkcs7 *pkcs7, PKCS7_CalcDigest calcDigest)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk10-again/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/_manual_fix/src_mbedtls_pkcs7_43/translated_rust.rs
+// last_error_truncated:
+//   error[E0308]: mismatched types
+//      --> src/src_mbedtls_pkcs7.rs:702:248
+//       |
+//       |           --------------------- arguments to this function are incorrect                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+//       |
+//      --> src/compat.rs:157:12
+//       |
+//       |            ^^^^^^                                                                     ----
+// =================================

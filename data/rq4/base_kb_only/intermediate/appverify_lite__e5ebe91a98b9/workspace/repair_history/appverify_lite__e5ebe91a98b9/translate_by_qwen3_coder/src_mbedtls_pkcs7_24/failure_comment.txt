@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_5
+// func_key: src_mbedtls_pkcs7_24
+// c_function: ParseSignedDataContentInfo
+// rust_file: src_mbedtls_pkcs7.rs
+// rust_signature: fn ParseSignedDataContentInfo(p: *mut *mut u8, end: *const u8, content: *mut crate::types::Content) -> i32
+// c_first_line: static int32_t ParseSignedDataContentInfo(unsigned char **p, const unsigned char *end, Content *content)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_nosed/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/_manual_fix/src_mbedtls_pkcs7_24/translated_rust.rs
+// last_error_truncated:
+//   error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+//      --> src/src_app_verify.rs:373:55
+//       |
+//       |                                                       ^^^^^^ method not found in `i32`
+//   error[E0615]: attempted to take value of method `as_ptr` on type `[u8; 9]`
+//      --> src/src_mbedtls_pkcs7.rs:865:23
+//       |
+//       |                       ^^^^^^ method, not a field
+// =================================

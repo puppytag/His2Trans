@@ -1,0 +1,73 @@
+函数: src_osal_sysevent_2
+尝试次数: 2/5
+============================================================
+error[E0425]: cannot find value `HDF_ERR_MALLOC_FAIL` in module `crate::compat`
+  --> src/src_osal_sysevent.rs:41:31
+   |
+   |                               ^^^^^^^^^^^^^^^^^^^ not found in `crate::compat`
+   |
+help: consider importing this constant
+   |
+   |
+help: if you import `HDF_ERR_MALLOC_FAIL`, refer to it directly
+   |
+   |
+error[E0425]: cannot find value `HDF_FAILURE` in module `crate::compat`
+  --> src/src_osal_sysevent.rs:46:31
+   |
+   |                               ^^^^^^^^^^^ not found in `crate::compat`
+   |
+help: consider importing this constant
+   |
+   |
+help: if you import `HDF_FAILURE`, refer to it directly
+   |
+   |
+error[E0425]: cannot find value `HDF_SUCCESS` in module `crate::compat`
+  --> src/src_osal_sysevent.rs:51:30
+   |
+   |                              ^^^^^^^^^^^ not found in `crate::compat`
+   |
+help: consider importing this constant
+   |
+   |
+help: if you import `HDF_SUCCESS`, refer to it directly
+   |
+   |
+error[E0425]: cannot find value `LOG_CORE` in module `crate::compat`
+  --> src/src_osal_sysevent.rs:53:28
+   |
+   |                            ^^^^^^^^ not found in `crate::compat`
+error[E0425]: cannot find value `LOG_ERROR` in module `crate::compat`
+  --> src/src_osal_sysevent.rs:54:28
+   |
+   |                            ^^^^^^^^^ not found in `crate::compat`
+error[E0308]: mismatched types
+  --> src/src_osal_sysevent.rs:39:54
+   |
+   |                         ---------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+   |                         |
+   |                         arguments to this function are incorrect
+   |
+  --> src/compat.rs:54:12
+   |
+   |            ^^^^^^^^^^^^^ --------
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+   |
+   |                                                      +                                                  +++++++++++++++++++++
+error[E0308]: mismatched types
+  --> src/src_osal_sysevent.rs:44:74
+   |
+   |        --------------------------------------------------------------    ^ expected `bool`, found integer
+   |        |
+   |        expected because this is `bool`
+error[E0599]: no method named `Dispatch` found for struct `HdfIoDispatcher` in the current scope
+  --> src/src_osal_sysevent.rs:50:38
+   |
+   |                                      ^^^^^^^^------------------------------------------------------------- help: remove the arguments
+   |                                      |
+   |                                      field, not a method
+   |
+   |
+   | -------------------------- method `Dispatch` not found for this struct
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 8 previous errors

@@ -1,0 +1,76 @@
+函数: src_app_verify_18
+尝试次数: 1/5
+============================================================
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:563:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:569:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:575:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:580:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:585:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:591:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:596:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:601:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `EXIT`
+   --> src/src_app_verify.rs:607:14
+    |
+    |              ^^^^ expected one of 8 possible tokens
+error: statements are terminated with a semicolon
+   --> src/src_app_verify.rs:617:9
+    |
+    |         ^
+    |
+help: use a semicolon instead
+    |
+    |
+error[E0425]: cannot find value `EXIT` in this scope
+   --> src/src_app_verify.rs:617:5
+    |
+    |     ^^^^ not found in this scope
+error[E0308]: mismatched types
+    --> src/src_app_verify.rs:582:106
+     |
+     |               -----------------------------------------------------                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Option<...>`, found fn item
+     |               |
+     |               arguments to this function are incorrect
+     |
+    --> src/src_mbedtls_pkcs7.rs:1104:19
+     |
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^                                    ------------------------------------------
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:603:24
+    |
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^                                       ----------------- expected `u32`, found `usize`      ----------------- expected `u32`, found `usize`
+    |
+   --> src/compat.rs:160:12
+    |
+    |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                      +                 +++++++++++++++++++++
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                                                           +                 +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 13 previous errors; 23 warnings emitted

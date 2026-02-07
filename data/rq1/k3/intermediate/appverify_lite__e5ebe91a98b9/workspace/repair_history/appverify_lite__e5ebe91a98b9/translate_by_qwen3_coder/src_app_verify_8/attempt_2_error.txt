@@ -1,0 +1,101 @@
+函数: src_app_verify_8
+尝试次数: 2/5
+============================================================
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:123:17
+    |
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ------------------------------ expected `u32`, found `i32`
+    |                                  |
+    |                                  expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                           +                             +++++++++++++++++++++
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                          +                              +++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:128:98
+    |
+    |              ------------------------- arguments to this function are incorrect                  ^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:132:12
+    |
+    |            ^^^^^^^^^^                                                                                      ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                  +                 +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:131:17
+    |
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ------------------------------ expected `u32`, found `i32`
+    |                                  |
+    |                                  expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                           +                             +++++++++++++++++++++
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                          +                              +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:142:17
+    |
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ------------------------------ expected `u32`, found `i32`
+    |                                  |
+    |                                  expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:146:28
+    |
+    |            ------------    ^^^^^^^^^^^^^^^ expected `u32`, found `u64`
+    |            |
+    |            expected because this is `u32`
+    |
+help: you can convert `digInAttrLen` from `u32` to `u64`, matching the type of `*hashLen as u64`
+    |
+    |            ++++++++++            +
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:147:21
+    |
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ------------------------------ expected `u32`, found `i32`
+    |                                  |
+    |                                  expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                               +                             +++++++++++++++++++++
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                              +                              +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:151:21
+    |
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ------------------------------ expected `u32`, found `i32`
+    |                                  |
+    |                                  expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                               +                             +++++++++++++++++++++
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                              +                              +++++++++++++++++++++
+error: could not compile `appverify_lite__e

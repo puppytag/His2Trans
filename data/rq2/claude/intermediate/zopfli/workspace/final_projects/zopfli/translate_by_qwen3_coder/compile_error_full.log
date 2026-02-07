@@ -1,0 +1,21 @@
+# Compilation Log (full)
+# Generated at: 2026-01-27T03:31:51.152547
+# Project: /data/home/wangshb/c2-rust_framework/translation_outputs/Our/claude-test0125/intermediate/zopfli/workspace/skeletons/zopfli
+============================================================
+
+     Locking 4 packages to latest compatible versions
+   Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.5
+   Compiling libc v0.2.180
+   Compiling cc v1.2.49
+   Compiling zopfli v0.1.0 (/data/home/wangshb/c2-rust_framework/translation_outputs/Our/claude-test0125/intermediate/zopfli/workspace/skeletons/zopfli)
+warning: static variable `crc32_table` should have an upper case name
+  --> src/src_gzip_container.rs:19:12
+   |
+19 | static mut crc32_table: [::core::ffi::c_ulong; 256usize] = unsafe { core::mem::MaybeUninit::<[::core::ffi::c_ulong; 256usize]>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^ help: convert the identifier to upper case: `CRC32_TABLE`
+   |
+   = note: `#[warn(non_upper_case_globals)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: `zopfli` (bin "zopfli") generated 1 warning (run `cargo fix --bin "zopfli" -p zopfli` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.39s

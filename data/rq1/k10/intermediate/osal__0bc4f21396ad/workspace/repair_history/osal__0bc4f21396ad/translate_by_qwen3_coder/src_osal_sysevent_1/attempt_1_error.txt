@@ -1,0 +1,54 @@
+函数: src_osal_sysevent_1
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+  --> src/src_osal_sysevent.rs:25:48
+   |
+   |                   ---------------------------- ^^^^^^^^^^^^^^^^^^^^^^ expected `*mut OsalMutex`, found `&mut OsalMutex`
+   |                   |
+   |                   arguments to this function are incorrect
+   |
+  --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:93:1
+   |
+   | ^^^^^^^^^^^^^^^^^^^^
+  --> src/compat.rs:35:1
+   |
+   | ^^^^^^^^^^^^^^^^^^^^
+  --> src/compat.rs:62:12
+   |
+   |            ^^^^^^^^^^^^^ -----
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:30:43
+    |
+    |         -------------------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `__c2r_tu_types_src_osal_sysevent::DListHead`, found `types::DListHead`
+    |         |
+    |         expected due to the type of this binding
+    |
+   --> src/types.rs:119:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:5:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:31:43
+    |
+    |         -------------------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `__c2r_tu_types_src_osal_sysevent::DListHead`, found `types::DListHead`
+    |         |
+    |         expected due to the type of this binding
+    |
+   --> src/types.rs:119:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:5:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::DListHead` as `*mut types::DListHead` is invalid
+  --> src/src_osal_sysevent.rs:30:43
+   |
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::DListHead` as `*mut types::DListHead` is invalid
+  --> src/src_osal_sysevent.rs:31:43
+   |
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 5 previous errors

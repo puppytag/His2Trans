@@ -1,0 +1,20 @@
+函数: src_hdf_device_node_10
+尝试次数: 4/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_hdf_device_node.rs:91:40
+    |
+    |                                   ---- ^^^^^^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+    |                                   |
+    |                                   arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `fn(*mut types::HdfDeviceNode) {HdfDeviceUnlaunchNode}` due to the type of the argument passed
+   --> src/src_hdf_device_node.rs:91:35
+    |
+    |                                   ^^^^^---------------------^
+    |                                        |
+    |                                        this argument influences the type of `Some`
+   --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:608:5
+    |
+    |     ^^^^
+error: could not compile `host__25c1898e1626` (bin "host__25c1898e1626") due to 1 previous error; 26 warnings emitted

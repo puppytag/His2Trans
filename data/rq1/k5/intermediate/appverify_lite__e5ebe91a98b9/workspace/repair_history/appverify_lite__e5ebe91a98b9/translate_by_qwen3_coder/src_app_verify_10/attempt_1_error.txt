@@ -1,0 +1,67 @@
+函数: src_app_verify_10
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:384:15
+    |
+    |        ---    ^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |        |
+    |        expected because this is `i32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                 ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:392:16
+    |
+    |                                                                                                                                            --- expected `i32` because of return type
+    |       ^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                   ++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:394:24
+    |
+    |       ^^^^^^^^^^^^^^^^^^^^^^^                                      ------------------------------------------------ expected `u32`, found `usize`         ----------------- expected `u32`, found `usize`
+    |
+   --> src/compat.rs:161:12
+    |
+    |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                                                     ++++++++++++++++++++
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                                                                                            +                 +++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:405:18
+    |
+    |        ------    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |        |
+    |        expected because this is `i32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                                 ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:405:63
+    |
+    |                                                     ------    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |                                                     |
+    |                                                     expected because this is `i32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                                                                              ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:405:108
+    |
+    |                               ------    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |                               |
+    |                               expected because this is `i32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                                                           ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 6 previous errors; 19 warnings emitted

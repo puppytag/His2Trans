@@ -1,0 +1,20 @@
+函数: src_power_state_token_6
+尝试次数: 3/5
+============================================================
+error[E0605]: non-primitive cast: `fn(*mut IPowerStateToken) {PowerStateTokenAcquireWakeLock}` as `unsafe extern "C" fn(*mut IPowerStateToken)`
+   --> src/src_power_state_token.rs:109:43
+    |
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ invalid cast
+error[E0605]: non-primitive cast: `fn(*mut IPowerStateToken) {PowerStateTokenReleaseWakeLock}` as `unsafe extern "C" fn(*mut IPowerStateToken)`
+   --> src/src_power_state_token.rs:110:43
+    |
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ invalid cast
+error[E0605]: non-primitive cast: `fn(*mut HdfSRef) {PowerStateTokenOnFirstAcquire}` as `unsafe extern "C" fn(*mut HdfSRef)`
+   --> src/src_power_state_token.rs:111:47
+    |
+    |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ invalid cast
+error[E0605]: non-primitive cast: `fn(*mut HdfSRef) {PowerStateTokenOnLastRelease}` as `unsafe extern "C" fn(*mut HdfSRef)`
+   --> src/src_power_state_token.rs:112:46
+    |
+    |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ invalid cast
+error: could not compile `host__25c1898e1626` (bin "host__25c1898e1626") due to 4 previous errors; 20 warnings emitted

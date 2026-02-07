@@ -1,0 +1,76 @@
+# Compilation Log (after_rule_fix)
+# Generated at: 2026-01-21T14:18:03.922868
+# Project: /data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_nosed/intermediate/appverify_lite__e5ebe91a98b9/workspace/skeletons/appverify_lite__e5ebe91a98b9
+============================================================
+
+    Checking appverify_lite__e5ebe91a98b9 v0.1.0 (/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_nosed/intermediate/appverify_lite__e5ebe91a98b9/workspace/skeletons/appverify_lite__e5ebe91a98b9)
+warning: static variable `g_memoryPageSize` should have an upper case name
+  --> src/src_app_file.rs:19:12
+   |
+19 | static mut g_memoryPageSize: i32 = 0;
+   |            ^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_MEMORY_PAGE_SIZE`
+   |
+   = note: `#[warn(non_upper_case_globals)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: static variable `g_isActsMode` should have an upper case name
+  --> src/src_app_verify.rs:19:12
+   |
+19 | static mut g_isActsMode: bool = false;
+   |            ^^^^^^^^^^^^ help: convert the identifier to upper case: `G_IS_ACTS_MODE`
+
+warning: static variable `g_isDebugMode` should have an upper case name
+  --> src/src_app_verify.rs:22:12
+   |
+22 | static mut g_isDebugMode: bool = false;
+   |            ^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_IS_DEBUG_MODE`
+
+warning: static variable `g_trustAppList` should have an upper case name
+  --> src/src_app_verify.rs:25:12
+   |
+25 | static mut g_trustAppList: [crate::types::TrustAppCert; 3usize] = unsafe { core::mem::MaybeUninit::<[crate::types::TrustAppCert; 3usize]>::zeroed().assume_in...
+   |            ^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_TRUST_APP_LIST`
+
+warning: static variable `g_trustAppListTest` should have an upper case name
+  --> src/src_app_verify.rs:28:12
+   |
+28 | static mut g_trustAppListTest: [crate::types::TrustAppCert; 2usize] = unsafe { core::mem::MaybeUninit::<[crate::types::TrustAppCert; 2usize]>::zeroed().assum...
+   |            ^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_TRUST_APP_LIST_TEST`
+
+warning: static variable `g_productDiffFunc` should have an upper case name
+  --> src/src_app_verify_hal.rs:19:12
+   |
+19 | static mut g_productDiffFunc: crate::types::ProductDiff = unsafe { core::mem::MaybeUninit::<crate::types::ProductDiff>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_PRODUCT_DIFF_FUNC`
+
+warning: static variable `g_debugModeEnabled` should have an upper case name
+  --> src/src_mbedtls_pkcs7.rs:28:12
+   |
+28 | static mut g_debugModeEnabled: bool = unsafe { core::mem::MaybeUninit::<bool>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_DEBUG_MODE_ENABLED`
+
+warning: static variable `g_debugModeRootCert` should have an upper case name
+  --> src/src_mbedtls_pkcs7.rs:31:12
+   |
+31 | static mut g_debugModeRootCert: crate::types::mbedtls_x509_crt = unsafe { core::mem::MaybeUninit::<crate::types::mbedtls_x509_crt>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_DEBUG_MODE_ROOT_CERT`
+
+warning: static variable `g_ohosRootCert` should have an upper case name
+  --> src/src_mbedtls_pkcs7.rs:34:12
+   |
+34 | static mut g_ohosRootCert: crate::types::mbedtls_x509_crt = unsafe { core::mem::MaybeUninit::<crate::types::mbedtls_x509_crt>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_OHOS_ROOT_CERT`
+
+warning: static variable `g_rootCaG2Cert` should have an upper case name
+  --> src/src_mbedtls_pkcs7.rs:37:12
+   |
+37 | static mut g_rootCaG2Cert: crate::types::mbedtls_x509_crt = unsafe { core::mem::MaybeUninit::<crate::types::mbedtls_x509_crt>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_ROOT_CA_G2_CERT`
+
+warning: static variable `g_rootCertLoaded` should have an upper case name
+  --> src/src_mbedtls_pkcs7.rs:40:12
+   |
+40 | static mut g_rootCertLoaded: bool = unsafe { core::mem::MaybeUninit::<bool>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_ROOT_CERT_LOADED`
+
+warning: `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") generated 11 warnings (run `cargo fix --bin "appverify_lite__e5ebe91a98b9" -p appverify_lite__e5ebe91a98b9` to apply 11 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.44s

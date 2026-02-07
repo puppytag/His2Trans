@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_0
+// func_key: src_osal_sysevent_6
+// c_function: HdfSysEventNotifyRegister
+// rust_file: src_osal_sysevent.rs
+// rust_signature: pub extern "C" fn HdfSysEventNotifyRegister(notifierNode: *mut HdfSysEventNotifyNode, classSet: u64) -> i32
+// c_first_line: int32_t HdfSysEventNotifyRegister(struct HdfSysEventNotifyNode *notifierNode, uint64_t classSet)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C2/intermediate/osal__0bc4f21396ad/workspace/repair_history/osal__0bc4f21396ad/translate_by_qwen3_coder/_manual_fix/src_osal_sysevent_6/translated_rust.rs
+// last_error_truncated:
+//   error[E0425]: cannot find value `HDF_DEV_ERR_NO_MEMORY` in module `crate::types`
+//      --> src/src_osal_sysevent.rs:362:30
+//       |
+//       |                              ^^^^^^^^^^^^^^^^^^^^^ not found in `crate::types`
+//       |
+//   help: consider importing this constant
+//       |
+//       |
+// =================================

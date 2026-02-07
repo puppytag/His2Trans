@@ -1,0 +1,35 @@
+函数: src_app_verify_40
+文件: src_app_verify
+尝试次数: 1/5
+============================================================
+完整编译错误信息:
+============================================================
+error[E0425]: cannot find value `__FUNCTION__` in this scope
+    --> src/src_app_verify.rs:2095:13
+     |
+     |             ^^^^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `__FUNCTION__` in this scope
+    --> src/src_app_verify.rs:2108:13
+     |
+     |             ^^^^^^^^^^^^ not found in this scope
+error[E0308]: mismatched types
+    --> src/src_app_verify.rs:2088:15
+     |
+     |        ---    ^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+     |        |
+     |        expected because this is `i32`
+     |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+     |
+     |                                 ++++++++++++++++++++
+error[E0308]: mismatched types
+    --> src/src_app_verify.rs:2101:15
+     |
+     |        ---    ^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+     |        |
+     |        expected because this is `i32`
+     |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+     |
+     |                                 ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 4 previous errors; 22 warnings emitted

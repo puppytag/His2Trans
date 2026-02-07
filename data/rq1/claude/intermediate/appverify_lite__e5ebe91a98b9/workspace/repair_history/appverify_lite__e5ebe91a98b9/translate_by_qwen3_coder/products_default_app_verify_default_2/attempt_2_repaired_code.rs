@@ -1,0 +1,1 @@
+fn GetUdid(udid: *mut u8, size: i32) -> i32;

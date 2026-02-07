@@ -1,0 +1,16 @@
+函数: src_hdf_device_8
+尝试次数: 4/5
+============================================================
+error[E0605]: non-primitive cast: `fn(*mut IHdfDevice, *mut HdfDeviceNode) -> i32 {HdfDeviceAttach}` as `unsafe extern "C" fn(*mut IHdfDevice, *mut HdfDeviceNode) -> i32`
+   --> src/src_hdf_device.rs:136:40
+    |
+    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ invalid cast
+error[E0605]: non-primitive cast: `fn(*mut IHdfDevice, u32) -> i32 {HdfDeviceDetachWithDevid}` as `unsafe extern "C" fn(*mut IHdfDevice, u32) -> i32`
+   --> src/src_hdf_device.rs:138:49
+    |
+    |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ invalid cast
+error[E0605]: non-primitive cast: `fn(*mut IHdfDevice, u32) -> *mut HdfDeviceNode {HdfDeviceGetDeviceNode}` as `unsafe extern "C" fn(*mut IHdfDevice, u32) -> *mut HdfDeviceNode`
+   --> src/src_hdf_device.rs:139:47
+    |
+    |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ invalid cast
+error: could not compile `host__25c1898e1626` (bin "host__25c1898e1626") due to 3 previous errors; 4 warnings emitted

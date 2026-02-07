@@ -1,0 +1,74 @@
+函数: src_app_verify_18
+尝试次数: 3/5
+============================================================
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:662:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:668:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:674:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:679:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:684:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:690:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:695:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:700:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error: cannot find macro `goto_exit` in this scope
+   --> src/src_app_verify.rs:706:9
+    |
+    |         ^^^^^^^^^
+    |
+    = help: have you added the `#[macro_use]` on the module/import?
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:681:107
+    |
+    |                              ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+    |                              |
+    |                              arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `fn(*const Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32 {CalcDigest}` due to the type of the argument passed
+   --> src/src_app_verify.rs:681:102
+    |
+    |                         ^^^^^---------------------------------^
+    |                              |
+    |                              this argument influences the type of `Some`
+   --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:608:5
+    |
+    |     ^^^^
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 10 previous errors; 27 warnings emitted

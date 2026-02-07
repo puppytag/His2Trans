@@ -1,0 +1,1 @@
+fn InvalidDigestEncAlg(alg: *const crate::types::mbedtls_x509_buf) -> bool;

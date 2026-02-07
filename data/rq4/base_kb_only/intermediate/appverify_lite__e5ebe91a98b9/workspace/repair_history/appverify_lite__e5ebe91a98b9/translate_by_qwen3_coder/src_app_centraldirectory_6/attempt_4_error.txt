@@ -1,0 +1,40 @@
+函数: src_app_centraldirectory_6
+尝试次数: 4/5
+============================================================
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_centraldirectory.rs:199:13
+    |
+    |             ^^^^^^^^^^^^^^^^^^^^^^^
+    |                 -------------------- expected `u32`, found `u64`
+    |                 -------------------- expected `u32`, found `u64`
+    |
+   --> src/compat.rs:161:12
+    |
+    |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                 +                    +++++++++++++++++++++
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                 +                    +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_centraldirectory.rs:237:17
+    |
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^
+    |                     -------------------- expected `u32`, found `u64`
+    |                     -------------------- expected `u32`, found `u64`
+    |
+   --> src/compat.rs:161:12
+    |
+    |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                     +                    +++++++++++++++++++++
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                     +                    +++++++++++++++++++++
+error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+   --> src/src_app_verify.rs:216:55
+    |
+    |                                                       ^^^^^^ method not found in `i32`
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 3 previous errors; 4 warnings emitted

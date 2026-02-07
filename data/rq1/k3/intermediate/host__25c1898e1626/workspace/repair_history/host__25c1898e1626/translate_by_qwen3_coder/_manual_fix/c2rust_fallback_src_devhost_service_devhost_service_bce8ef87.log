@@ -1,0 +1,22 @@
+cmd: /data/home/wangshb/.cargo/bin/c2rust transpile /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk3/intermediate/host__25c1898e1626/workspace/incremental_work/host__25c1898e1626/translate_by_qwen3_coder/.c2r_c2rust_fallback/src_devhost_service/devhost_service_bce8ef87.c -- -Wno-error -Wno-macro-redefined -Wno-builtin-macro-redefined -Wno-ignored-attributes
+returncode: 0
+---- stdout ----
+Transpiling devhost_service_bce8ef87.c
+
+---- stderr ----
+In file included from /data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/drivers/hdf_core/framework/core/host/src/devhost_service.c:17:
+In file included from /data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/drivers/hdf_core/framework/core/host/include/power_state_token.h:12:
+In file included from /data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/drivers/hdf_core/interfaces/inner_api/utils/hdf_sref.h:12:
+In file included from /data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/drivers/hdf_core/interfaces/inner_api/osal/shared/osal_atomic.h:40:
+In file included from /data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/drivers/hdf_core/adapter/khdf/liteos/osal/include/osal_atomic_def.h:35:
+In file included from /data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/kernel/liteos_a/arch/arm/include/los_hwi.h:39:
+In file included from /data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/kernel/liteos_a/kernel/include/los_base.h:48:
+In file included from /data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/kernel/liteos_a/arch/arm/include/los_hw.h:40:
+/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/kernel/liteos_a/arch/arm/arm/include/los_hw_cpu.h:135:12: warning: cast to 'void *' from smaller integer type 'UINTPTR' (aka 'unsigned int') [-Wint-to-void-pointer-cast]
+    return (void *)(UINTPTR)({ UINT32 _val; __asm__ volatile("mrc " "p15, ""0"", %0, ""c13"",""c0"",""4" : "=r" (_val)); _val; });
+           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/kernel/liteos_a/arch/arm/arm/include/los_hw_cpu.h:140:85: warning: cast to smaller integer type 'UINTPTR' (aka 'unsigned int') from 'void *' [-Wvoid-pointer-to-int-cast]
+    ({ __asm__ volatile("mcr " "p15, ""0"", %0, ""c13"",""c0"",""4" :: "r" ((UINT32)(UINTPTR)val)); __asm__ volatile("isb" ::: "memory"); });
+                                                                                    ^~~~~~~~~~~~
+2 warnings generated.
+

@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-01-28T09:28:46.609624",
+  "project": "appverify_lite__e5ebe91a98b9",
+  "llm": "qwen3_coder",
+  "func_key": "src_app_verify_36",
+  "c_func": "VerifyAppSignPkcsData",
+  "rust_signature": "fn VerifyAppSignPkcsData(fileRead: *const crate::types::FileRead, signInfo: *const crate::types::SignatureInfo, pkcs7Handle: *const crate::types::Pkcs7) -> i32",
+  "rust_file": "src_app_verify.rs",
+  "reason": "repair_failed_after_5",
+  "error_truncated": "error[E0308]: mismatched types\n    --> src/src_app_verify.rs:1763:83\n     |\n     |                                                                              ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected \"C\" fn, found \"Rust\" fn\n     |                                                                              |\n     |                                                                              arguments to this enum variant are incorrect\n     |\nhelp: the type constructed contains `fn(*const Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32 {CalcDigest}` due to the type of the argument passed\n    --> src/src_app_verify.rs:1763:78\n     |\n     |                                                                              ^^^^^---------------------------------^\n     |                                                                                   |\n     |                                                                                   this argument influences the type of `Some`\n    --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:608:5\n     |\n     |     ^^^^\nerror: could not compile `appverify_lite__e5ebe91a98b9` (bin \"appverify_lite__e5ebe91a98b9\") due to 1 previous error; 31 warnings emitted",
+  "artifact_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk10-again/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/_manual_fix/src_app_verify_36",
+  "rust_code_path": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk10-again/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/_manual_fix/src_app_verify_36/translated_rust.rs"
+}

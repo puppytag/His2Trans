@@ -1,0 +1,34 @@
+函数: src_app_verify_15
+尝试次数: 4/5
+============================================================
+error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+   --> src/src_app_verify.rs:216:55
+    |
+    |                                                       ^^^^^^ method not found in `i32`
+error[E0610]: `i32` is a primitive type and therefore doesn't have fields
+   --> src/src_app_verify.rs:318:57
+    |
+    |                                                         ^^^^^^
+error[E0599]: no method named `len` found for type `i32` in the current scope
+    --> src/src_app_verify.rs:319:56
+     |
+     |                                                        ^^^
+     |
+help: there is a method `le` with a similar name, but with different arguments
+    --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:1416:5
+     |
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0610]: `i32` is a primitive type and therefore doesn't have fields
+   --> src/src_app_verify.rs:328:70
+    |
+    |                                                                      ^^^^^^
+error[E0599]: no method named `len` found for type `i32` in the current scope
+    --> src/src_app_verify.rs:329:69
+     |
+     |                                                                     ^^^
+     |
+help: there is a method `le` with a similar name, but with different arguments
+    --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:1416:5
+     |
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 5 previous errors; 4 warnings emitted

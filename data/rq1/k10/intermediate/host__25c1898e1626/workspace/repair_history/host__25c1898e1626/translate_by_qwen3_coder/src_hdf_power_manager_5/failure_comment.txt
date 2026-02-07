@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_5
+// func_key: src_hdf_power_manager_5
+// c_function: HdfPmTaskPut
+// rust_file: src_hdf_power_manager.rs
+// rust_signature: pub extern "C" fn HdfPmTaskPut(powerToken: *mut crate::types::PowerStateToken, type_: crate::types::HDF_PM_REQUEST_TYPE)
+// c_first_line: void HdfPmTaskPut(struct PowerStateToken *powerToken, HDF_PM_REQUEST_TYPE type)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk10-again/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder/_manual_fix/src_hdf_power_manager_5/translated_rust.rs
+// last_error_truncated:
+//   error[E0308]: mismatched types
+//      --> src/src_hdf_power_manager.rs:112:39
+//       |
+//       |                                  ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+//       |                                  |
+//       |                                  arguments to this enum variant are incorrect
+//       |
+//   help: the type constructed contains `fn(*mut HdfTaskType) -> i32 {PmTaskFunc}` due to the type of the argument passed
+// =================================

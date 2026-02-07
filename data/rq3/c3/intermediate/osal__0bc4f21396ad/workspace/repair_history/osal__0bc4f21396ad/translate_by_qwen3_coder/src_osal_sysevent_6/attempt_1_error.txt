@@ -1,0 +1,98 @@
+函数: src_osal_sysevent_6
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find value `HDF_DEV_ERR_NO_MEMORY` in module `crate::types`
+   --> src/src_osal_sysevent.rs:332:30
+    |
+    |                              ^^^^^^^^^^^^^^^^^^^^^ not found in `crate::types`
+    |
+help: consider importing this constant
+    |
+    |
+help: if you import `HDF_DEV_ERR_NO_MEMORY`, refer to it directly
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:336:23
+    |
+    |         ------------- ^^^^^^^^^^^^^^^^^^^^^^ expected `*mut OsalMutex`, found `&mut OsalMutex`
+    |         |
+    |         arguments to this function are incorrect
+    |
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:93:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:42:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:70:12
+    |
+    |            ^^^^^^^^^^^^^ -----
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:341:25
+    |
+    |         -------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `DListHead`, found `types::DListHead`
+    |         |
+    |         expected due to the type of this binding
+    |
+   --> src/types.rs:125:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:5:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:343:32
+    |
+    |         --------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `DListHead`, found `types::DListHead`
+    |         |
+    |         expected due to the type of this binding
+    |
+   --> src/types.rs:125:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:5:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:344:24
+    |
+    |         ------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `DListHead`, found `types::DListHead`
+    |         |
+    |         expected due to the type of this binding
+    |
+   --> src/types.rs:125:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:5:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:359:25
+    |
+    |         --------------- ^^^^^^^^^^^^^^^^^^^^^^ expected `*mut OsalMutex`, found `&mut OsalMutex`
+    |         |
+    |         arguments to this function are incorrect
+    |
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:93:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:42:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:71:12
+    |
+    |            ^^^^^^^^^^^^^^^ -----
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::DListHead` as `*mut types::DListHead` is invalid
+   --> src/src_osal_sysevent.rs:341:25
+    |
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::DListHead` as `*mut types::DListHead` is invalid
+   --> src/src_osal_sysevent.rs:343:32
+    |
+    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::DListHead` as `*mut types::DListHead` is invalid
+   --> src/src_osal_sysevent.rs:344:24
+    |
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 9 previous errors

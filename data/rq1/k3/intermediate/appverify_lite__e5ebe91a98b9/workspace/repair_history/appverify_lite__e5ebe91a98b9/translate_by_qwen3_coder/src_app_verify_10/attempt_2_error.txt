@@ -1,0 +1,18 @@
+函数: src_app_verify_10
+尝试次数: 2/5
+============================================================
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:376:20
+    |
+    |       ^^^^^^^^^^^^^^^^^^^^^^^                                      ------------------------------------------------------- expected `u32`, found `u64`           --------------- expected `u32`, found `u64`
+    |
+   --> src/compat.rs:162:12
+    |
+    |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                 +                                                       +++++++++++++++++++++
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                                                                                               +               +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 1 previous error; 13 warnings emitted

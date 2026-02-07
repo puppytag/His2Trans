@@ -1,0 +1,466 @@
+{
+  "generated_at": "2026-01-21T15:41:53",
+  "project": "appverify_lite__e5ebe91a98b9",
+  "llm_name": "qwen3_coder",
+  "workspace_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace",
+  "preprocessed_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed",
+  "types_rs": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/incremental_work/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/src/types.rs",
+  "compat_rs": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/incremental_work/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/src/compat.rs",
+  "requested_callees_total": 102,
+  "extern_count": 64,
+  "extra_types_count": 9,
+  "decls": [
+    {
+      "name": "GetDevUdid",
+      "rust_decl": "pub fn GetDevUdid(udid: *mut ::core::ffi::c_char, size: ::core::ffi::c_int) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_default_115aecef.i",
+      "source_file_group": "products_default_app_verify_default"
+    },
+    {
+      "name": "HiLogPrint",
+      "rust_decl": "pub fn HiLogPrint(type_: crate::types::LogType, level: crate::types::LogLevel, domain: ::core::ffi::c_uint, tag: *const ::core::ffi::c_char, fmt: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_centraldirectory_06cf30c0.i",
+      "source_file_group": "src_app_centraldirectory"
+    },
+    {
+      "name": "cJSON_Delete",
+      "rust_decl": "pub fn cJSON_Delete(item: *mut crate::types::cJSON);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_provision_c5402285.i",
+      "source_file_group": "src_app_provision"
+    },
+    {
+      "name": "cJSON_GetArrayItem",
+      "rust_decl": "pub fn cJSON_GetArrayItem(array: *const crate::types::cJSON, index: ::core::ffi::c_int) -> *mut crate::types::cJSON;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_provision_c5402285.i",
+      "source_file_group": "src_app_provision"
+    },
+    {
+      "name": "cJSON_GetArraySize",
+      "rust_decl": "pub fn cJSON_GetArraySize(array: *const crate::types::cJSON) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_provision_c5402285.i",
+      "source_file_group": "src_app_provision"
+    },
+    {
+      "name": "cJSON_GetObjectItem",
+      "rust_decl": "pub fn cJSON_GetObjectItem(object: *const crate::types::cJSON, string: *const ::core::ffi::c_char) -> *mut crate::types::cJSON;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_provision_c5402285.i",
+      "source_file_group": "src_app_provision"
+    },
+    {
+      "name": "cJSON_Parse",
+      "rust_decl": "pub fn cJSON_Parse(value: *const ::core::ffi::c_char) -> *mut crate::types::cJSON;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_provision_c5402285.i",
+      "source_file_group": "src_app_provision"
+    },
+    {
+      "name": "calloc",
+      "rust_decl": "pub fn calloc(arg1: crate::types::size_t, arg2: crate::types::size_t) -> *mut ::core::ffi::c_void;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "close",
+      "rust_decl": "pub fn close(arg1: ::core::ffi::c_int) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "free",
+      "rust_decl": "pub fn free(arg1: *mut ::core::ffi::c_void);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_centraldirectory_06cf30c0.i",
+      "source_file_group": "src_app_centraldirectory"
+    },
+    {
+      "name": "fstat",
+      "rust_decl": "pub fn fstat(arg1: ::core::ffi::c_int, arg2: *mut stat) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "islower",
+      "rust_decl": "pub fn islower(arg1: ::core::ffi::c_int) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "isupper",
+      "rust_decl": "pub fn isupper(arg1: ::core::ffi::c_int) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "lseek",
+      "rust_decl": "pub fn lseek(arg1: ::core::ffi::c_int, arg2: crate::types::off_t, arg3: ::core::ffi::c_int) -> crate::types::off_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_centraldirectory_06cf30c0.i",
+      "source_file_group": "src_app_centraldirectory"
+    },
+    {
+      "name": "malloc",
+      "rust_decl": "pub fn malloc(arg1: crate::types::size_t) -> *mut ::core::ffi::c_void;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_centraldirectory_06cf30c0.i",
+      "source_file_group": "src_app_centraldirectory"
+    },
+    {
+      "name": "mbedtls_asn1_get_alg",
+      "rust_decl": "pub fn mbedtls_asn1_get_alg(p: *mut *mut ::core::ffi::c_uchar, end: *const ::core::ffi::c_uchar, alg: *mut crate::types::mbedtls_asn1_buf, params: *mut crate::types::mbedtls_asn1_buf) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_asn1_get_alg_null",
+      "rust_decl": "pub fn mbedtls_asn1_get_alg_null(p: *mut *mut ::core::ffi::c_uchar, end: *const ::core::ffi::c_uchar, alg: *mut crate::types::mbedtls_asn1_buf) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_asn1_get_int",
+      "rust_decl": "pub fn mbedtls_asn1_get_int(p: *mut *mut ::core::ffi::c_uchar, end: *const ::core::ffi::c_uchar, val: *mut ::core::ffi::c_int) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_asn1_get_tag",
+      "rust_decl": "pub fn mbedtls_asn1_get_tag(p: *mut *mut ::core::ffi::c_uchar, end: *const ::core::ffi::c_uchar, len: *mut crate::types::size_t, tag: ::core::ffi::c_int) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_base64_encode",
+      "rust_decl": "pub fn mbedtls_base64_encode(dst: *mut ::core::ffi::c_uchar, dlen: crate::types::size_t, olen: *mut crate::types::size_t, src: *const ::core::ffi::c_uchar, slen: crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_calloc",
+      "rust_decl": "pub fn mbedtls_calloc(n: crate::types::size_t, size: crate::types::size_t) -> *mut ::core::ffi::c_void;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_ecp_point_write_binary",
+      "rust_decl": "pub fn mbedtls_ecp_point_write_binary(grp: *const crate::types::mbedtls_ecp_group, P: *const crate::types::mbedtls_ecp_point, format: ::core::ffi::c_int, olen: *mut crate::types::size_t, buf: *mut ::core::ffi::c_uchar, buflen: crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_free",
+      "rust_decl": "pub fn mbedtls_free(ptr: *mut ::core::ffi::c_void);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_md",
+      "rust_decl": "pub fn mbedtls_md(md_info: *const crate::types::mbedtls_md_info_t, input: *const ::core::ffi::c_uchar, ilen: crate::types::size_t, output: *mut ::core::ffi::c_uchar) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_md_finish",
+      "rust_decl": "pub fn mbedtls_md_finish(ctx: *mut crate::types::mbedtls_md_context_t, output: *mut ::core::ffi::c_uchar) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_hap_8455da46.i",
+      "source_file_group": "src_app_verify_hap"
+    },
+    {
+      "name": "mbedtls_md_free",
+      "rust_decl": "pub fn mbedtls_md_free(ctx: *mut crate::types::mbedtls_md_context_t);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_hap_8455da46.i",
+      "source_file_group": "src_app_verify_hap"
+    },
+    {
+      "name": "mbedtls_md_get_size",
+      "rust_decl": "pub fn mbedtls_md_get_size(md_info: *const crate::types::mbedtls_md_info_t) -> ::core::ffi::c_uchar;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_md_info_from_type",
+      "rust_decl": "pub fn mbedtls_md_info_from_type(md_type: crate::types::mbedtls_md_type_t) -> *const crate::types::mbedtls_md_info_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_md_init",
+      "rust_decl": "pub fn mbedtls_md_init(ctx: *mut crate::types::mbedtls_md_context_t);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_hap_8455da46.i",
+      "source_file_group": "src_app_verify_hap"
+    },
+    {
+      "name": "mbedtls_md_setup",
+      "rust_decl": "pub fn mbedtls_md_setup(ctx: *mut crate::types::mbedtls_md_context_t, md_info: *const crate::types::mbedtls_md_info_t, hmac: ::core::ffi::c_int) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_hap_8455da46.i",
+      "source_file_group": "src_app_verify_hap"
+    },
+    {
+      "name": "mbedtls_md_starts",
+      "rust_decl": "pub fn mbedtls_md_starts(ctx: *mut crate::types::mbedtls_md_context_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_hap_8455da46.i",
+      "source_file_group": "src_app_verify_hap"
+    },
+    {
+      "name": "mbedtls_md_update",
+      "rust_decl": "pub fn mbedtls_md_update(ctx: *mut crate::types::mbedtls_md_context_t, input: *const ::core::ffi::c_uchar, ilen: crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_hap_8455da46.i",
+      "source_file_group": "src_app_verify_hap"
+    },
+    {
+      "name": "mbedtls_pem_free",
+      "rust_decl": "pub fn mbedtls_pem_free(ctx: *mut crate::types::mbedtls_pem_context);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_pem_init",
+      "rust_decl": "pub fn mbedtls_pem_init(ctx: *mut crate::types::mbedtls_pem_context);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_pem_read_buffer",
+      "rust_decl": "pub fn mbedtls_pem_read_buffer(ctx: *mut crate::types::mbedtls_pem_context, header: *const ::core::ffi::c_char, footer: *const ::core::ffi::c_char, data: *const ::core::ffi::c_uchar, pwd: *const ::core::ffi::c_uchar, pwdlen: crate::types::size_t, use_len: *mut crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_pk_get_type",
+      "rust_decl": "pub fn mbedtls_pk_get_type(ctx: *const crate::types::mbedtls_pk_context) -> crate::types::mbedtls_pk_type_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_pk_verify",
+      "rust_decl": "pub fn mbedtls_pk_verify(ctx: *mut crate::types::mbedtls_pk_context, md_alg: crate::types::mbedtls_md_type_t, hash: *const ::core::ffi::c_uchar, hash_len: crate::types::size_t, sig: *const ::core::ffi::c_uchar, sig_len: crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_pk_write_pubkey",
+      "rust_decl": "pub fn mbedtls_pk_write_pubkey(p: *mut *mut ::core::ffi::c_uchar, start: *mut ::core::ffi::c_uchar, key: *const crate::types::mbedtls_pk_context) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_rsa_set_padding",
+      "rust_decl": "pub fn mbedtls_rsa_set_padding(ctx: *mut crate::types::mbedtls_rsa_context, padding: ::core::ffi::c_int, hash_id: crate::types::mbedtls_md_type_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_x509_crl_free",
+      "rust_decl": "pub fn mbedtls_x509_crl_free(crl: *mut crate::types::mbedtls_x509_crl);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_x509_crl_init",
+      "rust_decl": "pub fn mbedtls_x509_crl_init(crl: *mut crate::types::mbedtls_x509_crl);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_x509_crl_parse",
+      "rust_decl": "pub fn mbedtls_x509_crl_parse(chain: *mut crate::types::mbedtls_x509_crl, buf: *const ::core::ffi::c_uchar, buflen: crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_x509_crt_free",
+      "rust_decl": "pub fn mbedtls_x509_crt_free(crt: *mut crate::types::mbedtls_x509_crt);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_x509_crt_init",
+      "rust_decl": "pub fn mbedtls_x509_crt_init(crt: *mut crate::types::mbedtls_x509_crt);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_x509_crt_parse",
+      "rust_decl": "pub fn mbedtls_x509_crt_parse(chain: *mut crate::types::mbedtls_x509_crt, buf: *const ::core::ffi::c_uchar, buflen: crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "mbedtls_x509_crt_verify",
+      "rust_decl": "pub fn mbedtls_x509_crt_verify(crt: *mut crate::types::mbedtls_x509_crt, trust_ca: *mut crate::types::mbedtls_x509_crt, ca_crl: *mut crate::types::mbedtls_x509_crl, cn: *const ::core::ffi::c_char, flags: *mut u32, f_vrfy: ::core::option::Option< unsafe extern \"C\" fn( arg1: *mut ::core::ffi::c_void, arg2: *mut crate::types::mbedtls_x509_crt, arg3: ::core::ffi::c_int, arg4: *mut u32, ) -> ::core::ffi::c_int, >, p_vrfy: *mut ::core::ffi::c_void) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_x509_crt_verify_info",
+      "rust_decl": "pub fn mbedtls_x509_crt_verify_info(buf: *mut ::core::ffi::c_char, size: crate::types::size_t, prefix: *const ::core::ffi::c_char, flags: u32) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "mbedtls_x509_dn_gets",
+      "rust_decl": "pub fn mbedtls_x509_dn_gets(buf: *mut ::core::ffi::c_char, size: crate::types::size_t, dn: *const crate::types::mbedtls_x509_name) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "memcmp",
+      "rust_decl": "pub fn memcmp(arg1: *const ::core::ffi::c_void, arg2: *const ::core::ffi::c_void, arg3: crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "memcpy_s",
+      "rust_decl": "pub fn memcpy_s(dest: *mut ::core::ffi::c_void, destMax: crate::types::size_t, src: *const ::core::ffi::c_void, count: crate::types::size_t) -> crate::types::errno_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_centraldirectory_06cf30c0.i",
+      "source_file_group": "src_app_centraldirectory"
+    },
+    {
+      "name": "memset_s",
+      "rust_decl": "pub fn memset_s(dest: *mut ::core::ffi::c_void, destMax: crate::types::size_t, c: ::core::ffi::c_int, count: crate::types::size_t) -> crate::types::errno_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_centraldirectory_06cf30c0.i",
+      "source_file_group": "src_app_centraldirectory"
+    },
+    {
+      "name": "mmap",
+      "rust_decl": "pub fn mmap(arg1: *mut ::core::ffi::c_void, arg2: crate::types::size_t, arg3: ::core::ffi::c_int, arg4: ::core::ffi::c_int, arg5: ::core::ffi::c_int, arg6: crate::types::off_t) -> *mut ::core::ffi::c_void;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_file_6d15459c.i",
+      "source_file_group": "src_app_file"
+    },
+    {
+      "name": "munmap",
+      "rust_decl": "pub fn munmap(arg1: *mut ::core::ffi::c_void, arg2: crate::types::size_t) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_file_6d15459c.i",
+      "source_file_group": "src_app_file"
+    },
+    {
+      "name": "open",
+      "rust_decl": "pub fn open(arg1: *const ::core::ffi::c_char, arg2: ::core::ffi::c_int, ...) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_file_6d15459c.i",
+      "source_file_group": "src_app_file"
+    },
+    {
+      "name": "read",
+      "rust_decl": "pub fn read(arg1: ::core::ffi::c_int, arg2: *mut ::core::ffi::c_void, arg3: crate::types::size_t) -> crate::types::ssize_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_centraldirectory_06cf30c0.i",
+      "source_file_group": "src_app_centraldirectory"
+    },
+    {
+      "name": "realpath",
+      "rust_decl": "pub fn realpath(arg1: *const ::core::ffi::c_char, arg2: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_file_6d15459c.i",
+      "source_file_group": "src_app_file"
+    },
+    {
+      "name": "snprintf_s",
+      "rust_decl": "pub fn snprintf_s(strDest: *mut ::core::ffi::c_char, destMax: crate::types::size_t, count: crate::types::size_t, format: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_257478bb.i",
+      "source_file_group": "src_app_verify"
+    },
+    {
+      "name": "strchr",
+      "rust_decl": "pub fn strchr(arg1: *const ::core::ffi::c_char, arg2: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_provision_c5402285.i",
+      "source_file_group": "src_app_provision"
+    },
+    {
+      "name": "strcmp",
+      "rust_decl": "pub fn strcmp(arg1: *const ::core::ffi::c_char, arg2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_provision_c5402285.i",
+      "source_file_group": "src_app_provision"
+    },
+    {
+      "name": "strcpy_s",
+      "rust_decl": "pub fn strcpy_s(strDest: *mut ::core::ffi::c_char, destMax: crate::types::size_t, strSrc: *const ::core::ffi::c_char) -> crate::types::errno_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_provision_c5402285.i",
+      "source_file_group": "src_app_provision"
+    },
+    {
+      "name": "strlen",
+      "rust_decl": "pub fn strlen(arg1: *const ::core::ffi::c_char) -> crate::types::size_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_file_6d15459c.i",
+      "source_file_group": "src_app_file"
+    },
+    {
+      "name": "strncpy_s",
+      "rust_decl": "pub fn strncpy_s(strDest: *mut ::core::ffi::c_char, destMax: crate::types::size_t, strSrc: *const ::core::ffi::c_char, count: crate::types::size_t) -> crate::types::errno_t;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "strstr",
+      "rust_decl": "pub fn strstr(arg1: *const ::core::ffi::c_char, arg2: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "source_file_group": "src_mbedtls_pkcs7"
+    },
+    {
+      "name": "sysconf",
+      "rust_decl": "pub fn sysconf(arg1: ::core::ffi::c_int) -> ::core::ffi::c_long;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_file_6d15459c.i",
+      "source_file_group": "src_app_file"
+    }
+  ],
+  "extra_types": [
+    "blkcnt_t",
+    "blksize_t",
+    "dev_t",
+    "gid_t",
+    "ino_t",
+    "mode_t",
+    "nlink_t",
+    "stat",
+    "stat__bindgen_ty_1"
+  ],
+  "missing": [
+    {
+      "source_file_group": "src_app_verify_hal",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/app_verify_hal_8b587fe3.i",
+      "reason": "missing_in_bindgen_output",
+      "missing_callees": [
+        "devUdidFunc"
+      ],
+      "requested_callees": [
+        "devUdidFunc"
+      ]
+    },
+    {
+      "source_file_group": "src_mbedtls_pkcs7",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/mbedtls_pkcs7_3b11dd2c.i",
+      "reason": "missing_in_bindgen_output",
+      "missing_callees": [
+        "calcDigest",
+        "mbedtls_x509_get_name",
+        "mbedtls_x509_get_serial"
+      ],
+      "requested_callees": [
+        "HiLogPrint",
+        "calcDigest",
+        "calloc",
+        "free",
+        "islower",
+        "isupper",
+        "mbedtls_asn1_get_alg",
+        "mbedtls_asn1_get_alg_null",
+        "mbedtls_asn1_get_int",
+        "mbedtls_asn1_get_tag",
+        "mbedtls_calloc",
+        "mbedtls_free",
+        "mbedtls_pem_free",
+        "mbedtls_pem_init",
+        "mbedtls_pem_read_buffer",
+        "mbedtls_pk_verify",
+        "mbedtls_rsa_set_padding",
+        "mbedtls_x509_crl_free",
+        "mbedtls_x509_crl_init",
+        "mbedtls_x509_crl_parse",
+        "mbedtls_x509_crt_free",
+        "mbedtls_x509_crt_init",
+        "mbedtls_x509_crt_parse",
+        "mbedtls_x509_crt_verify",
+        "mbedtls_x509_crt_verify_info",
+        "mbedtls_x509_dn_gets",
+        "mbedtls_x509_get_name",
+        "mbedtls_x509_get_serial",
+        "memcmp",
+        "memset_s",
+        "strncpy_s",
+        "strstr"
+      ]
+    }
+  ]
+}

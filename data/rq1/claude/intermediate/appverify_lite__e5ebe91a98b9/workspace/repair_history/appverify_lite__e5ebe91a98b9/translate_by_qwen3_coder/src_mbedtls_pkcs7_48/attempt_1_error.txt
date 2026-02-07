@@ -1,0 +1,37 @@
+函数: src_mbedtls_pkcs7_48
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find value `OHOS_ROOT_CERT_IN_PEM` in module `crate::globals`
+   --> src/src_mbedtls_pkcs7.rs:785:29
+    |
+    |                             ^^^^^^^^^^^^^^^^^^^^^ not found in `crate::globals`
+error[E0425]: cannot find value `OHOS_ROOT_CERT_IN_PEM` in module `crate::globals`
+   --> src/src_mbedtls_pkcs7.rs:786:52
+    |
+    |                                                    ^^^^^^^^^^^^^^^^^^^^^ not found in `crate::globals`
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:782:46
+    |
+    |         ------------------------------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut mbedtls_x509_crt`, found `&mut i32`
+    |         |
+    |         arguments to this function are incorrect
+    |
+   --> src/compat.rs:158:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^ ---
+error[E0308]: arguments to this function are incorrect
+   --> src/src_mbedtls_pkcs7.rs:783:18
+    |
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |             ---------------------------------------------------------------------- expected `u32`, found `usize`
+    |
+   --> src/src_mbedtls_pkcs7.rs:784:13
+    |
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:159:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^^ -----                                                                         ------
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |             +                                                                      +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 4 previous errors; 3 warnings emitted

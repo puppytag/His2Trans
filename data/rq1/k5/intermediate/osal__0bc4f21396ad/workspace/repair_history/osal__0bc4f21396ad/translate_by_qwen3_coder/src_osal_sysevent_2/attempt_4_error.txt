@@ -1,0 +1,30 @@
+函数: src_osal_sysevent_2
+尝试次数: 4/5
+============================================================
+error[E0133]: call to unsafe function `compat::HdfSbufObtain` is unsafe and requires unsafe function or block
+  --> src/src_osal_sysevent.rs:39:16
+   |
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+error[E0133]: call to unsafe function `compat::HdfSbufWriteUint64` is unsafe and requires unsafe function or block
+  --> src/src_osal_sysevent.rs:44:9
+   |
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+error[E0133]: call to unsafe function `compat::HdfSbufRecycle` is unsafe and requires unsafe function or block
+  --> src/src_osal_sysevent.rs:45:9
+   |
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+error[E0133]: call to unsafe function `compat::HiLogPrint` is unsafe and requires unsafe function or block
+  --> src/src_osal_sysevent.rs:56:17
+   |
+   |  _________________^
+   | |_________^ call to unsafe function
+   |
+error[E0133]: call to unsafe function `compat::HdfSbufRecycle` is unsafe and requires unsafe function or block
+  --> src/src_osal_sysevent.rs:65:5
+   |
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ call to unsafe function
+   |
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 5 previous errors

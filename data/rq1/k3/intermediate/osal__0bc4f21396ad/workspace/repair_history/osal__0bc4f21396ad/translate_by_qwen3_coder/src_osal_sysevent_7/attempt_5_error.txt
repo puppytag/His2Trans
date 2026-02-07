@@ -1,0 +1,49 @@
+函数: src_osal_sysevent_7
+尝试次数: 5/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:305:46
+    |
+    |                 ---------------------------- ^^^^^^^^^ expected `compat::OsalMutex`, found `types::OsalMutex`
+    |                 |
+    |                 arguments to this function are incorrect
+    |
+   --> src/types.rs:142:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:42:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:70:12
+    |
+    |            ^^^^^^^^^^^^^ -----
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:318:44
+    |
+    |                                            ^^^^^^^^^^^^^^^^^^^^ types differ in mutability
+    |
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:321:48
+    |
+    |                 ------------------------------ ^^^^^^^^^ expected `compat::OsalMutex`, found `types::OsalMutex`
+    |                 |
+    |                 arguments to this function are incorrect
+    |
+   --> src/types.rs:142:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:42:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:71:12
+    |
+    |            ^^^^^^^^^^^^^^^ -----
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::OsalMutex` as `*mut types::OsalMutex` is invalid
+   --> src/src_osal_sysevent.rs:304:25
+    |
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&__c2r_tu_types_src_osal_sysevent::DListHead` as `*const types::DListHead` is invalid
+   --> src/src_osal_sysevent.rs:317:36
+    |
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 5 previous errors

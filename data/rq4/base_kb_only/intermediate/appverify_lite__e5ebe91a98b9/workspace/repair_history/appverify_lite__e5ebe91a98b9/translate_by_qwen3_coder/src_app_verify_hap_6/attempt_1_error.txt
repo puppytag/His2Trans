@@ -1,0 +1,17 @@
+函数: src_app_verify_hap_6
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_app_verify_hap.rs:166:62
+    |
+    |                            -----------------                 ^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |                            |
+    |                            arguments to this function are incorrect
+    |
+   --> src/compat.rs:134:12
+    |
+    |            ^^^^^^^^^^^^^^^^^                                                                                   ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                              +                 +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 1 previous error

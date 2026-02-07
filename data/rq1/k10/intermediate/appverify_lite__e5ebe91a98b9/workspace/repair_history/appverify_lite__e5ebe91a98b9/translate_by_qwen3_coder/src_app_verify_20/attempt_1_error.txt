@@ -1,0 +1,25 @@
+函数: src_app_verify_20
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find function `mbedtls_pk_ec` in this scope
+   --> src/src_app_verify.rs:235:26
+    |
+    |                          ^^^^^^^^^^^^^
+    |
+    |
+    |     --------------------------------------------------- similarly named function `mbedtls_free` defined here
+    |
+help: a function with a similar name exists
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:262:15
+    |
+    |        ---    ^^^^ expected `i32`, found `u32`
+    |        |
+    |        expected because this is `i32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                   ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors

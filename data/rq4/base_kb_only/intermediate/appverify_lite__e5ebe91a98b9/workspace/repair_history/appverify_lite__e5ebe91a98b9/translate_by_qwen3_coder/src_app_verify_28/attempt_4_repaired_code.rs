@@ -1,0 +1,27 @@
+Looking at the error, it says `no method named 'as_ptr' found for type 'i32'` at line 450:55. The error is NOT in the code I'm generating - it's in a different function in the same file. However, I need to ensure my generated code compiles correctly.
+
+The code I generated in the last attempt looks correct. The error at line 450 is from a DIFFERENT function in the file, not from `LoadCertAndCmpDest`. Let me provide the same correct implementation:
+
+pub extern "C" fn LoadCertAndCmpDest(certBase64: *const ::core::ffi::c_uchar, binSignCert: *const crate::types::CertInfo) -> i32 {
+    if certBase64.is_null() || binSignCert.is_null() {
+        return crate::types::V_ERR as i32;
+    }
+    
+    let mut cert: crate::types::mbedtls_x509_crt = unsafe { std::mem::zeroed() };
+    unsafe { crate::compat::mbedtls_x509_crt_init(&mut cert) };
+    
+    let cert_len = unsafe { libc::strlen(certBase64 as *const i8) } + 1;
+    let ret = unsafe { crate::compat::mbedtls_x509_crt_parse(&mut cert, certBase64, cert_len as crate::types::size_t) };
+    
+    if ret != crate::types::V_OK as i32 {
+        return crate::types::V_ERR as i32;
+    }
+    
+    if crate::src_app_verify::CmpCert(&cert as *const _, binSignCert) == crate::types::V_OK as i32 {
+        unsafe { crate::compat::mbedtls_x509_crt_free(&mut cert) };
+        return crate::types::V_OK as i32;
+    }
+    
+    unsafe { crate::compat::mbedtls_x509_crt_free(&mut cert) };
+    crate::types::V_ERR as i32
+}

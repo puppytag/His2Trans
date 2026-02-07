@@ -1,0 +1,29 @@
+函数: src_osal_sysevent_2
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find value `LOG_CORE` in this scope
+  --> src/src_osal_sysevent.rs:81:17
+   |
+   |                 ^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `LOG_ERROR` in this scope
+  --> src/src_osal_sysevent.rs:82:17
+   |
+   |                 ^^^^^^^^^ not found in this scope
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:73:20
+    |
+    |                  - ^^^^^^^^^^ expected `HdfObject`, found `types::HdfObject`
+    |                  |
+    |                  arguments to this function are incorrect
+    |
+   --> src/types.rs:125:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:34:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::HdfObject` as `*mut types::HdfObject` is invalid
+  --> src/src_osal_sysevent.rs:70:31
+   |
+   |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 4 previous errors

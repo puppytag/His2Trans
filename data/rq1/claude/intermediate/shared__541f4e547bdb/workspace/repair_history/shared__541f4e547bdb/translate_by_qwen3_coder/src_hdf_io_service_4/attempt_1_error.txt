@@ -1,0 +1,18 @@
+函数: src_hdf_io_service_4
+尝试次数: 1/5
+============================================================
+error[E0428]: the name `HdfIoServiceAdapterRemove` is defined multiple times
+  --> src/src_hdf_io_service.rs:34:9
+   |
+   |         ----------------------------------------------------------------------- previous definition of the value `HdfIoServiceAdapterRemove` here
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `HdfIoServiceAdapterRemove` redefined here
+   |
+error[E0599]: no method named `is_some` found for fn item `unsafe extern "C" fn(*mut types::HdfIoService) {HdfIoServiceRemove::HdfIoServiceAdapterRemove}` in the current scope
+  --> src/src_hdf_io_service.rs:38:38
+   |
+   |                                      ^^^^^^^ method not found in `unsafe extern "C" fn(*mut types::HdfIoService) {HdfIoServiceRemove::HdfIoServiceAdapterRemove}`
+error[E0599]: no method named `unwrap` found for fn item `unsafe extern "C" fn(*mut types::HdfIoService) {HdfIoServiceRemove::HdfIoServiceAdapterRemove}` in the current scope
+  --> src/src_hdf_io_service.rs:39:40
+   |
+   |                                        ^^^^^^ method not found in `unsafe extern "C" fn(*mut types::HdfIoService) {HdfIoServiceRemove::HdfIoServiceAdapterRemove}`
+error: could not compile `shared__541f4e547bdb` (bin "shared__541f4e547bdb") due to 3 previous errors

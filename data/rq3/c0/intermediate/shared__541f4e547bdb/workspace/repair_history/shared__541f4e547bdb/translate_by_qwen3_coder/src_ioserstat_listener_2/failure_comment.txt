@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_0
+// func_key: src_ioserstat_listener_2
+// c_function: IoServiceStatusListenerNewInstance
+// rust_file: src_ioserstat_listener.rs
+// rust_signature: pub extern "C" fn IoServiceStatusListenerNewInstance() -> *mut crate::types::ServiceStatusListener
+// c_first_line: struct ServiceStatusListener *IoServiceStatusListenerNewInstance(void)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C0/intermediate/shared__541f4e547bdb/workspace/repair_history/shared__541f4e547bdb/translate_by_qwen3_coder/_manual_fix/src_ioserstat_listener_2/translated_rust.rs
+// last_error_truncated:
+//   error[E0308]: mismatched types
+//      --> src/src_ioserstat_listener.rs:29:53
+//       |
+//       |                                                ---- ^^^^^^^^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+//       |                                                |
+//       |                                                arguments to this enum variant are incorrect
+//       |
+//   help: the type constructed contains `fn(*mut HdfDevEventlistener, *mut types::HdfIoService, u32, *mut types::HdfSBuf) -> i32 {OnIoServiceEventReceive}` due to the type of the argument passed
+// =================================

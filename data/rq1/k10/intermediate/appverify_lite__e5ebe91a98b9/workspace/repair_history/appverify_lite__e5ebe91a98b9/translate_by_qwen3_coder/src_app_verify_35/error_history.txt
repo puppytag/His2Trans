@@ -1,0 +1,30 @@
+函数: src_app_verify_35
+错误历史摘要（前500字符）:
+============================================================
+
+尝试 1:
+error[E0308]: mismatched types
+    --> src/src_app_verify.rs:1846:15
+     |
+     |        ---    ^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+     |        |
+     |        expected because this is `i32`
+     |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+     |
+     |                                 ++++++++++++++++++++
+error[E0308]: mismatched types
+    --> src/src_app_verify.rs:1853:15
+     |
+     |        ---    ^^^^^^^^^^^^^^^^^^ expected `i32`, fo
+------------------------------------------------------------
+
+尝试 2:
+error[E0133]: call to unsafe function `compat::HiLogPrint` is unsafe and requires unsafe function or block
+    --> src/src_app_verify.rs:1847:17
+     |
+error[E0133]: call to unsafe function `compat::HiLogPrint` is unsafe and requires unsafe function or block
+    --> src/src_app_verify.rs:1850:13
+     |
+     |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------------------

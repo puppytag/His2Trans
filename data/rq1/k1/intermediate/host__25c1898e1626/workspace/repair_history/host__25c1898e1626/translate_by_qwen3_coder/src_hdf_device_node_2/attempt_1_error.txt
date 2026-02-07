@@ -1,0 +1,34 @@
+函数: src_hdf_device_node_2
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+  --> src/src_hdf_device_node.rs:43:18
+   |
+   |        ------    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u16`, found `u32`
+   |        |
+   |        expected because this is `u16`
+   |
+help: you can convert `policy` from `u16` to `u32`, matching the type of `crate::types::SERVICE_POLICY_NONE`
+   |
+   |        ++++++++++      +
+error[E0308]: mismatched types
+  --> src/src_hdf_device_node.rs:48:18
+   |
+   |        ------    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u16`, found `u32`
+   |        |
+   |        expected because this is `u16`
+   |
+help: you can convert `policy` from `u16` to `u32`, matching the type of `crate::types::SERVICE_POLICY_PUBLIC`
+   |
+   |        ++++++++++      +
+error[E0308]: mismatched types
+  --> src/src_hdf_device_node.rs:48:67
+   |
+   |                                                         ------    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u16`, found `u32`
+   |                                                         |
+   |                                                         expected because this is `u16`
+   |
+help: you can convert `policy` from `u16` to `u32`, matching the type of `crate::types::SERVICE_POLICY_CAPACITY`
+   |
+   |                                                         ++++++++++      +
+error: could not compile `host__25c1898e1626` (bin "host__25c1898e1626") due to 3 previous errors; 40 warnings emitted

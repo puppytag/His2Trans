@@ -1,0 +1,1 @@
+pub extern "C" fn memset_s(dest: *mut std::ffi::c_void, destMax: size_t, c: i32, count: size_t) -> errno_t;

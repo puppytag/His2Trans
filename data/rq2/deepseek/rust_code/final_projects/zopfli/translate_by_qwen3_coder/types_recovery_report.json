@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "project": "zopfli",
+  "created_at": "2026-01-12T08:12:37.204441+00:00",
+  "updated_at": "2026-01-12T08:54:51.168181+00:00",
+  "missing_types": {
+    "SplitCostContext": {
+      "kind": "opaque",
+      "mapped_to": "",
+      "last_seen": "2026-01-12T08:46:58.913356+00:00"
+    }
+  },
+  "missing_consts": [
+    {
+      "name": "EXIT_FAILURE",
+      "last_seen": "2026-01-12T08:30:17.246573+00:00"
+    },
+    {
+      "name": "SEEK_END",
+      "last_seen": "2026-01-12T08:30:17.246763+00:00"
+    }
+  ],
+  "missing_globals": [],
+  "structs": {
+    "ZopfliLZ77Store": {
+      "fields": {
+        "d_counts": "*mut usize",
+        "d_symbol": "*mut u16",
+        "dists": "*mut u16",
+        "litlens": "*mut u16",
+        "ll_counts": "*mut usize",
+        "ll_symbol": "*mut u16",
+        "pos": "*mut usize",
+        "size": "usize"
+      },
+      "sources": {
+        "d_counts": "c",
+        "d_symbol": "c",
+        "dists": "c",
+        "litlens": "c",
+        "ll_counts": "c",
+        "ll_symbol": "c",
+        "pos": "c",
+        "size": "c"
+      },
+      "evidence": {
+        "file": "/data/home/wangshb/c2-rust_framework/ComparisonMethod/Our/projects/zopfli_c/src/lz77.h",
+        "line": 44
+      },
+      "complete": true,
+      "confidence": 0.95,
+      "inferred": false,
+      "last_updated": "2026-01-12T08:54:51.167937+00:00"
+    },
+    "ZopfliLongestMatchCache": {
+      "fields": {
+        "dist": "*mut u16",
+        "length": "*mut u16"
+      },
+      "sources": {
+        "dist": "c",
+        "length": "c"
+      },
+      "evidence": {
+        "file": "/data/home/wangshb/c2-rust_framework/ComparisonMethod/Our/projects/zopfli_c/src/cache.h",
+        "line": 39
+      },
+      "complete": true,
+      "confidence": 0.95,
+      "inferred": false,
+      "last_updated": "2026-01-12T08:39:08.856524+00:00"
+    },
+    "SplitCostContext": {
+      "fields": {
+        "end": "usize",
+        "lz77": "*const ZopfliLZ77Store",
+        "start": "usize"
+      },
+      "sources": {
+        "end": "c",
+        "lz77": "c",
+        "start": "c"
+      },
+      "evidence": {
+        "file": "/data/home/wangshb/c2-rust_framework/ComparisonMethod/Our/projects/zopfli_c/src/blocksplitter.c",
+        "line": 113
+      },
+      "complete": true,
+      "confidence": 0.95,
+      "inferred": false,
+      "last_updated": "2026-01-12T08:47:05.484403+00:00"
+    }
+  }
+}

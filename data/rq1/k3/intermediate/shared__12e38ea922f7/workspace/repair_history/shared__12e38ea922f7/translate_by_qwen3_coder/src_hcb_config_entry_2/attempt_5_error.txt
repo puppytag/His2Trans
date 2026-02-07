@@ -1,0 +1,40 @@
+函数: src_hcb_config_entry_2
+尝试次数: 5/5
+============================================================
+error[E0308]: arguments to this function are incorrect
+  --> src/src_hcb_config_entry.rs:29:30
+   |
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^ --------------------------  --------------------------- expected `u32`, found `LogLevel`
+   |                                   |
+   |                                   expected `u32`, found `LogType`
+   |
+  --> src/compat.rs:52:12
+   |
+   |            ^^^^^^^^^^ -----           -----
+error[E0308]: arguments to this function are incorrect
+  --> src/src_hcb_config_entry.rs:35:26
+   |
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^ --------------------------  --------------------------- expected `u32`, found `LogLevel`
+   |                                   |
+   |                                   expected `u32`, found `LogType`
+   |
+  --> src/compat.rs:52:12
+   |
+   |            ^^^^^^^^^^ -----           -----
+error[E0605]: non-primitive cast: `{integer}` as `types::LogType`
+  --> src/src_hcb_config_entry.rs:29:56
+   |
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ an `as` expression can only be used to convert between primitive types or to coerce to a specific trait object
+error[E0605]: non-primitive cast: `{integer}` as `types::LogLevel`
+  --> src/src_hcb_config_entry.rs:29:84
+   |
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^ an `as` expression can only be used to convert between primitive types or to coerce to a specific trait object
+error[E0605]: non-primitive cast: `{integer}` as `types::LogType`
+  --> src/src_hcb_config_entry.rs:35:52
+   |
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ an `as` expression can only be used to convert between primitive types or to coerce to a specific trait object
+error[E0605]: non-primitive cast: `{integer}` as `types::LogLevel`
+  --> src/src_hcb_config_entry.rs:35:80
+   |
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^ an `as` expression can only be used to convert between primitive types or to coerce to a specific trait object
+error: could not compile `shared__12e38ea922f7` (bin "shared__12e38ea922f7") due to 6 previous errors

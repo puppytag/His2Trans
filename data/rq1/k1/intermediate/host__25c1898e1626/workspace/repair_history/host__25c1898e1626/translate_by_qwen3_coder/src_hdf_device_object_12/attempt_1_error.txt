@@ -1,0 +1,27 @@
+函数: src_hdf_device_object_12
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_hdf_device_object.rs:144:49
+    |
+    |        -------------------------------------    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u8`, found `u32`
+    |        |
+    |        expected because this is `u8`
+    |
+help: you can convert `unsafe { (*parentDevNode).devStatus }` from `u8` to `u32`, matching the type of `crate::types::DEVNODE_LAUNCHED`
+    |
+    |        ++++++++++                                     +
+error[E0308]: mismatched types
+   --> src/src_hdf_device_object.rs:149:65
+    |
+    |                        ---------------------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |                        |
+    |                        arguments to this function are incorrect
+    |
+   --> src/compat.rs:45:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^ --------
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                           ++++++++++++++++++++
+error: could not compile `host__25c1898e1626` (bin "host__25c1898e1626") due to 2 previous errors; 22 warnings emitted

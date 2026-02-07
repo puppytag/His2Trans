@@ -1,0 +1,140 @@
+{
+  "generated_at": "2026-01-20T20:16:18",
+  "project": "osal__0bc4f21396ad",
+  "llm_name": "qwen3_coder",
+  "workspace_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace",
+  "preprocessed_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed",
+  "types_rs": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/incremental_work/osal__0bc4f21396ad/translate_by_qwen3_coder/src/types.rs",
+  "compat_rs": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/incremental_work/osal__0bc4f21396ad/translate_by_qwen3_coder/src/compat.rs",
+  "requested_callees_total": 17,
+  "extern_count": 15,
+  "extra_types_count": 4,
+  "decls": [
+    {
+      "name": "HdfDeviceRegisterEventListener",
+      "rust_decl": "pub fn HdfDeviceRegisterEventListener(target: *mut crate::types::HdfIoService, listener: *mut crate::types::HdfDevEventlistener) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HdfDeviceUnregisterEventListener",
+      "rust_decl": "pub fn HdfDeviceUnregisterEventListener(target: *mut crate::types::HdfIoService, listener: *mut crate::types::HdfDevEventlistener) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HdfIoServiceBind",
+      "rust_decl": "pub fn HdfIoServiceBind(serviceName: *const ::core::ffi::c_char) -> *mut crate::types::HdfIoService;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HdfIoServiceRecycle",
+      "rust_decl": "pub fn HdfIoServiceRecycle(service: *mut crate::types::HdfIoService);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HdfSbufObtain",
+      "rust_decl": "pub fn HdfSbufObtain(capacity: size_t) -> *mut crate::types::HdfSBuf;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HdfSbufReadBuffer",
+      "rust_decl": "pub fn HdfSbufReadBuffer(sbuf: *mut crate::types::HdfSBuf, data: *mut *const ::core::ffi::c_void, readSize: *mut u32) -> bool;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HdfSbufReadString",
+      "rust_decl": "pub fn HdfSbufReadString(sbuf: *mut crate::types::HdfSBuf) -> *const ::core::ffi::c_char;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HdfSbufRecycle",
+      "rust_decl": "pub fn HdfSbufRecycle(sbuf: *mut crate::types::HdfSBuf);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HdfSbufWriteUint64",
+      "rust_decl": "pub fn HdfSbufWriteUint64(sbuf: *mut crate::types::HdfSBuf, value: u64) -> bool;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "HiLogPrint",
+      "rust_decl": "pub fn HiLogPrint(type_: LogType, level: LogLevel, domain: ::core::ffi::c_uint, tag: *const ::core::ffi::c_char, fmt: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "OsalMemCalloc",
+      "rust_decl": "pub fn OsalMemCalloc(size: size_t) -> *mut ::core::ffi::c_void;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "OsalMemFree",
+      "rust_decl": "pub fn OsalMemFree(mem: *mut ::core::ffi::c_void);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "OsalMutexInit",
+      "rust_decl": "pub fn OsalMutexInit(mutex: *mut OsalMutex) -> i32;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "OsalMutexLock",
+      "rust_decl": "pub fn OsalMutexLock(mutex: *mut OsalMutex) -> i32;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    },
+    {
+      "name": "OsalMutexUnlock",
+      "rust_decl": "pub fn OsalMutexUnlock(mutex: *mut OsalMutex) -> i32;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "source_file_group": "src_osal_sysevent"
+    }
+  ],
+  "extra_types": [
+    "LogLevel",
+    "LogType",
+    "OsalMutex",
+    "size_t"
+  ],
+  "missing": [
+    {
+      "source_file_group": "src_osal_sysevent",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C3/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/osal_sysevent_64d3abb0.i",
+      "reason": "missing_in_bindgen_output",
+      "missing_callees": [
+        "Dispatch",
+        "callback"
+      ],
+      "requested_callees": [
+        "Dispatch",
+        "HdfDeviceRegisterEventListener",
+        "HdfDeviceUnregisterEventListener",
+        "HdfIoServiceBind",
+        "HdfIoServiceRecycle",
+        "HdfSbufObtain",
+        "HdfSbufReadBuffer",
+        "HdfSbufReadString",
+        "HdfSbufRecycle",
+        "HdfSbufWriteUint64",
+        "HiLogPrint",
+        "OsalMemCalloc",
+        "OsalMemFree",
+        "OsalMutexInit",
+        "OsalMutexLock",
+        "OsalMutexUnlock",
+        "callback"
+      ]
+    }
+  ]
+}

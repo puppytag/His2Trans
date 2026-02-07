@@ -1,0 +1,27 @@
+函数: src_app_verify_9
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find function, tuple struct or tuple variant `PKCS7_GetSignerAuthAttr` in module `crate::compat`
+   --> src/src_app_verify.rs:288:34
+    |
+    |                                  ^^^^^^^^^^^^^^^^^^^^^^^ not found in `crate::compat`
+    |
+help: consider importing this function
+    |
+    |
+help: if you import `PKCS7_GetSignerAuthAttr`, refer to it directly
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:309:13
+    |
+    |         ------------------------- arguments to this function are incorrect
+    |             ^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:142:12
+    |
+    |            ^^^^^^^^^^                                                                                      ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |             +                 +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors; 5 warnings emitted

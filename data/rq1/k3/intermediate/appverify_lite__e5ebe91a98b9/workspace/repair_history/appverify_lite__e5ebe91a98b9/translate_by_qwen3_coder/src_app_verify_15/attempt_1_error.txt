@@ -1,0 +1,42 @@
+函数: src_app_verify_15
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:301:60
+    |
+    |                          -------------------------         ^^^^^^^^^^^^^^ expected `*const TrustAppCert`, found `[TrustAppCert; 3]`
+    |                          |
+    |                          arguments to this function are incorrect
+    |
+   --> src/src_app_verify.rs:286:4
+    |
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^                                                  --------------------------------------------
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:304:56
+    |
+    |                      -------------------------         ^^^^^^^^^^^^^^^^^^ expected `*const TrustAppCert`, found `[TrustAppCert; 2]`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+   --> src/src_app_verify.rs:286:4
+    |
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^                                                  --------------------------------------------
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:310:24
+    |
+    |                                                                                                     --- expected `i32` because of return type
+    |                        ^^^^^ expected `i32`, found `u32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                             ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:317:5
+    |
+    |                                                                                                     --- expected `i32` because of return type
+    |     ^^^^ expected `i32`, found `u32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |         ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 4 previous errors; 4 warnings emitted

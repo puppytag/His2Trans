@@ -1,0 +1,68 @@
+函数: src_app_verify_18
+尝试次数: 2/5
+============================================================
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:662:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:668:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:674:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:679:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:684:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:690:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:695:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:700:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `goto_exit` in this scope
+   --> src/src_app_verify.rs:706:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0423]: expected value, found macro `goto_exit`
+   --> src/src_app_verify.rs:730:5
+    |
+    |     ^^^^^^^^^ not a value
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:681:102
+    |
+    |       -----------------------------------------------------                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Option<...>`, found fn item
+    |       |
+    |       arguments to this function are incorrect
+    |
+   --> src/src_mbedtls_pkcs7.rs:977:19
+    |
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^                                    ------------------------------------------
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:702:20
+    |
+    |       ^^^^^^^^^^^^^^^^^^^^^^^                                        ------------------ expected `u32`, found `usize`      ------------------ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:161:12
+    |
+    |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                   +                  +++++++++++++++++++++
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                                                         +                  +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 12 previous errors; 28 warnings emitted

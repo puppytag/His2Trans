@@ -1,0 +1,25 @@
+函数: src_svcmgr_ioservice_7
+尝试次数: 2/5
+============================================================
+error[E0308]: mismatched types
+    --> src/src_svcmgr_ioservice.rs:108:31
+     |
+     |       -------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `HdfIoService`, found `types::HdfIoService`
+     |       |
+     |       expected due to the type of this binding
+     |
+    --> src/types.rs:1216:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+    --> src/__c2r_generated/tu_types_src_svcmgr_ioservice.rs:67:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_svcmgr_ioservice::ISvcMgrIoservice` as `*mut types::ISvcMgrIoservice` is invalid
+   --> src/src_svcmgr_ioservice.rs:125:63
+    |
+    |                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_svcmgr_ioservice::ISvcMgrIoservice` as `*mut types::ISvcMgrIoservice` is invalid
+   --> src/src_svcmgr_ioservice.rs:128:9
+    |
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `shared__541f4e547bdb` (bin "shared__541f4e547bdb") due to 3 previous errors

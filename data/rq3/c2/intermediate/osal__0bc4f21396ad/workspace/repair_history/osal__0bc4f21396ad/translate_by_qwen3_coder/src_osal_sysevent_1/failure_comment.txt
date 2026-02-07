@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_0
+// func_key: src_osal_sysevent_1
+// c_function: HdfSysEventNotifierGetInstance
+// rust_file: src_osal_sysevent.rs
+// rust_signature: fn HdfSysEventNotifierGetInstance() -> *mut crate::types::HdfSysEventNotifier
+// c_first_line: static struct HdfSysEventNotifier *HdfSysEventNotifierGetInstance(void)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C2/intermediate/osal__0bc4f21396ad/workspace/repair_history/osal__0bc4f21396ad/translate_by_qwen3_coder/_manual_fix/src_osal_sysevent_1/translated_rust.rs
+// last_error_truncated:
+//   error[E0308]: mismatched types
+//     --> src/src_osal_sysevent.rs:31:48
+//      |
+//      |                   ---------------------------- ^^^^^^^^^^^^^^^^^^^^^^ expected `*mut OsalMutex`, found `&mut OsalMutex`
+//      |                   |
+//      |                   arguments to this function are incorrect
+//      |
+//     --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:93:1
+// =================================

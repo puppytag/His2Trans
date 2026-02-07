@@ -1,0 +1,16 @@
+函数: src_app_centraldirectory_7
+尝试次数: 1/5
+============================================================
+error[E0793]: reference to field of packed struct is unaligned
+   --> src/src_app_centraldirectory.rs:280:13
+    |
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: copy the field contents to a local variable, or replace the reference with a raw pointer and use `read_unaligned`/`write_unaligned` (loads and stores via `*p` must be properly aligned even when using raw pointers)
+error[E0133]: call to unsafe function `compat::HiLogPrint` is unsafe and requires unsafe function or block
+   --> src/src_app_centraldirectory.rs:265:17
+    |
+    |  _________________^
+    | |_________^ call to unsafe function
+    |
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors; 8 warnings emitted

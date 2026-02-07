@@ -1,0 +1,32 @@
+函数: src_app_verify_13
+尝试次数: 2/5
+============================================================
+error: expected one of `!`, `(`, `+`, `::`, or `<`, found `.`
+   --> src/src_app_verify.rs:243:49
+    |
+    |                                ---              ^ expected one of `!`, `(`, `+`, `::`, or `<`
+    |                                |
+    |                                while parsing this parenthesized list of type arguments starting here
+    |
+help: consider removing the `::` here to call the expression
+    |
+    |
+error: expected one of `!`, `(`, `+`, `::`, or `<`, found `.`
+   --> src/src_app_verify.rs:252:57
+    |
+    |                                    ---                  ^ expected one of `!`, `(`, `+`, `::`, or `<`
+    |                                    |
+    |                                    while parsing this parenthesized list of type arguments starting here
+    |
+help: consider removing the `::` here to call the expression
+    |
+    |
+error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+   --> src/src_app_verify.rs:216:55
+    |
+    |                                                       ^^^^^^ method not found in `i32`
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:247:17
+    |
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `bool`, found `i32`
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 4 previous errors; 4 warnings emitted

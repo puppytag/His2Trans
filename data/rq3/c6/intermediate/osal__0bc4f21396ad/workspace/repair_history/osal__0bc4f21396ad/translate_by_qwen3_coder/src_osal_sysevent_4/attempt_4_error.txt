@@ -1,0 +1,40 @@
+函数: src_osal_sysevent_4
+尝试次数: 4/5
+============================================================
+error[E0433]: failed to resolve: could not find `LOG_ERROR` in `types`
+   --> src/src_osal_sysevent.rs:158:31
+    |
+    |                               ^^^^^^^^^ could not find `LOG_ERROR` in `types`
+error[E0433]: failed to resolve: could not find `LOG_CORE` in `types`
+   --> src/src_osal_sysevent.rs:157:31
+    |
+    |                               ^^^^^^^^ could not find `LOG_CORE` in `types`
+error[E0433]: failed to resolve: could not find `HDF_DEV_ERR_NO_DEVICE` in `types`
+   --> src/src_osal_sysevent.rs:144:34
+    |
+    |                                  ^^^^^^^^^^^^^^^^^^^^^ could not find `HDF_DEV_ERR_NO_DEVICE` in `types`
+error[E0433]: failed to resolve: could not find `LOG_ERROR` in `types`
+   --> src/src_osal_sysevent.rs:138:31
+    |
+    |                               ^^^^^^^^^ could not find `LOG_ERROR` in `types`
+error[E0433]: failed to resolve: could not find `LOG_CORE` in `types`
+   --> src/src_osal_sysevent.rs:137:31
+    |
+    |                               ^^^^^^^^ could not find `LOG_CORE` in `types`
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:147:56
+    |
+    |                                                   ---- ^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+    |                                                   |
+    |                                                   arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `fn(*mut __c2r_tu_types_src_osal_sysevent::HdfDevEventlistener, *mut __c2r_tu_types_src_osal_sysevent::HdfIoService, u32, *mut __c2r_tu_types_src_osal_sysevent::HdfSBuf) -> i32 {src_osal_sysevent::OnKEventReceived}` due to the type of the argument passed
+   --> src/src_osal_sysevent.rs:147:51
+    |
+    |                                                   ^^^^^----------------^
+    |                                                        |
+    |                                                        this argument influences the type of `Some`
+   --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:608:5
+    |
+    |     ^^^^
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 6 previous errors

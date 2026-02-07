@@ -1,0 +1,26 @@
+函数: src_app_verify_12
+尝试次数: 3/5
+============================================================
+error: expected one of `!`, `(`, `+`, `::`, or `<`, found `.`
+   --> src/src_app_verify.rs:152:54
+    |
+    |                                     ---              ^ expected one of `!`, `(`, `+`, `::`, or `<`
+    |                                     |
+    |                                     while parsing this parenthesized list of type arguments starting here
+    |
+help: consider removing the `::` here to call the expression
+    |
+    |
+error: expected one of `(`, `.`, `::`, `;`, `?`, `}`, or an operator, found `,`
+   --> src/src_app_verify.rs:152:80
+    |
+    |                                                                                ^ expected one of 7 possible tokens
+error[E0615]: attempted to take value of method `offset` on type `*const TrustAppCert`
+   --> src/src_app_verify.rs:139:43
+    |
+    |                                           ^^^^^^ method, not a field
+    |
+help: remove wrapping parentheses to call the method
+    |
+    |
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 3 previous errors; 1 warning emitted

@@ -1,0 +1,20 @@
+函数: products_default_app_verify_default_2
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/products_default_app_verify_default.rs:25:43
+    |
+    |                                      ---- ^^^^^^^ expected "C" fn, found "Rust" fn
+    |                                      |
+    |                                      arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `fn(*mut u8, i32) -> i32 {GetUdid}` due to the type of the argument passed
+   --> src/products_default_app_verify_default.rs:25:38
+    |
+    |                                      ^^^^^-------^
+    |                                           |
+    |                                           this argument influences the type of `Some`
+   --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:608:5
+    |
+    |     ^^^^
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 1 previous error

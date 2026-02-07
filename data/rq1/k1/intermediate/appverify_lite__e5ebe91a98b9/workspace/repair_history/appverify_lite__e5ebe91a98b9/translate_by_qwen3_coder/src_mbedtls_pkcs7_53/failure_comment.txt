@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_5
+// func_key: src_mbedtls_pkcs7_53
+// c_function: VerifyClicert
+// rust_file: src_mbedtls_pkcs7.rs
+// rust_signature: fn VerifyClicert(clicert: *mut crate::types::mbedtls_x509_crt, rootCert: *mut crate::types::mbedtls_x509_crt, pkcs7: *const crate::types::Pkcs7) -> i32
+// c_first_line: static int32_t VerifyClicert(mbedtls_x509_crt *clicert, mbedtls_x509_crt *rootCert, const Pkcs7 *pkcs7)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1-again/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/_manual_fix/src_mbedtls_pkcs7_53/translated_rust.rs
+// last_error_truncated:
+//   error[E0308]: mismatched types
+//       --> src/src_mbedtls_pkcs7.rs:1346:13
+//        |
+//        |         -------------------------------------- arguments to this function are incorrect
+//        |             ^^^^ expected `*mut c_void`, found `Option<_>`
+//        |
+//       --> src/compat.rs:154:12
+//        |
+// =================================

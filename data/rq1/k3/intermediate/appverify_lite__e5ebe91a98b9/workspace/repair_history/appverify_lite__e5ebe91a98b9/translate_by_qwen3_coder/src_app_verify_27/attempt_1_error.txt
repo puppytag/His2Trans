@@ -1,0 +1,57 @@
+函数: src_app_verify_27
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:661:36
+    |
+    |            --------------------    ^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `u64`
+    |            |
+    |            expected because this is `u32`
+    |
+help: you can convert `cert.subject_raw.len` from `u32` to `u64`, matching the type of `bin.subjectLen as u64`
+    |
+    |            ++++++++++                    +
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:662:77
+    |
+    |             ------ arguments to this function are incorrect                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:157:12
+    |
+    |            ^^^^^^                                                                     ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                             +                             +++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:666:35
+    |
+    |            -------------------    ^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `u64`
+    |            |
+    |            expected because this is `u32`
+    |
+help: you can convert `cert.issuer_raw.len` from `u32` to `u64`, matching the type of `bin.issuerLen as u64`
+    |
+    |            ++++++++++                   +
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:667:75
+    |
+    |             ------ arguments to this function are incorrect               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:157:12
+    |
+    |            ^^^^^^                                                                     ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                           +                            +++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:686:60
+    |
+    |            ------ arguments to this function are incorrect ^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:157:12
+    |
+    |            ^^^^^^                                                                     ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                            +             +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 5 previous errors; 7 warnings emitted

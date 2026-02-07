@@ -1,0 +1,63 @@
+函数: src_osal_sysevent_6
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find value `HDF_DEV_ERR_NO_MEMORY` in module `crate::types`
+   --> src/src_osal_sysevent.rs:289:30
+    |
+    |                              ^^^^^^^^^^^^^^^^^^^^^ not found in `crate::types`
+    |
+help: consider importing this constant
+    |
+    |
+help: if you import `HDF_DEV_ERR_NO_MEMORY`, refer to it directly
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:293:46
+    |
+    |                 ---------------------------- ^^^^^^^^^ expected `compat::OsalMutex`, found `types::OsalMutex`
+    |                 |
+    |                 arguments to this function are incorrect
+    |
+   --> src/types.rs:128:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:42:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:70:12
+    |
+    |            ^^^^^^^^^^^^^ -----
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:309:48
+    |
+    |                 ------------------------------ ^^^^^^^^^ expected `compat::OsalMutex`, found `types::OsalMutex`
+    |                 |
+    |                 arguments to this function are incorrect
+    |
+   --> src/types.rs:128:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:42:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:71:12
+    |
+    |            ^^^^^^^^^^^^^^^ -----
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::OsalMutex` as `*mut types::OsalMutex` is invalid
+   --> src/src_osal_sysevent.rs:292:25
+    |
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::DListHead` as `*mut types::DListHead` is invalid
+   --> src/src_osal_sysevent.rs:294:21
+    |
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::DListHead` as `*mut types::DListHead` is invalid
+   --> src/src_osal_sysevent.rs:295:20
+    |
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::DListHead` as `*mut types::DListHead` is invalid
+   --> src/src_osal_sysevent.rs:303:25
+    |
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 7 previous errors

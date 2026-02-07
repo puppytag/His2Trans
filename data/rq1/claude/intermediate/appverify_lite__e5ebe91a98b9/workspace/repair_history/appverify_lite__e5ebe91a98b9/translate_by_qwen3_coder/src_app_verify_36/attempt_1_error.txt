@@ -1,0 +1,20 @@
+函数: src_app_verify_36
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+    --> src/src_app_verify.rs:1879:83
+     |
+     |                                                                              ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+     |                                                                              |
+     |                                                                              arguments to this enum variant are incorrect
+     |
+help: the type constructed contains `fn(*const Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32 {CalcDigest}` due to the type of the argument passed
+    --> src/src_app_verify.rs:1879:78
+     |
+     |                                                                              ^^^^^---------------------------------^
+     |                                                                                   |
+     |                                                                                   this argument influences the type of `Some`
+    --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:608:5
+     |
+     |     ^^^^
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 1 previous error; 14 warnings emitted

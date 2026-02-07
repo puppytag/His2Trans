@@ -1,0 +1,24 @@
+函数: src_app_verify_hal_1
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+  --> src/src_app_verify_hal.rs:25:75
+   |
+   |         ----------------------------------------------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut ProductDiff`, found `&mut i32`
+   |         |
+   |         arguments to this function are incorrect
+   |
+  --> src/products_default_app_verify_default.rs:20:19
+   |
+   |                   ^^^^^^^^^^^^^^^^^^^^^ -------------------------------------------
+error[E0308]: mismatched types
+  --> src/src_app_verify_hal.rs:26:69
+   |
+   |         ----------------------------------------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut ProductDiff`, found `&mut i32`
+   |         |
+   |         arguments to this function are incorrect
+   |
+  --> src/products_ipcamera_app_verify_base.rs:15:19
+   |
+   |                   ^^^^^^^^^^^^^^^^^ -------------------------------------------
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors; 3 warnings emitted

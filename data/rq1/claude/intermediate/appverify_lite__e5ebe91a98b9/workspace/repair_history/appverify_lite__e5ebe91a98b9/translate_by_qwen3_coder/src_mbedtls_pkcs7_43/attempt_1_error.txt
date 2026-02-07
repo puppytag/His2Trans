@@ -1,0 +1,29 @@
+函数: src_mbedtls_pkcs7_43
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:917:25
+    |
+    |                     -------------------------------------- arguments to this function are incorrect
+    |                         ^^^^^^^^^^^^^^^^^^^^ expected `*mut mbedtls_rsa_context`, found `*mut c_void`
+    |
+   --> src/compat.rs:156:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^^^ ---
+error[E0308]: arguments to this function are incorrect
+   --> src/src_mbedtls_pkcs7.rs:926:13
+    |
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |                 ---------------- expected `u32`, found `usize`
+    |                 --------------- expected `u32`, found `usize`
+    |
+   --> src/compat.rs:154:12
+    |
+    |       ^^^^^^^^^^^^^^^^^                                                                                                                         --------                                                          -------
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                 +                +++++++++++++++++++++
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                 +               +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors; 5 warnings emitted

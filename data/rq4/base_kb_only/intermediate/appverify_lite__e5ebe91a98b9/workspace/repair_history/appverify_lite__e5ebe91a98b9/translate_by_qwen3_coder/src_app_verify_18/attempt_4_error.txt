@@ -1,0 +1,83 @@
+函数: src_app_verify_18
+尝试次数: 4/5
+============================================================
+error[E0255]: the name `GetSignersCnt` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:2062:1
+     |
+     |         ------------- previous import of the value `GetSignersCnt` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `GetSignersCnt` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                       +++++++++++++++++++++
+error[E0255]: the name `GetSignerSignningCertDepth` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:2145:1
+     |
+     |                        -------------------------- previous import of the value `GetSignerSignningCertDepth` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `GetSignerSignningCertDepth` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                                                   ++++++++++++++++++++++++++++++++++
+error[E0255]: the name `Pkcs7Calloc` is defined multiple times
+   --> src/src_mbedtls_pkcs7.rs:566:1
+    |
+    |                                                    ----------- previous import of the value `Pkcs7Calloc` here
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Pkcs7Calloc` redefined here
+    |
+help: you can use `as` to change the binding name of the import
+    |
+    |                                                                +++++++++++++++++++
+error[E0255]: the name `Pkcs7Free` is defined multiple times
+   --> src/src_mbedtls_pkcs7.rs:570:1
+    |
+    |                                                                 --------- previous import of the value `Pkcs7Free` here
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Pkcs7Free` redefined here
+    |
+help: you can use `as` to change the binding name of the import
+    |
+    |                                                                           +++++++++++++++++
+error[E0255]: the name `PKCS7_FreeAllSignersResolvedInfo` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:2180:1
+     |
+     |         -------------------------------- previous import of the value `PKCS7_FreeAllSignersResolvedInfo` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `PKCS7_FreeAllSignersResolvedInfo` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                                          ++++++++++++++++++++++++++++++++++++++++
+error[E0255]: the name `PKCS7_GetSignerSignningCertSubject` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:2018:1
+     |
+     |                                           ---------------------------------- previous import of the value `PKCS7_GetSignerSignningCertSubject` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `PKCS7_GetSignerSignningCertSubject` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                                                                              ++++++++++++++++++++++++++++++++++++++++++
+error[E0255]: the name `PKCS7_GetSignerSignningCertIssuer` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:2040:1
+     |
+     |         --------------------------------- previous import of the value `PKCS7_GetSignerSignningCertIssuer` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `PKCS7_GetSignerSignningCertIssuer` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                                           +++++++++++++++++++++++++++++++++++++++++
+error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+   --> src/src_app_verify.rs:547:55
+    |
+    |                                                       ^^^^^^ method not found in `i32`
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:858:93
+    |
+    |                                                                                        ---- ^^^^^^^^^^ expected "C" fn, found "Rust" fn
+    |                                                                                        |
+    |                                                                                        arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `fn(*const types::Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32 {CalcDigest}` due to the type of the argument passed
+   --> src/src_app_verify.rs:858:88
+    |
+    |                                                                                        ^^^^^----------^
+    |                                                                                             |
+    |               

@@ -1,0 +1,1 @@
+pub extern "C" fn HdfServiceSubscriberDelete(listEntry: *mut crate::types::HdfSListNode);

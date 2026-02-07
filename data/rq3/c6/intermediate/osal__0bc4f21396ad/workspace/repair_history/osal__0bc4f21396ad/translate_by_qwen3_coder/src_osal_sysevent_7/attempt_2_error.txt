@@ -1,0 +1,44 @@
+函数: src_osal_sysevent_7
+尝试次数: 2/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:355:23
+    |
+    |         ------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `compat::OsalMutex`, found `types::OsalMutex`
+    |         |
+    |         arguments to this function are incorrect
+    |
+   --> src/types.rs:133:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:42:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:70:12
+    |
+    |            ^^^^^^^^^^^^^ -----
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:371:25
+    |
+    |         --------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `compat::OsalMutex`, found `types::OsalMutex`
+    |         |
+    |         arguments to this function are incorrect
+    |
+   --> src/types.rs:133:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:42:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:71:12
+    |
+    |            ^^^^^^^^^^^^^^^ -----
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::OsalMutex` as `*mut types::OsalMutex` is invalid
+   --> src/src_osal_sysevent.rs:355:23
+    |
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0606]: casting `&mut __c2r_tu_types_src_osal_sysevent::OsalMutex` as `*mut types::OsalMutex` is invalid
+   --> src/src_osal_sysevent.rs:371:25
+    |
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 4 previous errors

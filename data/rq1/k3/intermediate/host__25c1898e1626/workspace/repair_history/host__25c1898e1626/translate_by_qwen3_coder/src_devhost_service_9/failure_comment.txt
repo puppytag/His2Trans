@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_5
+// func_key: src_devhost_service_9
+// c_function: DevHostServiceConstruct
+// rust_file: src_devhost_service.rs
+// rust_signature: pub extern "C" fn DevHostServiceConstruct(service: *mut crate::types::DevHostService)
+// c_first_line: void DevHostServiceConstruct(struct DevHostService *service)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk3/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder/_manual_fix/src_devhost_service_9/translated_rust.rs
+// last_error_truncated:
+//   error[E0308]: mismatched types
+//      --> src/src_devhost_service.rs:201:46
+//       |
+//       |                                         ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+//       |                                         |
+//       |                                         arguments to this enum variant are incorrect
+//       |
+//   help: the type constructed contains `fn(*mut IDevHostService) -> i32 {DevHostServiceStartService}` due to the type of the argument passed
+// =================================

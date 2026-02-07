@@ -1,0 +1,31 @@
+函数: src_mbedtls_pkcs7_46
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find value `DEBUG_MODE_ROOT_CERT_IN_PEM` in module `crate::globals`
+   --> src/src_mbedtls_pkcs7.rs:603:29
+    |
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `crate::globals`
+error[E0425]: cannot find value `DEBUG_MODE_ROOT_CERT_IN_PEM` in module `crate::globals`
+   --> src/src_mbedtls_pkcs7.rs:604:29
+    |
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `crate::globals`
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:600:46
+    |
+    |         ------------------------------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut mbedtls_x509_crt`, found `&mut i32`
+    |         |
+    |         arguments to this function are incorrect
+    |
+   --> src/compat.rs:151:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^ ---
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:602:13
+    |
+    |                  ------------------------------------- arguments to this function are incorrect
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut mbedtls_x509_crt`, found `&mut i32`
+    |
+   --> src/compat.rs:152:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^^ -----
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 4 previous errors; 1 warning emitted

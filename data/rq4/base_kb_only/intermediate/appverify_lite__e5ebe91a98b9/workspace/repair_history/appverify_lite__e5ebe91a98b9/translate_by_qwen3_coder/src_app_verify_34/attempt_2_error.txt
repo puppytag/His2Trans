@@ -1,0 +1,40 @@
+函数: src_app_verify_34
+尝试次数: 2/5
+============================================================
+error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+   --> src/src_app_verify.rs:373:55
+    |
+    |                                                       ^^^^^^ method not found in `i32`
+error[E0308]: arguments to this function are incorrect
+    --> src/src_app_verify.rs:1048:15
+     |
+     |               ^^^^^^^^
+     |             ------------------------------ expected `u32`, found `usize`
+     |             ------------------------------ expected `u32`, found `usize`
+     |
+    --> src/compat.rs:161:12
+     |
+     |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+     |
+     |             +                              +++++++++++++++++++++
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+     |
+     |             +                              +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+    --> src/src_app_verify.rs:1067:15
+     |
+     |               ^^^^^^^^
+     |             ------------------------------- expected `u32`, found `usize`
+     |             ------------------------------- expected `u32`, found `usize`
+     |
+    --> src/compat.rs:161:12
+     |
+     |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+     |
+     |             +                               +++++++++++++++++++++
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+     |
+     |             +                               +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 3 previous errors; 4 warnings emitted

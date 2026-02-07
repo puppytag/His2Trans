@@ -1,0 +1,45 @@
+函数: src_app_verify_15
+尝试次数: 4/5
+============================================================
+error: cannot find macro `__FUNCTION__` in this scope
+   --> src/src_app_verify.rs:282:168
+    |
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:274:60
+    |
+    |                          -------------------------         ^^^^^^^^^^^^^^ expected `*const TrustAppCert`, found `[TrustAppCert; 3]`
+    |                          |
+    |                          arguments to this function are incorrect
+    |
+   --> src/src_app_verify.rs:259:4
+    |
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^                                                  --------------------------------------------
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:277:56
+    |
+    |                      -------------------------         ^^^^^^^^^^^^^^^^^^ expected `*const TrustAppCert`, found `[TrustAppCert; 2]`
+    |                      |
+    |                      arguments to this function are incorrect
+    |
+   --> src/src_app_verify.rs:259:4
+    |
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^                                                  --------------------------------------------
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:283:24
+    |
+    |                                                                                                     --- expected `i32` because of return type
+    |                        ^^^^^ expected `i32`, found `u32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                             ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:290:5
+    |
+    |                                                                                                     --- expected `i32` because of return type
+    |     ^^^^ expected `i32`, found `u32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |         ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 5 previous errors; 1 warning emitted

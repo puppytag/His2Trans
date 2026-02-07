@@ -1,0 +1,30 @@
+函数: src_svcmgr_ioservice_4
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+  --> src/src_svcmgr_ioservice.rs:79:64
+   |
+   |                                                 -----------    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u16`, found `u32`
+   |                                                 |
+   |                                                 expected because this is `u16`
+   |
+help: you can convert `deviceClass` from `u16` to `u32`, matching the type of `crate::types::DEVICE_CLASS_MAX`
+   |
+   |                                                 ++++++++++           +
+error[E0308]: mismatched types
+    --> src/src_svcmgr_ioservice.rs:97:55
+     |
+     |         --------------------------------------------- ^^^^^^^^^^^^^^^^^^^ expected `types::HdfIoService`, found `__c2r_tu_types_src_svcmgr_ioservice::HdfIoService`
+     |         |
+     |         arguments to this function are incorrect
+     |
+    --> src/__c2r_generated/tu_types_src_svcmgr_ioservice.rs:67:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+    --> src/types.rs:1216:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+    --> src/compat.rs:40:12
+     |
+     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ------
+error: could not compile `shared__541f4e547bdb` (bin "shared__541f4e547bdb") due to 2 previous errors

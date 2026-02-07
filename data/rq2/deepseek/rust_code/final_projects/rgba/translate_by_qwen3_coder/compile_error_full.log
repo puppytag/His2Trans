@@ -1,0 +1,21 @@
+# Compilation Log (full)
+# Generated at: 2026-01-12T15:59:26.976697
+# Project: /data/home/wangshb/c2-rust_framework/translation_outputs/Our/deepseek-coder/intermediate/rgba/workspace/skeletons/rgba
+============================================================
+
+     Locking 4 packages to latest compatible versions
+   Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.5
+   Compiling libc v0.2.180
+   Compiling cc v1.2.49
+   Compiling rgba v0.1.0 (/data/home/wangshb/c2-rust_framework/translation_outputs/Our/deepseek-coder/intermediate/rgba/workspace/skeletons/rgba)
+warning: static variable `named_colors` should have an upper case name
+  --> src/src_rgba.rs:26:12
+   |
+26 | static mut named_colors: [named_color; 149usize] = unsafe { core::mem::MaybeUninit::<[named_color; 149usize]>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^ help: convert the identifier to upper case: `NAMED_COLORS`
+   |
+   = note: `#[warn(non_upper_case_globals)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: `rgba` (bin "rgba") generated 1 warning (run `cargo fix --bin "rgba" -p rgba` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.87s

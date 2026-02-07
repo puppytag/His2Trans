@@ -1,0 +1,52 @@
+函数: src_app_file_2
+尝试次数: 1/5
+============================================================
+error[E0432]: unresolved import `crate::globals::g_memoryPageSize`
+  --> src/src_app_file.rs:30:9
+   |
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `g_memoryPageSize` in `globals`
+error[E0432]: unresolved imports `crate::compat::PROT_READ`, `crate::compat::MAP_SHARED`
+  --> src/src_app_file.rs:31:25
+   |
+   |                         ^^^^^^^^^  ^^^^^^^^^^ no `MAP_SHARED` in `compat`
+   |                         |
+   |                         no `PROT_READ` in `compat`
+error[E0603]: type alias import `off_t` is private
+    --> src/src_app_file.rs:50:49
+     |
+     |                                                 ^^^^^ private type alias import
+     |
+    --> src/compat.rs:36:20
+     |
+     |                    ^^^^^
+    --> src/types.rs:1776:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ you could import this directly
+help: consider importing this type alias instead
+     |
+     |
+help: import `off_t` directly
+     |
+     |
+error[E0308]: mismatched types
+   --> src/src_app_file.rs:69:13
+    |
+    |                               ---- arguments to this function are incorrect
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i64`, found `u32`
+    |
+   --> src/compat.rs:143:12
+    |
+    |            ^^^^                                                                                                                                           ----
+help: you can convert a `u32` to an `i64`
+    |
+    |             +                                ++++++++
+error[E0308]: mismatched types
+  --> src/src_app_file.rs:84:5
+   |
+   |                                                                                                                                         --- expected `i32` because of return type
+   |     ^^^^ expected `i32`, found `u32`
+   |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+   |
+   |         ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 5 previous errors

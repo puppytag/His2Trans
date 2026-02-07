@@ -1,0 +1,17 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_0
+// func_key: src_hcb_config_entry_2
+// c_function: GetConfigFilePath
+// rust_file: src_hcb_config_entry.rs
+// rust_signature: fn GetConfigFilePath(productName: *const std::ffi::c_char, configPath: *mut std::ffi::c_char, configPathLen: usize) -> bool
+// c_first_line: static _Bool GetConfigFilePath(const char *productName, char *configPath, size_t configPathLen)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C2/intermediate/shared__12e38ea922f7/workspace/repair_history/shared__12e38ea922f7/translate_by_qwen3_coder/_manual_fix/src_hcb_config_entry_2/translated_rust.rs
+// last_error_truncated:
+//   error[E0277]: `*const i8` cannot be shared between threads safely
+//     --> src/src_hcb_config_entry.rs:26:33
+//      |
+//      |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `*const i8` cannot be shared between threads safely
+//      |
+//      = help: within `[*const i8; 2]`, the trait `Sync` is not implemented for `*const i8`
+//   error: could not compile `shared__12e38ea922f7` (bin "shared__12e38ea922f7") due to 1 previous error
+// =================================

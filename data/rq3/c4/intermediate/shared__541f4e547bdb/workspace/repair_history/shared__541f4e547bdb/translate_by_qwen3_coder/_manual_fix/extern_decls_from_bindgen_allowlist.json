@@ -1,0 +1,181 @@
+{
+  "generated_at": "2026-01-20T20:16:26",
+  "project": "shared__541f4e547bdb",
+  "llm_name": "qwen3_coder",
+  "workspace_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace",
+  "preprocessed_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed",
+  "types_rs": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/incremental_work/shared__541f4e547bdb/translate_by_qwen3_coder/src/types.rs",
+  "compat_rs": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/incremental_work/shared__541f4e547bdb/translate_by_qwen3_coder/src/compat.rs",
+  "requested_callees_total": 31,
+  "extern_count": 17,
+  "extra_types_count": 0,
+  "decls": [
+    {
+      "name": "HdfDeviceRegisterEventListener",
+      "rust_decl": "pub fn HdfDeviceRegisterEventListener(target: *mut crate::types::HdfIoService, listener: *mut crate::types::HdfDevEventlistener) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/svcmgr_ioservice_1bc48511.i",
+      "source_file_group": "src_svcmgr_ioservice"
+    },
+    {
+      "name": "HdfDeviceUnregisterEventListener",
+      "rust_decl": "pub fn HdfDeviceUnregisterEventListener(target: *mut crate::types::HdfIoService, listener: *mut crate::types::HdfDevEventlistener) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/svcmgr_ioservice_1bc48511.i",
+      "source_file_group": "src_svcmgr_ioservice"
+    },
+    {
+      "name": "HdfIoServiceAdapterObtain",
+      "rust_decl": "pub fn HdfIoServiceAdapterObtain(serviceName: *const ::core::ffi::c_char) -> *mut crate::types::HdfIoService;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_io_service_56c4cdfa.i",
+      "source_file_group": "src_hdf_io_service"
+    },
+    {
+      "name": "HdfIoServiceAdapterPublish",
+      "rust_decl": "pub fn HdfIoServiceAdapterPublish(serviceName: *const ::core::ffi::c_char, mode: u32) -> *mut crate::types::HdfIoService;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_io_service_56c4cdfa.i",
+      "source_file_group": "src_hdf_io_service"
+    },
+    {
+      "name": "HdfIoServiceAdapterRecycle",
+      "rust_decl": "pub fn HdfIoServiceAdapterRecycle(service: *mut crate::types::HdfIoService);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_io_service_56c4cdfa.i",
+      "source_file_group": "src_hdf_io_service"
+    },
+    {
+      "name": "HdfIoServiceAdapterRemove",
+      "rust_decl": "pub fn HdfIoServiceAdapterRemove(service: *mut crate::types::HdfIoService);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_io_service_56c4cdfa.i",
+      "source_file_group": "src_hdf_io_service"
+    },
+    {
+      "name": "HdfIoserviceGetListenerCount",
+      "rust_decl": "pub fn HdfIoserviceGetListenerCount(service: *const crate::types::HdfIoService) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/svcmgr_ioservice_1bc48511.i",
+      "source_file_group": "src_svcmgr_ioservice"
+    },
+    {
+      "name": "HdfObjectManagerGetCreators",
+      "rust_decl": "pub fn HdfObjectManagerGetCreators(objectId: ::core::ffi::c_int) -> *const crate::types::HdfObjectCreator;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_object_manager_612fe0ed.i",
+      "source_file_group": "src_hdf_object_manager"
+    },
+    {
+      "name": "HdfSbufObtainDefaultSize",
+      "rust_decl": "pub fn HdfSbufObtainDefaultSize() -> *mut crate::types::HdfSBuf;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/svcmgr_ioservice_1bc48511.i",
+      "source_file_group": "src_svcmgr_ioservice"
+    },
+    {
+      "name": "HdfSbufReadString",
+      "rust_decl": "pub fn HdfSbufReadString(sbuf: *mut crate::types::HdfSBuf) -> *const ::core::ffi::c_char;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/service_status_93b9a1bb.i",
+      "source_file_group": "src_service_status"
+    },
+    {
+      "name": "HdfSbufReadUint16",
+      "rust_decl": "pub fn HdfSbufReadUint16(sbuf: *mut crate::types::HdfSBuf, value: *mut u16) -> bool;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/service_status_93b9a1bb.i",
+      "source_file_group": "src_service_status"
+    },
+    {
+      "name": "HdfSbufRecycle",
+      "rust_decl": "pub fn HdfSbufRecycle(sbuf: *mut crate::types::HdfSBuf);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/svcmgr_ioservice_1bc48511.i",
+      "source_file_group": "src_svcmgr_ioservice"
+    },
+    {
+      "name": "HdfSbufWriteString",
+      "rust_decl": "pub fn HdfSbufWriteString(sbuf: *mut crate::types::HdfSBuf, value: *const ::core::ffi::c_char) -> bool;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/service_status_93b9a1bb.i",
+      "source_file_group": "src_service_status"
+    },
+    {
+      "name": "HdfSbufWriteUint16",
+      "rust_decl": "pub fn HdfSbufWriteUint16(sbuf: *mut crate::types::HdfSBuf, value: u16) -> bool;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/service_status_93b9a1bb.i",
+      "source_file_group": "src_service_status"
+    },
+    {
+      "name": "HiLogPrint",
+      "rust_decl": "pub fn HiLogPrint(type_: crate::types::LogType, level: crate::types::LogLevel, domain: ::core::ffi::c_uint, tag: *const ::core::ffi::c_char, fmt: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_device_info_89cd64c0.i",
+      "source_file_group": "src_hdf_device_info"
+    },
+    {
+      "name": "OsalMemCalloc",
+      "rust_decl": "pub fn OsalMemCalloc(size: crate::types::size_t) -> *mut ::core::ffi::c_void;",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_device_info_89cd64c0.i",
+      "source_file_group": "src_hdf_device_info"
+    },
+    {
+      "name": "OsalMemFree",
+      "rust_decl": "pub fn OsalMemFree(mem: *mut ::core::ffi::c_void);",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_device_info_89cd64c0.i",
+      "source_file_group": "src_hdf_device_info"
+    }
+  ],
+  "extra_types": [],
+  "missing": [
+    {
+      "source_file_group": "src_hdf_io_service",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_io_service_56c4cdfa.i",
+      "reason": "missing_in_bindgen_output",
+      "missing_callees": [
+        "Dispatch"
+      ],
+      "requested_callees": [
+        "Dispatch",
+        "HdfIoServiceAdapterObtain",
+        "HdfIoServiceAdapterPublish",
+        "HdfIoServiceAdapterRecycle",
+        "HdfIoServiceAdapterRemove"
+      ]
+    },
+    {
+      "source_file_group": "src_hdf_object_manager",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/hdf_object_manager_612fe0ed.i",
+      "reason": "missing_in_bindgen_output",
+      "missing_callees": [
+        "Create",
+        "Release"
+      ],
+      "requested_callees": [
+        "Create",
+        "HdfObjectManagerGetCreators",
+        "Release"
+      ]
+    },
+    {
+      "source_file_group": "src_ioserstat_listener",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/ioserstat_listener_eb733855.i",
+      "reason": "missing_in_bindgen_output",
+      "missing_callees": [
+        "callback"
+      ],
+      "requested_callees": [
+        "OsalMemCalloc",
+        "OsalMemFree",
+        "callback"
+      ]
+    },
+    {
+      "source_file_group": "src_svcmgr_ioservice",
+      "source_i": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C4/intermediate/shared__541f4e547bdb/workspace/.preprocessed/svcmgr_ioservice_1bc48511.i",
+      "reason": "missing_in_bindgen_output",
+      "missing_callees": [
+        "Dispatch"
+      ],
+      "requested_callees": [
+        "Dispatch",
+        "HdfDeviceRegisterEventListener",
+        "HdfDeviceUnregisterEventListener",
+        "HdfIoserviceGetListenerCount",
+        "HdfSbufObtainDefaultSize",
+        "HdfSbufRecycle",
+        "HdfSbufWriteUint16",
+        "HiLogPrint",
+        "OsalMemCalloc",
+        "OsalMemFree"
+      ]
+    }
+  ]
+}

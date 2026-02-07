@@ -1,0 +1,14 @@
+函数: src_app_centraldirectory_7
+尝试次数: 2/5
+============================================================
+error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+   --> src/src_app_verify.rs:373:55
+    |
+    |                                                       ^^^^^^ method not found in `i32`
+error[E0793]: reference to field of packed struct is unaligned
+   --> src/src_app_centraldirectory.rs:304:60
+    |
+    |                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: copy the field contents to a local variable, or replace the reference with a raw pointer and use `read_unaligned`/`write_unaligned` (loads and stores via `*p` must be properly aligned even when using raw pointers)
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors; 4 warnings emitted

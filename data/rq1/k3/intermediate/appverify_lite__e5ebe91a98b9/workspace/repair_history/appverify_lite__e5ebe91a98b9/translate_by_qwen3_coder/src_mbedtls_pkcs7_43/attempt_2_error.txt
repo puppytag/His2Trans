@@ -1,0 +1,42 @@
+函数: src_mbedtls_pkcs7_43
+尝试次数: 2/5
+============================================================
+error[E0425]: cannot find type `mbedtls_rsa_context` in module `crate::compat`
+   --> src/src_mbedtls_pkcs7.rs:724:100
+    |
+    |                                          ^^^^^^^^^^^^^^^^^^^ not found in `crate::compat`
+    |
+help: consider importing this struct
+    |
+    |
+help: if you import `mbedtls_rsa_context`, refer to it directly
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:723:176
+    |
+    |       --------------------- arguments to this function are incorrect                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:157:12
+    |
+    |            ^^^^^^                                                                     ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                                                                                                +                           +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_mbedtls_pkcs7.rs:727:23
+    |
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                            --------------       ------------- expected `u32`, found `u64`
+    |                                                                                   |
+    |                                                                                   expected `u32`, found `u64`
+    |
+   --> src/compat.rs:145:12
+    |
+    |       ^^^^^^^^^^^^^^^^^                                                                                                                         --------                                                          -------
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                   +              +++++++++++++++++++++
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                        +             +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 3 previous errors; 5 warnings emitted

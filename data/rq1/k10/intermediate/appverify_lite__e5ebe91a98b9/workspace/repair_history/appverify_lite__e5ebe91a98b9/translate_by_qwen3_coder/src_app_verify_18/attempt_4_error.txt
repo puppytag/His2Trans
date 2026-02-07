@@ -1,0 +1,27 @@
+函数: src_app_verify_18
+尝试次数: 4/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:730:60
+    |
+    |                                                       ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected fn pointer, found `Option<...>`
+    |                                                       |
+    |                                                       arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `Option<unsafe extern "C" fn(*const Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32>` due to the type of the argument passed
+   --> src/src_app_verify.rs:730:55
+    |
+    |                                                       ^^^^^-------------------------------------------------------------------^
+    |                                                            |
+    |                                                            this argument influences the type of `Some`
+   --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:608:5
+    |
+    |     ^^^^
+help: consider using `Option::expect` to unwrap the `Option<unsafe extern "C" fn(*const Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32>` value, panicking if the value is an `Option::None`
+    |
+    |                                                                                                                               +++++++++++++++++
+error[E0605]: non-primitive cast: `fn(*const Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32 {CalcDigest}` as `Option<unsafe extern "C" fn(*const Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32>`
+   --> src/src_app_verify.rs:730:60
+    |
+    |                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ an `as` expression can only be used to convert between primitive types or to coerce to a specific trait object
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors; 15 warnings emitted

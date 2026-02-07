@@ -1,0 +1,31 @@
+函数: src_app_file_1
+尝试次数: 1/5
+============================================================
+error[E0432]: unresolved import `crate::globals::g_memoryPageSize`
+  --> src/src_app_file.rs:25:9
+   |
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `g_memoryPageSize` in `globals`
+error[E0425]: cannot find value `_SC_PAGESIZE` in module `crate::types`
+   --> src/src_app_file.rs:89:69
+    |
+    |                                                                     ^^^^^^^^^^^^
+    |
+    |
+    | ------------------------------- similarly named constant `PAGESIZE` defined here
+    |
+help: a constant with a similar name exists
+    |
+    |
+help: consider importing this constant
+    |
+    |
+help: if you import `_SC_PAGESIZE`, refer to it directly
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_app_file.rs:107:23
+    |
+    |         -----------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `i64`
+    |         |
+    |         expected due to the type of this binding
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 3 previous errors; 5 warnings emitted

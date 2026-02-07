@@ -1,0 +1,52 @@
+函数: src_osal_sysevent_3
+尝试次数: 3/5
+============================================================
+error: expected identifier, found reserved keyword `priv`
+   --> src/src_osal_sysevent.rs:110:21
+    |
+    |                     ^^^^ expected identifier, found reserved keyword
+error[E0425]: cannot find value `LOG_CORE` in this scope
+   --> src/src_osal_sysevent.rs:128:37
+    |
+    |                                     ^^^^^^^^ not found in this scope
+    |
+help: consider importing this constant
+    |
+    |
+error[E0425]: cannot find value `LOG_ERROR` in this scope
+   --> src/src_osal_sysevent.rs:128:47
+    |
+    |                                               ^^^^^^^^^ not found in this scope
+    |
+help: consider importing this constant
+    |
+    |
+error[E0609]: no field `r#priv` on type `__c2r_tu_types_src_osal_sysevent::HdfDevEventlistener`
+   --> src/src_osal_sysevent.rs:110:21
+    |
+    |                     ^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+    |                         +
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:123:13
+    |
+    |         ----------------- arguments to this function are incorrect
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut *const c_void`, found `&mut *const *const c_void`
+    |
+   --> src/compat.rs:62:12
+    |
+    |            ^^^^^^^^^^^^^^^^^                                   ----
+error[E0308]: mismatched types
+   --> src/src_osal_sysevent.rs:154:64
+    |
+    |                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `types::DListHead`, found `__c2r_tu_types_src_osal_sysevent::DListHead`
+    |
+   --> src/__c2r_generated/tu_types_src_osal_sysevent.rs:5:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+   --> src/types.rs:119:1
+    |
+    | ^^^^^^^^^^^^^^^^^^^^
+error: could not compile `osal__0bc4f21396ad` (bin "osal__0bc4f21396ad") due to 6 previous errors

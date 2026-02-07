@@ -1,0 +1,32 @@
+函数: src_app_verify_hap_8
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find value `__FUNCTION__` in this scope
+   --> src/src_app_verify_hap.rs:352:185
+    |
+    |                                                ^^^^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `__FUNCTION__` in this scope
+   --> src/src_app_verify_hap.rs:358:188
+    |
+    |                                                ^^^^^^^^^^^^ not found in this scope
+error[E0425]: cannot find value `__FUNCTION__` in this scope
+   --> src/src_app_verify_hap.rs:370:181
+    |
+    |                                                ^^^^^^^^^^^^ not found in this scope
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify_hap.rs:365:22
+    |
+    |                      ^^^^^^^^                              -----------------------     ----------------------- expected `u32`, found `usize`
+    |                                                            |
+    |                                                            expected `u32`, found `usize`
+    |
+   --> src/compat.rs:159:12
+    |
+    |            ^^^^^^^^                                 -------                                               -----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                            +                       +++++++++++++++++++++
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                        +                       +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 4 previous errors; 7 warnings emitted

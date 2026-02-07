@@ -1,0 +1,67 @@
+函数: src_app_verify_16
+尝试次数: 2/5
+============================================================
+error[E0255]: the name `GetSignersCnt` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:1669:1
+     |
+     |         ------------- previous import of the value `GetSignersCnt` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `GetSignersCnt` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                       +++++++++++++++++++++
+error[E0255]: the name `GetSignerSignningCertDepth` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:1728:1
+     |
+     |                        -------------------------- previous import of the value `GetSignerSignningCertDepth` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `GetSignerSignningCertDepth` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                                                   ++++++++++++++++++++++++++++++++++
+error[E0255]: the name `Pkcs7Calloc` is defined multiple times
+   --> src/src_mbedtls_pkcs7.rs:447:1
+    |
+    |                                                    ----------- previous import of the value `Pkcs7Calloc` here
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Pkcs7Calloc` redefined here
+    |
+help: you can use `as` to change the binding name of the import
+    |
+    |                                                                +++++++++++++++++++
+error[E0255]: the name `Pkcs7Free` is defined multiple times
+   --> src/src_mbedtls_pkcs7.rs:451:1
+    |
+    |                                                                 --------- previous import of the value `Pkcs7Free` here
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Pkcs7Free` redefined here
+    |
+help: you can use `as` to change the binding name of the import
+    |
+    |                                                                           +++++++++++++++++
+error[E0255]: the name `PKCS7_FreeAllSignersResolvedInfo` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:1736:1
+     |
+     |         -------------------------------- previous import of the value `PKCS7_FreeAllSignersResolvedInfo` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `PKCS7_FreeAllSignersResolvedInfo` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                                          ++++++++++++++++++++++++++++++++++++++++
+error[E0255]: the name `PKCS7_GetSignerSignningCertSubject` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:1626:1
+     |
+     |                                           ---------------------------------- previous import of the value `PKCS7_GetSignerSignningCertSubject` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `PKCS7_GetSignerSignningCertSubject` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                                                                              ++++++++++++++++++++++++++++++++++++++++++
+error[E0255]: the name `PKCS7_GetSignerSignningCertIssuer` is defined multiple times
+    --> src/src_mbedtls_pkcs7.rs:1648:1
+     |
+     |         --------------------------------- previous import of the value `PKCS7_GetSignerSignningCertIssuer` here
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `PKCS7_GetSignerSignningCertIssuer` redefined here
+     |
+help: you can use `as` to change the binding name of the import
+     |
+     |                                           +++++++++++++++++++++++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 7 previous errors; 8 warnings emitted

@@ -1,0 +1,715 @@
+{
+  "meta": {
+    "generated_at": "2026-01-27T11:40:52.499213",
+    "llm_name": "qwen3_coder",
+    "run_intermediate_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate",
+    "run_results_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/results",
+    "projects_total": 5
+  },
+  "timeouts": {
+    "enabled": true,
+    "logs_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/logs",
+    "files_scanned": 35,
+    "vllm": {
+      "pattern": "Request timed out / vLLM 调用超时",
+      "total_hits": 0,
+      "projects": {}
+    },
+    "gpu_wait": {
+      "pattern": "等待超时",
+      "total_hits": 0,
+      "projects": {}
+    }
+  },
+  "unsafe": {
+    "overall": {
+      "projects_with_rust": 5,
+      "rs_files": 73,
+      "total_lines": 28332,
+      "unsafe_keyword_lines": 1462,
+      "unsafe_keyword_count": 1470,
+      "unsafe_block_count": 1049,
+      "unsafe_fn_count": 54,
+      "unsafe_keyword_line_ratio": 0.05160242834956939
+    },
+    "by_project": {
+      "osal__0bc4f21396ad": {
+        "rs_files": 7,
+        "total_lines": 885,
+        "unsafe_keyword_lines": 39,
+        "unsafe_keyword_count": 39,
+        "unsafe_block_count": 35,
+        "unsafe_fn_count": 0,
+        "unsafe_keyword_line_ratio": 0.044068
+      },
+      "shared__12e38ea922f7": {
+        "rs_files": 12,
+        "total_lines": 2079,
+        "unsafe_keyword_lines": 40,
+        "unsafe_keyword_count": 40,
+        "unsafe_block_count": 33,
+        "unsafe_fn_count": 0,
+        "unsafe_keyword_line_ratio": 0.01924
+      },
+      "shared__541f4e547bdb": {
+        "rs_files": 13,
+        "total_lines": 2858,
+        "unsafe_keyword_lines": 142,
+        "unsafe_keyword_count": 142,
+        "unsafe_block_count": 48,
+        "unsafe_fn_count": 0,
+        "unsafe_keyword_line_ratio": 0.049685
+      },
+      "host__25c1898e1626": {
+        "rs_files": 21,
+        "total_lines": 5888,
+        "unsafe_keyword_lines": 429,
+        "unsafe_keyword_count": 429,
+        "unsafe_block_count": 287,
+        "unsafe_fn_count": 2,
+        "unsafe_keyword_line_ratio": 0.07286
+      },
+      "appverify_lite__e5ebe91a98b9": {
+        "rs_files": 20,
+        "total_lines": 16622,
+        "unsafe_keyword_lines": 812,
+        "unsafe_keyword_count": 820,
+        "unsafe_block_count": 646,
+        "unsafe_fn_count": 52,
+        "unsafe_keyword_line_ratio": 0.048851
+      }
+    }
+  },
+  "failure_breakdown": {
+    "projects_with_stats": 5,
+    "overall": {
+      "total": 321,
+      "translated": 321,
+      "compiled_total": 319,
+      "compiled_direct": 233,
+      "compiled_after_repair": 86,
+      "failed_reverted": 2,
+      "skipped": 0,
+      "injection_failed": 0,
+      "still_unimplemented": 2,
+      "compiled_total_rate": 0.9937694704049844,
+      "compiled_direct_rate": 0.7258566978193146,
+      "compiled_after_repair_rate": 0.26791277258566976,
+      "failed_reverted_rate": 0.006230529595015576,
+      "skipped_rate": 0.0,
+      "injection_failed_rate": 0.0,
+      "still_unimplemented_rate": 0.006230529595015576
+    },
+    "by_project": {
+      "osal__0bc4f21396ad": {
+        "total": 7,
+        "translated": 7,
+        "compiled_total": 7,
+        "compiled_direct": 1,
+        "compiled_after_repair": 6,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "shared__12e38ea922f7": {
+        "total": 7,
+        "translated": 7,
+        "compiled_total": 7,
+        "compiled_direct": 5,
+        "compiled_after_repair": 2,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "shared__541f4e547bdb": {
+        "total": 26,
+        "translated": 26,
+        "compiled_total": 26,
+        "compiled_direct": 15,
+        "compiled_after_repair": 11,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "host__25c1898e1626": {
+        "total": 118,
+        "translated": 118,
+        "compiled_total": 118,
+        "compiled_direct": 94,
+        "compiled_after_repair": 24,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "appverify_lite__e5ebe91a98b9": {
+        "total": 163,
+        "translated": 163,
+        "compiled_total": 161,
+        "compiled_direct": 118,
+        "compiled_after_repair": 43,
+        "failed_reverted": 2,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 2
+      }
+    }
+  },
+  "repair_rounds": {
+    "overall": {
+      "projects_with_repair_history": 5,
+      "repair_attempts_total": 178,
+      "functions_in_repair_phase": 94,
+      "functions_with_attempts": 94,
+      "repair_success": 0,
+      "repair_failed": 0,
+      "attempts_histogram": {
+        "1": 55,
+        "2": 17,
+        "3": 9,
+        "4": 3,
+        "5": 10
+      },
+      "avg_rounds_per_repair_phase_function": 1.893617,
+      "avg_rounds_per_attempted_function": 1.893617,
+      "avg_rounds_per_total_function": 0.554517,
+      "avg_rounds_per_translated_function": 0.554517
+    },
+    "by_project": {
+      "osal__0bc4f21396ad": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/osal__0bc4f21396ad/workspace/repair_history/osal__0bc4f21396ad/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 6,
+        "functions_with_attempts": 6,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 17,
+        "avg_rounds_per_repair_phase_function": 2.833333,
+        "avg_rounds_per_attempted_function": 2.833333,
+        "attempts_histogram": {
+          "1": 1,
+          "2": 2,
+          "3": 1,
+          "4": 1,
+          "5": 1
+        },
+        "avg_rounds_per_total_function": 2.428571,
+        "avg_rounds_per_translated_function": 2.428571
+      },
+      "shared__12e38ea922f7": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__12e38ea922f7/workspace/repair_history/shared__12e38ea922f7/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 5,
+        "functions_with_attempts": 5,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 22,
+        "avg_rounds_per_repair_phase_function": 4.4,
+        "avg_rounds_per_attempted_function": 4.4,
+        "attempts_histogram": {
+          "3": 1,
+          "4": 1,
+          "5": 3
+        },
+        "avg_rounds_per_total_function": 3.142857,
+        "avg_rounds_per_translated_function": 3.142857
+      },
+      "shared__541f4e547bdb": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__541f4e547bdb/workspace/repair_history/shared__541f4e547bdb/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 11,
+        "functions_with_attempts": 11,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 22,
+        "avg_rounds_per_repair_phase_function": 2.0,
+        "avg_rounds_per_attempted_function": 2.0,
+        "attempts_histogram": {
+          "1": 5,
+          "2": 2,
+          "3": 3,
+          "4": 1
+        },
+        "avg_rounds_per_total_function": 0.846154,
+        "avg_rounds_per_translated_function": 0.846154
+      },
+      "host__25c1898e1626": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 25,
+        "functions_with_attempts": 25,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 36,
+        "avg_rounds_per_repair_phase_function": 1.44,
+        "avg_rounds_per_attempted_function": 1.44,
+        "attempts_histogram": {
+          "1": 18,
+          "2": 5,
+          "3": 1,
+          "5": 1
+        },
+        "avg_rounds_per_total_function": 0.305085,
+        "avg_rounds_per_translated_function": 0.305085
+      },
+      "appverify_lite__e5ebe91a98b9": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 47,
+        "functions_with_attempts": 47,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 81,
+        "avg_rounds_per_repair_phase_function": 1.723404,
+        "avg_rounds_per_attempted_function": 1.723404,
+        "attempts_histogram": {
+          "1": 31,
+          "2": 8,
+          "3": 3,
+          "5": 5
+        },
+        "avg_rounds_per_total_function": 0.496933,
+        "avg_rounds_per_translated_function": 0.496933
+      }
+    }
+  },
+  "codebleu_proxy": {
+    "enabled": false,
+    "reference": "BM25 top-1 Rust snippet from existing RAG knowledge_base.json (proxy; not ground truth)",
+    "projects_with_score": 0,
+    "overall": {
+      "count": 0,
+      "mean": null,
+      "median": null,
+      "p10": null,
+      "p90": null
+    },
+    "overall_sampled_functions": 0,
+    "by_project": {}
+  },
+  "projects": [
+    {
+      "project": "osal__0bc4f21396ad",
+      "stats_file": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/osal__0bc4f21396ad/workspace/incremental_work/osal__0bc4f21396ad/translate_by_qwen3_coder/translation_stats.json",
+      "rust_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/osal__0bc4f21396ad/workspace/final_projects/osal__0bc4f21396ad/translate_by_qwen3_coder",
+      "failure": {
+        "total": 7,
+        "translated": 7,
+        "compiled_total": 7,
+        "compiled_direct": 1,
+        "compiled_after_repair": 6,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "repair_rounds": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/osal__0bc4f21396ad/workspace/repair_history/osal__0bc4f21396ad/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 6,
+        "functions_with_attempts": 6,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 17,
+        "avg_rounds_per_repair_phase_function": 2.833333,
+        "avg_rounds_per_attempted_function": 2.833333,
+        "attempts_histogram": {
+          "1": 1,
+          "2": 2,
+          "3": 1,
+          "4": 1,
+          "5": 1
+        },
+        "avg_rounds_per_total_function": 2.428571,
+        "avg_rounds_per_translated_function": 2.428571
+      },
+      "missing_symbol_issues": {
+        "enabled": true,
+        "scan_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/osal__0bc4f21396ad/workspace/repair_history/osal__0bc4f21396ad/translate_by_qwen3_coder",
+        "files_scanned": 6,
+        "unique_missing_item_symbols": 0,
+        "total_missing_item_occurrences": 0,
+        "missing_item_symbols_top": [],
+        "unique_missing_macro_symbols": 0,
+        "total_missing_macro_occurrences": 0,
+        "missing_macro_symbols_top": []
+      },
+      "tu_context": {
+        "enabled": true,
+        "path": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/osal__0bc4f21396ad/workspace/.preprocessed/tu_context_map.json",
+        "use_preprocessing": true,
+        "preprocessing_enabled": true,
+        "strategy": "auto",
+        "target_config": "rk3568",
+        "selected_profile": {
+          "label": "hispark_taurus_standard@hisilicon",
+          "out_dir": "out/hispark_taurus",
+          "compile_commands_json": "/data/home/wangshb/c2-rust_framework/translation_outputs/shared/ohos_profiles/compile_commands/out__hispark_taurus/compile_commands.json",
+          "ohos_root": "/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+        },
+        "counts": {
+          "file_groups_total": 1,
+          "file_groups_included": 1,
+          "excluded_by_compile_commands": 0,
+          "compile_commands_entry_present": 1,
+          "compile_commands_entry_missing": 0,
+          "preprocessed_ok": 1,
+          "preprocessed_failed": 0,
+          "preprocessed_not_attempted": 0,
+          "preprocessed_file_missing": 0
+        },
+        "has_closure_gaps": false,
+        "failure_samples": [],
+        "missing_file_samples": []
+      },
+      "unsafe": {
+        "rs_files": 7,
+        "total_lines": 885,
+        "unsafe_keyword_lines": 39,
+        "unsafe_keyword_count": 39,
+        "unsafe_block_count": 35,
+        "unsafe_fn_count": 0,
+        "unsafe_keyword_line_ratio": 0.044068
+      }
+    },
+    {
+      "project": "shared__12e38ea922f7",
+      "stats_file": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__12e38ea922f7/workspace/incremental_work/shared__12e38ea922f7/translate_by_qwen3_coder/translation_stats.json",
+      "rust_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__12e38ea922f7/workspace/final_projects/shared__12e38ea922f7/translate_by_qwen3_coder",
+      "failure": {
+        "total": 7,
+        "translated": 7,
+        "compiled_total": 7,
+        "compiled_direct": 5,
+        "compiled_after_repair": 2,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "repair_rounds": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__12e38ea922f7/workspace/repair_history/shared__12e38ea922f7/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 5,
+        "functions_with_attempts": 5,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 22,
+        "avg_rounds_per_repair_phase_function": 4.4,
+        "avg_rounds_per_attempted_function": 4.4,
+        "attempts_histogram": {
+          "3": 1,
+          "4": 1,
+          "5": 3
+        },
+        "avg_rounds_per_total_function": 3.142857,
+        "avg_rounds_per_translated_function": 3.142857
+      },
+      "missing_symbol_issues": {
+        "enabled": true,
+        "scan_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__12e38ea922f7/workspace/repair_history/shared__12e38ea922f7/translate_by_qwen3_coder",
+        "files_scanned": 5,
+        "unique_missing_item_symbols": 0,
+        "total_missing_item_occurrences": 0,
+        "missing_item_symbols_top": [],
+        "unique_missing_macro_symbols": 0,
+        "total_missing_macro_occurrences": 0,
+        "missing_macro_symbols_top": []
+      },
+      "tu_context": {
+        "enabled": true,
+        "path": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__12e38ea922f7/workspace/.preprocessed/tu_context_map.json",
+        "use_preprocessing": true,
+        "preprocessing_enabled": true,
+        "strategy": "auto",
+        "target_config": "rk3568",
+        "selected_profile": {
+          "label": "hispark_taurus_standard@hisilicon",
+          "out_dir": "out/hispark_taurus",
+          "compile_commands_json": "/data/home/wangshb/c2-rust_framework/translation_outputs/shared/ohos_profiles/compile_commands/out__hispark_taurus/compile_commands.json",
+          "ohos_root": "/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+        },
+        "counts": {
+          "file_groups_total": 2,
+          "file_groups_included": 2,
+          "excluded_by_compile_commands": 0,
+          "compile_commands_entry_present": 2,
+          "compile_commands_entry_missing": 0,
+          "preprocessed_ok": 2,
+          "preprocessed_failed": 0,
+          "preprocessed_not_attempted": 0,
+          "preprocessed_file_missing": 0
+        },
+        "has_closure_gaps": false,
+        "failure_samples": [],
+        "missing_file_samples": []
+      },
+      "unsafe": {
+        "rs_files": 12,
+        "total_lines": 2079,
+        "unsafe_keyword_lines": 40,
+        "unsafe_keyword_count": 40,
+        "unsafe_block_count": 33,
+        "unsafe_fn_count": 0,
+        "unsafe_keyword_line_ratio": 0.01924
+      }
+    },
+    {
+      "project": "shared__541f4e547bdb",
+      "stats_file": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__541f4e547bdb/workspace/incremental_work/shared__541f4e547bdb/translate_by_qwen3_coder/translation_stats.json",
+      "rust_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__541f4e547bdb/workspace/final_projects/shared__541f4e547bdb/translate_by_qwen3_coder",
+      "failure": {
+        "total": 26,
+        "translated": 26,
+        "compiled_total": 26,
+        "compiled_direct": 15,
+        "compiled_after_repair": 11,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "repair_rounds": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__541f4e547bdb/workspace/repair_history/shared__541f4e547bdb/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 11,
+        "functions_with_attempts": 11,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 22,
+        "avg_rounds_per_repair_phase_function": 2.0,
+        "avg_rounds_per_attempted_function": 2.0,
+        "attempts_histogram": {
+          "1": 5,
+          "2": 2,
+          "3": 3,
+          "4": 1
+        },
+        "avg_rounds_per_total_function": 0.846154,
+        "avg_rounds_per_translated_function": 0.846154
+      },
+      "missing_symbol_issues": {
+        "enabled": true,
+        "scan_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__541f4e547bdb/workspace/repair_history/shared__541f4e547bdb/translate_by_qwen3_coder",
+        "files_scanned": 11,
+        "unique_missing_item_symbols": 0,
+        "total_missing_item_occurrences": 0,
+        "missing_item_symbols_top": [],
+        "unique_missing_macro_symbols": 0,
+        "total_missing_macro_occurrences": 0,
+        "missing_macro_symbols_top": []
+      },
+      "tu_context": {
+        "enabled": true,
+        "path": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/shared__541f4e547bdb/workspace/.preprocessed/tu_context_map.json",
+        "use_preprocessing": true,
+        "preprocessing_enabled": true,
+        "strategy": "auto",
+        "target_config": "rk3568",
+        "selected_profile": {
+          "label": "hispark_taurus_standard@hisilicon",
+          "out_dir": "out/hispark_taurus",
+          "compile_commands_json": "/data/home/wangshb/c2-rust_framework/translation_outputs/shared/ohos_profiles/compile_commands/out__hispark_taurus/compile_commands.json",
+          "ohos_root": "/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+        },
+        "counts": {
+          "file_groups_total": 7,
+          "file_groups_included": 7,
+          "excluded_by_compile_commands": 0,
+          "compile_commands_entry_present": 7,
+          "compile_commands_entry_missing": 0,
+          "preprocessed_ok": 7,
+          "preprocessed_failed": 0,
+          "preprocessed_not_attempted": 0,
+          "preprocessed_file_missing": 0
+        },
+        "has_closure_gaps": false,
+        "failure_samples": [],
+        "missing_file_samples": []
+      },
+      "unsafe": {
+        "rs_files": 13,
+        "total_lines": 2858,
+        "unsafe_keyword_lines": 142,
+        "unsafe_keyword_count": 142,
+        "unsafe_block_count": 48,
+        "unsafe_fn_count": 0,
+        "unsafe_keyword_line_ratio": 0.049685
+      }
+    },
+    {
+      "project": "host__25c1898e1626",
+      "stats_file": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/host__25c1898e1626/workspace/incremental_work/host__25c1898e1626/translate_by_qwen3_coder/translation_stats.json",
+      "rust_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/host__25c1898e1626/workspace/final_projects/host__25c1898e1626/translate_by_qwen3_coder",
+      "failure": {
+        "total": 118,
+        "translated": 118,
+        "compiled_total": 118,
+        "compiled_direct": 94,
+        "compiled_after_repair": 24,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "repair_rounds": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 25,
+        "functions_with_attempts": 25,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 36,
+        "avg_rounds_per_repair_phase_function": 1.44,
+        "avg_rounds_per_attempted_function": 1.44,
+        "attempts_histogram": {
+          "1": 18,
+          "2": 5,
+          "3": 1,
+          "5": 1
+        },
+        "avg_rounds_per_total_function": 0.305085,
+        "avg_rounds_per_translated_function": 0.305085
+      },
+      "missing_symbol_issues": {
+        "enabled": true,
+        "scan_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder",
+        "files_scanned": 25,
+        "unique_missing_item_symbols": 0,
+        "total_missing_item_occurrences": 0,
+        "missing_item_symbols_top": [],
+        "unique_missing_macro_symbols": 0,
+        "total_missing_macro_occurrences": 0,
+        "missing_macro_symbols_top": []
+      },
+      "tu_context": {
+        "enabled": true,
+        "path": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/host__25c1898e1626/workspace/.preprocessed/tu_context_map.json",
+        "use_preprocessing": true,
+        "preprocessing_enabled": true,
+        "strategy": "auto",
+        "target_config": "rk3568",
+        "selected_profile": {
+          "label": "hispark_taurus_standard@hisilicon",
+          "out_dir": "out/hispark_taurus",
+          "compile_commands_json": "/data/home/wangshb/c2-rust_framework/translation_outputs/shared/ohos_profiles/compile_commands/out__hispark_taurus/compile_commands.json",
+          "ohos_root": "/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+        },
+        "counts": {
+          "file_groups_total": 14,
+          "file_groups_included": 14,
+          "excluded_by_compile_commands": 0,
+          "compile_commands_entry_present": 14,
+          "compile_commands_entry_missing": 0,
+          "preprocessed_ok": 14,
+          "preprocessed_failed": 0,
+          "preprocessed_not_attempted": 0,
+          "preprocessed_file_missing": 0
+        },
+        "has_closure_gaps": false,
+        "failure_samples": [],
+        "missing_file_samples": []
+      },
+      "unsafe": {
+        "rs_files": 21,
+        "total_lines": 5888,
+        "unsafe_keyword_lines": 429,
+        "unsafe_keyword_count": 429,
+        "unsafe_block_count": 287,
+        "unsafe_fn_count": 2,
+        "unsafe_keyword_line_ratio": 0.07286
+      }
+    },
+    {
+      "project": "appverify_lite__e5ebe91a98b9",
+      "stats_file": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/appverify_lite__e5ebe91a98b9/workspace/incremental_work/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/translation_stats.json",
+      "rust_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/appverify_lite__e5ebe91a98b9/workspace/final_projects/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder",
+      "failure": {
+        "total": 163,
+        "translated": 163,
+        "compiled_total": 161,
+        "compiled_direct": 118,
+        "compiled_after_repair": 43,
+        "failed_reverted": 2,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 2
+      },
+      "repair_rounds": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 47,
+        "functions_with_attempts": 47,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 81,
+        "avg_rounds_per_repair_phase_function": 1.723404,
+        "avg_rounds_per_attempted_function": 1.723404,
+        "attempts_histogram": {
+          "1": 31,
+          "2": 8,
+          "3": 3,
+          "5": 5
+        },
+        "avg_rounds_per_total_function": 0.496933,
+        "avg_rounds_per_translated_function": 0.496933
+      },
+      "missing_symbol_issues": {
+        "enabled": true,
+        "scan_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder",
+        "files_scanned": 47,
+        "unique_missing_item_symbols": 1,
+        "total_missing_item_occurrences": 1,
+        "missing_item_symbols_top": [
+          {
+            "name": "HapPutData",
+            "count": 1
+          }
+        ],
+        "unique_missing_macro_symbols": 0,
+        "total_missing_macro_occurrences": 0,
+        "missing_macro_symbols_top": []
+      },
+      "tu_context": {
+        "enabled": true,
+        "path": "/data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk1/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/tu_context_map.json",
+        "use_preprocessing": true,
+        "preprocessing_enabled": true,
+        "strategy": "auto",
+        "target_config": "rk3568",
+        "selected_profile": {
+          "label": "hispark_taurus_standard@hisilicon",
+          "out_dir": "out/hispark_taurus",
+          "compile_commands_json": "/data/home/wangshb/c2-rust_framework/translation_outputs/shared/ohos_profiles/compile_commands/out__hispark_taurus/compile_commands.json",
+          "ohos_root": "/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+        },
+        "counts": {
+          "file_groups_total": 10,
+          "file_groups_included": 10,
+          "excluded_by_compile_commands": 0,
+          "compile_commands_entry_present": 10,
+          "compile_commands_entry_missing": 0,
+          "preprocessed_ok": 10,
+          "preprocessed_failed": 0,
+          "preprocessed_not_attempted": 0,
+          "preprocessed_file_missing": 0
+        },
+        "has_closure_gaps": false,
+        "failure_samples": [],
+        "missing_file_samples": []
+      },
+      "unsafe": {
+        "rs_files": 20,
+        "total_lines": 16622,
+        "unsafe_keyword_lines": 812,
+        "unsafe_keyword_count": 820,
+        "unsafe_block_count": 646,
+        "unsafe_fn_count": 52,
+        "unsafe_keyword_line_ratio": 0.048851
+      }
+    }
+  ]
+}

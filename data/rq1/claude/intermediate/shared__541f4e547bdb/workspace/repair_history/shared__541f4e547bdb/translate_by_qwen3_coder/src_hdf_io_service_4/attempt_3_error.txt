@@ -1,0 +1,18 @@
+函数: src_hdf_io_service_4
+尝试次数: 3/5
+============================================================
+error[E0428]: the name `HdfIoServiceAdapterRemove` is defined multiple times
+  --> src/src_hdf_io_service.rs:34:9
+   |
+   |         ----------------------------------------------------------------------- previous definition of the value `HdfIoServiceAdapterRemove` here
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `HdfIoServiceAdapterRemove` redefined here
+   |
+error[E0609]: no field `is_some` on type `unsafe extern "C" fn(*mut types::HdfIoService) {HdfIoServiceRemove::HdfIoServiceAdapterRemove}`
+  --> src/src_hdf_io_service.rs:38:39
+   |
+   |                                       ^^^^^^^ unknown field
+error[E0609]: no field `unwrap` on type `unsafe extern "C" fn(*mut types::HdfIoService) {HdfIoServiceRemove::HdfIoServiceAdapterRemove}`
+  --> src/src_hdf_io_service.rs:39:41
+   |
+   |                                         ^^^^^^ unknown field
+error: could not compile `shared__541f4e547bdb` (bin "shared__541f4e547bdb") due to 3 previous errors

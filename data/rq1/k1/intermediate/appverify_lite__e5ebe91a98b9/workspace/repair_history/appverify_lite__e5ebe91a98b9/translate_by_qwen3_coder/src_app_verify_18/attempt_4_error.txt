@@ -1,0 +1,70 @@
+函数: src_app_verify_18
+尝试次数: 4/5
+============================================================
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:563:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:569:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:575:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:580:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:582:60
+    |
+    |                                                       ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+    |                                                       |
+    |                                                       arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `fn(*const Pkcs7, *const tagSignerInfo, u32, *mut u8, *mut u32) -> i32 {CalcDigest}` due to the type of the argument passed
+   --> src/src_app_verify.rs:582:55
+    |
+    |                                                       ^^^^^---------------------------------^
+    |                                                            |
+    |                                                            this argument influences the type of `Some`
+   --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:608:5
+    |
+    |     ^^^^
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:586:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:592:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:597:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:602:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:604:20
+    |
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^                                       --------------- expected `u32`, found `u64`        --------------- expected `u32`, found `u64`
+    |
+   --> src/compat.rs:160:12
+    |
+    |            ^^^^^^^^                                 -------                                                         -----
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                  +               +++++++++++++++++++++
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                                                     +               +++++++++++++++++++++
+error[E0425]: cannot find function `goto_exit` in this scope
+   --> src/src_app_verify.rs:608:9
+    |
+    |         ^^^^^^^^^ not found in this scope
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 11 previous errors; 22 warnings emitted

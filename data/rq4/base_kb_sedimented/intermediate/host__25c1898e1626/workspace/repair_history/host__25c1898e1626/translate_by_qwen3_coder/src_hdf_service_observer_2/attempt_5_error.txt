@@ -1,0 +1,38 @@
+函数: src_hdf_service_observer_2
+尝试次数: 5/5
+============================================================
+error[E0425]: cannot find function, tuple struct or tuple variant `HdfSListFlush` in the crate root
+  --> src/src_hdf_service_observer.rs:40:20
+   |
+   |                    ^^^^^^^^^^^^^ not found in the crate root
+   |
+help: consider importing this function through its public re-export
+   |
+   |
+help: if you import `HdfSListFlush`, refer to it directly
+   |
+   |
+error[E0425]: cannot find value `HdfServiceObserverRecordDelete` in this scope
+  --> src/src_hdf_service_observer.rs:40:66
+   |
+   |                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   | -------------------------------------------------------------------------------------------------------------------------------------- similarly named function `HdfServiceObserverRemoveRecord` defined here
+   |
+help: a function with a similar name exists
+   |
+   |
+help: consider importing this function
+   |
+   |
+error[E0425]: cannot find function, tuple struct or tuple variant `OsalMutexDestroy` in the crate root
+  --> src/src_hdf_service_observer.rs:41:20
+   |
+   |                    ^^^^^^^^^^^^^^^^ not found in the crate root
+   |
+help: consider importing this function through its public re-export
+   |
+   |
+help: if you import `OsalMutexDestroy`, refer to it directly
+   |
+   |
+error: could not compile `host__25c1898e1626` (bin "host__25c1898e1626") due to 3 previous errors; 8 warnings emitted

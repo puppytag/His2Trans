@@ -1,0 +1,20 @@
+函数: src_app_verify_9
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:327:13
+    |
+    |         ------------------------- arguments to this function are incorrect
+    |             ^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:135:12
+    |
+    |            ^^^^^^^^^^                                                                                      ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |             +                 +++++++++++++++++++++
+error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+   --> src/src_app_verify.rs:392:55
+    |
+    |                                                       ^^^^^^ method not found in `i32`
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors; 4 warnings emitted

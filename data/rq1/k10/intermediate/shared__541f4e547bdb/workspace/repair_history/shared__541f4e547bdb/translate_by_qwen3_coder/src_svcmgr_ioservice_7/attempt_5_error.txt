@@ -1,0 +1,45 @@
+函数: src_svcmgr_ioservice_7
+尝试次数: 5/5
+============================================================
+error[E0308]: mismatched types
+    --> src/src_svcmgr_ioservice.rs:102:31
+     |
+     |         -------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `__c2r_tu_types_src_svcmgr_ioservice::HdfIoService`, found `types::HdfIoService`
+     |         |
+     |         expected due to the type of this binding
+     |
+    --> src/types.rs:1216:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+    --> src/__c2r_generated/tu_types_src_svcmgr_ioservice.rs:67:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+error[E0308]: mismatched types
+    --> src/src_svcmgr_ioservice.rs:119:63
+     |
+     |         ----------------------------------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `types::ISvcMgrIoservice`, found `ISvcMgrIoservice`
+     |         |
+     |         arguments to this function are incorrect
+     |
+    --> src/__c2r_generated/tu_types_src_svcmgr_ioservice.rs:22:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    --> src/types.rs:1749:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    --> src/src_svcmgr_ioservice.rs:86:4
+     |
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------------------------
+error[E0308]: mismatched types
+    --> src/src_svcmgr_ioservice.rs:122:9
+     |
+     |                                           ----------------------------------- expected `*mut types::ISvcMgrIoservice` because of return type
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `types::ISvcMgrIoservice`, found `ISvcMgrIoservice`
+     |
+    --> src/__c2r_generated/tu_types_src_svcmgr_ioservice.rs:22:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    --> src/types.rs:1749:1
+     |
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: could not compile `shared__541f4e547bdb` (bin "shared__541f4e547bdb") due to 3 previous errors

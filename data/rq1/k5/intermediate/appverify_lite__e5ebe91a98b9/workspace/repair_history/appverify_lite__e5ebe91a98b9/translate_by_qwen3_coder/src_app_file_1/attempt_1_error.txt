@@ -1,0 +1,26 @@
+函数: src_app_file_1
+尝试次数: 1/5
+============================================================
+error[E0432]: unresolved import `crate::globals::g_memoryPageSize`
+  --> src/src_app_file.rs:25:9
+   |
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `g_memoryPageSize` in `globals`
+error[E0308]: mismatched types
+  --> src/src_app_file.rs:29:16
+   |
+   |                                                                                                                            --- expected `i32` because of return type
+   |                ^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+   |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+   |
+   |                               ++++++++++++++++++++
+error[E0308]: mismatched types
+  --> src/src_app_file.rs:61:5
+   |
+   |                                                                                                                            --- expected `i32` because of return type
+   |     ^^^^ expected `i32`, found `u32`
+   |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+   |
+   |         ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 3 previous errors; 3 warnings emitted

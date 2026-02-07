@@ -1,0 +1,31 @@
+函数: src_mbedtls_pkcs7_44
+尝试次数: 2/5
+============================================================
+error[E0433]: failed to resolve: could not find `ROOT_CA_G2_CERT_IN_PEM` in `globals`
+   --> src/src_mbedtls_pkcs7.rs:713:33
+    |
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^ could not find `ROOT_CA_G2_CERT_IN_PEM` in `globals`
+error[E0433]: failed to resolve: could not find `ROOT_CA_G2_CERT_IN_PEM` in `globals`
+   --> src/src_mbedtls_pkcs7.rs:714:57
+    |
+    |                                                         ^^^^^^^^^^^^^^^^^^^^^^ could not find `ROOT_CA_G2_CERT_IN_PEM` in `globals`
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:710:50
+    |
+    |             ------------------------------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut mbedtls_x509_crt`, found `&mut i32`
+    |             |
+    |             arguments to this function are incorrect
+    |
+   --> src/compat.rs:147:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^ ---
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:712:17
+    |
+    |                  ------------------------------------- arguments to this function are incorrect
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut mbedtls_x509_crt`, found `&mut i32`
+    |
+   --> src/compat.rs:148:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^^ -----
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 4 previous errors; 3 warnings emitted

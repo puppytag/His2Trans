@@ -1,0 +1,54 @@
+函数: src_app_verify_9
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:240:14
+    |
+    |        --    ^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |        |
+    |        expected because this is `i32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:246:14
+    |
+    |        --    ^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |        |
+    |        expected because this is `i32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:251:98
+    |
+    |              ------------------------- arguments to this function are incorrect                  ^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:132:12
+    |
+    |            ^^^^^^^^^^                                                                                      ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                  +                 +++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:253:14
+    |
+    |        --    ^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |        |
+    |        expected because this is `i32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:260:5
+    |
+    |                                                                                                                                                                                                            --- expected `i32` because of return type
+    |     ^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                       ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 5 previous errors; 3 warnings emitted

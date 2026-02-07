@@ -1,0 +1,126 @@
+//! Module: src_hdf_io_service
+//!
+//! Auto-generated skeleton - function bodies are unimplemented.
+
+#![allow(unused_imports)]
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+
+use crate::types::*;
+use crate::globals::*;
+use crate::compat::*;
+
+pub extern "C" fn HdfIoServiceBind(serviceName: *const ::core::ffi::c_char) -> *mut crate::types::HdfIoService {
+    unsafe { crate::compat::HdfIoServiceAdapterObtain(serviceName) }
+}
+
+pub extern "C" fn HdfIoServiceRecycle(service: *mut crate::types::HdfIoService) {
+    unsafe {
+        crate::compat::HdfIoServiceAdapterRecycle(service);
+    }
+}
+
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_0
+// func_key: src_hdf_io_service_3
+// c_function: HdfIoServicePublish
+// rust_file: src_hdf_io_service.rs
+// rust_signature: pub extern "C" fn HdfIoServicePublish(serviceName: *const ::core::ffi::c_char, mode: u32) -> *mut crate::types::HdfIoService
+// c_first_line: struct HdfIoService *HdfIoServicePublish(const char *serviceName, uint32_t mode)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C2/intermediate/shared__541f4e547bdb/workspace/repair_history/shared__541f4e547bdb/translate_by_qwen3_coder/_manual_fix/src_hdf_io_service_3/translated_rust.rs
+// last_error_truncated:
+//   error[E0599]: no method named `is_some` found for fn item `unsafe extern "C" fn(..., u32) -> ... {HdfIoServiceAdapterPublish}` in the current scope
+//     --> src/src_hdf_io_service.rs:27:39
+//      |
+//      |                                       ^^^^^^^ method not found in `unsafe extern "C" fn(..., u32) -> ... {HdfIoServiceAdapterPublish}`
+//      |
+//   error[E0599]: no method named `unwrap` found for fn item `unsafe extern "C" fn(..., u32) -> ... {HdfIoServiceAdapterPublish}` in the current scope
+//     --> src/src_hdf_io_service.rs:28:48
+//      |
+// =================================
+pub extern "C" fn HdfIoServicePublish(serviceName: *const ::core::ffi::c_char, mode: u32) -> *mut crate::types::HdfIoService {
+    // C2R: C2Rust fallback (LLM failed; wrapper keeps skeleton signature)
+    unsafe { crate::compat::__c2rust_fallback::src_hdf_io_service::HdfIoServicePublish(serviceName as _, mode as _) as _ }
+}
+/* === C2R_LLM_FAILED_OUTPUT_BEGIN ===
+ * func_key: src_hdf_io_service_3
+ * reason: repair_failed_after_0
+ * saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C2/intermediate/shared__541f4e547bdb/workspace/repair_history/shared__541f4e547bdb/translate_by_qwen3_coder/_manual_fix/src_hdf_io_service_3/translated_rust.rs
+ * ------------------------------------------------------------
+pub extern "C" fn HdfIoServicePublish(serviceName: *const ::core::ffi::c_char, mode: u32) -> *mut crate::types::HdfIoService {
+    unsafe {
+        if HdfIoServiceAdapterPublish.is_some() {
+            return (HdfIoServiceAdapterPublish.unwrap())(serviceName, mode);
+        }
+    }
+    std::ptr::null_mut()
+}
+ * ------------------------------------------------------------
+ * C2R_LLM_FAILED_OUTPUT_BEGIN func_key: src_hdf_io_service_3
+ * === C2R_LLM_FAILED_OUTPUT_END === */
+
+
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_0
+// func_key: src_hdf_io_service_4
+// c_function: HdfIoServiceRemove
+// rust_file: src_hdf_io_service.rs
+// rust_signature: pub extern "C" fn HdfIoServiceRemove(service: *mut crate::types::HdfIoService)
+// c_first_line: void HdfIoServiceRemove(struct HdfIoService *service)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C2/intermediate/shared__541f4e547bdb/workspace/repair_history/shared__541f4e547bdb/translate_by_qwen3_coder/_manual_fix/src_hdf_io_service_4/translated_rust.rs
+// last_error_truncated:
+//   error[E0428]: the name `HdfIoServiceAdapterRemove` is defined multiple times
+//     --> src/src_hdf_io_service.rs:68:9
+//      |
+//      |         ----------------------------------------------------------------------- previous definition of the value `HdfIoServiceAdapterRemove` here
+//      |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `HdfIoServiceAdapterRemove` redefined here
+//      |
+//   error: could not compile `shared__541f4e547bdb` (bin "shared__541f4e547bdb") due to 1 previous error
+// =================================
+pub extern "C" fn HdfIoServiceRemove(service: *mut crate::types::HdfIoService) {
+    // C2R: C2Rust fallback (LLM failed; wrapper keeps skeleton signature)
+    unsafe { crate::compat::__c2rust_fallback::src_hdf_io_service::HdfIoServiceRemove(service as _); }
+}
+/* === C2R_LLM_FAILED_OUTPUT_BEGIN ===
+ * func_key: src_hdf_io_service_4
+ * reason: repair_failed_after_0
+ * saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_C2/intermediate/shared__541f4e547bdb/workspace/repair_history/shared__541f4e547bdb/translate_by_qwen3_coder/_manual_fix/src_hdf_io_service_4/translated_rust.rs
+ * ------------------------------------------------------------
+pub extern "C" fn HdfIoServiceRemove(service: *mut crate::types::HdfIoService) {
+    extern "C" {
+        fn HdfIoServiceAdapterRemove(service: *mut crate::types::HdfIoService);
+        static HdfIoServiceAdapterRemove: Option<unsafe extern "C" fn(*mut crate::types::HdfIoService)>;
+    }
+    
+    unsafe {
+        // Check if the weak symbol is non-null
+        let func_ptr: *const () = HdfIoServiceAdapterRemove as *const ();
+        if !func_ptr.is_null() {
+            HdfIoServiceAdapterRemove(service);
+        }
+    }
+}
+ * ------------------------------------------------------------
+ * C2R_LLM_FAILED_OUTPUT_BEGIN func_key: src_hdf_io_service_4
+ * === C2R_LLM_FAILED_OUTPUT_END === */
+
+
+pub extern "C" fn HdfIoServiceDispatch(ioService: *mut crate::types::HdfIoService, cmdId: ::core::ffi::c_int, data: *mut crate::types::HdfSBuf, reply: *mut crate::types::HdfSBuf) -> i32 {
+    unsafe {
+        if ioService.is_null() {
+            return crate::types::HDF_ERR_INVALID_OBJECT;
+        }
+        let dispatcher = (*ioService).dispatcher;
+        if dispatcher.is_null() {
+            return crate::types::HDF_ERR_INVALID_OBJECT;
+        }
+        let dispatch_fn = (*dispatcher).Dispatch;
+        if dispatch_fn.is_none() {
+            return crate::types::HDF_ERR_INVALID_OBJECT;
+        }
+        let f = dispatch_fn.unwrap();
+        f(&mut (*ioService).object as *mut crate::types::HdfObject, cmdId, data, reply)
+    }
+}

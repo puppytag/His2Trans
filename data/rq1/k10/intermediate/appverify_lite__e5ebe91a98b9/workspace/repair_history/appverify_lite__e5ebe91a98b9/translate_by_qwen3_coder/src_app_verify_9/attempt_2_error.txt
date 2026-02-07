@@ -1,0 +1,79 @@
+函数: src_app_verify_9
+尝试次数: 2/5
+============================================================
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:216:17
+    |
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ------------------------------ expected `u32`, found `i32`
+    |                                         |
+    |                                         expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                           +                             +++++++++++++++++++++
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                          +                              +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:219:13
+    |
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ----------------------------- expected `u32`, found `i32`
+    |                                       |
+    |                                       expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                       +                             +++++++++++++++++++++
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                      +                             +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:222:17
+    |
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ------------------------------ expected `u32`, found `i32`
+    |                                         |
+    |                                         expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                           +                             +++++++++++++++++++++
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                          +                              +++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_app_verify.rs:226:98
+    |
+    |              ------------------------- arguments to this function are incorrect                  ^^^^^^^^^^^^^^^ expected `u32`, found `u64`
+    |
+   --> src/compat.rs:132:12
+    |
+    |            ^^^^^^^^^^                                                                                      ----
+help: you can convert a `u64` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                                                  +               +++++++++++++++++++++
+error[E0308]: arguments to this function are incorrect
+   --> src/src_app_verify.rs:229:17
+    |
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ -----------------------------  ------------------------------ expected `u32`, found `i32`
+    |                                         |
+    |                                         expected `u32`, found `i32`
+    |
+   --> src/compat.rs:110:12
+    |
+    |            ^^^^^^^^^^ -----                         -----
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                           +                             +++++++++++++++++++++
+help: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                                                                          +                              +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 5 previous errors; 3 warnings emitted

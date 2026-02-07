@@ -1,0 +1,61 @@
+函数: src_app_verify_12
+尝试次数: 2/5
+============================================================
+error: unexpected token: `(`
+   --> src/src_app_verify.rs:109:62
+    |
+    |                                                              ^
+error: unexpected token: `(`
+   --> src/src_app_verify.rs:110:74
+    |
+    |                                                                          ^
+error: unexpected token: `(`
+   --> src/src_app_verify.rs:111:79
+    |
+    |                                                                               ^
+error: expected one of `!`, `(`, `+`, `::`, or `<`, found `.`
+   --> src/src_app_verify.rs:120:58
+    |
+    |                                         ---              ^ expected one of `!`, `(`, `+`, `::`, or `<`
+    |                                         |
+    |                                         while parsing this parenthesized list of type arguments starting here
+    |
+help: consider removing the `::` here to call the expression
+    |
+    |
+error: expected one of `(`, `.`, `::`, `;`, `?`, `else`, or an operator, found `)`
+   --> src/src_app_verify.rs:121:21
+    |
+    |                                                                                             - expected one of 7 possible tokens
+    |                     ^ unexpected token
+error[E0425]: cannot find value `issuer` in this scope
+   --> src/src_app_verify.rs:109:63
+    |
+    |                                                               ^^^^^^ not found in this scope
+error[E0425]: cannot find value `subject` in this scope
+   --> src/src_app_verify.rs:110:75
+    |
+    |                                                                           ^^^^^^^ not found in this scope
+error[E0425]: cannot find value `subject` in this scope
+   --> src/src_app_verify.rs:111:80
+    |
+    |                                                                                ^^^^^^^ not found in this scope
+error[E0618]: expected function, found `SignerResovledInfo`
+   --> src/src_app_verify.rs:109:52
+    |
+    |                                                    ^^^^^^^^^----------------
+    |                                                    |
+    |                                                    call expression requires function
+error[E0618]: expected function, found `SignerResovledInfo`
+   --> src/src_app_verify.rs:110:64
+    |
+    |                                                                ^^^^^^^^^-----------------
+    |                                                                |
+    |                                                                call expression requires function
+error[E0618]: expected function, found `SignerResovledInfo`
+   --> src/src_app_verify.rs:111:69
+    |
+    |                                                                     ^^^^^^^^^-----------------
+    |                                                                     |
+    |                                                                     call expression requires function
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 11 previous errors

@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "generated_at": "2026-01-21T16:24:05.461966",
+    "llm_name": "qwen3_coder",
+    "run_intermediate_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate",
+    "run_results_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/results",
+    "projects_total": 2
+  },
+  "timeouts": {
+    "enabled": true,
+    "logs_dir": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/logs",
+    "files_scanned": 13,
+    "vllm": {
+      "pattern": "Request timed out / vLLM 调用超时",
+      "total_hits": 0,
+      "projects": {}
+    },
+    "gpu_wait": {
+      "pattern": "等待超时",
+      "total_hits": 0,
+      "projects": {}
+    }
+  },
+  "unsafe": {
+    "overall": {
+      "projects_with_rust": 2,
+      "rs_files": 38,
+      "total_lines": 22818,
+      "unsafe_keyword_lines": 1231,
+      "unsafe_keyword_count": 1231,
+      "unsafe_block_count": 918,
+      "unsafe_fn_count": 54,
+      "unsafe_keyword_line_ratio": 0.0539486370409326
+    },
+    "by_project": {
+      "host__25c1898e1626": {
+        "rs_files": 21,
+        "total_lines": 6280,
+        "unsafe_keyword_lines": 449,
+        "unsafe_keyword_count": 449,
+        "unsafe_block_count": 304,
+        "unsafe_fn_count": 2,
+        "unsafe_keyword_line_ratio": 0.071497
+      },
+      "appverify_lite__e5ebe91a98b9": {
+        "rs_files": 17,
+        "total_lines": 16538,
+        "unsafe_keyword_lines": 782,
+        "unsafe_keyword_count": 782,
+        "unsafe_block_count": 614,
+        "unsafe_fn_count": 52,
+        "unsafe_keyword_line_ratio": 0.047285
+      }
+    }
+  },
+  "failure_breakdown": {
+    "projects_with_stats": 2,
+    "overall": {
+      "total": 281,
+      "translated": 281,
+      "compiled_total": 267,
+      "compiled_direct": 201,
+      "compiled_after_repair": 66,
+      "failed_reverted": 14,
+      "skipped": 0,
+      "injection_failed": 0,
+      "still_unimplemented": 14,
+      "compiled_total_rate": 0.9501779359430605,
+      "compiled_direct_rate": 0.7153024911032029,
+      "compiled_after_repair_rate": 0.23487544483985764,
+      "failed_reverted_rate": 0.0498220640569395,
+      "skipped_rate": 0.0,
+      "injection_failed_rate": 0.0,
+      "still_unimplemented_rate": 0.0498220640569395
+    },
+    "by_project": {
+      "host__25c1898e1626": {
+        "total": 118,
+        "translated": 118,
+        "compiled_total": 118,
+        "compiled_direct": 92,
+        "compiled_after_repair": 26,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "appverify_lite__e5ebe91a98b9": {
+        "total": 163,
+        "translated": 163,
+        "compiled_total": 149,
+        "compiled_direct": 109,
+        "compiled_after_repair": 40,
+        "failed_reverted": 14,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 14
+      }
+    }
+  },
+  "repair_rounds": {
+    "overall": {
+      "projects_with_repair_history": 2,
+      "repair_attempts_total": 171,
+      "functions_in_repair_phase": 81,
+      "functions_with_attempts": 81,
+      "repair_success": 0,
+      "repair_failed": 3,
+      "attempts_histogram": {
+        "1": 47,
+        "2": 9,
+        "3": 9,
+        "4": 1,
+        "5": 15
+      },
+      "avg_rounds_per_repair_phase_function": 2.111111,
+      "avg_rounds_per_attempted_function": 2.111111,
+      "avg_rounds_per_total_function": 0.608541,
+      "avg_rounds_per_translated_function": 0.608541
+    },
+    "by_project": {
+      "host__25c1898e1626": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 27,
+        "functions_with_attempts": 27,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 43,
+        "avg_rounds_per_repair_phase_function": 1.592593,
+        "avg_rounds_per_attempted_function": 1.592593,
+        "attempts_histogram": {
+          "1": 19,
+          "2": 2,
+          "3": 5,
+          "5": 1
+        },
+        "avg_rounds_per_total_function": 0.364407,
+        "avg_rounds_per_translated_function": 0.364407
+      },
+      "appverify_lite__e5ebe91a98b9": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 54,
+        "functions_with_attempts": 54,
+        "repair_success": 0,
+        "repair_failed": 3,
+        "repair_attempts_total": 128,
+        "avg_rounds_per_repair_phase_function": 2.37037,
+        "avg_rounds_per_attempted_function": 2.37037,
+        "attempts_histogram": {
+          "1": 28,
+          "2": 7,
+          "3": 4,
+          "4": 1,
+          "5": 14
+        },
+        "avg_rounds_per_total_function": 0.785276,
+        "avg_rounds_per_translated_function": 0.785276
+      }
+    }
+  },
+  "codebleu_proxy": {
+    "enabled": false,
+    "reference": "BM25 top-1 Rust snippet from existing RAG knowledge_base.json (proxy; not ground truth)",
+    "projects_with_score": 0,
+    "overall": {
+      "count": 0,
+      "mean": null,
+      "median": null,
+      "p10": null,
+      "p90": null
+    },
+    "overall_sampled_functions": 0,
+    "by_project": {}
+  },
+  "projects": [
+    {
+      "project": "host__25c1898e1626",
+      "stats_file": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/host__25c1898e1626/workspace/incremental_work/host__25c1898e1626/translate_by_qwen3_coder/translation_stats.json",
+      "rust_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/host__25c1898e1626/workspace/final_projects/host__25c1898e1626/translate_by_qwen3_coder",
+      "failure": {
+        "total": 118,
+        "translated": 118,
+        "compiled_total": 118,
+        "compiled_direct": 92,
+        "compiled_after_repair": 26,
+        "failed_reverted": 0,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 0
+      },
+      "repair_rounds": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 27,
+        "functions_with_attempts": 27,
+        "repair_success": 0,
+        "repair_failed": 0,
+        "repair_attempts_total": 43,
+        "avg_rounds_per_repair_phase_function": 1.592593,
+        "avg_rounds_per_attempted_function": 1.592593,
+        "attempts_histogram": {
+          "1": 19,
+          "2": 2,
+          "3": 5,
+          "5": 1
+        },
+        "avg_rounds_per_total_function": 0.364407,
+        "avg_rounds_per_translated_function": 0.364407
+      },
+      "missing_symbol_issues": {
+        "enabled": true,
+        "scan_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder",
+        "files_scanned": 27,
+        "unique_missing_item_symbols": 0,
+        "total_missing_item_occurrences": 0,
+        "missing_item_symbols_top": [],
+        "unique_missing_macro_symbols": 0,
+        "total_missing_macro_occurrences": 0,
+        "missing_macro_symbols_top": []
+      },
+      "tu_context": {
+        "enabled": true,
+        "path": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/host__25c1898e1626/workspace/.preprocessed/tu_context_map.json",
+        "use_preprocessing": true,
+        "preprocessing_enabled": true,
+        "strategy": "auto",
+        "target_config": "rk3568",
+        "selected_profile": {
+          "label": "hispark_taurus_standard@hisilicon",
+          "out_dir": "out/hispark_taurus",
+          "compile_commands_json": "/data/home/wangshb/c2-rust_framework/translation_outputs/shared/ohos_profiles/compile_commands/out__hispark_taurus/compile_commands.json",
+          "ohos_root": "/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+        },
+        "counts": {
+          "file_groups_total": 14,
+          "file_groups_included": 14,
+          "excluded_by_compile_commands": 0,
+          "compile_commands_entry_present": 14,
+          "compile_commands_entry_missing": 0,
+          "preprocessed_ok": 14,
+          "preprocessed_failed": 0,
+          "preprocessed_not_attempted": 0,
+          "preprocessed_file_missing": 0
+        },
+        "has_closure_gaps": false,
+        "failure_samples": [],
+        "missing_file_samples": []
+      },
+      "unsafe": {
+        "rs_files": 21,
+        "total_lines": 6280,
+        "unsafe_keyword_lines": 449,
+        "unsafe_keyword_count": 449,
+        "unsafe_block_count": 304,
+        "unsafe_fn_count": 2,
+        "unsafe_keyword_line_ratio": 0.071497
+      }
+    },
+    {
+      "project": "appverify_lite__e5ebe91a98b9",
+      "stats_file": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/incremental_work/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/translation_stats.json",
+      "rust_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/final_projects/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder",
+      "failure": {
+        "total": 163,
+        "translated": 163,
+        "compiled_total": 149,
+        "compiled_direct": 109,
+        "compiled_after_repair": 40,
+        "failed_reverted": 14,
+        "skipped": 0,
+        "injection_failed": 0,
+        "still_unimplemented": 14
+      },
+      "repair_rounds": {
+        "enabled": true,
+        "repair_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder",
+        "functions_in_repair_phase": 54,
+        "functions_with_attempts": 54,
+        "repair_success": 0,
+        "repair_failed": 3,
+        "repair_attempts_total": 128,
+        "avg_rounds_per_repair_phase_function": 2.37037,
+        "avg_rounds_per_attempted_function": 2.37037,
+        "attempts_histogram": {
+          "1": 28,
+          "2": 7,
+          "3": 4,
+          "4": 1,
+          "5": 14
+        },
+        "avg_rounds_per_total_function": 0.785276,
+        "avg_rounds_per_translated_function": 0.785276
+      },
+      "missing_symbol_issues": {
+        "enabled": true,
+        "scan_root": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder",
+        "files_scanned": 54,
+        "unique_missing_item_symbols": 0,
+        "total_missing_item_occurrences": 0,
+        "missing_item_symbols_top": [],
+        "unique_missing_macro_symbols": 0,
+        "total_missing_macro_occurrences": 0,
+        "missing_macro_symbols_top": []
+      },
+      "tu_context": {
+        "enabled": true,
+        "path": "/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_sed/intermediate/appverify_lite__e5ebe91a98b9/workspace/.preprocessed/tu_context_map.json",
+        "use_preprocessing": true,
+        "preprocessing_enabled": true,
+        "strategy": "auto",
+        "target_config": "rk3568",
+        "selected_profile": {
+          "label": "hispark_taurus_standard@hisilicon",
+          "out_dir": "out/hispark_taurus",
+          "compile_commands_json": "/data/home/wangshb/c2-rust_framework/translation_outputs/shared/ohos_profiles/compile_commands/out__hispark_taurus/compile_commands.json",
+          "ohos_root": "/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+        },
+        "counts": {
+          "file_groups_total": 10,
+          "file_groups_included": 10,
+          "excluded_by_compile_commands": 0,
+          "compile_commands_entry_present": 10,
+          "compile_commands_entry_missing": 0,
+          "preprocessed_ok": 10,
+          "preprocessed_failed": 0,
+          "preprocessed_not_attempted": 0,
+          "preprocessed_file_missing": 0
+        },
+        "has_closure_gaps": false,
+        "failure_samples": [],
+        "missing_file_samples": []
+      },
+      "unsafe": {
+        "rs_files": 17,
+        "total_lines": 16538,
+        "unsafe_keyword_lines": 782,
+        "unsafe_keyword_count": 782,
+        "unsafe_block_count": 614,
+        "unsafe_fn_count": 52,
+        "unsafe_keyword_line_ratio": 0.047285
+      }
+    }
+  ]
+}

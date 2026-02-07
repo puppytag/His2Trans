@@ -1,0 +1,31 @@
+     Locking 4 packages to latest compatible versions
+   Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.5
+   Compiling libc v0.2.180
+   Compiling cc v1.2.49
+   Compiling appverify_lite__e5ebe91a98b9 v0.1.0 (/data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_nosed/intermediate/appverify_lite__e5ebe91a98b9/workspace/skeletons/appverify_lite__e5ebe91a98b9)
+error[E0425]: cannot find type `c_char` in this scope
+   --> src/src_app_verify.rs:176:35
+    |
+176 | fn GetBinSignPkcs(signBuf: *const c_char, len: i32) -> *mut crate::types::Pkcs7 {
+    |                                   ^^^^^^
+    |
+help: a builtin type with a similar name exists
+    |
+176 - fn GetBinSignPkcs(signBuf: *const c_char, len: i32) -> *mut crate::types::Pkcs7 {
+176 + fn GetBinSignPkcs(signBuf: *const char, len: i32) -> *mut crate::types::Pkcs7 {
+    |
+help: consider importing one of these type aliases
+    |
+ 11 + use crate::src_app_verify::ffi::c_char;
+    |
+ 11 + use std::ffi::c_char;
+    |
+ 11 + use std::os::raw::c_char;
+    |
+ 11 + use core::ffi::c_char;
+    |
+    = and 1 other candidate
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 1 previous error

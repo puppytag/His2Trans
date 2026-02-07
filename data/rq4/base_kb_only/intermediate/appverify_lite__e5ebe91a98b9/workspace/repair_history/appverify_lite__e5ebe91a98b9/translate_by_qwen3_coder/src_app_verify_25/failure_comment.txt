@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_5
+// func_key: src_app_verify_25
+// c_function: GetAppid
+// rust_file: src_app_verify.rs
+// rust_signature: pub extern "C" fn GetAppid(profile: *mut crate::types::ProfileProf) -> i32
+// c_first_line: int32_t GetAppid(ProfileProf *profile)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_nosed/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/_manual_fix/src_app_verify_25/translated_rust.rs
+// last_error_truncated:
+//   error[E0599]: no method named `as_ptr` found for type `i32` in the current scope
+//      --> src/src_app_verify.rs:450:55
+//       |
+//       |                                                       ^^^^^^ method not found in `i32`
+//   error[E0615]: attempted to take value of method `as_ptr` on type `&'static [u8]`
+//       --> src/src_app_verify.rs:1024:22
+//        |
+//        |                      ^^^^^^ method, not a field
+// =================================

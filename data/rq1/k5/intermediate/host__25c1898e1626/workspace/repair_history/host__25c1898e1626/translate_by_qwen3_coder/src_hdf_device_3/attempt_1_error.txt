@@ -1,0 +1,24 @@
+函数: src_hdf_device_3
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+  --> src/src_hdf_device.rs:89:15
+   |
+   |               ^^^^^^^ expected `u16`, found `u32`
+error[E0277]: no implementation for `u16 | u32`
+   --> src/src_hdf_device.rs:89:13
+    |
+    |             ^ no implementation for `u16 | u32`
+    |
+    = help: the trait `BitOr<u32>` is not implemented for `u16`
+help: the following other types implement trait `BitOr<Rhs>`
+   --> /data/home/wangshb/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/bit.rs:278:9
+    |
+    |         ^^^^^^^^^^^^^^^^^^^^^^^ `u16` implements `BitOr`
+    | ------------------------------------------------------------------------ in this macro invocation
+    |
+    |
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `&u16` implements `BitOr<u16>`
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `u16` implements `BitOr<&u16>`
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `&u16` implements `BitOr`
+error: could not compile `host__25c1898e1626` (bin "host__25c1898e1626") due to 2 previous errors; 26 warnings emitted

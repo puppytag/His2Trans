@@ -1,0 +1,47 @@
+pub extern "C" fn HdfDriverEntryConstruct() -> i32 {
+    let mut i: i32;
+    let mut driverEntry: *mut crate::types::HdfDriverEntry = std::ptr::null_mut();
+    let mut addrBegin: *mut crate::types::size_t = std::ptr::null_mut();
+    extern "C" {
+        static _hdf_drivers_start: crate::types::size_t;
+        static _hdf_drivers_end: crate::types::size_t;
+    }
+    let count: i32 = (unsafe {
+        (&_hdf_drivers_end as *const crate::types::size_t as *const u8)
+            .offset_from(&_hdf_drivers_start as *const crate::types::size_t as *const u8)
+    } as isize) / std::mem::size_of::<crate::types::size_t>() as isize;
+    if count <= 0 {
+        let _ = crate::compat::HiLogPrint(
+            crate::types::LOG_CORE,
+            crate::types::LOG_ERROR,
+            0xD002510,
+            "driver_loader\0".as_ptr() as *const i8,
+            "%{public}s: no hdf driver exist\0".as_ptr() as *const i8,
+            "HdfDriverEntryConstruct\0".as_ptr() as *const i8,
+        );
+        return crate::types::HDF_FAILURE;
+    }
+    addrBegin = unsafe { &_hdf_drivers_start as *const crate::types::size_t as *mut crate::types::size_t };
+    i = 0;
+    while i < count {
+        driverEntry = unsafe { *addrBegin } as *mut crate::types::HdfDriverEntry;
+        if crate::compat::HdfRegisterDriverEntry(driverEntry as *const crate::types::HdfDriverEntry) != crate::types::HDF_SUCCESS {
+            let moduleName = if !driverEntry.is_null() {
+                unsafe { (*driverEntry).moduleName }
+            } else {
+                "\0".as_ptr() as *const i8
+            };
+            let _ = crate::compat::HiLogPrint(
+                crate::types::LOG_CORE,
+                crate::types::LOG_ERROR,
+                0xD002510,
+                "driver_loader\0".as_ptr() as *const i8,
+                "failed to register driver %{public}s, skip and try another\0".as_ptr() as *const i8,
+                moduleName,
+            );
+        }
+        addrBegin = unsafe { addrBegin.offset(1) };
+        i += 1;
+    }
+    crate::types::HDF_SUCCESS
+}

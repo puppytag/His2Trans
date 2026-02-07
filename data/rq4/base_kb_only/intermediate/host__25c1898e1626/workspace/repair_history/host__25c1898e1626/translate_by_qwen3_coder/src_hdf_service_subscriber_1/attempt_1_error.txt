@@ -1,0 +1,17 @@
+函数: src_hdf_service_subscriber_1
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+  --> src/src_hdf_service_subscriber.rs:17:38
+   |
+   |         ---------------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+   |         |
+   |         arguments to this function are incorrect
+   |
+  --> src/compat.rs:63:12
+   |
+   |            ^^^^^^^^^^^^^ ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+   |
+   |                                                                                               ++++++++++++++++++++
+error: could not compile `host__25c1898e1626` (bin "host__25c1898e1626") due to 1 previous error; 6 warnings emitted

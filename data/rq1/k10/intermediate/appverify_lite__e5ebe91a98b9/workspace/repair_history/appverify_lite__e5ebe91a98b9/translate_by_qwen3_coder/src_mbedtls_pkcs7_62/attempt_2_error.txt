@@ -1,0 +1,86 @@
+函数: src_mbedtls_pkcs7_62
+尝试次数: 2/5
+============================================================
+error: cannot find macro `MBEDTLS_OID_PKCS9_MSG_DIGEST` in this scope
+   --> src/src_mbedtls_pkcs7.rs:834:38
+    |
+    |                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: cannot find macro `MBEDTLS_OID_PKCS9_MSG_DIGEST` in this scope
+   --> src/src_mbedtls_pkcs7.rs:833:21
+    |
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error: cannot find macro `MBEDTLS_OID_PKCS9_MSG_DIGEST` in this scope
+   --> src/src_mbedtls_pkcs7.rs:829:41
+    |
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:807:17
+    |
+    |             -------------------- arguments to this function are incorrect
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u8`
+    |
+   --> src/compat.rs:127:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^                                                                                                      ---
+help: you can convert a `u8` to an `i32`
+    |
+    |                 +                                                        ++++++++
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:822:17
+    |
+    |             -------------------- arguments to this function are incorrect
+    |                 ^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u8`
+    |
+   --> src/compat.rs:127:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^                                                                                                      ---
+help: you can convert a `u8` to an `i32`
+    |
+    |                 +                      ++++++++
+error[E0425]: cannot find function, tuple struct or tuple variant `MBEDTLS_OID_SIZE` in this scope
+   --> src/src_mbedtls_pkcs7.rs:829:24
+    |
+    |                        ^^^^^^^^^^^^^^^^
+    |
+    |
+    | -------------------------------------------------------------------------- similarly named constant `MBEDTLS_OID_UID` defined here
+    |
+help: a constant with a similar name exists
+    |
+    |
+error[E0425]: cannot find function, tuple struct or tuple variant `MBEDTLS_OID_SIZE` in this scope
+   --> src/src_mbedtls_pkcs7.rs:834:21
+    |
+    |                     ^^^^^^^^^^^^^^^^
+    |
+    |
+    | -------------------------------------------------------------------------- similarly named constant `MBEDTLS_OID_UID` defined here
+    |
+help: a constant with a similar name exists
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:846:21
+    |
+    |                 -------------------- arguments to this function are incorrect
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u8`
+    |
+   --> src/compat.rs:127:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^                                                                                                      ---
+help: you can convert a `u8` to an `i32`
+    |
+    |                     +                                                   ++++++++
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:859:21
+    |
+    |                 -------------------- arguments to this function are incorrect
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u8`
+    |
+   --> src/compat.rs:127:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^                                                                                                      ---
+help: you can convert a `u8` to an `i32`
+    |
+    |                     +                               ++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 9 previous errors; 1 warning emitted

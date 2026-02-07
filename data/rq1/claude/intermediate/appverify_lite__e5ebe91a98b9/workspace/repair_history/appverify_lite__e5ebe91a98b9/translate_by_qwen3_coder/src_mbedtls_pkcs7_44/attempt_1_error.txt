@@ -1,0 +1,37 @@
+函数: src_mbedtls_pkcs7_44
+尝试次数: 1/5
+============================================================
+error[E0425]: cannot find value `ROOT_CA_G2_CERT_IN_PEM` in module `crate::globals`
+   --> src/src_mbedtls_pkcs7.rs:711:33
+    |
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^ not found in `crate::globals`
+error[E0425]: cannot find value `ROOT_CA_G2_CERT_IN_PEM` in module `crate::globals`
+   --> src/src_mbedtls_pkcs7.rs:712:56
+    |
+    |                                                        ^^^^^^^^^^^^^^^^^^^^^^ not found in `crate::globals`
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:708:50
+    |
+    |             ------------------------------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut mbedtls_x509_crt`, found `&mut i32`
+    |             |
+    |             arguments to this function are incorrect
+    |
+   --> src/compat.rs:156:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^ ---
+error[E0308]: arguments to this function are incorrect
+   --> src/src_mbedtls_pkcs7.rs:709:18
+    |
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |                 ----------------------------------------------------------------------- expected `u32`, found `usize`
+    |
+   --> src/src_mbedtls_pkcs7.rs:710:17
+    |
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   --> src/compat.rs:157:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^^^ -----                                                                         ------
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                 +                                                                       +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 4 previous errors; 3 warnings emitted

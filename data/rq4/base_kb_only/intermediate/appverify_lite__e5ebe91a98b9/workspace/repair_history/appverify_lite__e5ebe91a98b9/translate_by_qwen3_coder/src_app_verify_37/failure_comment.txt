@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_5
+// func_key: src_app_verify_37
+// c_function: GetBinSignPkcs
+// rust_file: src_app_verify.rs
+// rust_signature: fn GetBinSignPkcs(signBuf: *const c_char, len: i32) -> *mut crate::types::Pkcs7
+// c_first_line: static Pkcs7 *GetBinSignPkcs(const char *signBuf, int32_t len)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/claude-ohos5_B_nosed/intermediate/appverify_lite__e5ebe91a98b9/workspace/repair_history/appverify_lite__e5ebe91a98b9/translate_by_qwen3_coder/_manual_fix/src_app_verify_37/translated_rust.rs
+// last_error_truncated:
+//   error[E0255]: the name `GetSignersCnt` is defined multiple times
+//       --> src/src_mbedtls_pkcs7.rs:2062:1
+//        |
+//        |         ------------- previous import of the value `GetSignersCnt` here
+//        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `GetSignersCnt` redefined here
+//        |
+//   help: you can use `as` to change the binding name of the import
+//        |
+// =================================

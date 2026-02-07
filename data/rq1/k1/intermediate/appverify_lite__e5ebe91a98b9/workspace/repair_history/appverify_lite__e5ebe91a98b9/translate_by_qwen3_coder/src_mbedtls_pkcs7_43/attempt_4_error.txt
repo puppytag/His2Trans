@@ -1,0 +1,27 @@
+函数: src_mbedtls_pkcs7_43
+尝试次数: 4/5
+============================================================
+error[E0425]: cannot find type `mbedtls_rsa_context` in module `crate::compat`
+   --> src/src_mbedtls_pkcs7.rs:771:108
+    |
+    |                                                                                                            ^^^^^^^^^^^^^^^^^^^ not found in `crate::compat`
+    |
+help: consider importing this struct
+    |
+    |
+help: if you import `mbedtls_rsa_context`, refer to it directly
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:769:17
+    |
+    |                                                   --------------------- arguments to this function are incorrect
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `usize`
+    |
+   --> src/compat.rs:157:12
+    |
+    |            ^^^^^^                                                                     ----
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+    |
+    |                 +                           +++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 2 previous errors; 6 warnings emitted

@@ -1,0 +1,21 @@
+函数: src_mbedtls_pkcs7_50
+尝试次数: 1/5
+============================================================
+error[E0133]: call to unsafe function `compat::memset_s` is unsafe and requires unsafe function or block
+   --> src/src_mbedtls_pkcs7.rs:695:13
+    |
+    |  _____________^
+    | |_____^ call to unsafe function
+    |
+error[E0133]: call to unsafe function `compat::mbedtls_x509_crt_verify_info` is unsafe and requires unsafe function or block
+   --> src/src_mbedtls_pkcs7.rs:701:5
+    |
+    | |_____^ call to unsafe function
+    |
+error[E0133]: call to unsafe function `compat::HiLogPrint` is unsafe and requires unsafe function or block
+   --> src/src_mbedtls_pkcs7.rs:707:13
+    |
+    |  _____________^
+    | |_____^ call to unsafe function
+    |
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 3 previous errors; 1 warning emitted

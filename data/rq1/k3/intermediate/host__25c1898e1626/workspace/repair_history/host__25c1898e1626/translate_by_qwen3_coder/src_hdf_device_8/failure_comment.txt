@@ -1,0 +1,18 @@
+// === C2R MANUAL FIX REQUIRED ===
+// reason: repair_failed_after_5
+// func_key: src_hdf_device_8
+// c_function: HdfDeviceConstruct
+// rust_file: src_hdf_device.rs
+// rust_signature: pub extern "C" fn HdfDeviceConstruct(device: *mut crate::types::HdfDevice)
+// c_first_line: void HdfDeviceConstruct(struct HdfDevice *device)
+// saved_translation: /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5_reuseS1_topk3/intermediate/host__25c1898e1626/workspace/repair_history/host__25c1898e1626/translate_by_qwen3_coder/_manual_fix/src_hdf_device_8/translated_rust.rs
+// last_error_truncated:
+//   error[E0308]: mismatched types
+//      --> src/src_hdf_device.rs:136:40
+//       |
+//       |                                   ---- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected "C" fn, found "Rust" fn
+//       |                                   |
+//       |                                   arguments to this enum variant are incorrect
+//       |
+//   help: the type constructed contains `fn(*mut IHdfDevice, *mut HdfDeviceNode) -> i32 {HdfDeviceAttach}` due to the type of the argument passed
+// =================================

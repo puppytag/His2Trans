@@ -1,0 +1,32 @@
+函数: src_mbedtls_pkcs7_53
+尝试次数: 1/5
+============================================================
+error[E0308]: mismatched types
+    --> src/src_mbedtls_pkcs7.rs:1325:13
+     |
+     |         -------------------------------------- arguments to this function are incorrect
+     |             ^^^^^^^^^^^^^^^^^^^^ expected `Option<...>`, found `*mut _`
+     |
+    --> src/compat.rs:156:12
+     |
+     |       ^^^^^^^^^^^^^^^^^^^^^^^                                                                                                                                                                                        ------
+error[E0308]: mismatched types
+    --> src/src_mbedtls_pkcs7.rs:1341:151
+     |
+     |            ---------------------------------------------------------------------------------------------------------------------------------------    ^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+     |            |
+     |            expected because this is `i32`
+     |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+     |
+     |                                                                                                                                                                               ++++++++++++++++++++
+error[E0308]: mismatched types
+    --> src/src_mbedtls_pkcs7.rs:1351:20
+     |
+     |                                                                                                                                                     --- expected `i32` because of return type
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+     |
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+     |
+     |                                                  ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 3 previous errors; 6 warnings emitted

@@ -1,0 +1,71 @@
+函数: src_mbedtls_pkcs7_62
+尝试次数: 2/5
+============================================================
+error[E0433]: failed to resolve: could not find `MBEDTLS_OID_PKCS9_MSG_DIGEST` in `types`
+   --> src/src_mbedtls_pkcs7.rs:858:35
+    |
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ could not find `MBEDTLS_OID_PKCS9_MSG_DIGEST` in `types`
+error[E0433]: failed to resolve: could not find `MBEDTLS_OID_PKCS9_MSG_DIGEST` in `types`
+   --> src/src_mbedtls_pkcs7.rs:854:68
+    |
+    |                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ could not find `MBEDTLS_OID_PKCS9_MSG_DIGEST` in `types`
+error[E0425]: cannot find function, tuple struct or tuple variant `MBEDTLS_OID_SIZE` in module `crate::types`
+   --> src/src_mbedtls_pkcs7.rs:854:37
+    |
+    |                                     ^^^^^^^^^^^^^^^^
+    |
+    |
+    | -------------------------------------------------------------------------- similarly named constant `MBEDTLS_OID_UID` defined here
+    |
+help: a constant with a similar name exists
+    |
+    |
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:835:17
+    |
+    |             ----------------------------------- arguments to this function are incorrect
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |
+   --> src/compat.rs:127:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^                                                                                                      ---
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                 +                                                                            +++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:848:17
+    |
+    |             ----------------------------------- arguments to this function are incorrect
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |
+   --> src/compat.rs:127:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^                                                                                                      ---
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                               ++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:868:21
+    |
+    |                 ----------------------------------- arguments to this function are incorrect
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |
+   --> src/compat.rs:127:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^                                                                                                      ---
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                     +                                                                       +++++++++++++++++++++
+error[E0308]: mismatched types
+   --> src/src_mbedtls_pkcs7.rs:879:21
+    |
+    |                 ----------------------------------- arguments to this function are incorrect
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `i32`, found `u32`
+    |
+   --> src/compat.rs:127:12
+    |
+    |            ^^^^^^^^^^^^^^^^^^^^                                                                                                      ---
+help: you can convert a `u32` to an `i32` and panic if the converted value doesn't fit
+    |
+    |                                                            ++++++++++++++++++++
+error: could not compile `appverify_lite__e5ebe91a98b9` (bin "appverify_lite__e5ebe91a98b9") due to 7 previous errors; 1 warning emitted

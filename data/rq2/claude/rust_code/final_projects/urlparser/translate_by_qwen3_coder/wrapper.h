@@ -1,0 +1,30 @@
+// Auto-generated wrapper header for bindgen
+
+#ifndef __NEED_struct_cpu_set_t
+#define __NEED_struct_cpu_set_t 1
+#endif
+
+#ifndef __must_check
+#define __must_check __attribute__((warn_unused_result))
+#endif
+#ifndef __packed
+#define __packed __attribute__((packed))
+#endif
+#ifndef __aligned
+#define __aligned(x) __attribute__((aligned(x)))
+#endif
+#ifndef __user
+#define __user
+#endif
+#ifndef __force
+#define __force
+#endif
+#ifndef __iomem
+#define __iomem
+#endif
+
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "/data/home/wangshb/c2-rust_framework/translation_outputs/Our/claude-test0125/intermediate/urlparser/workspace/projects/urlparser/src/url.h"
