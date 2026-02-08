@@ -1,13 +1,13 @@
 # His2Trans
 
-This repository contains only:
+This repository contains:
 - `scripts/`: paper metric analysis scripts + one-click run scripts
 - `data/`: the corresponding minimal inputs (translation outputs + test inputs)
 
 ## Run
 
 ```bash
-cd /data/home/wangshb/His2Trans/scripts
+cd scripts
 
 # Run everything (RQ1–RQ4)
 bash run_all_analysis.sh
