@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_device_info_2",
+  "function_name": "HdfDeviceInfoNewInstance",
+  "source_c_file": "src/hdf_device_info.c",
+  "c_code": "struct HdfDeviceInfo * HdfDeviceInfoNewInstance()\n{\n    struct HdfDeviceInfo *deviceInfo =\n            (struct HdfDeviceInfo*)OsalMemCalloc(sizeof(struct HdfDeviceInfo));\n    if (deviceInfo != NULL) {\n        HdfDeviceInfoConstruct(deviceInfo);\n        return deviceInfo;\n    }\n    HDF_LOGE(\"failed to create deviceInfo, oom\");\n    return NULL;\n}",
+  "rust_signature": "pub extern \"C\" fn HdfDeviceInfoNewInstance() -> *mut crate::types::HdfDeviceInfo",
+  "rust_code": "pub extern \\\"C\\\" fn HdfDeviceInfoNewInstance() -> *mut HdfDeviceInfo {\n    unsafe {\n        let deviceInfo = OsalMemCalloc(core::mem::size_of::<HdfDeviceInfo>() as size_t) as *mut HdfDeviceInfo;\n        if !deviceInfo.is_null() {\n            HdfDeviceInfoConstruct(deviceInfo);\n            return deviceInfo;\n        }\n    }\n    core::ptr::null_mut()\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemCalloc",
+      "rust_api": "OsalMemCalloc",
+      "description": "Allocate zeroed memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

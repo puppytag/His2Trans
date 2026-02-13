@@ -1,0 +1,478 @@
+C_Code: 
+size_t qrcodegen_calcSegmentBufferSize(enum qrcodegen_Mode mode, size_t numChars) {
+	int temp = calcSegmentBitLength(mode, numChars);
+	if (temp == -1) {
+		return SIZE_MAX;
+	}
+	if (!(0 <= temp && temp <= INT16_MAX)) {
+		return SIZE_MAX;
+	}
+	return ((size_t)temp + 7) / 8;
+}
+Function: 
+fn calc_bit_length(mode: QrSegmentMode, numchars: usize) -> Option<usize> {
+		// Returns ceil((numer / denom) * numchars)
+		let mul_frac_ceil = |numer: usize, denom: usize|
+			Some(numchars)
+				.and_then(|x| x.checked_mul(numer))
+				.and_then(|x| x.checked_add(denom - 1))
+				.map(|x| x / denom);
+		
+		use QrSegmentMode::*;
+		match mode {
+			Numeric      => mul_frac_ceil(10, 3),
+			Alphanumeric => mul_frac_ceil(11, 2),
+			Byte         => mul_frac_ceil( 8, 1),
+			Kanji        => mul_frac_ceil(13, 1),
+			Eci => {
+				assert_eq!(numchars, 0);
+				Some(3 * 8)
+			},
+		}
+	}
+Unixcoder Score: 0.0908927321434021
+--------------------------------------------------
+C_Code: 
+size_t qrcodegen_calcSegmentBufferSize(enum qrcodegen_Mode mode, size_t numChars) {
+	int temp = calcSegmentBitLength(mode, numChars);
+	if (temp == -1) {
+		return SIZE_MAX;
+	}
+	if (!(0 <= temp && temp <= INT16_MAX)) {
+		return SIZE_MAX;
+	}
+	return ((size_t)temp + 7) / 8;
+}
+Function: 
+fn do_segment_demo() {
+	{  // Illustration "silver"
+		let silver0 = "THE SQUARE ROOT OF 2 IS 1.";
+		let silver1 = "41421356237309504880168872420969807856967187537694807317667973799";
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text(&[silver0, silver1].concat(), &mut tempbuffer, &mut outbuffer,
+			QrCodeEcc::Low, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+		
+		let (tempbuf0, tempbuf1) = tempbuffer.split_at_mut(QrSegment::calc_buffer_size(QrSegmentMode::Alphanumeric, silver0.len()).unwrap());
+		let segs = [
+			QrSegment::make_alphanumeric(silver0, tempbuf0),
+			QrSegment::make_numeric(silver1, tempbuf1),
+		];
+		let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(
+			&segs, &mut outbuffer, QrCodeEcc::Low, Version::MIN, Version::MAX, true).unwrap();
+		std::mem::drop(segs);  // Implied, because segs has references to tempbuffer, but tempbuffer will be reused in encode_codewords()
+		let qr = QrCode::encode_codewords(&mut outbuffer, datacodewordslen, &mut tempbuffer, ecl, version, None);
+		print_qr(&qr);
+	}
+	
+	{  // Illustration "golden"
+		let golden0 = "Golden ratio φ = 1.";
+		let golden1 = "6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374";
+		let golden2 = "......";
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text(&[golden0, golden1, golden2].concat(), &mut tempbuffer, &mut outbuffer,
+			QrCodeEcc::Low, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+		
+		let (tempbuf1, tempbuf2) = tempbuffer.split_at_mut(QrSegment::calc_buffer_size(QrSegmentMode::Numeric, golden1.len()).unwrap());
+		let segs = [
+			QrSegment::make_bytes(golden0.as_bytes()),
+			QrSegment::make_numeric(golden1, tempbuf1),
+			QrSegment::make_alphanumeric(golden2, tempbuf2),
+		];
+		let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(
+			&segs, &mut outbuffer, QrCodeEcc::Low, Version::MIN, Version::MAX, true).unwrap();
+		let qr = QrCode::encode_codewords(&mut outbuffer, datacodewordslen, &mut tempbuffer, ecl, version, None);
+		print_qr(&qr);
+	}
+	
+	{  // Illustration "Madoka": kanji, kana, Cyrillic, full-width Latin, Greek characters
+		let madoka = "「魔法少女まどか☆マギカ」って、　ИАИ　ｄｅｓｕ　κα？";
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text(madoka, &mut outbuffer, &mut tempbuffer,
+			QrCodeEcc::Low, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+		
+		let kanjichars: Vec<u32> = vec![  // Kanji mode encoding (13 bits per character)
+			0x0035, 0x1002, 0x0FC0, 0x0AED, 0x0AD7,
+			0x015C, 0x0147, 0x0129, 0x0059, 0x01BD,
+			0x018D, 0x018A, 0x0036, 0x0141, 0x0144,
+			0x0001, 0x0000, 0x0249, 0x0240, 0x0249,
+			0x0000, 0x0104, 0x0105, 0x0113, 0x0115,
+			0x0000, 0x0208, 0x01FF, 0x0008,
+		];
+		let mut bb = qrcodegen::BitBuffer::new(&mut tempbuffer);
+		for &c in &kanjichars {
+			bb.append_bits(c, 13);
+		}
+		let segs = [
+			{
+				let bitlen = bb.len();
+				QrSegment::new(qrcodegen::QrSegmentMode::Kanji, kanjichars.len(), &tempbuffer, bitlen)
+			},
+		];
+		let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(
+			&segs, &mut outbuffer, QrCodeEcc::Low, Version::MIN, Version::MAX, true).unwrap();
+		let qr = QrCode::encode_codewords(&mut outbuffer, datacodewordslen, &mut tempbuffer, ecl, version, None);
+		print_qr(&qr);
+	}
+}
+Unixcoder Score: 0.06870272755622864
+--------------------------------------------------
+C_Code: 
+inline void SetMode(rust::str taskId, int32_t mode)
+{
+    std::string tid = std::string(taskId);
+    RequestAction::GetInstance()->SetMode(tid, static_cast<Mode>(mode));
+}
+Function: 
+fn main() {
+    SetAccessTokenPermission();
+    println!("Please Input Test CASE");
+    println!("1. Disable Task Notification Bar");
+    println!("2. Set Task Mode");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    match input.trim() {
+        "1" => loop {
+            println!("please input TaskId");
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            DisableTaskNotification(input.trim());
+        },
+        "2" => loop {
+            println!("please input TaskId");
+            let mut task_id = String::new();
+            std::io::stdin().read_line(&mut task_id).unwrap();
+            println!("please input Mode 0 for background 1 for foreground");
+            let mut mode = String::new();
+            std::io::stdin().read_line(&mut mode).unwrap();
+            let mode = match mode.trim() {
+                "0" => 0,
+                "1" => 1,
+                _ => {
+                    println!("invalid mode");
+                    continue;
+                }
+            };
+            SetMode(task_id.trim(), mode);
+        },
+        _ => {
+            println!("invalid inpu");
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.c", "source_rust_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.rs", "c_api": "queryRet->GetLong(0, action)", "rust_api": "info.action", "mapping_type": "method", "description": "Data field access from query result", "reasoning": "[Task Analysis] C function handles database query and result parsing; Rust function retrieves and maps data from database. [Similarity] Names don't match but both perform data retrieval and transformation. [Knowledge Extraction] Found API mappings for database query and data transformation, but no full structural match due to different domains (C: low-level DB access, Rust: high-level data processing)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.c", "source_rust_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.rs", "c_api": "queryRet->GetLong(3, priority)", "rust_api": "info.priority", "mapping_type": "method", "description": "Data field access from query result", "reasoning": "[Task Analysis] C function handles database query and result parsing; Rust function retrieves and maps data from database. [Similarity] Names don't match but both perform data retrieval and transformation. [Knowledge Extraction] Found API mappings for database query and data transformation, but no full structural match due to different domains (C: low-level DB access, Rust: high-level data processing)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.c", "source_rust_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.rs", "c_api": "queryRet->GetLong(2, state)", "rust_api": "info.state", "mapping_type": "method", "description": "Data field access from query result", "reasoning": "[Task Analysis] C function handles database query and result parsing; Rust function retrieves and maps data from database. [Similarity] Names don't match but both perform data retrieval and transformation. [Knowledge Extraction] Found API mappings for database query and data transformation, but no full structural match due to different domains (C: low-level DB access, Rust: high-level data processing)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.c", "source_rust_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.rs", "c_api": "queryRet->GetLong(1, mode)", "rust_api": "info.mode", "mapping_type": "method", "description": "Data field access from query result", "reasoning": "[Task Analysis] C function handles database query and result parsing; Rust function retrieves and maps data from database. [Similarity] Names don't match but both perform data retrieval and transformation. [Knowledge Extraction] Found API mappings for database query and data transformation, but no full structural match due to different domains (C: low-level DB access, Rust: high-level data processing)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.c", "source_rust_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.rs", "c_api": "queryRet->GetRowCount(rowCount)", "rust_api": "info.task_id", "mapping_type": "method", "description": "Data field access from query result", "reasoning": "[Task Analysis] C function handles database query and result parsing; Rust function retrieves and maps data from database. [Similarity] Names don't match but both perform data retrieval and transformation. [Knowledge Extraction] Found API mappings for database query and data transformation, but no full structural match due to different domains (C: low-level DB access, Rust: high-level data processing)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.c", "source_rust_file": "API_Mapping__GetTaskQosInfo__idx629_rank4.rs", "c_api": "store_->QueryByStep(std::string(sql))", "rust_api": "RequestDb::get_instance().get_app_task_qos_infos(uid)", "mapping_type": "function", "description": "Database query execution", "reasoning": "[Task Analysis] C function handles database query and result parsing; Rust function retrieves and maps data from database. [Similarity] Names don't match but both perform data retrieval and transformation. [Knowledge Extraction] Found API mappings for database query and data transformation, but no full structural match due to different domains (C: low-level DB access, Rust: high-level data processing)."}]
+Unixcoder Score: 0.05761001259088516
+--------------------------------------------------
+C_Code: 
+size_t qrcodegen_calcSegmentBufferSize(enum qrcodegen_Mode mode, size_t numChars) {
+	int temp = calcSegmentBitLength(mode, numChars);
+	if (temp == -1) {
+		return SIZE_MAX;
+	}
+	if (!(0 <= temp && temp <= INT16_MAX)) {
+		return SIZE_MAX;
+	}
+	return ((size_t)temp + 7) / 8;
+}
+Function: 
+fn calc_bit_length(mode: QrSegmentMode, numchars: usize) -> Option<usize> {
+		// Returns ceil((numer / denom) * numchars)
+		let mul_frac_ceil = |numer: usize, denom: usize|
+			Some(numchars)
+				.and_then(|x| x.checked_mul(numer))
+				.and_then(|x| x.checked_add(denom - 1))
+				.map(|x| x / denom);
+		
+		use QrSegmentMode::*;
+		match mode {
+			Numeric      => mul_frac_ceil(10, 3),
+			Alphanumeric => mul_frac_ceil(11, 2),
+			Byte         => mul_frac_ceil( 8, 1),
+			Kanji        => mul_frac_ceil(13, 1),
+			Eci => {
+				assert_eq!(numchars, 0);
+				Some(3 * 8)
+			},
+		}
+	}
+Unixcoder Score: 0.05643395334482193
+--------------------------------------------------
+C_Code: 
+size_t qrcodegen_calcSegmentBufferSize(enum qrcodegen_Mode mode, size_t numChars) {
+	int temp = calcSegmentBitLength(mode, numChars);
+	if (temp == -1) {
+		return SIZE_MAX;
+	}
+	if (!(0 <= temp && temp <= INT16_MAX)) {
+		return SIZE_MAX;
+	}
+	return ((size_t)temp + 7) / 8;
+}
+Function: 
+pub fn calc_buffer_size(mode: QrSegmentMode, numchars: usize) -> Option<usize> {
+		let temp = Self::calc_bit_length(mode, numchars)?;
+		Some(temp / 8 + usize::from(temp % 8 != 0))  // ceil(temp / 8)
+	}
+Unixcoder Score: 0.05579261854290962
+--------------------------------------------------
+C_Code: 
+napi_value PropNExporter::MkdirSync(napi_env env, napi_callback_info info)
+{
+    NFuncArg funcArg(env, info);
+    if (!funcArg.InitArgs(NARG_CNT::ONE, NARG_CNT::TWO)) {
+        UniError(EINVAL).ThrowErr(env, "Number of arguments unmatched");
+        return nullptr;
+    }
+
+    auto [succ, path, ignore] = NVal(env, funcArg[NARG_POS::FIRST]).ToUTF8StringPath();
+    if (!succ) {
+        UniError(EINVAL).ThrowErr(env, "Invalid path");
+        return nullptr;
+    }
+
+    int32_t mode = MODE_RUO_RWX;
+    if (funcArg.GetArgc() >= NARG_CNT::TWO) {
+        bool succ = false;
+        tie(succ, mode) = NVal(env, funcArg[NARG_POS::SECOND]).ToInt32(mode);
+        if (!succ || mode < 0) {
+            UniError(EINVAL).ThrowErr(env, "Invalid mode");
+            return nullptr;
+        }
+    }
+    int ret = mkdir(path.get(), mode);
+    if (ret == -1) {
+        UniError(errno).ThrowErr(env);
+        return nullptr;
+    }
+
+    return NVal::CreateUndefined(env).val_;
+}
+Function: 
+pub(crate) fn create_dir(path: *const c_char, mode: MakeDirectionMode) -> Result<(), Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = unsafe { CStr::from_ptr(path) };
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    match mode {
+        MakeDirectionMode::Single => fs::create_dir(path),
+        MakeDirectionMode::Multiple => fs::create_dir_all(path),
+    }
+}
+Unixcoder Score: 0.054775070399045944
+--------------------------------------------------
+C_Code: 
+size_t qrcodegen_calcSegmentBufferSize(enum qrcodegen_Mode mode, size_t numChars) {
+	int temp = calcSegmentBitLength(mode, numChars);
+	if (temp == -1) {
+		return SIZE_MAX;
+	}
+	if (!(0 <= temp && temp <= INT16_MAX)) {
+		return SIZE_MAX;
+	}
+	return ((size_t)temp + 7) / 8;
+}
+Function: 
+pub fn calc_buffer_size(mode: QrSegmentMode, numchars: usize) -> Option<usize> {
+		let temp = Self::calc_bit_length(mode, numchars)?;
+		Some(temp / 8 + usize::from(temp % 8 != 0))  // ceil(temp / 8)
+	}
+Unixcoder Score: 0.04412110522389412
+--------------------------------------------------
+C_Code: 
+int uv_tty_set_mode(uv_tty_t* tty, int mode) {
+  DWORD flags = 0;
+  unsigned char was_reading;
+  uv_alloc_cb alloc_cb;
+  uv_read_cb read_cb;
+
+  if (!!mode == !!(tty->flags & UV_HANDLE_TTY_RAW)) {
+    return 0;
+  }
+
+  if (tty->original_console_mode & ENABLE_QUICK_EDIT_MODE) {
+    flags = ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS;
+  }
+
+  if (mode) {
+    /* Raw input */
+    flags |= ENABLE_WINDOW_INPUT;
+  } else {
+    /* Line-buffered mode. */
+    flags |= ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT |
+        ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT;
+  }
+
+  if (!SetConsoleMode(tty->handle, flags)) {
+    uv__set_sys_error(tty->loop, GetLastError());
+    return -1;
+  }
+
+  /* If currently reading, stop, and restart reading. */
+  if (tty->flags & UV_HANDLE_READING) {
+    was_reading = 1;
+    alloc_cb = tty->alloc_cb;
+    read_cb = tty->read_cb;
+
+    if (was_reading && uv_tty_read_stop(tty) != 0) {
+      return -1;
+    }
+  } else {
+    was_reading = 0;
+  }
+
+  /* Update flag. */
+  tty->flags &= ~UV_HANDLE_TTY_RAW;
+  tty->flags |= mode ? UV_HANDLE_TTY_RAW : 0;
+
+  /* If we just stopped reading, restart. */
+  if (was_reading && uv_tty_read_start(tty, alloc_cb, read_cb) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+Function: 
+pub unsafe fn tty_set_mode(tty: *uv_tty_t, mode: c_int) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+    rust_uv_tty_set_mode(tty, mode)
+}
+Unixcoder Score: 0.009575719945132732
+--------------------------------------------------
+C_Code: 
+int uv_tty_set_mode(uv_tty_t* tty, int mode) {
+  DWORD flags = 0;
+  unsigned char was_reading;
+  uv_alloc_cb alloc_cb;
+  uv_read_cb read_cb;
+
+  if (!!mode == !!(tty->flags & UV_HANDLE_TTY_RAW)) {
+    return 0;
+  }
+
+  if (tty->original_console_mode & ENABLE_QUICK_EDIT_MODE) {
+    flags = ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS;
+  }
+
+  if (mode) {
+    /* Raw input */
+    flags |= ENABLE_WINDOW_INPUT;
+  } else {
+    /* Line-buffered mode. */
+    flags |= ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT |
+        ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT;
+  }
+
+  if (!SetConsoleMode(tty->handle, flags)) {
+    uv__set_sys_error(tty->loop, GetLastError());
+    return -1;
+  }
+
+  /* If currently reading, stop, and restart reading. */
+  if (tty->flags & UV_HANDLE_READING) {
+    was_reading = 1;
+    alloc_cb = tty->alloc_cb;
+    read_cb = tty->read_cb;
+
+    if (was_reading && uv_tty_read_stop(tty) != 0) {
+      return -1;
+    }
+  } else {
+    was_reading = 0;
+  }
+
+  /* Update flag. */
+  tty->flags &= ~UV_HANDLE_TTY_RAW;
+  tty->flags |= mode ? UV_HANDLE_TTY_RAW : 0;
+
+  /* If we just stopped reading, restart. */
+  if (was_reading && uv_tty_read_start(tty, alloc_cb, read_cb) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+Function: 
+pub fn set_mode(&self, raw: bool) -> Result<(), uv::UvError> {
+        let raw = raw as libc::c_int;
+        match unsafe { uvll::uv_tty_set_mode(self.native_handle(), raw) } {
+            0 => Ok(()),
+            n => Err(uv::UvError(n))
+        }
+    }
+Unixcoder Score: 0.001367695163935423
+--------------------------------------------------
+C_Code: 
+int uv_tty_set_mode(uv_tty_t* tty, int mode) {
+  DWORD flags = 0;
+  unsigned char was_reading;
+  uv_alloc_cb alloc_cb;
+  uv_read_cb read_cb;
+
+  if (!!mode == !!(tty->flags & UV_HANDLE_TTY_RAW)) {
+    return 0;
+  }
+
+  if (tty->original_console_mode & ENABLE_QUICK_EDIT_MODE) {
+    flags = ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS;
+  }
+
+  if (mode) {
+    /* Raw input */
+    flags |= ENABLE_WINDOW_INPUT;
+  } else {
+    /* Line-buffered mode. */
+    flags |= ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT |
+        ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT;
+  }
+
+  if (!SetConsoleMode(tty->handle, flags)) {
+    uv__set_sys_error(tty->loop, GetLastError());
+    return -1;
+  }
+
+  /* If currently reading, stop, and restart reading. */
+  if (tty->flags & UV_HANDLE_READING) {
+    was_reading = 1;
+    alloc_cb = tty->alloc_cb;
+    read_cb = tty->read_cb;
+
+    if (was_reading && uv_tty_read_stop(tty) != 0) {
+      return -1;
+    }
+  } else {
+    was_reading = 0;
+  }
+
+  /* Update flag. */
+  tty->flags &= ~UV_HANDLE_TTY_RAW;
+  tty->flags |= mode ? UV_HANDLE_TTY_RAW : 0;
+
+  /* If we just stopped reading, restart. */
+  if (was_reading && uv_tty_read_start(tty, alloc_cb, read_cb) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+Function: 
+pub fn set_mode(&self, raw: bool) -> Result<(), UvError> {
+        let raw = raw as libc::c_int;
+        match unsafe { uvll::tty_set_mode(self.native_handle(), raw) } {
+            0 => Ok(()),
+            n => Err(UvError(n))
+        }
+    }
+Unixcoder Score: 0.0009720597299747169
+--------------------------------------------------

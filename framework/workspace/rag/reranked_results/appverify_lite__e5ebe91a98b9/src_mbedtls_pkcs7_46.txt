@@ -1,0 +1,420 @@
+C_Code: 
+static void LoadCaCertFromMemory(X509_STORE *store, const std::string &pemCerts)
+{
+    if (!store || pemCerts.empty() || pemCerts.size() > static_cast<size_t>(INT_MAX)) {
+        return;
+    }
+
+    auto cbio = BIO_new_mem_buf(pemCerts.data(), static_cast<int>(pemCerts.size()));
+    if (!cbio) {
+        return;
+    }
+
+    auto inf = PEM_X509_INFO_read_bio(cbio, nullptr, nullptr, nullptr);
+    if (!inf) {
+        BIO_free(cbio);
+        return;
+    }
+
+    /* add each entry from PEM file to x509_store */
+    for (int i = 0; i < static_cast<int>(sk_X509_INFO_num(inf)); ++i) {
+        auto itmp = sk_X509_INFO_value(inf, i);
+        if (!itmp) {
+            continue;
+        }
+        if (itmp->x509) {
+            X509_STORE_add_cert(store, itmp->x509);
+        }
+        if (itmp->crl) {
+            X509_STORE_add_crl(store, itmp->crl);
+        }
+    }
+
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    BIO_free(cbio);
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx25378_rank4.c", "source_rust_file": "API_Mapping__fromRust__idx25378_rank4.rs", "c_api": "case LLVMRustDebugEmissionKind::NoDebug:", "rust_api": "if let VarDebugInfoContents::Place(p) = debuginfo.value", "mapping_type": "pattern", "description": "Enum case matching and conditional logic for debug information handling", "reasoning": "[Task Analysis] C function converts an enum value using a switch statement, while Rust function processes debug information in a loop with conditional checks. [Similarity] No structural similarity at the function level due to different domains (LLVM debug emission kind conversion vs. Rust debug info processing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to debug information handling and enum conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx25378_rank4.c", "source_rust_file": "API_Mapping__fromRust__idx25378_rank4.rs", "c_api": "report_fatal_error(\"bad DebugEmissionKind.\")", "rust_api": "default: // implicit fallback in Rust", "mapping_type": "pattern", "description": "Error handling for invalid enum values", "reasoning": "[Task Analysis] C function converts an enum value using a switch statement, while Rust function processes debug information in a loop with conditional checks. [Similarity] No structural similarity at the function level due to different domains (LLVM debug emission kind conversion vs. Rust debug info processing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to debug information handling and enum conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx25378_rank4.c", "source_rust_file": "API_Mapping__fromRust__idx25378_rank4.rs", "c_api": "case LLVMRustDebugEmissionKind::FullDebug:", "rust_api": "if p.local == local && p.projection.is_empty()", "mapping_type": "pattern", "description": "Conditional checks for matching debug information attributes", "reasoning": "[Task Analysis] C function converts an enum value using a switch statement, while Rust function processes debug information in a loop with conditional checks. [Similarity] No structural similarity at the function level due to different domains (LLVM debug emission kind conversion vs. Rust debug info processing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to debug information handling and enum conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx25378_rank4.c", "source_rust_file": "API_Mapping__fromRust__idx25378_rank4.rs", "c_api": "case LLVMRustDebugEmissionKind::DebugDirectivesOnly:", "rust_api": "debuginfo.value = VarDebugInfoContents::Const(constant)", "mapping_type": "function", "description": "Updating debug information with constant value", "reasoning": "[Task Analysis] C function converts an enum value using a switch statement, while Rust function processes debug information in a loop with conditional checks. [Similarity] No structural similarity at the function level due to different domains (LLVM debug emission kind conversion vs. Rust debug info processing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to debug information handling and enum conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx25378_rank4.c", "source_rust_file": "API_Mapping__fromRust__idx25378_rank4.rs", "c_api": "case LLVMRustDebugEmissionKind::LineTablesOnly:", "rust_api": "trace!(\"changing debug info for {:?} from place {:?} to constant {:?}\", debuginfo.name, p, constant)", "mapping_type": "pattern", "description": "Debug logging and transformation of debug information", "reasoning": "[Task Analysis] C function converts an enum value using a switch statement, while Rust function processes debug information in a loop with conditional checks. [Similarity] No structural similarity at the function level due to different domains (LLVM debug emission kind conversion vs. Rust debug info processing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to debug information handling and enum conversion patterns."}]
+Unixcoder Score: 0.09080061316490173
+--------------------------------------------------
+C_Code: 
+static int VerifyCallback(int preverifyOk, X509_STORE_CTX *ctx)
+{
+    X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+    int err = X509_STORE_CTX_get_error(ctx);
+    int depth = X509_STORE_CTX_get_error_depth(ctx);
+
+    NETSTACK_LOGI("X509_STORE_CTX error code %{public}d, depth %{public}d", err, depth);
+
+    SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+    SSL_CTX *sslctx = SSL_get_SSL_CTX(ssl);
+    RequestContext *requestContext = static_cast<RequestContext *>(SSL_CTX_get_ex_data(sslctx,
+        SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX));
+    if (requestContext == nullptr) {
+        NETSTACK_LOGE("creat requestContext instance failed");
+        return 0;
+    }
+    if (requestContext->IsRootCaVerifiedOk()) {
+        // root CA hash verified, normal procedure.
+        return preverifyOk;
+    }
+
+    int verifyResult = VerifyCertPubkey(cert, requestContext->GetPinnedPubkey());
+    if (!requestContext->IsRootCaVerified()) {
+        // not verified yet, so this is the root CA verifying.
+        NETSTACK_LOGD("Verifying Root CA.");
+        requestContext->SetRootCaVerifiedOk(verifyResult == CURLE_OK);
+        requestContext->SetRootCaVerified();
+    }
+    if (verifyResult != CURLE_OK && depth == 0) {
+        // peer site certificate, since root ca verify not ok, and peer site is also not ok
+        // return failed.
+        return 0;
+    }
+    return preverifyOk;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGE(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Error logging during certificate handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGI(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Logging certificate verification status", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error_depth(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Certificate chain depth information", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error(ctx)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Certificate validation result handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGD(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Debug logging for root CA verification", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "VerifyCertPubkey(cert, requestContext->GetPinnedPubkey())", "rust_api": "self.0.add_root_certificate(cert)", "mapping_type": "function", "description": "Public key verification for certificate", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_current_cert(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Extract certificate from SSL context", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}]
+Unixcoder Score: 0.030791401863098145
+--------------------------------------------------
+C_Code: 
+CURLcode VerifyRootCaSslCtxFunction(CURL *curl, void *sslCtx, void *context)
+{
+#ifdef HTTP_ONLY_VERIFY_ROOT_CA_ENABLE
+    SSL_CTX *ctx = static_cast<SSL_CTX *>(sslCtx);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, VerifyCallback);
+    SSL_CTX_set_ex_data(ctx, SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX, context);
+#endif
+    return CURLE_OK;
+}
+Function: 
+pub fn tls_built_in_root_certs(self, tls_built_in_root_certs: bool) -> ClientBuilder {
+        Self(self.0.tls_built_in_root_certs(tls_built_in_root_certs))
+    }
+Unixcoder Score: 0.017300324514508247
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn build_task_certificate_pins(
+    config: &TaskConfig,
+) -> Result<Option<PubKeyPins>, Box<dyn Error + Send + Sync>> {
+    if config.certificate_pins.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(cvt_res_error!(
+        PubKeyPins::builder()
+            .add(&config.url, &config.certificate_pins)
+            .build()
+            .map_err(Box::new),
+        "Create task certificate pinned_key failed",
+    )))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__calcSegmentBitLength__idx144464_rank2.c", "source_rust_file": "API_Mapping__calcSegmentBitLength__idx144464_rank2.rs", "c_api": "if (mode == qrcodegen_Mode_NUMERIC)\n\tresult = (result * 10 + 2) / 3;\nelse if (mode == qrcodegen_Mode_ALPHANUMERIC)\n\tresult = (result * 11 + 1) / 2;\nelse if (mode == qrcodegen_Mode_BYTE)\n\tresult *= 8;\nelse if (mode == qrcodegen_Mode_KANJI)\n\tresult *= 13;\nelse if (mode == qrcodegen_Mode_ECI && numChars == 0)\n\tresult = 3 * 8;", "rust_api": "match self {\n\t\tNumeric      => 0x1,\n\t\tAlphanumeric => 0x2,\n\t\tByte         => 0x4,\n\t\tKanji        => 0x8,\n\t\tEci          => 0x7,\n\t}", "mapping_type": "pattern", "description": "Mode-based bit length calculation in C vs mode-to-value mapping in Rust", "reasoning": "[Task Analysis] C function calculates bit length based on QR code mode and character count; Rust function returns mode-specific bit values. [Similarity] No structural similarity at function level due to different logic and control flow. [Knowledge Extraction] C uses conditional arithmetic to compute result, Rust uses pattern matching to return constants. No full or partial match. API mappings found: C's mode-based calculation corresponds to Rust's mode-to-value mapping."}]
+Unixcoder Score: -0.02742764540016651
+--------------------------------------------------
+C_Code: 
+uint32_t VerifyCert(const CertBlob *cert, const CertBlob *caCert)
+{
+    uint32_t verifyResult = SSL_X509_V_ERR_UNSPECIFIED;
+    X509 *certX509 = nullptr;
+    X509 *caX509 = nullptr;
+    X509_STORE *store = nullptr;
+    X509_STORE_CTX *ctx = nullptr;
+    do {
+        certX509 = CertBlobToX509(cert);
+        if (certX509 == nullptr) {
+            NETSTACK_LOGE("x509 of cert is nullptr\n");
+        }
+        caX509 = CertBlobToX509(caCert);
+        if (caX509 == nullptr) {
+            NETSTACK_LOGE("x509 of ca is nullptr\n");
+        }
+        store = X509_STORE_new();
+        if (store == nullptr) {
+            continue;
+        }
+        if (X509_STORE_add_cert(store, caX509) != VERIFY_RESULT_SUCCESS) {
+            NETSTACK_LOGE("add ca to store failed\n");
+        }
+        ctx = X509_STORE_CTX_new();
+        if (ctx == nullptr) {
+            continue;
+        }
+        X509_STORE_CTX_init(ctx, store, certX509, nullptr);
+        verifyResult = static_cast<uint32_t>(X509_verify_cert(ctx));
+        if (verifyResult != VERIFY_RESULT_SUCCESS) {
+            verifyResult = static_cast<uint32_t>(X509_STORE_CTX_get_error(ctx) + SSL_ERROR_CODE_BASE);
+            NETSTACK_LOGE("failed to verify certificate: %{public}s (%{public}d)\n",
+                          X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)), verifyResult);
+            break;
+        } else {
+            verifyResult = X509_V_OK;
+            NETSTACK_LOGD("certificate validation succeeded.\n");
+        }
+    } while (false);
+
+    FreeResources(&certX509, &caX509, &store, &ctx);
+    return verifyResult;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseParams__idx5340_rank2.c", "source_rust_file": "Partial__ParseParams__idx5340_rank2.rs", "c_api": "options.SetConnectTimeout(ops->connectTimeout)", "rust_api": "r.headers.insert(...)", "mapping_type": "function", "description": "Setting connection timeout via header insertion", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP headers. [Similarity] Names don't match but both involve setting HTTP request properties. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs header setting). Partial match in control flow pattern (if-else logic for optional fields). API mappings found for header setting operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseParams__idx5340_rank2.c", "source_rust_file": "Partial__ParseParams__idx5340_rank2.rs", "c_api": "options.SetMaxLimit(ops->maxLimit)", "rust_api": "r.headers.insert(...)", "mapping_type": "function", "description": "Setting limit parameters via header insertion", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP headers. [Similarity] Names don't match but both involve setting HTTP request properties. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs header setting). Partial match in control flow pattern (if-else logic for optional fields). API mappings found for header setting operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseParams__idx5340_rank2.c", "source_rust_file": "Partial__ParseParams__idx5340_rank2.rs", "c_api": "options.SetReadTimeout(ops->readTimeout)", "rust_api": "r.headers.insert(...)", "mapping_type": "function", "description": "Setting timeout parameters via header insertion", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP headers. [Similarity] Names don't match but both involve setting HTTP request properties. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs header setting). Partial match in control flow pattern (if-else logic for optional fields). API mappings found for header setting operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseParams__idx5340_rank2.c", "source_rust_file": "Partial__ParseParams__idx5340_rank2.rs", "c_api": "options.SetUrl(url)", "rust_api": "r.headers.insert(...)", "mapping_type": "function", "description": "Setting HTTP request properties (URL vs headers)", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP headers. [Similarity] Names don't match but both involve setting HTTP request properties. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs header setting). Partial match in control flow pattern (if-else logic for optional fields). API mappings found for header setting operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ParseParams__idx5340_rank2.c", "source_rust_file": "Partial__ParseParams__idx5340_rank2.rs", "c_fragment": "if (ops != nullptr) {\n        options.SetMethod(std::string(ops->method));\n        options.SetReadTimeout(ops->readTimeout);\n        options.SetMaxLimit(ops->maxLimit);\n        options.SetConnectTimeout(ops->connectTimeout);", "rust_fragment": "self.inner = self.inner.and_then(|mut r| {\n            r.headers.insert(\n                HeaderName::from_bytes(name.as_bytes())\n                    .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?,\n                value\n                    .parse()\n                    .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?,\n            );\n            Ok(r)\n        });", "description": "Both use conditional logic to set properties when input is present", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP headers. [Similarity] Names don't match but both involve setting HTTP request properties. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs header setting). Partial match in control flow pattern (if-else logic for optional fields). API mappings found for header setting operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseParams__idx5340_rank2.c", "source_rust_file": "Partial__ParseParams__idx5340_rank2.rs", "c_api": "options.SetMethod(std::string(ops->method))", "rust_api": "r.headers.insert(...)", "mapping_type": "function", "description": "Setting HTTP method via header insertion", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP headers. [Similarity] Names don't match but both involve setting HTTP request properties. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs header setting). Partial match in control flow pattern (if-else logic for optional fields). API mappings found for header setting operations."}]
+Unixcoder Score: -0.031406138092279434
+--------------------------------------------------
+C_Code: 
+bool TLSContextServer::SetDefaultCa(TLSContextServer *tlsContext, const TLSConfiguration &configuration)
+{
+#ifdef HAS_NETMANAGER_BASE
+    auto hostname = CommonUtils::GetHostnameFromURL(configuration.GetNetAddress().GetAddress());
+    // customize trusted CAs.
+    std::vector<std::string> cert_paths;
+
+    if (NetManagerStandard::NetworkSecurityConfig::GetInstance().
+        GetTrustAnchorsForHostName(hostname, cert_paths) != 0) {
+        NETSTACK_LOGE("get customize trusted CAs failed");
+        return false;
+    }
+    for (const auto &path : cert_paths) {
+        if (!X509_STORE_load_path(SSL_CTX_get_cert_store(tlsContext->ctx_), path.c_str())) {
+            NETSTACK_LOGE("load customize certificates failed");
+            return false;
+        }
+    }
+#endif // HAS_NETMANAGER_BASE
+
+    if (access(ROOT_CERT_PATH.c_str(), F_OK | R_OK) == 0) {
+        NETSTACK_LOGD("root CA certificates folder exist and can read");
+        if (!X509_STORE_load_path(SSL_CTX_get_cert_store(tlsContext->ctx_), ROOT_CERT_PATH.c_str())) {
+            NETSTACK_LOGE("load root certificates failed");
+            return false;
+        }
+    } else {
+        NETSTACK_LOGD("root CA certificates folder not exist or can not read");
+    }
+    std::string userCertPath = BASE_PATH + std::to_string(getuid() / UID_TRANSFORM_DIVISOR);
+    if (access(userCertPath.c_str(), F_OK | R_OK) == 0) {
+        NETSTACK_LOGD("user CA certificates folder exist and can read");
+        if (!X509_STORE_load_path(SSL_CTX_get_cert_store(tlsContext->ctx_), userCertPath.c_str())) {
+            NETSTACK_LOGE("load user certificates failed");
+            return false;
+        }
+    } else {
+        NETSTACK_LOGD("user CA certificates folder not exist or can not read");
+    }
+    if (!X509_STORE_load_path(SSL_CTX_get_cert_store(tlsContext->ctx_), SYSTEM_REPLACE_CA_PATH.c_str())) {
+        NETSTACK_LOGE("load system replace certificates failed");
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_ares_init_options__idx132614_rank1.c", "source_rust_file": "API_Mapping__uv_ares_init_options__idx132614_rank1.rs", "c_api": "ev_timer_init", "rust_api": "ll::async_t", "mapping_type": "function", "description": "Timer/event initialization", "reasoning": "[Task Analysis] C function initializes ares DNS channel with options, sets callbacks, and initializes a timer; Rust function initializes an async handler with a pointer. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API-like patterns in the FFI calls and initialization logic that could be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_ares_init_options__idx132614_rank1.c", "source_rust_file": "API_Mapping__uv_ares_init_options__idx132614_rank1.rs", "c_api": "uv__set_artificial_error", "rust_api": "fail ll::get_last_err_info", "mapping_type": "function", "description": "Error handling and reporting", "reasoning": "[Task Analysis] C function initializes ares DNS channel with options, sets callbacks, and initializes a timer; Rust function initializes an async handler with a pointer. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API-like patterns in the FFI calls and initialization logic that could be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_ares_init_options__idx132614_rank1.c", "source_rust_file": "API_Mapping__uv_ares_init_options__idx132614_rank1.rs", "c_api": "ares_init_options", "rust_api": "ll::async_init", "mapping_type": "function", "description": "Channel/async initialization with configuration", "reasoning": "[Task Analysis] C function initializes ares DNS channel with options, sets callbacks, and initializes a timer; Rust function initializes an async handler with a pointer. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API-like patterns in the FFI calls and initialization logic that could be mapped."}]
+Unixcoder Score: -0.043237462639808655
+--------------------------------------------------
+C_Code: 
+CaCertCache() = default;
+Function: 
+fn default() -> Self {
+        Self::new()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx110377_rank4.c", "source_rust_file": "API_Mapping__fromRust__idx110377_rank4.rs", "c_api": "switch (Kind) { case LLVMRustDebugEmissionKind::NoDebug: return DICompileUnit::DebugEmissionKind::NoDebug; ... }", "rust_api": "match s { \"unversioned-shared-resources\" => Ok(Unversioned), ... }", "mapping_type": "pattern", "description": "Enum value mapping from one representation to another", "reasoning": "[Task Analysis] The C function converts an enum from a Rust type to a C enum, while the Rust function converts a string to an enum variant. [Similarity] The structures are different: C uses a switch-case, Rust uses a match expression. [Knowledge Extraction] No full structural match due to different control flow and data types. However, both represent enum conversion logic, so API mappings are extracted."}]
+Unixcoder Score: -0.04392097145318985
+--------------------------------------------------
+C_Code: 
+CURLcode VerifyRootCaSslCtxFunction(CURL *curl, void *sslCtx, void *context)
+{
+#ifdef HTTP_ONLY_VERIFY_ROOT_CA_ENABLE
+    SSL_CTX *ctx = static_cast<SSL_CTX *>(sslCtx);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, VerifyCallback);
+    SSL_CTX_set_ex_data(ctx, SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX, context);
+#endif
+    return CURLE_OK;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Unixcoder Score: -0.04501801356673241
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "c_api": "result *= 13;", "rust_api": "mul_frac_ceil(13, 1)", "mapping_type": "function", "description": "Direct multiplication for kanji mode", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "c_api": "result = 3 * 8;", "rust_api": "Some(3 * 8)", "mapping_type": "function", "description": "Fixed value assignment for ECI mode", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "c_api": "result = (result * 10 + 2) / 3;", "rust_api": "mul_frac_ceil(10, 3)", "mapping_type": "function", "description": "Ceiling division calculation for numeric mode", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns."}, {"knowledge_type": "Full", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "c_api": "result = (result * 11 + 1) / 2;", "rust_api": "mul_frac_ceil(11, 2)", "mapping_type": "function", "description": "Ceiling division calculation for alphanumeric mode", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "c_api": "result *= 8;", "rust_api": "mul_frac_ceil( 8, 1)", "mapping_type": "function", "description": "Direct multiplication for byte mode", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "c_fragment": "if (numChars > (unsigned int)INT16_MAX)\n\treturn -1;\nlong result = (long)numChars;\nif (mode == qrcodegen_Mode_NUMERIC)\n\tresult = (result * 10 + 2) / 3;  // ceil(10/3 * n)\nelse if (mode == qrcodegen_Mode_ALPHANUMERIC)\n\tresult = (result * 11 + 1) / 2;  // ceil(11/2 * n)\nelse if (mode == qrcodegen_Mode_BYTE)\n\tresult *= 8;\nelse if (mode == qrcodegen_Mode_KANJI)\n\tresult *= 13;\nelse if (mode == qrcodegen_Mode_ECI && numChars == 0)\n\tresult = 3 * 8;\nelse {  // Invalid argument\n\treturn -1;\n}\nif (result < 0) {\n\treturn -1;\n}\nif (result > INT16_MAX)\n\treturn -1;\nreturn (int)result;", "rust_fragment": "let mul_frac_ceil = |numer: usize, denom: usize|\n\tSome(numchars)\n\t\t.and_then(|x| x.checked_mul(numer))\n\t\t.and_then(|x| x.checked_add(denom - 1))\n\t\t.map(|x| x / denom);\n\t\t\n\tuse QrSegmentMode::*;\n\tmatch mode {\n\t\tNumeric      => mul_frac_ceil(10, 3),\n\t\tAlphanumeric => mul_frac_ceil(11, 2),\n\t\tByte         => mul_frac_ceil( 8, 1),\n\t\tKanji        => mul_frac_ceil(13, 1),\n\t\tEci => {\n\t\t\tassert_eq!(numchars, 0);\n\t\t\tSome(3 * 8)\n\t\t},\n\t}", "description": "Both functions calculate bit length for QR code segments based on mode and character count using similar mathematical formulas and error checking.", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "c_api": "return -1;", "rust_api": "None", "mapping_type": "pattern", "description": "Error return pattern", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__calcSegmentBitLength__idx144460_rank1.c", "source_rust_file": "Full__calcSegmentBitLength__idx144460_rank1.rs", "c_api": "if (result < 0) {\n\treturn -1;\n}\nif (result > INT16_MAX)\n\treturn -1;", "rust_api": "checked_mul and checked_add", "mapping_type": "pattern", "description": "Integer overflow protection pattern", "reasoning": "[Task Analysis] C function calculates bit length for QR code segments based on mode and character count; Rust function does the same with a more idiomatic approach using Option and checked arithmetic. [Similarity] Both perform the same logical operations with different control flow (if/else vs match) and error handling (early return vs Option). [Knowledge Extraction] Full structural similarity in core logic, partial in control flow; API mappings found for arithmetic operations and error handling patterns."}]
+Unixcoder Score: -0.05062926933169365
+--------------------------------------------------
+C_Code: 
+static int numCharCountBits(enum qrcodegen_Mode mode, int version) {
+	if (!(qrcodegen_VERSION_MIN <= version && version <= qrcodegen_VERSION_MAX)) {
+		return -1;
+	}
+	int i = (version + 7) / 17;
+	switch (mode) {
+		case qrcodegen_Mode_NUMERIC     : { static const int temp[] = {10, 12, 14}; return temp[i]; }
+		case qrcodegen_Mode_ALPHANUMERIC: { static const int temp[] = { 9, 11, 13}; return temp[i]; }
+		case qrcodegen_Mode_BYTE        : { static const int temp[] = { 8, 16, 16}; return temp[i]; }
+		case qrcodegen_Mode_KANJI       : { static const int temp[] = { 8, 10, 12}; return temp[i]; }
+		case qrcodegen_Mode_ECI         : return 0;
+		default:  return(false);  return -1;  // Dummy value
+	}
+}
+Function: 
+pub fn calc_buffer_size(mode: QrSegmentMode, numchars: usize) -> Option<usize> {
+		let temp = Self::calc_bit_length(mode, numchars)?;
+		Some(temp / 8 + usize::from(temp % 8 != 0))  // ceil(temp / 8)
+	}
+Unixcoder Score: -0.05078048259019852
+--------------------------------------------------

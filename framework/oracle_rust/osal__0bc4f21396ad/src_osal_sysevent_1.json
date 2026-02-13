@@ -1,0 +1,35 @@
+{
+  "project": "osal__0bc4f21396ad",
+  "func_key": "src_osal_sysevent_1",
+  "function_name": "HdfSysEventNotifierGetInstance",
+  "source_c_file": "src/osal_sysevent.c",
+  "c_code": "static struct HdfSysEventNotifier * HdfSysEventNotifierGetInstance()\n{\n    static struct HdfSysEventNotifier *hdfSysEventNotifier = NULL;\n    if (hdfSysEventNotifier != NULL) {\n        return hdfSysEventNotifier;\n    }\n\n    struct HdfSysEventNotifier *notifier = OsalMemCalloc(sizeof(struct HdfSysEventNotifier));\n    if (notifier == NULL) {\n        return NULL;\n    }\n\n    int ret = OsalMutexInit(&notifier->mutex);\n    if (ret != HDF_SUCCESS) {\n        OsalMemFree(notifier);\n        return NULL;\n    }\n\n    DListHeadInit(&notifier->notifyNodeList);\n\n    hdfSysEventNotifier = notifier;\n\n    return notifier;\n}",
+  "rust_signature": "fn HdfSysEventNotifierGetInstance() -> *mut crate::types::HdfSysEventNotifier",
+  "rust_code": "fn HdfSysEventNotifierGetInstance() -> *mut HdfSysEventNotifier {\n    static mut HDF_SYS_EVENT_NOTIFIER: *mut HdfSysEventNotifier = core::ptr::null_mut();\n    unsafe {\n        if !HDF_SYS_EVENT_NOTIFIER.is_null() {\n            return HDF_SYS_EVENT_NOTIFIER;\n        }\n\n        let notifier = OsalMemCalloc(core::mem::size_of::<HdfSysEventNotifier>() as size_t) as *mut HdfSysEventNotifier;\n        if notifier.is_null() {\n            return core::ptr::null_mut();\n        }\n\n        if OsalMutexInit(core::ptr::addr_of_mut!((*notifier).mutex)) != 0 {\n            OsalMemFree(notifier as *mut core::ffi::c_void);\n            return core::ptr::null_mut();\n        }\n\n        // DListHeadInit(&notifier->notifyNodeList)\n        let head = core::ptr::addr_of_mut!((*notifier).notifyNodeList);\n        (*head).next = head;\n        (*head).prev = head;\n\n        HDF_SYS_EVENT_NOTIFIER = notifier;\n        notifier\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemCalloc",
+      "rust_api": "OsalMemCalloc",
+      "description": "Allocate zeroed memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemFree",
+      "rust_api": "OsalMemFree",
+      "description": "Free memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

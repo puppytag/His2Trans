@@ -1,0 +1,97 @@
+C_Code: 
+struct upb_ServiceDef
+Function: 
+pub struct SerializedData {
+    /// Owns the memory.
+    data: NonNull<u8>,
+    len: usize,
+}
+Unixcoder Score: 0.046702928841114044
+--------------------------------------------------
+C_Code: 
+struct RemoteServiceStub
+Function: 
+pub struct SystemAbility {
+    inner: UniquePtr<SystemAbilityWrapper>,
+}
+Unixcoder Score: 0.04552077129483223
+--------------------------------------------------
+C_Code: 
+struct RemoteServiceStub
+Function: 
+pub struct AbilityStub {
+    remote: RemoteStubWrapper,
+}
+Unixcoder Score: 0.04134880751371384
+--------------------------------------------------
+C_Code: 
+struct RemoteServiceStub
+Function: 
+pub struct UnsubscribeHandler {
+    inner: Unsubscribe,
+}
+Unixcoder Score: 0.03903863951563835
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub(crate) struct PrimeCallback {
+    task_id: TaskId,
+    finish: Arc<AtomicBool>,
+    state: Arc<AtomicUsize>,
+    cache_handle: Updater,
+    callbacks: Arc<Mutex<VecDeque<Box<dyn PreloadCallback>>>>,
+    progress_restriction: ProgressRestriction,
+    seq: usize,
+}
+Unixcoder Score: 0.027867166325449944
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub struct RustData {
+    data: Arc<RamCache>,
+}
+Unixcoder Score: 0.01767774671316147
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+struct FfiPredownloadOptions<'a> {
+        headers: Vec<&'a str>,
+        ssl_type: &'a str,
+        ca_path: &'a str,
+    }
+Unixcoder Score: 0.012714092619717121
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub struct RustDownloadInfo {
+    info: DownloadInfo,
+}
+Unixcoder Score: 0.008885325863957405
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub struct TaskHandle {
+    task_id: TaskId,
+    handle: Option<Arc<dyn CommonHandle>>,
+    state: Arc<AtomicUsize>,
+    finish: Arc<AtomicBool>,
+    callbacks: Arc<Mutex<VecDeque<Box<dyn PreloadCallback>>>>,
+}
+Unixcoder Score: -0.0014485287247225642
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub struct CacheDownloadService {
+    running_tasks: Mutex<HashMap<TaskId, Arc<Mutex<DownloadTask>>>>,
+    cache_manager: CacheManager,
+    info_mgr: Arc<DownloadInfoMgr>,
+    net_registrar: NetRegistrar,
+}
+Unixcoder Score: -0.005136287771165371
+--------------------------------------------------

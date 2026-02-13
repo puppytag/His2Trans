@@ -1,0 +1,27 @@
+{
+  "project": "shared__12e38ea922f7",
+  "func_key": "src_hcb_config_entry_2",
+  "function_name": "GetConfigFilePath",
+  "source_c_file": "src/hcb_config_entry.c",
+  "c_code": "static _Bool GetConfigFilePath(const char * productName, char * configPath, size_t configPathLen)\n{\n    static const char *adapterConfigPath[] = {\n        HOST_CONFIG_PATH,\n        HOST_CHIP_PROD_CONFIG_PATH,\n    };\n\n    size_t pathNum = sizeof(adapterConfigPath) / sizeof(adapterConfigPath[0]);\n    for (size_t i = 0; i < pathNum; ++i) {\n        if (sprintf_s(configPath, configPathLen - 1, \"%s/hdf_%s.hcb\", adapterConfigPath[i], productName) < 0) {\n            HDF_LOGE(\"failed to generate file path\");\n            continue;\n        }\n\n        if (access(configPath, F_OK | R_OK) == 0) {\n            return true;\n        }\n        HDF_LOGD(\"invalid config file path or permission:%{public}s\", configPath);\n    }\n    return false;\n}",
+  "rust_signature": "fn GetConfigFilePath(productName: *const std::ffi::c_char, configPath: *mut std::ffi::c_char, configPathLen: crate::types::size_t) -> bool",
+  "rust_code": "fn GetConfigFilePath(\n    productName: *const ::core::ffi::c_char,\n    configPath: *mut ::core::ffi::c_char,\n    configPathLen: crate::types::size_t,\n) -> bool {\n    unsafe {\n        if productName.is_null() || configPath.is_null() || configPathLen == 0 {\n            return false;\n        }\n\n        // Keep the two candidate directories as in OHOS standard layout.\n        // (If one path is not valid on a given device, access() will fail and we fall back to the next.)\n        let adapterConfigPath: [*const ::core::ffi::c_char; 2] = [\n            b\"/vendor/etc/hdfconfig\\0\".as_ptr() as *const ::core::ffi::c_char,\n            b\"/chip_prod/etc/hdfconfig\\0\".as_ptr() as *const ::core::ffi::c_char,\n        ];\n\n        for base in adapterConfigPath {\n            // securec: sprintf_s returns <0 on error\n            if sprintf_s(\n                configPath,\n                configPathLen.saturating_sub(1),\n                b\"%s/hdf_%s.hcb\\0\".as_ptr() as *const ::core::ffi::c_char,\n                base,\n                productName,\n            ) < 0\n            {\n                continue;\n            }\n\n            // F_OK=0, R_OK=4 (POSIX). Avoid depending on missing C macros.\n            if access(configPath as *const ::core::ffi::c_char, 0 | 4) == 0 {\n                return true;\n            }\n        }\n        false\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "return foo(...);",
+      "rust_fragment": "return foo(...);",
+      "description": "Direct call/return pattern is preserved in Rust",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

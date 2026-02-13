@@ -1,0 +1,43 @@
+{
+  "project": "shared__12e38ea922f7",
+  "func_key": "src_dev_attribute_serialize_1",
+  "function_name": "DeviceAttributeSerialize",
+  "source_c_file": "src/dev_attribute_serialize.c",
+  "c_code": "_Bool DeviceAttributeSerialize(const struct HdfDeviceInfo * attribute, struct HdfSBuf * sbuf)\n{\n    if (attribute == NULL || sbuf == NULL) {\n        return false;\n    }\n\n    if (!HdfSbufWriteUint32(sbuf, attribute->deviceId) ||\n        !HdfSbufWriteUint16(sbuf, attribute->policy) ||\n        !HdfSbufWriteString(sbuf, attribute->svcName) ||\n        !HdfSbufWriteString(sbuf, attribute->moduleName) ||\n        !HdfSbufWriteString(sbuf, attribute->deviceName)) {\n        return false;\n    }\n\n    if (attribute->deviceMatchAttr != NULL) {\n        if (!HdfSbufWriteUint32(sbuf, ATTRIBUTE_PRIVATE_DATA_LENGTH_NORMAL) ||\n            !HdfSbufWriteString(sbuf, attribute->deviceMatchAttr)) {\n            HDF_LOGE(\"failed to serialize device attribute\");\n            return false;\n        }\n    } else {\n        if (!HdfSbufWriteUint32(sbuf, ATTRIBUTE_PRIVATE_DATA_LENGTH_NULL)) {\n            HDF_LOGE(\"failed to serialize device attribute\");\n            return false;\n        }\n    }\n\n    return true;\n}",
+  "rust_signature": "pub extern \"C\" fn DeviceAttributeSerialize(attribute: *const HdfDeviceInfo, sbuf: *mut HdfSBuf) -> bool",
+  "rust_code": "pub extern \"C\" fn DeviceAttributeSerialize(\n    attribute: *const HdfDeviceInfo,\n    sbuf: *mut HdfSBuf,\n) -> bool {\n    if attribute.is_null() || sbuf.is_null() {\n        return false;\n    }\n\n    unsafe {\n        if !HdfSbufWriteUint32(sbuf, (*attribute).deviceId)\n            || !HdfSbufWriteUint16(sbuf, (*attribute).policy)\n            || !HdfSbufWriteString(sbuf, (*attribute).svcName)\n            || !HdfSbufWriteString(sbuf, (*attribute).moduleName)\n            || !HdfSbufWriteString(sbuf, (*attribute).deviceName)\n        {\n            return false;\n        }\n\n        if !(*attribute).deviceMatchAttr.is_null() {\n            if !HdfSbufWriteUint32(sbuf, 1)\n                || !HdfSbufWriteString(sbuf, (*attribute).deviceMatchAttr)\n            {\n                return false;\n            }\n        } else {\n            if !HdfSbufWriteUint32(sbuf, 0) {\n                return false;\n            }\n        }\n    }\n\n    true\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufWriteString",
+      "rust_api": "HdfSbufWriteString",
+      "description": "Serialize string into sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufWriteUint16",
+      "rust_api": "HdfSbufWriteUint16",
+      "description": "Serialize u16 into sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufWriteUint32",
+      "rust_api": "HdfSbufWriteUint32",
+      "description": "Serialize u32 into sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

@@ -1,0 +1,425 @@
+C_Code: 
+uint32_t VerifyCert(const CertBlob *cert, const CertBlob *caCert)
+{
+    uint32_t verifyResult = SSL_X509_V_ERR_UNSPECIFIED;
+    X509 *certX509 = nullptr;
+    X509 *caX509 = nullptr;
+    X509_STORE *store = nullptr;
+    X509_STORE_CTX *ctx = nullptr;
+    do {
+        certX509 = CertBlobToX509(cert);
+        if (certX509 == nullptr) {
+            NETSTACK_LOGE("x509 of cert is nullptr\n");
+        }
+        caX509 = CertBlobToX509(caCert);
+        if (caX509 == nullptr) {
+            NETSTACK_LOGE("x509 of ca is nullptr\n");
+        }
+        store = X509_STORE_new();
+        if (store == nullptr) {
+            continue;
+        }
+        if (X509_STORE_add_cert(store, caX509) != VERIFY_RESULT_SUCCESS) {
+            NETSTACK_LOGE("add ca to store failed\n");
+        }
+        ctx = X509_STORE_CTX_new();
+        if (ctx == nullptr) {
+            continue;
+        }
+        X509_STORE_CTX_init(ctx, store, certX509, nullptr);
+        verifyResult = static_cast<uint32_t>(X509_verify_cert(ctx));
+        if (verifyResult != VERIFY_RESULT_SUCCESS) {
+            verifyResult = static_cast<uint32_t>(X509_STORE_CTX_get_error(ctx) + SSL_ERROR_CODE_BASE);
+            NETSTACK_LOGE("failed to verify certificate: %{public}s (%{public}d)\n",
+                          X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)), verifyResult);
+            break;
+        } else {
+            verifyResult = X509_V_OK;
+            NETSTACK_LOGD("certificate validation succeeded.\n");
+        }
+    } while (false);
+
+    FreeResources(&certX509, &caX509, &store, &ctx);
+    return verifyResult;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__InitCertInfo__idx555_rank3.c", "source_rust_file": "Partial__InitCertInfo__idx555_rank3.rs", "c_fragment": "if (certInfo->certInfo.data == nullptr) {\n        return CMR_ERROR_MALLOC_FAIL;\n    }", "rust_fragment": "if !c_certs_ptr.is_null() {\n        info!(\"GetUserCertsData valid\");", "description": "Both contain conditional checks for null pointers and handle failure cases.", "reasoning": "[Task Analysis] C function allocates memory for a certificate info struct and returns an error code; Rust function fetches certificate data from C FFI, parses it into Rust Certificate objects, and updates a shared CertInfo struct. [Similarity] No full structural similarity due to different domains (memory allocation vs certificate parsing), different control flow, and different data structures. [Knowledge Extraction] Found partial matching logic in error handling and memory management patterns, and API mappings for memory allocation and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__InitCertInfo__idx555_rank3.c", "source_rust_file": "Partial__InitCertInfo__idx555_rank3.rs", "c_api": "free(ptr)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation in C vs FFI call to free memory in Rust", "reasoning": "[Task Analysis] C function allocates memory for a certificate info struct and returns an error code; Rust function fetches certificate data from C FFI, parses it into Rust Certificate objects, and updates a shared CertInfo struct. [Similarity] No full structural similarity due to different domains (memory allocation vs certificate parsing), different control flow, and different data structures. [Knowledge Extraction] Found partial matching logic in error handling and memory management patterns, and API mappings for memory allocation and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__InitCertInfo__idx555_rank3.c", "source_rust_file": "Partial__InitCertInfo__idx555_rank3.rs", "c_api": "static_cast<uint8_t *>(malloc(...))", "rust_api": "std::slice::from_raw_parts(...)", "mapping_type": "pattern", "description": "Raw pointer handling and memory access in C vs Rust", "reasoning": "[Task Analysis] C function allocates memory for a certificate info struct and returns an error code; Rust function fetches certificate data from C FFI, parses it into Rust Certificate objects, and updates a shared CertInfo struct. [Similarity] No full structural similarity due to different domains (memory allocation vs certificate parsing), different control flow, and different data structures. [Knowledge Extraction] Found partial matching logic in error handling and memory management patterns, and API mappings for memory allocation and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__InitCertInfo__idx555_rank3.c", "source_rust_file": "Partial__InitCertInfo__idx555_rank3.rs", "c_api": "malloc(MAX_LEN_CERTIFICATE)", "rust_api": "Vec::new()", "mapping_type": "pattern", "description": "Memory allocation pattern in C vs vector initialization in Rust", "reasoning": "[Task Analysis] C function allocates memory for a certificate info struct and returns an error code; Rust function fetches certificate data from C FFI, parses it into Rust Certificate objects, and updates a shared CertInfo struct. [Similarity] No full structural similarity due to different domains (memory allocation vs certificate parsing), different control flow, and different data structures. [Knowledge Extraction] Found partial matching logic in error handling and memory management patterns, and API mappings for memory allocation and FFI calls."}]
+Unixcoder Score: 0.036558616906404495
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "c_api": "if (degree < 1 || degree > 255)\n\tthrow std::domain_error(\"Degree out of range\");", "rust_api": "assert!((1 ..= 255).contains(&degree), \"Degree out of range\");", "mapping_type": "function", "description": "Validate degree range with assertion", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "c_api": "result.at(j) ^= result.at(j + 1);", "rust_api": "result[j] ^= result[j + 1];", "mapping_type": "pattern", "description": "XOR operation between adjacent elements", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "c_api": "result.at(result.size() - 1) = 1;", "rust_api": "result.push(1);", "mapping_type": "method", "description": "Set last element of vector to 1", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs."}, {"knowledge_type": "Partial", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "c_fragment": "vector<uint8_t> result(static_cast<size_t>(degree));\nresult.at(result.size() - 1) = 1;", "rust_fragment": "let mut result = vec![0u8; degree - 1];\nresult.push(1);", "description": "Initialize vector with size and set last element to 1", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs."}, {"knowledge_type": "Partial", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "c_fragment": "for (int i = 0; i < degree; i++) {\n\t// Multiply the current product by (x - r^i)\n\tfor (size_t j = 0; j < result.size(); j++) {\n\t\tresult.at(j) = reedSolomonMultiply(result.at(j), root);\n\t\tif (j + 1 < result.size())\n\t\t\tresult.at(j) ^= result.at(j + 1);\n\t}\n\troot = reedSolomonMultiply(root, 0x02);}", "rust_fragment": "for _ in 0 .. degree {\n\t// Multiply the current product by (x - r^i)\n\tfor j in 0 .. degree {\n\t\tresult[j] = QrCode::reed_solomon_multiply(result[j], root);\n\t\tif j + 1 < result.len() {\n\t\t\tresult[j] ^= result[j + 1];\n\t\t}\n\t}\n\troot = QrCode::reed_solomon_multiply(root, 0x02);}", "description": "Nested loop to compute polynomial multiplication and XOR operations", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "c_api": "result.at(j) = reedSolomonMultiply(result.at(j), root);", "rust_api": "result[j] = QrCode::reed_solomon_multiply(result[j], root);", "mapping_type": "function", "description": "Multiply element by root and assign back to vector", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "c_api": "root = reedSolomonMultiply(root, 0x02);", "rust_api": "root = QrCode::reed_solomon_multiply(root, 0x02);", "mapping_type": "function", "description": "Update root using multiplication with 0x02", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank1.rs", "c_api": "vector<uint8_t> result(static_cast<size_t>(degree));", "rust_api": "let mut result = vec![0u8; degree - 1];", "mapping_type": "function", "description": "Vector initialization with size", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> Both functions compute Reed-Solomon divisor polynomials using similar mathematical logic. -> [Similarity] -> Full structural similarity in algorithmic approach, variable usage, and control flow. -> [Knowledge Extraction] -> Extract full structural match, API mappings for vector initialization, array access, and loop constructs."}]
+Unixcoder Score: -0.018257316201925278
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx3325_rank4.h", "source_rust_file": "API_Mapping__Verify__idx3325_rank4.rs", "c_api": "VerifyField<int8_t>(verifier, VT_BASE_TYPE, 1)", "rust_api": "v.visit_table(pos)?", "mapping_type": "function", "description": "Verify field in table", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using a verifier, Rust code runs a verifier on a table position. [Similarity] Both perform verification logic but differ in structure and API usage. [Knowledge Extraction] C uses multiple VerifyField calls and VerifyTableStart, while Rust uses visit_table and finish. The core verification logic is semantically equivalent but implemented differently. [API Mappings] Found mappings between table verification operations and field verification operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx3325_rank4.h", "source_rust_file": "API_Mapping__Verify__idx3325_rank4.rs", "c_api": "verifier.EndTable()", "rust_api": ".finish()", "mapping_type": "method", "description": "End table verification", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using a verifier, Rust code runs a verifier on a table position. [Similarity] Both perform verification logic but differ in structure and API usage. [Knowledge Extraction] C uses multiple VerifyField calls and VerifyTableStart, while Rust uses visit_table and finish. The core verification logic is semantically equivalent but implemented differently. [API Mappings] Found mappings between table verification operations and field verification operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx3325_rank4.h", "source_rust_file": "API_Mapping__Verify__idx3325_rank4.rs", "c_api": "VerifyTableStart(verifier)", "rust_api": "v.visit_table(pos)?", "mapping_type": "function", "description": "Start table verification", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using a verifier, Rust code runs a verifier on a table position. [Similarity] Both perform verification logic but differ in structure and API usage. [Knowledge Extraction] C uses multiple VerifyField calls and VerifyTableStart, while Rust uses visit_table and finish. The core verification logic is semantically equivalent but implemented differently. [API Mappings] Found mappings between table verification operations and field verification operations."}]
+Unixcoder Score: -0.019895367324352264
+--------------------------------------------------
+C_Code: 
+static void LoadCaCertFromMemory(X509_STORE *store, const std::string &pemCerts)
+{
+    if (!store || pemCerts.empty() || pemCerts.size() > static_cast<size_t>(INT_MAX)) {
+        return;
+    }
+
+    auto cbio = BIO_new_mem_buf(pemCerts.data(), static_cast<int>(pemCerts.size()));
+    if (!cbio) {
+        return;
+    }
+
+    auto inf = PEM_X509_INFO_read_bio(cbio, nullptr, nullptr, nullptr);
+    if (!inf) {
+        BIO_free(cbio);
+        return;
+    }
+
+    /* add each entry from PEM file to x509_store */
+    for (int i = 0; i < static_cast<int>(sk_X509_INFO_num(inf)); ++i) {
+        auto itmp = sk_X509_INFO_value(inf, i);
+        if (!itmp) {
+            continue;
+        }
+        if (itmp->x509) {
+            X509_STORE_add_cert(store, itmp->x509);
+        }
+        if (itmp->crl) {
+            X509_STORE_add_crl(store, itmp->crl);
+        }
+    }
+
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    BIO_free(cbio);
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGE(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Error logging during certificate handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGI(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Logging certificate verification status", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error_depth(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Certificate chain depth information", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error(ctx)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Certificate validation result handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGD(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Debug logging for root CA verification", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "VerifyCertPubkey(cert, requestContext->GetPinnedPubkey())", "rust_api": "self.0.add_root_certificate(cert)", "mapping_type": "function", "description": "Public key verification for certificate", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_current_cert(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Extract certificate from SSL context", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}]
+Unixcoder Score: -0.03404618799686432
+--------------------------------------------------
+C_Code: 
+CURLcode VerifyRootCaSslCtxFunction(CURL *curl, void *sslCtx, void *context)
+{
+#ifdef HTTP_ONLY_VERIFY_ROOT_CA_ENABLE
+    SSL_CTX *ctx = static_cast<SSL_CTX *>(sslCtx);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, VerifyCallback);
+    SSL_CTX_set_ex_data(ctx, SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX, context);
+#endif
+    return CURLE_OK;
+}
+Function: 
+pub fn tls_built_in_root_certs(self, tls_built_in_root_certs: bool) -> ClientBuilder {
+        Self(self.0.tls_built_in_root_certs(tls_built_in_root_certs))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx2167_rank3.h", "source_rust_file": "Partial__Verify__idx2167_rank3.rs", "c_api": "VerifyField<int8_t>(verifier, VT_BASE_TYPE, 1)", "rust_api": ".visit_field::<i8>(\"just_i8\", Self::VT_JUST_I8, false)?", "mapping_type": "function", "description": "Verify a field of a specific type in flatbuffers", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__Verify__idx2167_rank3.h", "source_rust_file": "Partial__Verify__idx2167_rank3.rs", "c_fragment": "return VerifyTableStart(verifier) &&\n           VerifyField<int8_t>(verifier, VT_BASE_TYPE, 1) &&\n           VerifyField<int8_t>(verifier, VT_ELEMENT, 1) &&\n           VerifyField<int32_t>(verifier, VT_INDEX, 4) &&\n           VerifyField<uint16_t>(verifier, VT_FIXED_LENGTH, 2) &&\n           VerifyField<uint32_t>(verifier, VT_BASE_SIZE, 4) &&\n           VerifyField<uint32_t>(verifier, VT_ELEMENT_SIZE, 4) &&\n           verifier.EndTable();", "rust_fragment": "v.visit_table(pos)?\n     .visit_field::<i8>(\"just_i8\", Self::VT_JUST_I8, false)?\n     .visit_field::<i8>(\"maybe_i8\", Self::VT_MAYBE_I8, false)?\n     .visit_field::<i8>(\"default_i8\", Self::VT_DEFAULT_I8, false)?\n     .visit_field::<u8>(\"just_u8\", Self::VT_JUST_U8, false)?\n     .visit_field::<u8>(\"maybe_u8\", Self::VT_MAYBE_U8, false)?\n     .visit_field::<u8>(\"default_u8\", Self::VT_DEFAULT_U8, false)?\n     .visit_field::<i16>(\"just_i16\", Self::VT_JUST_I16, false)?\n     .visit_field::<i16>(\"maybe_i16\", Self::VT_MAYBE_I16, false)?\n     .visit_field::<i16>(\"default_i16\", Self::VT_DEFAULT_I16, false)?\n     .visit_field::<u16>(\"just_u16\", Self::VT_JUST_U16, false)?\n     .visit_field::<u16>(\"maybe_u16\", Self::VT_MAYBE_U16, false)?\n     .visit_field::<u16>(\"default_u16\", Self::VT_DEFAULT_U16, false)?\n     .visit_field::<i32>(\"just_i32\", Self::VT_JUST_I32, false)?\n     .visit_field::<i32>(\"maybe_i32\", Self::VT_MAYBE_I32, false)?\n     .visit_field::<i32>(\"default_i32\", Self::VT_DEFAULT_I32, false)?\n     .visit_field::<u32>(\"just_u32\", Self::VT_JUST_U32, false)?\n     .visit_field::<u32>(\"maybe_u32\", Self::VT_MAYBE_U32, false)?\n     .visit_field::<u32>(\"default_u32\", Self::VT_DEFAULT_U32, false)?\n     .visit_field::<i64>(\"just_i64\", Self::VT_JUST_I64, false)?\n     .visit_field::<i64>(\"maybe_i64\", Self::VT_MAYBE_I64, false)?\n     .visit_field::<i64>(\"default_i64\", Self::VT_DEFAULT_I64, false)?\n     .visit_field::<u64>(\"just_u64\", Self::VT_JUST_U64, false)?\n     .visit_field::<u64>(\"maybe_u64\", Self::VT_MAYBE_U64, false)?\n     .visit_field::<u64>(\"default_u64\", Self::VT_DEFAULT_U64, false)?\n     .visit_field::<f32>(\"just_f32\", Self::VT_JUST_F32, false)?\n     .visit_field::<f32>(\"maybe_f32\", Self::VT_MAYBE_F32, false)?\n     .visit_field::<f32>(\"default_f32\", Self::VT_DEFAULT_F32, false)?\n     .visit_field::<f64>(\"just_f64\", Self::VT_JUST_F64, false)?\n     .visit_field::<f64>(\"maybe_f64\", Self::VT_MAYBE_F64, false)?\n     .visit_field::<f64>(\"default_f64\", Self::VT_DEFAULT_F64, false)?\n     .visit_field::<bool>(\"just_bool\", Self::VT_JUST_BOOL, false)?\n     .visit_field::<bool>(\"maybe_bool\", Self::VT_MAYBE_BOOL, false)?\n     .visit_field::<bool>(\"default_bool\", Self::VT_DEFAULT_BOOL, false)?\n     .visit_field::<OptionalByte>(\"just_enum\", Self::VT_JUST_ENUM, false)?\n     .visit_field::<OptionalByte>(\"maybe_enum\", Self::VT_MAYBE_ENUM, false)?\n     .visit_field::<OptionalByte>(\"default_enum\", Self::VT_DEFAULT_ENUM, false)?\n     .finish();", "description": "Both verify fields of a table using a verifier object, with similar structure of checking multiple fields and ending verification.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx2167_rank3.h", "source_rust_file": "Partial__Verify__idx2167_rank3.rs", "c_api": "VerifyTableStart(verifier)", "rust_api": "v.visit_table(pos)?", "mapping_type": "function", "description": "Start verifying a table in flatbuffers", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx2167_rank3.h", "source_rust_file": "Partial__Verify__idx2167_rank3.rs", "c_api": "verifier.EndTable()", "rust_api": ".finish();", "mapping_type": "function", "description": "End table verification in flatbuffers", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}]
+Unixcoder Score: -0.07327937334775925
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int8_t>(verifier, VT_BASE_TYPE, 1) &&
+           VerifyField<int8_t>(verifier, VT_ELEMENT, 1) &&
+           VerifyField<int32_t>(verifier, VT_INDEX, 4) &&
+           VerifyField<uint16_t>(verifier, VT_FIXED_LENGTH, 2) &&
+           VerifyField<uint32_t>(verifier, VT_BASE_SIZE, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ELEMENT_SIZE, 4) &&
+           verifier.EndTable();
+  }
+Function: 
+fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .finish();
+    Ok(())
+  }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx2071_rank3.c", "source_rust_file": "API_Mapping__Verify__idx2071_rank3.rs", "c_api": "VerifyTableStart(verifier)", "rust_api": "flatbuffers::Verifier", "mapping_type": "function", "description": "Start verification of a FlatBuffers table", "reasoning": "[Task Analysis] C function verifies a FlatBuffers table structure; Rust function runs a verifier on an i32 type. [Similarity] Names don't match, but both involve verification logic. [Knowledge Extraction] No full structural match due to domain mismatch (table verification vs type verification), but there are API mappings for verification operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx2071_rank3.c", "source_rust_file": "API_Mapping__Verify__idx2071_rank3.rs", "c_api": "verifier.EndTable()", "rust_api": "flatbuffers::Verifier", "mapping_type": "function", "description": "End verification of a FlatBuffers table", "reasoning": "[Task Analysis] C function verifies a FlatBuffers table structure; Rust function runs a verifier on an i32 type. [Similarity] Names don't match, but both involve verification logic. [Knowledge Extraction] No full structural match due to domain mismatch (table verification vs type verification), but there are API mappings for verification operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx2071_rank3.c", "source_rust_file": "API_Mapping__Verify__idx2071_rank3.rs", "c_api": "verifier.VerifyVector(v8())", "rust_api": "flatbuffers::Verifier", "mapping_type": "function", "description": "Verify a vector in a FlatBuffers table", "reasoning": "[Task Analysis] C function verifies a FlatBuffers table structure; Rust function runs a verifier on an i32 type. [Similarity] Names don't match, but both involve verification logic. [Knowledge Extraction] No full structural match due to domain mismatch (table verification vs type verification), but there are API mappings for verification operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx2071_rank3.c", "source_rust_file": "API_Mapping__Verify__idx2071_rank3.rs", "c_api": "VerifyOffset(verifier, VT_V8)", "rust_api": "flatbuffers::Verifier", "mapping_type": "function", "description": "Verify an offset in a FlatBuffers table", "reasoning": "[Task Analysis] C function verifies a FlatBuffers table structure; Rust function runs a verifier on an i32 type. [Similarity] Names don't match, but both involve verification logic. [Knowledge Extraction] No full structural match due to domain mismatch (table verification vs type verification), but there are API mappings for verification operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx2071_rank3.c", "source_rust_file": "API_Mapping__Verify__idx2071_rank3.rs", "c_api": "VerifyField<int8_t>(verifier, VT_I8, 1)", "rust_api": "i32::run_verifier(v, pos)", "mapping_type": "function", "description": "Verify a field in a FlatBuffers table", "reasoning": "[Task Analysis] C function verifies a FlatBuffers table structure; Rust function runs a verifier on an i32 type. [Similarity] Names don't match, but both involve verification logic. [Knowledge Extraction] No full structural match due to domain mismatch (table verification vs type verification), but there are API mappings for verification operations."}]
+Unixcoder Score: -0.07536599785089493
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int8_t>(verifier, VT_BASE_TYPE, 1) &&
+           VerifyField<int8_t>(verifier, VT_ELEMENT, 1) &&
+           VerifyField<int32_t>(verifier, VT_INDEX, 4) &&
+           VerifyField<uint16_t>(verifier, VT_FIXED_LENGTH, 2) &&
+           VerifyField<uint32_t>(verifier, VT_BASE_SIZE, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ELEMENT_SIZE, 4) &&
+           verifier.EndTable();
+  }
+Function: 
+fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<i8>("just_i8", Self::VT_JUST_I8, false)?
+     .visit_field::<i8>("maybe_i8", Self::VT_MAYBE_I8, false)?
+     .visit_field::<i8>("default_i8", Self::VT_DEFAULT_I8, false)?
+     .visit_field::<u8>("just_u8", Self::VT_JUST_U8, false)?
+     .visit_field::<u8>("maybe_u8", Self::VT_MAYBE_U8, false)?
+     .visit_field::<u8>("default_u8", Self::VT_DEFAULT_U8, false)?
+     .visit_field::<i16>("just_i16", Self::VT_JUST_I16, false)?
+     .visit_field::<i16>("maybe_i16", Self::VT_MAYBE_I16, false)?
+     .visit_field::<i16>("default_i16", Self::VT_DEFAULT_I16, false)?
+     .visit_field::<u16>("just_u16", Self::VT_JUST_U16, false)?
+     .visit_field::<u16>("maybe_u16", Self::VT_MAYBE_U16, false)?
+     .visit_field::<u16>("default_u16", Self::VT_DEFAULT_U16, false)?
+     .visit_field::<i32>("just_i32", Self::VT_JUST_I32, false)?
+     .visit_field::<i32>("maybe_i32", Self::VT_MAYBE_I32, false)?
+     .visit_field::<i32>("default_i32", Self::VT_DEFAULT_I32, false)?
+     .visit_field::<u32>("just_u32", Self::VT_JUST_U32, false)?
+     .visit_field::<u32>("maybe_u32", Self::VT_MAYBE_U32, false)?
+     .visit_field::<u32>("default_u32", Self::VT_DEFAULT_U32, false)?
+     .visit_field::<i64>("just_i64", Self::VT_JUST_I64, false)?
+     .visit_field::<i64>("maybe_i64", Self::VT_MAYBE_I64, false)?
+     .visit_field::<i64>("default_i64", Self::VT_DEFAULT_I64, false)?
+     .visit_field::<u64>("just_u64", Self::VT_JUST_U64, false)?
+     .visit_field::<u64>("maybe_u64", Self::VT_MAYBE_U64, false)?
+     .visit_field::<u64>("default_u64", Self::VT_DEFAULT_U64, false)?
+     .visit_field::<f32>("just_f32", Self::VT_JUST_F32, false)?
+     .visit_field::<f32>("maybe_f32", Self::VT_MAYBE_F32, false)?
+     .visit_field::<f32>("default_f32", Self::VT_DEFAULT_F32, false)?
+     .visit_field::<f64>("just_f64", Self::VT_JUST_F64, false)?
+     .visit_field::<f64>("maybe_f64", Self::VT_MAYBE_F64, false)?
+     .visit_field::<f64>("default_f64", Self::VT_DEFAULT_F64, false)?
+     .visit_field::<bool>("just_bool", Self::VT_JUST_BOOL, false)?
+     .visit_field::<bool>("maybe_bool", Self::VT_MAYBE_BOOL, false)?
+     .visit_field::<bool>("default_bool", Self::VT_DEFAULT_BOOL, false)?
+     .visit_field::<OptionalByte>("just_enum", Self::VT_JUST_ENUM, false)?
+     .visit_field::<OptionalByte>("maybe_enum", Self::VT_MAYBE_ENUM, false)?
+     .visit_field::<OptionalByte>("default_enum", Self::VT_DEFAULT_ENUM, false)?
+     .finish();
+    Ok(())
+  }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx2922_rank4.c", "source_rust_file": "Partial__Verify__idx2922_rank4.rs", "c_api": "VerifyField<int8_t>(verifier, VT_I8, 1)", "rust_api": "self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, f64>>>(TypeAliases::VT_VF64, None)", "mapping_type": "function", "description": "Accessing a field in a flatbuffers table.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('Verify' vs 'vf64'), but both relate to table verification and field access in flatbuffers. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on flatbuffers table verification and field access, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C code verifies fields and offsets in a flatbuffers table; Rust code accesses a specific vector field. [Similarity] -> Partial structural match in field access logic, but not full function equivalence. [Knowledge Extraction] -> Extract API mappings for field access and verification patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx2922_rank4.c", "source_rust_file": "Partial__Verify__idx2922_rank4.rs", "c_api": "VerifyOffset(verifier, VT_V8)", "rust_api": "verifier.VerifyVector(v8())", "mapping_type": "function", "description": "Verifying an offset in a flatbuffers table.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('Verify' vs 'vf64'), but both relate to table verification and field access in flatbuffers. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on flatbuffers table verification and field access, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C code verifies fields and offsets in a flatbuffers table; Rust code accesses a specific vector field. [Similarity] -> Partial structural match in field access logic, but not full function equivalence. [Knowledge Extraction] -> Extract API mappings for field access and verification patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx2922_rank4.c", "source_rust_file": "Partial__Verify__idx2922_rank4.rs", "c_api": "verifier.VerifyVector(v8())", "rust_api": "verifier.VerifyVector(vf64())", "mapping_type": "function", "description": "Verifying a vector in a flatbuffers table.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('Verify' vs 'vf64'), but both relate to table verification and field access in flatbuffers. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on flatbuffers table verification and field access, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C code verifies fields and offsets in a flatbuffers table; Rust code accesses a specific vector field. [Similarity] -> Partial structural match in field access logic, but not full function equivalence. [Knowledge Extraction] -> Extract API mappings for field access and verification patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Verify__idx2922_rank4.c", "source_rust_file": "Partial__Verify__idx2922_rank4.rs", "c_fragment": "VerifyField<int8_t>(verifier, VT_I8, 1)", "rust_fragment": "self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, f64>>>(TypeAliases::VT_VF64, None)", "description": "Accessing a field in a flatbuffers table structure.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('Verify' vs 'vf64'), but both relate to table verification and field access in flatbuffers. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on flatbuffers table verification and field access, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C code verifies fields and offsets in a flatbuffers table; Rust code accesses a specific vector field. [Similarity] -> Partial structural match in field access logic, but not full function equivalence. [Knowledge Extraction] -> Extract API mappings for field access and verification patterns."}]
+Unixcoder Score: -0.07549509406089783
+--------------------------------------------------
+C_Code: 
+CURLcode VerifyRootCaSslCtxFunction(CURL *curl, void *sslCtx, void *context)
+{
+#ifdef HTTP_ONLY_VERIFY_ROOT_CA_ENABLE
+    SSL_CTX *ctx = static_cast<SSL_CTX *>(sslCtx);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, VerifyCallback);
+    SSL_CTX_set_ex_data(ctx, SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX, context);
+#endif
+    return CURLE_OK;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx3350_rank3.h", "source_rust_file": "Partial__Verify__idx3350_rank3.rs", "c_api": "verifier.EndTable()", "rust_api": ".finish();", "mapping_type": "function", "description": "Table verification completion", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using field checks and table start/end validation. Rust code performs similar verification using a verifier with table visiting and field validation. [Similarity] Both perform table verification logic, but differ in API usage and structure. [Knowledge Extraction] Found partial structural match in verification logic and API mappings for table/field verification operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx3350_rank3.h", "source_rust_file": "Partial__Verify__idx3350_rank3.rs", "c_api": "VerifyTableStart(verifier)", "rust_api": "v.visit_table(pos)?", "mapping_type": "function", "description": "Table verification start operation", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using field checks and table start/end validation. Rust code performs similar verification using a verifier with table visiting and field validation. [Similarity] Both perform table verification logic, but differ in API usage and structure. [Knowledge Extraction] Found partial structural match in verification logic and API mappings for table/field verification operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Verify__idx3350_rank3.h", "source_rust_file": "Partial__Verify__idx3350_rank3.rs", "c_fragment": "VerifyTableStart(verifier) &&\n           VerifyField<int8_t>(verifier, VT_BASE_TYPE, 1) &&\n           VerifyField<int8_t>(verifier, VT_ELEMENT, 1) &&\n           VerifyField<int32_t>(verifier, VT_INDEX, 4) &&\n           VerifyField<uint16_t>(verifier, VT_FIXED_LENGTH, 2) &&\n           VerifyField<uint32_t>(verifier, VT_BASE_SIZE, 4) &&\n           VerifyField<uint32_t>(verifier, VT_ELEMENT_SIZE, 4) &&\n           verifier.EndTable();", "rust_fragment": "v.visit_table(pos)?\n     .visit_field::<i32>(\"value\", Self::VT_VALUE, false)?\n     .finish();", "description": "Both perform table verification with field checks and table end/finish operations.", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using field checks and table start/end validation. Rust code performs similar verification using a verifier with table visiting and field validation. [Similarity] Both perform table verification logic, but differ in API usage and structure. [Knowledge Extraction] Found partial structural match in verification logic and API mappings for table/field verification operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Verify__idx3350_rank3.h", "source_rust_file": "Partial__Verify__idx3350_rank3.rs", "c_api": "VerifyField<int8_t>(verifier, VT_BASE_TYPE, 1)", "rust_api": "visit_field::<i32>(\"value\", Self::VT_VALUE, false)?", "mapping_type": "function", "description": "Field verification operation", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using field checks and table start/end validation. Rust code performs similar verification using a verifier with table visiting and field validation. [Similarity] Both perform table verification logic, but differ in API usage and structure. [Knowledge Extraction] Found partial structural match in verification logic and API mappings for table/field verification operations."}]
+Unixcoder Score: -0.07951609790325165
+--------------------------------------------------
+C_Code: 
+static int VerifyCallback(int preverifyOk, X509_STORE_CTX *ctx)
+{
+    X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+    int err = X509_STORE_CTX_get_error(ctx);
+    int depth = X509_STORE_CTX_get_error_depth(ctx);
+
+    NETSTACK_LOGI("X509_STORE_CTX error code %{public}d, depth %{public}d", err, depth);
+
+    SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+    SSL_CTX *sslctx = SSL_get_SSL_CTX(ssl);
+    RequestContext *requestContext = static_cast<RequestContext *>(SSL_CTX_get_ex_data(sslctx,
+        SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX));
+    if (requestContext == nullptr) {
+        NETSTACK_LOGE("creat requestContext instance failed");
+        return 0;
+    }
+    if (requestContext->IsRootCaVerifiedOk()) {
+        // root CA hash verified, normal procedure.
+        return preverifyOk;
+    }
+
+    int verifyResult = VerifyCertPubkey(cert, requestContext->GetPinnedPubkey());
+    if (!requestContext->IsRootCaVerified()) {
+        // not verified yet, so this is the root CA verifying.
+        NETSTACK_LOGD("Verifying Root CA.");
+        requestContext->SetRootCaVerifiedOk(verifyResult == CURLE_OK);
+        requestContext->SetRootCaVerified();
+    }
+    if (verifyResult != CURLE_OK && depth == 0) {
+        // peer site certificate, since root ca verify not ok, and peer site is also not ok
+        // return failed.
+        return 0;
+    }
+    return preverifyOk;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_api": "certInfo->certInfo.data = nullptr", "rust_api": "*info = CertInfo { cert: Some(certificates), };", "mapping_type": "pattern", "description": "Pointer nulling vs struct initialization - both represent clearing or resetting data structures", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_fragment": "free(certInfo->certInfo.data);\ncertInfo->certInfo.data = nullptr;", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Memory deallocation pattern - both perform cleanup of allocated memory, though Rust uses FFI call while C uses standard free.", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_api": "free(certInfo->certInfo.data)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation - C's free() equivalent in Rust via FFI call to FreeCertDataList", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}]
+Unixcoder Score: -0.0801556184887886
+--------------------------------------------------
+C_Code: 
+static std::string X509_to_PEM(X509 *cert)
+{
+    if (!cert) {
+        return {};
+    }
+    BIO *bio = BIO_new(BIO_s_mem());
+    if (!bio) {
+        return {};
+    }
+    if (!PEM_write_bio_X509(bio, cert)) {
+        BIO_free(bio);
+        return {};
+    }
+
+    char *data = nullptr;
+    auto pemStringLength = BIO_get_mem_data(bio, &data);
+    if (!data) {
+        BIO_free(bio);
+        return {};
+    }
+    std::string certificateInPEM(data, pemStringLength);
+    BIO_free(bio);
+    return certificateInPEM;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx3985_rank5.c", "source_rust_file": "API_Mapping__Verify__idx3985_rank5.rs", "c_api": "verifier.EndTable()", "rust_api": ".finish();", "mapping_type": "function", "description": "Finish table verification", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using multiple field checks and vector verifications; Rust code runs a verifier on a table with specific field validation. [Similarity] Names do not match exactly but both perform table verification logic; however, the domains and structures differ significantly (C uses a series of VerifyField calls, Rust uses a visitor pattern). [Knowledge Extraction] No full structural match due to domain mismatch and different verification approaches. However, both perform table verification, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx3985_rank5.c", "source_rust_file": "API_Mapping__Verify__idx3985_rank5.rs", "c_api": "verifier.VerifyVector(v8())", "rust_api": "v.visit_field::<i64>(\"num_stars\", Self::VT_NUM_STARS, false)?", "mapping_type": "function", "description": "Verify a vector field", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using multiple field checks and vector verifications; Rust code runs a verifier on a table with specific field validation. [Similarity] Names do not match exactly but both perform table verification logic; however, the domains and structures differ significantly (C uses a series of VerifyField calls, Rust uses a visitor pattern). [Knowledge Extraction] No full structural match due to domain mismatch and different verification approaches. However, both perform table verification, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx3985_rank5.c", "source_rust_file": "API_Mapping__Verify__idx3985_rank5.rs", "c_api": "VerifyField<int8_t>(verifier, VT_I8, 1)", "rust_api": "v.visit_field::<i64>(\"num_stars\", Self::VT_NUM_STARS, false)?", "mapping_type": "function", "description": "Verify a typed field in the table", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using multiple field checks and vector verifications; Rust code runs a verifier on a table with specific field validation. [Similarity] Names do not match exactly but both perform table verification logic; however, the domains and structures differ significantly (C uses a series of VerifyField calls, Rust uses a visitor pattern). [Knowledge Extraction] No full structural match due to domain mismatch and different verification approaches. However, both perform table verification, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx3985_rank5.c", "source_rust_file": "API_Mapping__Verify__idx3985_rank5.rs", "c_api": "VerifyTableStart(verifier)", "rust_api": "v.visit_table(pos)?", "mapping_type": "function", "description": "Start table verification", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using multiple field checks and vector verifications; Rust code runs a verifier on a table with specific field validation. [Similarity] Names do not match exactly but both perform table verification logic; however, the domains and structures differ significantly (C uses a series of VerifyField calls, Rust uses a visitor pattern). [Knowledge Extraction] No full structural match due to domain mismatch and different verification approaches. However, both perform table verification, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Verify__idx3985_rank5.c", "source_rust_file": "API_Mapping__Verify__idx3985_rank5.rs", "c_api": "VerifyOffset(verifier, VT_V8)", "rust_api": "v.visit_field::<i64>(\"num_stars\", Self::VT_NUM_STARS, false)?", "mapping_type": "function", "description": "Verify offset to a vector field", "reasoning": "[Task Analysis] C code verifies a FlatBuffers table structure using multiple field checks and vector verifications; Rust code runs a verifier on a table with specific field validation. [Similarity] Names do not match exactly but both perform table verification logic; however, the domains and structures differ significantly (C uses a series of VerifyField calls, Rust uses a visitor pattern). [Knowledge Extraction] No full structural match due to domain mismatch and different verification approaches. However, both perform table verification, so API mappings are extracted."}]
+Unixcoder Score: -0.08114837110042572
+--------------------------------------------------

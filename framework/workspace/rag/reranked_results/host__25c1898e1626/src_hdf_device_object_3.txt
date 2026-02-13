@@ -1,0 +1,275 @@
+C_Code: 
+int32_t SystemAbilityStateScheduler::SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener)
+{
+    std::unique_lock<samgr::shared_mutex> writeLock(listenerSetLock_);
+    auto iter = std::find_if(processListeners_.begin(), processListeners_.end(),
+        [listener](sptr<ISystemProcessStatusChange>& item) {
+        return item->AsObject() == listener->AsObject();
+    });
+    if (iter == processListeners_.end()) {
+        if (processListenerDeath_ != nullptr) {
+            bool ret = listener->AsObject()->AddDeathRecipient(processListenerDeath_);
+            HILOGI("SubscribeSystemProcess AddDeathRecipient %{public}s", ret ? "succeed" : "failed");
+        }
+        processListeners_.emplace_back(listener);
+    } else {
+        HILOGI("SubscribeSystemProcess listener already exists");
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.022166669368743896
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.02177339978516102
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.019938357174396515
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.015344045124948025
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.014243634417653084
+--------------------------------------------------
+C_Code: 
+void CommonEventListener::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    if (commonEventCollect_ == nullptr) {
+        HILOGE("commonEventCollect_ is nullptr!");
+        return;
+    }
+    if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
+        HILOGI("CommonEventCollect ces is ready");
+        commonEventCollect_->SendEvent(SUB_COMMON_EVENT);
+    }
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Unixcoder Score: -0.006119830068200827
+--------------------------------------------------
+C_Code: 
+struct VkBufferCopy {
+    VkDeviceSize    srcOffset;
+    VkDeviceSize    dstOffset;
+    VkDeviceSize    size;
+}
+Function: 
+struct WorkgroupBufferInfo {
+        size_in_bytes: u32,
+        index: u32,
+    }
+Unixcoder Score: -0.011206939816474915
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.014883138239383698
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityStateScheduler::SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener)
+{
+    std::unique_lock<samgr::shared_mutex> writeLock(listenerSetLock_);
+    auto iter = std::find_if(processListeners_.begin(), processListeners_.end(),
+        [listener](sptr<ISystemProcessStatusChange>& item) {
+        return item->AsObject() == listener->AsObject();
+    });
+    if (iter == processListeners_.end()) {
+        if (processListenerDeath_ != nullptr) {
+            bool ret = listener->AsObject()->AddDeathRecipient(processListenerDeath_);
+            HILOGI("SubscribeSystemProcess AddDeathRecipient %{public}s", ret ? "succeed" : "failed");
+        }
+        processListeners_.emplace_back(listener);
+    } else {
+        HILOGI("SubscribeSystemProcess listener already exists");
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.01938915066421032
+--------------------------------------------------
+C_Code: 
+PhysicalDeviceLimits( VkPhysicalDeviceLimits const & rhs ) VULKAN_HPP_NOEXCEPT
+      : PhysicalDeviceLimits( *reinterpret_cast<PhysicalDeviceLimits const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::WorkgroupCounts) -> Self {
+        Self {
+            use_large_path_scan: src.use_large_path_scan,
+            path_reduce: (&src.path_reduce).into(),
+            path_reduce2: (&src.path_reduce2).into(),
+            path_scan1: (&src.path_scan1).into(),
+            path_scan: (&src.path_scan).into(),
+            bbox_clear: (&src.bbox_clear).into(),
+            flatten: (&src.flatten).into(),
+            draw_reduce: (&src.draw_reduce).into(),
+            draw_leaf: (&src.draw_leaf).into(),
+            clip_reduce: (&src.clip_reduce).into(),
+            clip_leaf: (&src.clip_leaf).into(),
+            binning: (&src.binning).into(),
+            tile_alloc: (&src.tile_alloc).into(),
+            path_count_setup: (&src.path_count_setup).into(),
+            backdrop: (&src.backdrop).into(),
+            coarse: (&src.coarse).into(),
+            path_tiling_setup: (&src.path_tiling_setup).into(),
+            fine: (&src.fine).into(),
+        }
+    }
+Unixcoder Score: -0.02846767008304596
+--------------------------------------------------

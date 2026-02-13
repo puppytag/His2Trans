@@ -1,0 +1,582 @@
+C_Code: 
+rust::string GetCallingBundle(rust::u64 tokenId)
+{
+    auto tokenType = AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(tokenId));
+    if (tokenType != TOKEN_HAP) {
+        REQUEST_HILOGE("invalid token");
+        return rust::string("");
+    }
+    HapTokenInfo info;
+    int ret = AccessTokenKit::GetHapTokenInfo(tokenId, info);
+    if (ret != 0) {
+        REQUEST_HILOGE("failed to get hap info, ret: %{public}d", ret);
+        return rust::string("");
+    }
+    return rust::string(info.bundleName);
+}
+Function: 
+pub(crate) fn update_accounts(
+        &mut self,
+        foreground_account: u64,
+        active_accounts: HashSet<u64>,
+    ) -> Option<SqlList> {
+        if self.active_accounts == active_accounts {
+            return None;
+        }
+        info!("update active accounts {:?}", active_accounts);
+        let mut sql_list = SqlList::new();
+        sql_list.add_account_change(&active_accounts);
+        self.active_accounts = active_accounts;
+        self.top_user = foreground_account;
+        Some(sql_list)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx120693_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx120693_rank1.rs", "c_api": "GlobalAlloc::alloc", "rust_api": "GlobalAlloc::alloc", "mapping_type": "method", "description": "Memory allocation using global allocator", "reasoning": "[FFI Check] -> The Rust code uses `GlobalAlloc::alloc` and `GlobalAlloc::alloc_zeroed` which are not direct FFI calls but part of Rust's allocator trait. -> [Task Analysis] -> The C code implements `arena_salloc` to determine the size of an allocation given a pointer, while the Rust code implements `alloc_impl` to allocate memory based on a layout. The core logic is about memory allocation and size determination, but the domains are different: C is low-level memory management with explicit chunk/page tracking, while Rust uses high-level allocators. -> [Similarity] -> There is no full structural similarity due to domain mismatch and different abstraction levels. However, both involve memory size determination and allocation logic. -> [Knowledge Extraction] -> Extract API mappings between memory allocation and size retrieval operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx120693_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx120693_rank1.rs", "c_api": "arena_salloc", "rust_api": "alloc_impl", "mapping_type": "function", "description": "Memory size determination and allocation handling", "reasoning": "[FFI Check] -> The Rust code uses `GlobalAlloc::alloc` and `GlobalAlloc::alloc_zeroed` which are not direct FFI calls but part of Rust's allocator trait. -> [Task Analysis] -> The C code implements `arena_salloc` to determine the size of an allocation given a pointer, while the Rust code implements `alloc_impl` to allocate memory based on a layout. The core logic is about memory allocation and size determination, but the domains are different: C is low-level memory management with explicit chunk/page tracking, while Rust uses high-level allocators. -> [Similarity] -> There is no full structural similarity due to domain mismatch and different abstraction levels. However, both involve memory size determination and allocation logic. -> [Knowledge Extraction] -> Extract API mappings between memory allocation and size retrieval operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx120693_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx120693_rank1.rs", "c_api": "arena_bin_info[binind].reg_size", "rust_api": "layout.size", "mapping_type": "function", "description": "Retrieval of allocation size from bin info", "reasoning": "[FFI Check] -> The Rust code uses `GlobalAlloc::alloc` and `GlobalAlloc::alloc_zeroed` which are not direct FFI calls but part of Rust's allocator trait. -> [Task Analysis] -> The C code implements `arena_salloc` to determine the size of an allocation given a pointer, while the Rust code implements `alloc_impl` to allocate memory based on a layout. The core logic is about memory allocation and size determination, but the domains are different: C is low-level memory management with explicit chunk/page tracking, while Rust uses high-level allocators. -> [Similarity] -> There is no full structural similarity due to domain mismatch and different abstraction levels. However, both involve memory size determination and allocation logic. -> [Knowledge Extraction] -> Extract API mappings between memory allocation and size retrieval operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx120693_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx120693_rank1.rs", "c_api": "arena_mapbits_large_size_get", "rust_api": "layout.size", "mapping_type": "function", "description": "Retrieval of allocation size from metadata", "reasoning": "[FFI Check] -> The Rust code uses `GlobalAlloc::alloc` and `GlobalAlloc::alloc_zeroed` which are not direct FFI calls but part of Rust's allocator trait. -> [Task Analysis] -> The C code implements `arena_salloc` to determine the size of an allocation given a pointer, while the Rust code implements `alloc_impl` to allocate memory based on a layout. The core logic is about memory allocation and size determination, but the domains are different: C is low-level memory management with explicit chunk/page tracking, while Rust uses high-level allocators. -> [Similarity] -> There is no full structural similarity due to domain mismatch and different abstraction levels. However, both involve memory size determination and allocation logic. -> [Knowledge Extraction] -> Extract API mappings between memory allocation and size retrieval operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx120693_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx120693_rank1.rs", "c_api": "GlobalAlloc::alloc_zeroed", "rust_api": "GlobalAlloc::alloc_zeroed", "mapping_type": "method", "description": "Zero-initialized memory allocation using global allocator", "reasoning": "[FFI Check] -> The Rust code uses `GlobalAlloc::alloc` and `GlobalAlloc::alloc_zeroed` which are not direct FFI calls but part of Rust's allocator trait. -> [Task Analysis] -> The C code implements `arena_salloc` to determine the size of an allocation given a pointer, while the Rust code implements `alloc_impl` to allocate memory based on a layout. The core logic is about memory allocation and size determination, but the domains are different: C is low-level memory management with explicit chunk/page tracking, while Rust uses high-level allocators. -> [Similarity] -> There is no full structural similarity due to domain mismatch and different abstraction levels. However, both involve memory size determination and allocation logic. -> [Knowledge Extraction] -> Extract API mappings between memory allocation and size retrieval operations."}]
+Unixcoder Score: 0.12291554361581802
+--------------------------------------------------
+C_Code: 
+rust::string GetCallingBundle(rust::u64 tokenId)
+{
+    auto tokenType = AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(tokenId));
+    if (tokenType != TOKEN_HAP) {
+        REQUEST_HILOGE("invalid token");
+        return rust::string("");
+    }
+    HapTokenInfo info;
+    int ret = AccessTokenKit::GetHapTokenInfo(tokenId, info);
+    if (ret != 0) {
+        REQUEST_HILOGE("failed to get hap info, ret: %{public}d", ret);
+        return rust::string("");
+    }
+    return rust::string(info.bundleName);
+}
+Function: 
+pub(crate) fn query_calling_bundle() -> String {
+    let token_id = ipc::Skeleton::calling_full_token_id();
+    ffi::GetCallingBundle(token_id)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx90077_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx90077_rank1.rs", "c_api": "libc::malloc", "rust_api": "Box::new", "mapping_type": "function", "description": "Heap allocation", "reasoning": "[Task Analysis] C function `arena_salloc` performs memory size calculation for allocated chunks, while Rust function `alloc` performs heap allocation using `libc::malloc`. [Similarity] Names and domains do not match; C deals with memory layout and allocation metadata, Rust does raw heap allocation. [Knowledge Extraction] No full or partial structural match. However, both involve memory management patterns, so API mapping is extracted for `libc::malloc` vs `Box::new` or similar allocation patterns."}]
+Unixcoder Score: 0.10704780369997025
+--------------------------------------------------
+C_Code: 
+rust::string GetCallingBundle(rust::u64 tokenId)
+{
+    auto tokenType = AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(tokenId));
+    if (tokenType != TOKEN_HAP) {
+        REQUEST_HILOGE("invalid token");
+        return rust::string("");
+    }
+    HapTokenInfo info;
+    int ret = AccessTokenKit::GetHapTokenInfo(tokenId, info);
+    if (ret != 0) {
+        REQUEST_HILOGE("failed to get hap info, ret: %{public}d", ret);
+        return rust::string("");
+    }
+    return rust::string(info.bundleName);
+}
+Function: 
+pub(crate) fn query_calling_bundle() -> String {
+    let token_id = ipc::Skeleton::calling_full_token_id();
+    ffi::GetCallingBundle(token_id)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx127099_rank3.h", "source_rust_file": "API_Mapping__arena_salloc__idx127099_rank3.rs", "c_api": "arena_bin_info[binind].reg_size", "rust_api": "HeapFree(heap, 0, block as c::LPVOID)", "mapping_type": "function", "description": "Small allocation size retrieval and deallocation", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, while Rust function `dealloc` frees memory using Windows API `HeapFree`. These functions serve different purposes (size query vs deallocation), and their control flows and domains are unrelated. [Similarity] No structural similarity at the function level; C computes size from pointer metadata, Rust frees memory via FFI call. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx127099_rank3.h", "source_rust_file": "API_Mapping__arena_salloc__idx127099_rank3.rs", "c_api": "arena_mapbits_allocated_get(chunk, pageind)", "rust_api": "HeapFree(heap, 0, block as c::LPVOID)", "mapping_type": "function", "description": "Memory allocation status check and deallocation", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, while Rust function `dealloc` frees memory using Windows API `HeapFree`. These functions serve different purposes (size query vs deallocation), and their control flows and domains are unrelated. [Similarity] No structural similarity at the function level; C computes size from pointer metadata, Rust frees memory via FFI call. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx127099_rank3.h", "source_rust_file": "API_Mapping__arena_salloc__idx127099_rank3.rs", "c_api": "arena_mapbits_large_size_get(chunk, pageind)", "rust_api": "HeapFree(heap, 0, block as c::LPVOID)", "mapping_type": "function", "description": "Large allocation size retrieval and deallocation", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, while Rust function `dealloc` frees memory using Windows API `HeapFree`. These functions serve different purposes (size query vs deallocation), and their control flows and domains are unrelated. [Similarity] No structural similarity at the function level; C computes size from pointer metadata, Rust frees memory via FFI call. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management patterns."}]
+Unixcoder Score: 0.0896548330783844
+--------------------------------------------------
+C_Code: 
+rust::string GetCallingBundle(rust::u64 tokenId)
+{
+    auto tokenType = AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(tokenId));
+    if (tokenType != TOKEN_HAP) {
+        REQUEST_HILOGE("invalid token");
+        return rust::string("");
+    }
+    HapTokenInfo info;
+    int ret = AccessTokenKit::GetHapTokenInfo(tokenId, info);
+    if (ret != 0) {
+        REQUEST_HILOGE("failed to get hap info, ret: %{public}d", ret);
+        return rust::string("");
+    }
+    return rust::string(info.bundleName);
+}
+Function: 
+pub(crate) fn query_calling_bundle() -> String {
+    let token_id = ipc::Skeleton::calling_full_token_id();
+    ffi::GetCallingBundle(token_id)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx89256_rank3.h", "source_rust_file": "API_Mapping__arena_salloc__idx89256_rank3.rs", "c_api": "arena_mapbits_allocated_get(chunk, pageind)", "rust_api": "Global.allocate(l).unwrap().as_non_null_ptr()", "mapping_type": "function", "description": "Memory allocation using global allocator", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocated memory block, while Rust code shows allocation/deallocation using `Global` and `System` allocators. [Similarity] No direct structural similarity due to different domains: C is memory management (arena-based), Rust is global/system allocator usage. [Knowledge Extraction] No full/partial match due to domain mismatch (memory arena vs allocator). However, both involve memory size computation and allocation/deallocation patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx89256_rank3.h", "source_rust_file": "API_Mapping__arena_salloc__idx89256_rank3.rs", "c_api": "arena_mapbits_dirty_get(chunk, pageind)", "rust_api": "System.deallocate(ptr, l)", "mapping_type": "function", "description": "Memory deallocation using system allocator", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocated memory block, while Rust code shows allocation/deallocation using `Global` and `System` allocators. [Similarity] No direct structural similarity due to different domains: C is memory management (arena-based), Rust is global/system allocator usage. [Knowledge Extraction] No full/partial match due to domain mismatch (memory arena vs allocator). However, both involve memory size computation and allocation/deallocation patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx89256_rank3.h", "source_rust_file": "API_Mapping__arena_salloc__idx89256_rank3.rs", "c_api": "arena_mapbits_large_size_get(chunk, pageind)", "rust_api": "Layout::from_size_align(123, 1).unwrap()", "mapping_type": "function", "description": "Size computation for memory allocation", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocated memory block, while Rust code shows allocation/deallocation using `Global` and `System` allocators. [Similarity] No direct structural similarity due to different domains: C is memory management (arena-based), Rust is global/system allocator usage. [Knowledge Extraction] No full/partial match due to domain mismatch (memory arena vs allocator). However, both involve memory size computation and allocation/deallocation patterns, so API mappings are extracted."}]
+Unixcoder Score: 0.07881475985050201
+--------------------------------------------------
+C_Code: 
+TEST(Cpp, JsonNull) {
+  upb::DefPool defpool;
+  upb::MessageDefPtr md(upb_test_TestMessage_getmsgdef(defpool.ptr()));
+  upb::FieldDefPtr i32_f = md.FindFieldByName("i32");
+  upb::FieldDefPtr str_f = md.FindFieldByName("str");
+  ASSERT_TRUE(i32_f);
+  ASSERT_TRUE(str_f);
+  EXPECT_EQ(5, i32_f.default_value().int32_val);
+  EXPECT_EQ(0, strcmp(str_f.default_value().str_val.data, "abc"));
+  EXPECT_EQ(3, str_f.default_value().str_val.size);
+}
+Function: 
+fn array_ffi_test() {
+        // SAFETY: FFI unit test uses C API under expected patterns.
+        unsafe {
+            let arena = Arena::new();
+            let raw_arena = arena.raw();
+            let array = upb_Array_New(raw_arena, CType::Float);
+
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 7.0 }, raw_arena));
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 42.0 }, raw_arena));
+            assert_eq!(upb_Array_Size(array), 2);
+            assert!(matches!(upb_Array_Get(array, 1), upb_MessageValue { float_val: 42.0 }));
+
+            assert!(upb_Array_Resize(array, 3, raw_arena));
+            assert_eq!(upb_Array_Size(array), 3);
+            assert!(matches!(upb_Array_Get(array, 2), upb_MessageValue { float_val: 0.0 }));
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShowTasks__idx885_rank4.c", "source_rust_file": "Partial__ShowTasks__idx885_rank4.rs", "c_api": "data.WriteUint32(len)", "rust_api": "let len: u32 = data.read()?;", "mapping_type": "function", "description": "Writing/reading length parameter for IPC message", "reasoning": "[Task Analysis] C function handles IPC request for showing tasks, Rust function handles IPC query for task info. [Similarity] Names don't match but both handle IPC communication, data serialization, and error handling. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShowTasks__idx885_rank4.c", "source_rust_file": "Partial__ShowTasks__idx885_rank4.rs", "c_api": "Remote()->SendRequest(...)", "rust_api": "query(&self, data: &mut MsgParcel, reply: &mut MsgParcel)", "mapping_type": "function", "description": "IPC request sending and handling", "reasoning": "[Task Analysis] C function handles IPC request for showing tasks, Rust function handles IPC query for task info. [Similarity] Names don't match but both handle IPC communication, data serialization, and error handling. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShowTasks__idx885_rank4.c", "source_rust_file": "Partial__ShowTasks__idx885_rank4.rs", "c_api": "reply.ReadInt32()", "rust_api": "reply.write(&(c as i32))?;", "mapping_type": "function", "description": "Reading/writing integer error codes in IPC reply", "reasoning": "[Task Analysis] C function handles IPC request for showing tasks, Rust function handles IPC query for task info. [Similarity] Names don't match but both handle IPC communication, data serialization, and error handling. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ShowTasks__idx885_rank4.c", "source_rust_file": "Partial__ShowTasks__idx885_rank4.rs", "c_fragment": "for (const std::string &tid : tids) {\n        data.WriteString(tid);\n    }", "rust_fragment": "for i in 0..len {\n            let task_id: String = data.read()?;\n            info!(\"Service query tid {}\", task_id);\n\n            let Ok(task_id) = task_id.parse::<u32>() else {\n                error!(\"Service query, failed: tid not valid: {}\", task_id);\n                sys_event!(\n                    ExecError,\n                    DfxCode::INVALID_IPC_MESSAGE_A06,\n                    &format!(\"Service query, failed: tid not valid: {}\", task_id)\n                );\n                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);\n                continue;\n            };", "description": "Both iterate over input data to process each item, with C reading task IDs and Rust parsing and validating them.", "reasoning": "[Task Analysis] C function handles IPC request for showing tasks, Rust function handles IPC query for task info. [Similarity] Names don't match but both handle IPC communication, data serialization, and error handling. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ShowTasks__idx885_rank4.c", "source_rust_file": "Partial__ShowTasks__idx885_rank4.rs", "c_fragment": "for (uint32_t i = 0; i < len; i++) {\n        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());\n        TaskInfo info;\n        ParcelHelper::UnMarshal(reply, info);\n        rets[i].info = info;\n    }", "rust_fragment": "reply.write(&(ErrorCode::ErrOk as i32))?;\n        for (c, info) in vec {\n            reply.write(&(c as i32))?;\n            // TODO: Sends info only when ErrOk.\n            serialize_task_info(info, reply)?;", "description": "Both iterate over results to write back data to reply parcel, with C unmarshaling and Rust serializing task info.", "reasoning": "[Task Analysis] C function handles IPC request for showing tasks, Rust function handles IPC query for task info. [Similarity] Names don't match but both handle IPC communication, data serialization, and error handling. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShowTasks__idx885_rank4.c", "source_rust_file": "Partial__ShowTasks__idx885_rank4.rs", "c_api": "SysEventLog::SendSysEventLog(...)", "rust_api": "sys_event!(...)", "mapping_type": "function", "description": "System event logging for IPC faults", "reasoning": "[Task Analysis] C function handles IPC request for showing tasks, Rust function handles IPC query for task info. [Similarity] Names don't match but both handle IPC communication, data serialization, and error handling. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShowTasks__idx885_rank4.c", "source_rust_file": "Partial__ShowTasks__idx885_rank4.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "error!(...)", "mapping_type": "function", "description": "Error logging in IPC communication", "reasoning": "[Task Analysis] C function handles IPC request for showing tasks, Rust function handles IPC query for task info. [Similarity] Names don't match but both handle IPC communication, data serialization, and error handling. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShowTasks__idx885_rank4.c", "source_rust_file": "Partial__ShowTasks__idx885_rank4.rs", "c_api": "data.WriteString(tid)", "rust_api": "let task_id: String = data.read()?;", "mapping_type": "function", "description": "Writing/reading string data in IPC message", "reasoning": "[Task Analysis] C function handles IPC request for showing tasks, Rust function handles IPC query for task info. [Similarity] Names don't match but both handle IPC communication, data serialization, and error handling. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for IPC data handling and error reporting."}]
+Unixcoder Score: -0.02895362488925457
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::ShowTasks(const std::vector<std::string> &tids, std::vector<TaskInfoRet> &rets)
+{
+    TaskInfoRet infoRet{ .code = ExceptionErrorCode::E_OTHER };
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, infoRet);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RequestServiceProxy::GetDescriptor());
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_SHOW), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request ShowTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request ShowTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+        TaskInfo info;
+        ParcelHelper::UnMarshal(reply, info);
+        rets[i].info = info;
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn show(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        debug!("Service show");
+        let permission = PermissionChecker::check_down_permission();
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > GET_INFO_MAX {
+            info!("Service show: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![(ErrorCode::Other, TaskInfo::new()); len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service show tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service show, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!("Service show, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service show, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!(
+                        "Service show, failed: check task uid. tid: {}, uid: {}",
+                        task_id, ipc_uid
+                    )
+                );
+                continue;
+            }
+
+            let info = self.task_manager.lock().unwrap().show(task_uid, task_id);
+            match info {
+                Some(task_info) => {
+                    if let Some((c, info)) = vec.get_mut(i) {
+                        *c = ErrorCode::ErrOk;
+                        *info = task_info;
+                    }
+                }
+                None => {
+                    error!("Service show, failed: task_id not found, tid: {}", task_id);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A18,
+                        &format!("Service show, failed: task_id not found, tid: {}", task_id)
+                    );
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                }
+            };
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for (c, info) in vec {
+            reply.write(&(c as i32))?;
+            // TODO: Sends info only when ErrOk.
+            serialize_task_info(info, reply)?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__arena_salloc__idx140235_rank2.h", "source_rust_file": "Partial__arena_salloc__idx140235_rank2.rs", "c_fragment": "assert(ptr != NULL);\nassert(CHUNK_ADDR2BASE(ptr) != ptr);", "rust_fragment": "if layout.align() <= MIN_ALIGN {", "description": "Both perform initial validation checks on input parameters before proceeding with allocation logic.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__arena_salloc__idx140235_rank2.h", "source_rust_file": "Partial__arena_salloc__idx140235_rank2.rs", "c_api": "arena_mapbits_allocated_get", "rust_api": "layout.align()", "mapping_type": "function", "description": "Allocation status check in C maps to alignment check in Rust.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__arena_salloc__idx140235_rank2.h", "source_rust_file": "Partial__arena_salloc__idx140235_rank2.rs", "c_api": "arena_mapbits_large_size_get", "rust_api": "process_heap_alloc", "mapping_type": "function", "description": "Retrieval of large allocation size in C maps to heap allocation in Rust.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__arena_salloc__idx140235_rank2.h", "source_rust_file": "Partial__arena_salloc__idx140235_rank2.rs", "c_fragment": "ret = arena_mapbits_large_size_get(chunk, pageind);", "rust_fragment": "process_heap_alloc(MaybeUninit::uninit(), flags, layout.size()) as *mut u8", "description": "Both handle the core allocation of memory for a given size, with C using a map-based approach and Rust using a heap allocation function.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__arena_salloc__idx140235_rank2.h", "source_rust_file": "Partial__arena_salloc__idx140235_rank2.rs", "c_api": "CHUNK_ADDR2BASE(ptr)", "rust_api": "ptr.addr()", "mapping_type": "function", "description": "Address base calculation in C maps to pointer address access in Rust.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__arena_salloc__idx140235_rank2.h", "source_rust_file": "Partial__arena_salloc__idx140235_rank2.rs", "c_api": "arena_bin_info[binind].reg_size", "rust_api": "layout.size()", "mapping_type": "field_access", "description": "Access to registered size in C maps to layout size in Rust.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__arena_salloc__idx140235_rank2.h", "source_rust_file": "Partial__arena_salloc__idx140235_rank2.rs", "c_fragment": "ret = arena_bin_info[binind].reg_size;", "rust_fragment": "process_heap_alloc(MaybeUninit::uninit(), flags, layout.size()) as *mut u8", "description": "Both determine the size of the memory block to be allocated, though C uses a bin info lookup while Rust uses the layout size directly.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__arena_salloc__idx140235_rank2.h", "source_rust_file": "Partial__arena_salloc__idx140235_rank2.rs", "c_api": "arena_salloc", "rust_api": "allocate", "mapping_type": "function", "description": "Memory size retrieval function in C maps to allocation function in Rust.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}]
+Unixcoder Score: -0.029526760801672935
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::ShowTasks(const std::vector<std::string> &tids, std::vector<TaskInfoRet> &rets)
+{
+    TaskInfoRet infoRet{ .code = ExceptionErrorCode::E_OTHER };
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, infoRet);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RequestServiceProxy::GetDescriptor());
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_SHOW), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request ShowTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request ShowTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+        TaskInfo info;
+        ParcelHelper::UnMarshal(reply, info);
+        rets[i].info = info;
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn show(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        debug!("Service show");
+        let permission = PermissionChecker::check_down_permission();
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > GET_INFO_MAX {
+            info!("Service show: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![(ErrorCode::Other, TaskInfo::new()); len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service show tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service show, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!("Service show, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service show, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!(
+                        "Service show, failed: check task uid. tid: {}, uid: {}",
+                        task_id, ipc_uid
+                    )
+                );
+                continue;
+            }
+
+            let info = self.task_manager.lock().unwrap().show(task_uid, task_id);
+            match info {
+                Some(task_info) => {
+                    if let Some((c, info)) = vec.get_mut(i) {
+                        *c = ErrorCode::ErrOk;
+                        *info = task_info;
+                    }
+                }
+                None => {
+                    error!("Service show, failed: task_id not found, tid: {}", task_id);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A18,
+                        &format!("Service show, failed: task_id not found, tid: {}", task_id)
+                    );
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                }
+            };
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for (c, info) in vec {
+            reply.write(&(c as i32))?;
+            // TODO: Sends info only when ErrOk.
+            serialize_task_info(info, reply)?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx140218_rank4.h", "source_rust_file": "API_Mapping__arena_salloc__idx140218_rank4.rs", "c_api": "arena_salloc", "rust_api": "libc::free", "mapping_type": "function", "description": "Memory deallocation operation", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, handling both small and large allocations; Rust function `dealloc` performs deallocation using `libc::free`. [Similarity] Names and domains do not match; C deals with allocation size calculation, Rust with deallocation. [Knowledge Extraction] No full or partial structural match. However, both involve memory management operations, so API mapping is extracted for `libc::free` vs `arena_salloc` in terms of memory management context."}]
+Unixcoder Score: -0.03617429360747337
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::ShowTasks(const std::vector<std::string> &tids, std::vector<TaskInfoRet> &rets)
+{
+    TaskInfoRet infoRet{ .code = ExceptionErrorCode::E_OTHER };
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, infoRet);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RequestServiceProxy::GetDescriptor());
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_SHOW), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request ShowTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request ShowTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+        TaskInfo info;
+        ParcelHelper::UnMarshal(reply, info);
+        rets[i].info = info;
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn query(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        if !is_system_api() {
+            error!("Service query: not system api");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A05,
+                "Service query: not system api"
+            );
+            reply.write(&(ErrorCode::SystemApi as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+        let permission = PermissionChecker::check_manager();
+        let action = match permission.get_action() {
+            Some(a) => a,
+            None => {
+                error!("Service query: no QUERY permission");
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A05,
+                    "Service query: no QUERY permission"
+                );
+                reply.write(&(ErrorCode::Permission as i32))?;
+                return Err(IpcStatusCode::Failed);
+            }
+        };
+
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > GET_INFO_MAX {
+            info!("Service query: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let mut vec = vec![(ErrorCode::Other, TaskInfo::new()); len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service query tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service query, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A06,
+                    &format!("Service query, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            let info = self.task_manager.lock().unwrap().query(task_id, action);
+            match info {
+                Some(task_info) => {
+                    if let Some((c, info)) = vec.get_mut(i) {
+                        *c = ErrorCode::ErrOk;
+                        *info = task_info;
+                    }
+                }
+                None => {
+                    error!("Service query, failed: task_id not found, tid: {}", task_id);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A06,
+                        &format!("Service query, failed: task_id not found, tid: {}", task_id)
+                    );
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                }
+            };
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for (c, info) in vec {
+            reply.write(&(c as i32))?;
+            // TODO: Sends info only when ErrOk.
+            serialize_task_info(info, reply)?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__arena_salloc__idx138525_rank1.h", "source_rust_file": "Partial__arena_salloc__idx138525_rank1.rs", "c_api": "arena_mapbits_large_size_get(chunk, pageind)", "rust_api": "arena.alloc(layout)", "mapping_type": "function", "description": "Allocation size retrieval and allocation behavior in memory management", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, handling both small and large allocations; Rust function `alloc` performs memory allocation via an arena. [Similarity] Names and domains differ significantly (C: memory management, Rust: allocation via arena); no full structural match. [Knowledge Extraction] No full match, but there's a partial structural fragment involving allocation size logic and a mapping for allocation behavior."}, {"knowledge_type": "Partial", "source_c_file": "Partial__arena_salloc__idx138525_rank1.h", "source_rust_file": "Partial__arena_salloc__idx138525_rank1.rs", "c_fragment": "ret = arena_mapbits_large_size_get(chunk, pageind);", "rust_fragment": "arena.alloc(layout)", "description": "Both compute or perform allocation size/behavior logic, though in different contexts.", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, handling both small and large allocations; Rust function `alloc` performs memory allocation via an arena. [Similarity] Names and domains differ significantly (C: memory management, Rust: allocation via arena); no full structural match. [Knowledge Extraction] No full match, but there's a partial structural fragment involving allocation size logic and a mapping for allocation behavior."}]
+Unixcoder Score: -0.04069298505783081
+--------------------------------------------------
+C_Code: 
+UPB_INLINE void upb_MdDecoder_CheckOutOfMemory(upb_MdDecoder* d,
+                                               const void* ptr) {
+  if (!ptr) upb_MdDecoder_ErrorJmp(d, "Out of memory");
+}
+Function: 
+fn arena_new_failed() -> ! {
+            panic!("Could not create a new UPB arena");
+        }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__QrSegment__idx144456_rank1.c", "source_rust_file": "Full__QrSegment__idx144456_rank1.rs", "c_api": "throw std::domain_error(\"Invalid value\")", "rust_api": "assert!(bitlength == 0 || (bitlength - 1) / 8 < data.len())", "mapping_type": "pattern", "description": "Input validation pattern for ensuring valid data parameters", "reasoning": "[Task Analysis] C++ constructor vs Rust associated function with similar purpose. [Similarity] Both initialize a struct with mode, count, and data fields; C++ uses constructor initializer list, Rust uses function body with assertions. [Knowledge Extraction] Found full structural match in initialization logic and field assignment, with semantic alignment in data handling and validation. API mappings identified for struct initialization and field assignment patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__QrSegment__idx144456_rank1.c", "source_rust_file": "Full__QrSegment__idx144456_rank1.rs", "c_api": "mode(&md)", "rust_api": "mode", "mapping_type": "field_access", "description": "Assignment of mode field from constructor parameter to struct field", "reasoning": "[Task Analysis] C++ constructor vs Rust associated function with similar purpose. [Similarity] Both initialize a struct with mode, count, and data fields; C++ uses constructor initializer list, Rust uses function body with assertions. [Knowledge Extraction] Found full structural match in initialization logic and field assignment, with semantic alignment in data handling and validation. API mappings identified for struct initialization and field assignment patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__QrSegment__idx144456_rank1.c", "source_rust_file": "Full__QrSegment__idx144456_rank1.rs", "c_api": "numChars(numCh)", "rust_api": "numchars", "mapping_type": "field_access", "description": "Assignment of character count field from constructor parameter to struct field", "reasoning": "[Task Analysis] C++ constructor vs Rust associated function with similar purpose. [Similarity] Both initialize a struct with mode, count, and data fields; C++ uses constructor initializer list, Rust uses function body with assertions. [Knowledge Extraction] Found full structural match in initialization logic and field assignment, with semantic alignment in data handling and validation. API mappings identified for struct initialization and field assignment patterns."}, {"knowledge_type": "Full", "source_c_file": "Full__QrSegment__idx144456_rank1.c", "source_rust_file": "Full__QrSegment__idx144456_rank1.rs", "reasoning": "[Task Analysis] C++ constructor vs Rust associated function with similar purpose. [Similarity] Both initialize a struct with mode, count, and data fields; C++ uses constructor initializer list, Rust uses function body with assertions. [Knowledge Extraction] Found full structural match in initialization logic and field assignment, with semantic alignment in data handling and validation. API mappings identified for struct initialization and field assignment patterns.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__QrSegment__idx144456_rank1.c", "source_rust_file": "Full__QrSegment__idx144456_rank1.rs", "c_fragment": "QrSegment(const Mode &md, int numCh, const std::vector<bool> &dt) :\n\t\tmode(&md),\n\t\tnumChars(numCh),\n\t\tdata(dt) {\n\tif (numCh < 0)\n\t\tthrow std::domain_error(\"Invalid value\");\n}", "rust_fragment": "pub fn new(mode: QrSegmentMode, numchars: usize, data: &'a [u8], bitlength: usize) -> Self {\n\t\tassert!(bitlength == 0 || (bitlength - 1) / 8 < data.len());\n\t\tSelf { mode, numchars, data, bitlength }\n\t}", "description": "Both initialize a QrSegment struct with mode, character count, and data fields, including validation of input parameters.", "reasoning": "[Task Analysis] C++ constructor vs Rust associated function with similar purpose. [Similarity] Both initialize a struct with mode, count, and data fields; C++ uses constructor initializer list, Rust uses function body with assertions. [Knowledge Extraction] Found full structural match in initialization logic and field assignment, with semantic alignment in data handling and validation. API mappings identified for struct initialization and field assignment patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__QrSegment__idx144456_rank1.c", "source_rust_file": "Full__QrSegment__idx144456_rank1.rs", "c_api": "data(dt)", "rust_api": "data", "mapping_type": "field_access", "description": "Assignment of data field from constructor parameter to struct field", "reasoning": "[Task Analysis] C++ constructor vs Rust associated function with similar purpose. [Similarity] Both initialize a struct with mode, count, and data fields; C++ uses constructor initializer list, Rust uses function body with assertions. [Knowledge Extraction] Found full structural match in initialization logic and field assignment, with semantic alignment in data handling and validation. API mappings identified for struct initialization and field assignment patterns."}]
+Unixcoder Score: -0.05444823205471039
+--------------------------------------------------
+C_Code: 
+UPB_INLINE void upb_MdDecoder_ErrorJmp(upb_MdDecoder* d,
+                                                    const char* fmt, ...) {
+  if (d->status) {
+    va_list argp;
+    upb_Status_SetErrorMessage(d->status, "Error building mini table: ");
+    va_start(argp, fmt);
+    upb_Status_VAppendErrorFormat(d->status, fmt, argp);
+    va_end(argp);
+  }
+  UPB_LONGJMP(d->err, 1);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "reply.ReadInt32", "rust_api": "reply.write()", "mapping_type": "function", "description": "Reading/writing signed 32-bit integer in IPC communication", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "data.WriteInterfaceToken", "rust_api": "data.read()", "mapping_type": "function", "description": "Reading/writing interface token in IPC communication", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "data.WriteString", "rust_api": "data.read()", "mapping_type": "function", "description": "Reading/writing string data in IPC communication", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "Partial", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_fragment": "int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_TOUCH), data, reply, option);\n    if (ret != ERR_NONE) {\n        REQUEST_HILOGE(\"End Request TouchTasks, failed: %{public}d\", ret);\n        if (ret != REMOTE_DIED_ERROR) {\n            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));\n        }\n        return ExceptionErrorCode::E_SERVICE_ERROR;\n    }", "rust_fragment": "let permission = PermissionChecker::check_down_permission();\n        let len: u32 = data.read()?;\n        let len = len as usize;\n\n        if len > GET_INFO_MAX {\n            info!(\"Service touch: out of size: {}\", len);\n            reply.write(&(ErrorCode::Other as i32))?;\n            return Err(IpcStatusCode::Failed);\n        }", "description": "Handle initial IPC request validation and size checking", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "data.WriteUint32", "rust_api": "data.read()", "mapping_type": "function", "description": "Reading/writing unsigned 32-bit integer in IPC communication", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "Partial", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_fragment": "for (const auto &it : tids) {\n        data.WriteString(it.tid);\n        data.WriteString(it.token);\n    }", "rust_fragment": "for i in 0..len {\n            let task_id: String = data.read()?;\n            info!(\"Service touch tid {}\", task_id);\n\n            let token: String = data.read()?;", "description": "Iterate over input task IDs and tokens, writing them to the message parcel", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "check_current_account", "rust_api": "check_current_account", "mapping_type": "function", "description": "Checking current account permissions", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "Partial", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_fragment": "ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());\n    if (ret != ExceptionErrorCode::E_OK) {\n        REQUEST_HILOGE(\"End Request TouchTasks, failed: %{public}d\", code);\n        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));\n        return code;\n    }", "rust_fragment": "reply.write(&(ErrorCode::ErrOk as i32))?;\n        for (c, info) in vec {\n            reply.write(&(c as i32))?;\n            // TODO: Sends info only when ErrOk.\n            serialize_task_info(info, reply)?;", "description": "Process reply data and write results back to the parcel", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "SysEventLog::SendSysEventLog", "rust_api": "sys_event!", "mapping_type": "function", "description": "Sending system event logs for fault reporting", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "Full", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "set_code_with_index_other", "rust_api": "set_code_with_index_other", "mapping_type": "function", "description": "Setting error code for specific index in result vector", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "REQUEST_HILOGE", "rust_api": "error!", "mapping_type": "function", "description": "Logging error messages", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "RequestDb::get_instance().query_task_uid", "rust_api": "RequestDb::get_instance().query_task_uid", "mapping_type": "function", "description": "Querying task UID from database", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "serialize_task_info", "rust_api": "serialize_task_info", "mapping_type": "function", "description": "Serializing task information for IPC response", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__TouchTasks__idx870_rank1.c", "source_rust_file": "Full__TouchTasks__idx870_rank1.rs", "c_api": "Remote()->SendRequest", "rust_api": "reply.write()", "mapping_type": "function", "description": "Sending IPC request and writing response data", "reasoning": "[Task Analysis] C function handles IPC request for touching tasks, Rust function implements the same logic with validation and task processing. [Similarity] Both perform similar operations: read data from parcel, process task IDs/tokens, query database, validate permissions, and write results back. [Knowledge Extraction] Found full structural match in core logic flow, partial match in error handling, and multiple API mappings for IPC operations, data reading/writing, and error handling."}]
+Unixcoder Score: -0.05979716405272484
+--------------------------------------------------

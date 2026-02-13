@@ -1,0 +1,154 @@
+C_Code: 
+uint64_t GetSelfTokenID()
+{
+    return OHOS::IPCSkeleton::GetSelfTokenID();
+}
+Function: 
+pub fn self_token_id() -> u64 {
+        GetSelfTokenID()
+    }
+Unixcoder Score: 0.013081753626465797
+--------------------------------------------------
+C_Code: 
+uint32_t GetCallingTokenID()
+{
+    return IPCSkeleton::GetCallingTokenID();
+}
+Function: 
+fn skeleton() {
+    unsafe {
+        assert_eq!(
+            Skeleton::calling_device_id(),
+            (*GetCallingDeviceID()).to_string()
+        );
+        assert_eq!(Skeleton::calling_full_token_id(), GetCallingFullTokenID());
+        assert_eq!(Skeleton::calling_pid(), GetCallingPid());
+        assert_eq!(Skeleton::calling_real_pid(), GetCallingRealPid());
+        assert_eq!(Skeleton::calling_token_id(), GetCallingTokenID());
+        assert_eq!(Skeleton::calling_uid(), GetCallingUid());
+        assert_eq!(Skeleton::first_full_token_id(), GetFirstFullTokenID());
+        assert_eq!(Skeleton::first_token_id(), GetFirstTokenID());
+        assert_eq!(Skeleton::self_token_id(), SelfTokenID());
+        assert_eq!(Skeleton::is_local_calling(), IsLocalCalling());
+        assert_eq!(Skeleton::local_device_id(), (*LocalDeviceID()).to_string());
+        assert_eq!(
+            Skeleton::reset_calling_identity(),
+            (*ResetCallingIdentity()).to_string()
+        );
+    }
+}
+Unixcoder Score: 0.012984393164515495
+--------------------------------------------------
+C_Code: 
+uint64_t GetSelfTokenID()
+{
+    return OHOS::IPCSkeleton::GetSelfTokenID();
+}
+Function: 
+pub fn self_token_id() -> u64 {
+        GetSelfTokenID()
+    }
+Unixcoder Score: 0.009022708050906658
+--------------------------------------------------
+C_Code: 
+bool IsCalledByHAP(uint32_t tokenId)
+{
+    return AccessTokenKit::GetTokenTypeFlag(tokenId) == ATokenTypeEnum::TOKEN_HAP;
+}
+Function: 
+pub(crate) fn is_called_by_hap() -> bool {
+    let token_id = ipc::Skeleton::calling_token_id();
+    ffi::IsCalledByHAP(token_id)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "SetAccessTokenPermission", "rust_api": "unsafe { SetAccessTokenPermission() }", "mapping_type": "function", "description": "Token permission setup function", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "REQUEST_HILOGI", "rust_api": "info!", "mapping_type": "function", "description": "Logging function", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "GetAccessTokenId", "rust_api": "GetAccessTokenId", "mapping_type": "function", "description": "Get access token ID", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "SetSelfTokenID", "rust_api": "SetSelfTokenID", "mapping_type": "function", "description": "Set self token ID", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo", "rust_api": "OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo", "mapping_type": "function", "description": "Reload native token info", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}]
+Unixcoder Score: 0.007434637751430273
+--------------------------------------------------
+C_Code: 
+uint32_t GetCallingTokenID()
+{
+    return OHOS::IPCSkeleton ::GetCallingTokenID();
+}
+Function: 
+pub fn calling_token_id() -> u32 {
+        GetCallingTokenID()
+    }
+Unixcoder Score: -0.002108023501932621
+--------------------------------------------------
+C_Code: 
+bool IsCalledByHAP(uint32_t tokenId)
+{
+    return AccessTokenKit::GetTokenTypeFlag(tokenId) == ATokenTypeEnum::TOKEN_HAP;
+}
+Function: 
+pub(crate) fn is_called_by_hap() -> bool {
+    let token_id = ipc::Skeleton::calling_token_id();
+    ffi::IsCalledByHAP(token_id)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSelfTokenID__idx4653_rank5.c", "source_rust_file": "API_Mapping__GetSelfTokenID__idx4653_rank5.rs", "c_api": "OHOS::IPCSkeleton::GetSelfTokenID()", "rust_api": "GetFirstFullTokenID()", "mapping_type": "function", "description": "Retrieval of self token ID from IPC skeleton", "reasoning": "[Entity Name Check] -> Names do not refer to the same concept ('GetSelfTokenID' vs 'first_full_token_id'). [Empty/Trivial Code] -> Neither side is empty. [FFI Wrapper] -> No FFI call detected. [Semantic Domain Mismatch] -> Both functions appear to be related to token ID retrieval, but the C version uses OHOS IPC skeleton while Rust version calls a different function; however, the domain is consistent (token management). [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. [Full Classification] -> Names don't match, so not full. [Partial Classification] -> No matching structural fragments. [API Mappings] -> The functions perform similar operations (retrieving a token ID), but the APIs are different in name and possibly implementation. Extracting API mapping based on semantic similarity and function purpose."}]
+Unixcoder Score: -0.003974150400608778
+--------------------------------------------------
+C_Code: 
+uint32_t GetCallingTokenID()
+{
+    return OHOS::IPCSkeleton ::GetCallingTokenID();
+}
+Function: 
+pub fn first_full_token_id() -> u64 {
+        GetFirstFullTokenID()
+    }
+Unixcoder Score: -0.005928033962845802
+--------------------------------------------------
+C_Code: 
+uint64_t GetSelfTokenID()
+{
+    return OHOS::IPCSkeleton::GetSelfTokenID();
+}
+Function: 
+pub fn first_full_token_id() -> u64 {
+        GetFirstFullTokenID()
+    }
+Unixcoder Score: -0.006425418425351381
+--------------------------------------------------
+C_Code: 
+uint32_t GetCallingTokenID()
+{
+    return OHOS::IPCSkeleton ::GetCallingTokenID();
+}
+Function: 
+pub fn first_token_id() -> u32 {
+        GetFirstTokenID()
+    }
+Unixcoder Score: -0.006599320098757744
+--------------------------------------------------
+C_Code: 
+uint64_t SelfTokenID()
+{
+    return IPCSkeleton::GetSelfTokenID();
+}
+Function: 
+fn skeleton() {
+    unsafe {
+        assert_eq!(
+            Skeleton::calling_device_id(),
+            (*GetCallingDeviceID()).to_string()
+        );
+        assert_eq!(Skeleton::calling_full_token_id(), GetCallingFullTokenID());
+        assert_eq!(Skeleton::calling_pid(), GetCallingPid());
+        assert_eq!(Skeleton::calling_real_pid(), GetCallingRealPid());
+        assert_eq!(Skeleton::calling_token_id(), GetCallingTokenID());
+        assert_eq!(Skeleton::calling_uid(), GetCallingUid());
+        assert_eq!(Skeleton::first_full_token_id(), GetFirstFullTokenID());
+        assert_eq!(Skeleton::first_token_id(), GetFirstTokenID());
+        assert_eq!(Skeleton::self_token_id(), SelfTokenID());
+        assert_eq!(Skeleton::is_local_calling(), IsLocalCalling());
+        assert_eq!(Skeleton::local_device_id(), (*LocalDeviceID()).to_string());
+        assert_eq!(
+            Skeleton::reset_calling_identity(),
+            (*ResetCallingIdentity()).to_string()
+        );
+    }
+}
+Unixcoder Score: -0.006618457846343517
+--------------------------------------------------

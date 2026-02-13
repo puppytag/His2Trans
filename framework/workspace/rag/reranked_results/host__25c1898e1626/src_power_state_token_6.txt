@@ -1,0 +1,309 @@
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn init_access_token()
+{
+    let name = CString::new("com.ipc.calc").expect("process name is invalid");
+    let apl = CString::new("normal").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: ptr::null(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Unixcoder Score: 0.027993595227599144
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManager::NotifySystemAbilityChanged(int32_t systemAbilityId, const std::string& deviceId,
+    int32_t code, const sptr<ISystemAbilityStatusChange>& listener)
+{
+    HILOGD("NotifySystemAbilityChanged, SA:%{public}d", systemAbilityId);
+    if (listener == nullptr) {
+        HILOGE("%{public}s listener null pointer!", __func__);
+        return;
+    }
+
+    switch (code) {
+        case static_cast<uint32_t>(SamgrInterfaceCode::ADD_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnAddSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        case static_cast<uint32_t>(SamgrInterfaceCode::REMOVE_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnRemoveSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        default:
+            break;
+    }
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__GetFirstTokenID__idx4653_rank3.c", "source_rust_file": "Full__GetFirstTokenID__idx4653_rank3.rs", "c_api": "OHOS::IPCSkeleton ::GetFirstTokenID()", "rust_api": "GetFirstFullTokenID()", "mapping_type": "function", "description": "Retrieve first token ID from IPC skeleton", "reasoning": "[Entity Name Check] -> GetFirstTokenID vs first_full_token_id refer to different concepts (token ID retrieval with different naming styles) but likely same domain. [Empty/Trivial Code] -> Neither code is empty. [FFI Wrapper] -> No FFI call detected. [Semantic Domain Mismatch] -> Both operate on token ID retrieval, same domain. [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Full Classification] -> Names don't match exactly but conceptually align; code length similar; no implementation vs test mismatch. [Partial Classification] -> No partial match detected as full classification is possible. [API Mappings] -> C calls OHOS::IPCSkeleton::GetFirstTokenID(), Rust calls GetFirstFullTokenID(), both retrieve token IDs, different names but same logical operation. [None Classification] -> Not applicable as other flags are set."}, {"knowledge_type": "Full", "source_c_file": "Full__GetFirstTokenID__idx4653_rank3.c", "source_rust_file": "Full__GetFirstTokenID__idx4653_rank3.rs", "reasoning": "[Entity Name Check] -> GetFirstTokenID vs first_full_token_id refer to different concepts (token ID retrieval with different naming styles) but likely same domain. [Empty/Trivial Code] -> Neither code is empty. [FFI Wrapper] -> No FFI call detected. [Semantic Domain Mismatch] -> Both operate on token ID retrieval, same domain. [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Full Classification] -> Names don't match exactly but conceptually align; code length similar; no implementation vs test mismatch. [Partial Classification] -> No partial match detected as full classification is possible. [API Mappings] -> C calls OHOS::IPCSkeleton::GetFirstTokenID(), Rust calls GetFirstFullTokenID(), both retrieve token IDs, different names but same logical operation. [None Classification] -> Not applicable as other flags are set.", "description": "Full structural translation"}]
+Unixcoder Score: 0.012704938650131226
+--------------------------------------------------
+C_Code: 
+uint64_t GetFirstFullTokenID()
+    {
+        return g_mock.GetFirstFullTokenID();
+    }
+Function: 
+pub fn first_full_token_id() -> u64 {
+        GetFirstFullTokenID()
+    }
+Unixcoder Score: 0.012608903460204601
+--------------------------------------------------
+C_Code: 
+uint64_t GetFirstFullTokenID()
+    {
+        return g_mock.GetFirstFullTokenID();
+    }
+Function: 
+pub fn first_token_id() -> u32 {
+        GetFirstTokenID()
+    }
+Unixcoder Score: 0.012411012314260006
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn self_token_id() -> u64 {
+        GetSelfTokenID()
+    }
+Unixcoder Score: 0.011050666682422161
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn init_access_token()
+{
+    let name = CString::new("com.ipc.calc").expect("process name is invalid");
+    let apl = CString::new("normal").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: ptr::null(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Unixcoder Score: 0.00942804105579853
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn init_access_token()
+{
+    let name = CString::new("com.ipc.calc").expect("process name is invalid");
+    let apl = CString::new("normal").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: ptr::null(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Unixcoder Score: 0.0077158915810287
+--------------------------------------------------
+C_Code: 
+uint32_t GetFirstTokenID()
+{
+    return IPCSkeleton::GetFirstTokenID();
+}
+Function: 
+fn skeleton() {
+    unsafe {
+        assert_eq!(
+            Skeleton::calling_device_id(),
+            (*GetCallingDeviceID()).to_string()
+        );
+        assert_eq!(Skeleton::calling_full_token_id(), GetCallingFullTokenID());
+        assert_eq!(Skeleton::calling_pid(), GetCallingPid());
+        assert_eq!(Skeleton::calling_real_pid(), GetCallingRealPid());
+        assert_eq!(Skeleton::calling_token_id(), GetCallingTokenID());
+        assert_eq!(Skeleton::calling_uid(), GetCallingUid());
+        assert_eq!(Skeleton::first_full_token_id(), GetFirstFullTokenID());
+        assert_eq!(Skeleton::first_token_id(), GetFirstTokenID());
+        assert_eq!(Skeleton::self_token_id(), SelfTokenID());
+        assert_eq!(Skeleton::is_local_calling(), IsLocalCalling());
+        assert_eq!(Skeleton::local_device_id(), (*LocalDeviceID()).to_string());
+        assert_eq!(
+            Skeleton::reset_calling_identity(),
+            (*ResetCallingIdentity()).to_string()
+        );
+    }
+}
+Unixcoder Score: 0.002547824988141656
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManager::NotifySystemAbilityChanged(int32_t systemAbilityId, const std::string& deviceId,
+    int32_t code, const sptr<ISystemAbilityStatusChange>& listener)
+{
+    HILOGD("NotifySystemAbilityChanged, SA:%{public}d", systemAbilityId);
+    if (listener == nullptr) {
+        HILOGE("%{public}s listener null pointer!", __func__);
+        return;
+    }
+
+    switch (code) {
+        case static_cast<uint32_t>(SamgrInterfaceCode::ADD_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnAddSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        case static_cast<uint32_t>(SamgrInterfaceCode::REMOVE_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnRemoveSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        default:
+            break;
+    }
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetFirstTokenID__idx4650_rank4.c", "source_rust_file": "API_Mapping__GetFirstTokenID__idx4650_rank4.rs", "c_api": "OHOS::IPCSkeleton ::GetFirstTokenID()", "rust_api": "GetCallingTokenID()", "mapping_type": "function", "description": "Token ID retrieval", "reasoning": "[Entity Name Check] -> GetFirstTokenID vs calling_token_id refer to different concepts (token ID retrieval vs calling token ID); [Empty/Trivial Code] -> Neither code is empty; [FFI Wrapper] -> No FFI call detected; [Semantic Domain Mismatch] -> Both functions appear to operate on token IDs, but the specific APIs differ in naming and usage; [Empty Structs] -> Not applicable; [Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. -> [Task Analysis] -> C function calls OHOS::IPCSkeleton::GetFirstTokenID, Rust function calls GetCallingTokenID; [Similarity] -> No structural similarity; [Knowledge Extraction] -> No full match, no partial match, but there is a potential API mapping between token ID retrieval functions."}]
+Unixcoder Score: -0.009080056101083755
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManager::NotifySystemAbilityChanged(int32_t systemAbilityId, const std::string& deviceId,
+    int32_t code, const sptr<ISystemAbilityStatusChange>& listener)
+{
+    HILOGD("NotifySystemAbilityChanged, SA:%{public}d", systemAbilityId);
+    if (listener == nullptr) {
+        HILOGE("%{public}s listener null pointer!", __func__);
+        return;
+    }
+
+    switch (code) {
+        case static_cast<uint32_t>(SamgrInterfaceCode::ADD_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnAddSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        case static_cast<uint32_t>(SamgrInterfaceCode::REMOVE_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnRemoveSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        default:
+            break;
+    }
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__GetFirstTokenID__idx4652_rank1.c", "source_rust_file": "Full__GetFirstTokenID__idx4652_rank1.rs", "c_api": "OHOS::IPCSkeleton ::GetFirstTokenID()", "rust_api": "GetFirstTokenID()", "mapping_type": "function", "description": "Retrieval of first token ID from IPC skeleton", "reasoning": "[Entity Name Check] -> GetFirstTokenID vs first_token_id refer to the same concept (retrieving a token ID), so Full/Partial classification is allowed. [Empty/Trivial Code] -> Neither code is empty. [FFI Wrapper] -> No FFI call detected. [Semantic Domain Mismatch] -> Both functions perform the same logical operation (retrieving a token ID), no domain mismatch. [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> Both are function definitions, not calls, so allowed. [Full Classification] -> Names refer to same concept, structure is identical (simple function call and return), no length mismatch, no impl vs test mismatch, same domain. [Partial Classification] -> No partial match needed as full match exists. [API Mappings] -> C calls OHOS::IPCSkeleton::GetFirstTokenID(), Rust calls GetFirstTokenID(), same logical operation. [None Classification] -> Not applicable as other flags are set."}, {"knowledge_type": "Full", "source_c_file": "Full__GetFirstTokenID__idx4652_rank1.c", "source_rust_file": "Full__GetFirstTokenID__idx4652_rank1.rs", "reasoning": "[Entity Name Check] -> GetFirstTokenID vs first_token_id refer to the same concept (retrieving a token ID), so Full/Partial classification is allowed. [Empty/Trivial Code] -> Neither code is empty. [FFI Wrapper] -> No FFI call detected. [Semantic Domain Mismatch] -> Both functions perform the same logical operation (retrieving a token ID), no domain mismatch. [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> Both are function definitions, not calls, so allowed. [Full Classification] -> Names refer to same concept, structure is identical (simple function call and return), no length mismatch, no impl vs test mismatch, same domain. [Partial Classification] -> No partial match needed as full match exists. [API Mappings] -> C calls OHOS::IPCSkeleton::GetFirstTokenID(), Rust calls GetFirstTokenID(), same logical operation. [None Classification] -> Not applicable as other flags are set.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__GetFirstTokenID__idx4652_rank1.c", "source_rust_file": "Full__GetFirstTokenID__idx4652_rank1.rs", "c_fragment": "uint32_t GetFirstTokenID()\n{\n    return OHOS::IPCSkeleton ::GetFirstTokenID();\n}", "rust_fragment": "pub fn first_token_id() -> u32 {\n        GetFirstTokenID()\n    }", "description": "Function that retrieves and returns a token ID from IPC skeleton.", "reasoning": "[Entity Name Check] -> GetFirstTokenID vs first_token_id refer to the same concept (retrieving a token ID), so Full/Partial classification is allowed. [Empty/Trivial Code] -> Neither code is empty. [FFI Wrapper] -> No FFI call detected. [Semantic Domain Mismatch] -> Both functions perform the same logical operation (retrieving a token ID), no domain mismatch. [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> Both are function definitions, not calls, so allowed. [Full Classification] -> Names refer to same concept, structure is identical (simple function call and return), no length mismatch, no impl vs test mismatch, same domain. [Partial Classification] -> No partial match needed as full match exists. [API Mappings] -> C calls OHOS::IPCSkeleton::GetFirstTokenID(), Rust calls GetFirstTokenID(), same logical operation. [None Classification] -> Not applicable as other flags are set."}]
+Unixcoder Score: -0.010814190842211246
+--------------------------------------------------

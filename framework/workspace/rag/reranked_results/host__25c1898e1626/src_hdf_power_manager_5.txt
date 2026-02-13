@@ -1,0 +1,532 @@
+C_Code: 
+RetError FfiOHOSRequestTaskPause(int32_t taskId)
+    {
+        return CJRequestImpl::TaskPause(taskId);
+    }
+Function: 
+pub(crate) fn change_task_state(&self, task_id: u32, uid: u64, state: State) {
+        unsafe { ChangeRequestTaskState(task_id, uid, state) };
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "task_control::clear_downloaded_file(task)", "rust_api": "task_control::clear_downloaded_file(task.clone()).await?", "mapping_type": "function", "description": "Clearing downloaded file", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "task_control::file_metadata(file)", "rust_api": "task_control::file_metadata(file).await?.len() > 0", "mapping_type": "function", "description": "Checking if file has content", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "session.CreateTask(request)", "rust_api": "task.prepare_download().await?", "mapping_type": "function", "description": "Task creation and preparation", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "client.request(request)", "rust_api": "client.request(request).await", "mapping_type": "function", "description": "Sending HTTP request and awaiting response", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "request", "rust_api": "RequestTask::build_download_request(task.clone()).await?", "mapping_type": "function", "description": "Building HTTP request from task", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "RequestDb::get_instance().update_task_sizes(...)", "rust_api": "RequestDb::get_instance().update_task_sizes(task.task_id(), &task.progress.lock().unwrap().sizes)", "mapping_type": "function", "description": "Updating task sizes in database", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "task.handle_download_error(e).await", "rust_api": "task.handle_download_error(e).await", "mapping_type": "function", "description": "Handling download errors", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "task.network_retry().await", "rust_api": "task.network_retry().await?", "mapping_type": "function", "description": "Retrying network operation", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "response.status()", "rust_api": "response.status()", "mapping_type": "function", "description": "Accessing HTTP response status", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "task.files.get(0)", "rust_api": "task.files.get(0).unwrap()", "mapping_type": "function", "description": "Retrieving first file from task", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx348_rank3.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx348_rank3.rs", "c_api": "task.update_progress_in_database()", "rust_api": "task.update_progress_in_database()", "mapping_type": "function", "description": "Updating progress in database", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session's CreateTask method; Rust function performs async download logic with error handling, HTTP request/response processing, and file operations. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs download_inner), and domains differ (task creation vs async download with error handling). [Knowledge Extraction] No full structural match, but there are API mappings related to task creation and HTTP request handling."}]
+Unixcoder Score: 0.02866199240088463
+--------------------------------------------------
+C_Code: 
+void OnCallback(const std::shared_ptr<HttpClientTask> &task, rust::Box<CallbackWrapper> callback)
+{
+    CallbackWrapper *raw_ptr = callback.into_raw();
+    auto shared = std::shared_ptr<CallbackWrapper>(
+        raw_ptr, [](CallbackWrapper *ptr) { rust::Box<CallbackWrapper>::from_raw(ptr); });
+    task->OnSuccess([shared](const HttpClientRequest &request, const HttpClientResponse &response) {
+        shared->on_success(request, response);
+    });
+    task->OnFail([shared](const HttpClientRequest &request, const HttpClientResponse &response,
+                     const HttpClientError &error) { shared->on_fail(request, response, error); });
+    task->OnCancel([shared](const HttpClientRequest &request, const HttpClientResponse &response) {
+        shared->on_cancel(request, response);
+    });
+    auto weak = task->weak_from_this();
+    task->OnDataReceive([shared, weak](const HttpClientRequest &, const uint8_t *data, size_t size) {
+        auto httpTask = weak.lock();
+        if (httpTask != nullptr) {
+            shared->on_data_receive(httpTask, data, size);
+        }
+    });
+    task->OnProgress([shared](const HttpClientRequest &, u_long dlTotal, u_long dlNow, u_long ulTotal, u_long ulNow) {
+        shared->on_progress(dlTotal, dlNow, ulTotal, ulNow);
+    });
+}
+Function: 
+fn on_progress(&mut self, dl_total: u64, dl_now: u64, ul_total: u64, ul_now: u64) {
+        self.common_progress(dl_total, dl_now, ul_total, ul_now);
+    }
+Unixcoder Score: 0.00539742223918438
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTask(uint32_t taskId, CUpdateInfo *updateInfo)
+{
+    REQUEST_HILOGD("update request_task");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("mtime", updateInfo->mtime);
+    values.PutLong("tries", updateInfo->tries);
+    // write to insertValues
+    values.PutString("mime_type", std::string(updateInfo->mimeType.cStr, updateInfo->mimeType.len));
+    values.PutLong("idx", updateInfo->progress.commonData.index);
+    values.PutLong("total_processed", updateInfo->progress.commonData.totalProcessed);
+    values.PutString("processed", std::string(updateInfo->progress.processed.cStr, updateInfo->progress.processed.len));
+    values.PutString("extras", std::string(updateInfo->progress.extras.cStr, updateInfo->progress.extras.len));
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update table1 failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+fn get_task_mut(&mut self, task_id: u32) -> Option<(usize, &mut Task)> {
+        self.tasks
+            .iter_mut()
+            .enumerate()
+            .find(|(_, task)| task.task_id == task_id)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx1312_rank2.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx1312_rank2.rs", "c_api": "session.CreateTask(request)", "rust_api": "Arc::new(Mutex::new(inner))", "mapping_type": "pattern", "description": "Thread-safe wrapper creation for shared object", "reasoning": "[Task Analysis] C function creates and returns a shared_ptr to an HttpClientTask via a session, while Rust function converts a SharedPtr into a Self with Arc and Mutex wrappers. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs from_ffi), and the domains are different: C focuses on task creation and session management, while Rust handles FFI conversion and thread-safe wrappers. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different responsibilities. However, both involve handling HttpClientTask objects, so API mapping is possible for the underlying object lifecycle management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx1312_rank2.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx1312_rank2.rs", "c_api": "std::shared_ptr<HttpClientTask>", "rust_api": "SharedPtr<HttpClientTask>", "mapping_type": "type", "description": "Shared ownership pointer for HttpClientTask", "reasoning": "[Task Analysis] C function creates and returns a shared_ptr to an HttpClientTask via a session, while Rust function converts a SharedPtr into a Self with Arc and Mutex wrappers. [Similarity] Names do not refer to the same concept (NewHttpClientTask vs from_ffi), and the domains are different: C focuses on task creation and session management, while Rust handles FFI conversion and thread-safe wrappers. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different responsibilities. However, both involve handling HttpClientTask objects, so API mapping is possible for the underlying object lifecycle management."}]
+Unixcoder Score: -0.0032210841309279203
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTask(uint32_t taskId, CUpdateInfo *updateInfo)
+{
+    REQUEST_HILOGD("update request_task");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("mtime", updateInfo->mtime);
+    values.PutLong("tries", updateInfo->tries);
+    // write to insertValues
+    values.PutString("mime_type", std::string(updateInfo->mimeType.cStr, updateInfo->mimeType.len));
+    values.PutLong("idx", updateInfo->progress.commonData.index);
+    values.PutLong("total_processed", updateInfo->progress.commonData.totalProcessed);
+    values.PutString("processed", std::string(updateInfo->progress.processed.cStr, updateInfo->progress.processed.len));
+    values.PutString("extras", std::string(updateInfo->progress.extras.cStr, updateInfo->progress.extras.len));
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update table1 failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn update_task_sizes(&self, task_id: u32, sizes: &Vec<i64>) {
+        let sql = format!(
+            "UPDATE request_task SET sizes = '{:?}' WHERE task_id = {}",
+            sizes, task_id
+        );
+        let _ = self.execute(&sql);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__NewHttpClientTask__idx1365_rank1.h", "source_rust_file": "Partial__NewHttpClientTask__idx1365_rank1.rs", "c_api": "session.CreateTask(request)", "rust_api": "NewHttpClientTask(request)", "mapping_type": "function", "description": "Task creation from request", "reasoning": "[Task Analysis] C function creates a shared_ptr task via session, Rust function handles task creation with callback and error handling. [Similarity] Names don't match but logic is related: both create a task from a request. [Knowledge Extraction] Found partial structural match in task creation flow and API mapping for task creation pattern."}, {"knowledge_type": "Partial", "source_c_file": "Partial__NewHttpClientTask__idx1365_rank1.h", "source_rust_file": "Partial__NewHttpClientTask__idx1365_rank1.rs", "c_fragment": "return session.CreateTask(request);", "rust_fragment": "let new_task = NewHttpClientTask(request);", "description": "Both create a new HTTP client task from a request", "reasoning": "[Task Analysis] C function creates a shared_ptr task via session, Rust function handles task creation with callback and error handling. [Similarity] Names don't match but logic is related: both create a task from a request. [Knowledge Extraction] Found partial structural match in task creation flow and API mapping for task creation pattern."}]
+Unixcoder Score: -0.0032522447872906923
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTask(uint32_t taskId, CUpdateInfo *updateInfo)
+{
+    REQUEST_HILOGD("update request_task");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("mtime", updateInfo->mtime);
+    values.PutLong("tries", updateInfo->tries);
+    // write to insertValues
+    values.PutString("mime_type", std::string(updateInfo->mimeType.cStr, updateInfo->mimeType.len));
+    values.PutLong("idx", updateInfo->progress.commonData.index);
+    values.PutLong("total_processed", updateInfo->progress.commonData.totalProcessed);
+    values.PutString("processed", std::string(updateInfo->progress.processed.cStr, updateInfo->progress.processed.len));
+    values.PutString("extras", std::string(updateInfo->progress.extras.cStr, updateInfo->progress.extras.len));
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update table1 failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn update_task(&self, task_id: u32, update_info: UpdateInfo) {
+        debug!("Update task in database, task_id: {}", task_id);
+        if !self.contains_task(task_id) {
+            return;
+        }
+        let sizes = format!("{:?}", update_info.progress.sizes);
+        let processed = format!("{:?}", update_info.progress.processed);
+        let extras = hashmap_to_string(&update_info.progress.extras);
+        let c_update_info = update_info.to_c_struct(&sizes, &processed, &extras);
+        let ret = unsafe { UpdateRequestTask(task_id, &c_update_info) };
+        debug!("Update task in database, ret is {}", ret);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx1255_rank2.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx1255_rank2.rs", "c_api": "session.CreateTask(request)", "rust_api": "RequestTask::from_http_request(&request)", "mapping_type": "function", "description": "Task creation from HTTP request", "reasoning": "[Task Analysis] C function creates an HttpClientTask using a session, while Rust function constructs a request and converts it to a task. [Similarity] Names don't match exactly but both involve creating/constructing HTTP-related tasks. [Knowledge Extraction] No full structural match due to different logic flow and domain (C uses shared_ptr, Rust uses cxx::UniquePtr and wrapper types). However, there are API mappings related to task creation/conversion and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx1255_rank2.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx1255_rank2.rs", "c_api": "request.SetMethod(&method)", "rust_api": "request.pin_mut().SetMethod(&method)", "mapping_type": "method", "description": "Setting method on HTTP request", "reasoning": "[Task Analysis] C function creates an HttpClientTask using a session, while Rust function constructs a request and converts it to a task. [Similarity] Names don't match exactly but both involve creating/constructing HTTP-related tasks. [Knowledge Extraction] No full structural match due to different logic flow and domain (C uses shared_ptr, Rust uses cxx::UniquePtr and wrapper types). However, there are API mappings related to task creation/conversion and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx1255_rank2.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx1255_rank2.rs", "c_api": "request.SetURL(&url)", "rust_api": "request.pin_mut().SetURL(&url)", "mapping_type": "method", "description": "Setting URL on HTTP request", "reasoning": "[Task Analysis] C function creates an HttpClientTask using a session, while Rust function constructs a request and converts it to a task. [Similarity] Names don't match exactly but both involve creating/constructing HTTP-related tasks. [Knowledge Extraction] No full structural match due to different logic flow and domain (C uses shared_ptr, Rust uses cxx::UniquePtr and wrapper types). However, there are API mappings related to task creation/conversion and HTTP request handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx1255_rank2.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx1255_rank2.rs", "c_api": "NewHttpClientRequest()", "rust_api": "NewHttpClientRequest()", "mapping_type": "function", "description": "HTTP request creation", "reasoning": "[Task Analysis] C function creates an HttpClientTask using a session, while Rust function constructs a request and converts it to a task. [Similarity] Names don't match exactly but both involve creating/constructing HTTP-related tasks. [Knowledge Extraction] No full structural match due to different logic flow and domain (C uses shared_ptr, Rust uses cxx::UniquePtr and wrapper types). However, there are API mappings related to task creation/conversion and HTTP request handling."}]
+Unixcoder Score: -0.006053463090211153
+--------------------------------------------------
+C_Code: 
+CJRequestTask::CJRequestTask()
+{
+    config_.version = Version::API10;
+    config_.action = Action::ANY;
+    REQUEST_HILOGD("construct CJRequestTask()");
+}
+Function: 
+pub(crate) async fn download_inner(
+    task: Arc<RequestTask>,
+    abort_flag: Arc<AtomicBool>,
+) -> Result<(), TaskError> {
+    // Ensures `_trace` can only be freed when this function exits.
+    #[cfg(feature = "oh")]
+    let _trace = Trace::new("download file");
+
+    task.prepare_download().await?;
+
+    info!("{} downloading", task.task_id());
+
+    let request = RequestTask::build_download_request(task.clone()).await?;
+    let start_time = get_current_duration().as_secs() as u64;
+
+    task.start_time.store(start_time as u64, Ordering::SeqCst);
+    let client = task.client.lock().await;
+    let response = client.request(request).await;
+    match response.as_ref() {
+        Ok(response) => {
+            let status_code = response.status();
+            #[cfg(feature = "oh")]
+            task.notify_response(response);
+            info!(
+                "{} response {}",
+                task.conf.common_data.task_id, status_code
+            );
+            if status_code.is_server_error()
+                || (status_code.as_u16() != 408 && status_code.is_client_error())
+                || status_code.is_redirection()
+            {
+                return Err(TaskError::Failed(Reason::ProtocolError));
+            }
+            if status_code.as_u16() == 408 {
+                if task.timeout_tries.load(Ordering::SeqCst) < 2 {
+                    task.timeout_tries.fetch_add(1, Ordering::SeqCst);
+                    return Err(TaskError::Waiting(TaskPhase::NeedRetry));
+                } else {
+                    return Err(TaskError::Failed(Reason::ProtocolError));
+                }
+            } else {
+                task.timeout_tries.store(0, Ordering::SeqCst);
+            }
+            if status_code.as_u16() == 200 {
+                if task.require_range() {
+                    info!("task {} server not support range", task.task_id());
+                    return Err(TaskError::Failed(Reason::UnsupportedRangeRequest));
+                }
+                let file = task.files.get(0).unwrap();
+
+                let has_downloaded = task_control::file_metadata(file).await?.len() > 0;
+                if has_downloaded {
+                    error!("task {} file not cleared", task.task_id());
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::TASK_FAULT_09,
+                        &format!("task {} file not cleared", task.task_id())
+                    );
+                    task_control::clear_downloaded_file(task.clone()).await?;
+                }
+            }
+        }
+        Err(e) => {
+            error!("Task {} {:?}", task.task_id(), e);
+
+            match e.error_kind() {
+                ErrorKind::Timeout => {
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::TASK_FAULT_01,
+                        &format!("Task {} {:?}", task.task_id(), e)
+                    );
+                    return Err(TaskError::Failed(Reason::ContinuousTaskTimeout));
+                }
+                ErrorKind::Request => {
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::TASK_FAULT_02,
+                        &format!("Task {} {:?}", task.task_id(), e)
+                    );
+                    return Err(TaskError::Failed(Reason::RequestError));
+                }
+                ErrorKind::Redirect => {
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::TASK_FAULT_08,
+                        &format!("Task {} {:?}", task.task_id(), e)
+                    );
+                    return Err(TaskError::Failed(Reason::RedirectError));
+                }
+                ErrorKind::Connect | ErrorKind::ConnectionUpgrade => {
+                    task.network_retry().await?;
+                    if e.is_dns_error() {
+                        sys_event!(
+                            ExecFault,
+                            DfxCode::TASK_FAULT_05,
+                            &format!("Task {} {:?}", task.task_id(), e)
+                        );
+                        return Err(TaskError::Failed(Reason::Dns));
+                    } else if e.is_tls_error() {
+                        sys_event!(
+                            ExecFault,
+                            DfxCode::TASK_FAULT_07,
+                            &format!("Task {} {:?}", task.task_id(), e)
+                        );
+                        return Err(TaskError::Failed(Reason::Ssl));
+                    } else {
+                        sys_event!(
+                            ExecFault,
+                            DfxCode::TASK_FAULT_06,
+                            &format!("Task {} {:?}", task.task_id(), e)
+                        );
+                        return Err(TaskError::Failed(Reason::Tcp));
+                    }
+                }
+                ErrorKind::BodyTransfer => {
+                    task.network_retry().await?;
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::TASK_FAULT_09,
+                        &format!("Task {} {:?}", task.task_id(), e)
+                    );
+                    return Err(TaskError::Failed(Reason::OthersError));
+                }
+                _ => {
+                    if format!("{}", e).contains("No space left on device") {
+                        sys_event!(
+                            ExecFault,
+                            DfxCode::TASK_FAULT_09,
+                            &format!("Task {} {:?}", task.task_id(), e)
+                        );
+                        return Err(TaskError::Failed(Reason::InsufficientSpace));
+                    } else {
+                        sys_event!(
+                            ExecFault,
+                            DfxCode::TASK_FAULT_09,
+                            &format!("Task {} {:?}", task.task_id(), e)
+                        );
+                        return Err(TaskError::Failed(Reason::OthersError));
+                    }
+                }
+            };
+        }
+    };
+
+    let response = response.unwrap();
+    {
+        let mut guard = task.progress.lock().unwrap();
+        guard.extras.clear();
+        for (k, v) in response.headers() {
+            if let Ok(value) = v.to_string() {
+                guard.extras.insert(k.to_string().to_lowercase(), value);
+            }
+        }
+    }
+    task.get_file_info(&response)?;
+    task.update_progress_in_database();
+    RequestDb::get_instance()
+        .update_task_sizes(task.task_id(), &task.progress.lock().unwrap().sizes);
+
+    #[cfg(feature = "oh")]
+    let _trace = Trace::new(&format!(
+        "download file tid:{} size:{}",
+        task.task_id(),
+        task.progress
+            .lock()
+            .unwrap()
+            .sizes
+            .first()
+            .unwrap_or_else(|| {
+                error!("Failed to get a progress lock size from an empty vector in Progress");
+                &0
+            })
+    ));
+    let mut downloader = build_downloader(task.clone(), response, abort_flag);
+
+    if let Err(e) = downloader.download().await {
+        return task.handle_download_error(e).await;
+    }
+
+    let file_mutex = task.files.get(0).unwrap();
+    task_control::file_sync_all(file_mutex).await?;
+
+    #[cfg(not(test))]
+    check_file_exist(&task)?;
+    {
+        let mut guard = task.progress.lock().unwrap();
+        guard.sizes = vec![guard.processed.first().map_or_else(
+            || {
+                error!("Failed to get a process size from an empty vector in RequestTask");
+                Default::default()
+            },
+            |x| *x as i64,
+        )];
+    }
+
+    info!("{} downloaded", task.task_id());
+    Ok(())
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PauseExec__idx517_rank3.c", "source_rust_file": "API_Mapping__PauseExec__idx517_rank3.rs", "c_api": "return (ExceptionErrorCode)", "rust_api": "match ... { true => Ok(()), false => Err(()) }", "mapping_type": "pattern", "description": "Error handling pattern for task operations", "reasoning": "[Task Analysis] C function returns an error code from a request manager pause call; Rust function publishes a state change event and returns a Result. [Similarity] Names do not refer to the same concept (PauseExec vs publish_state_change_event), and domains differ (request management vs state event publishing). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve error handling patterns (C returns error code, Rust returns Result), and both perform operations related to task/state management. Extract API mappings based on shared logic: task management and result handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PauseExec__idx517_rank3.c", "source_rust_file": "API_Mapping__PauseExec__idx517_rank3.rs", "c_api": "RequestManager::GetInstance()->Pause(task->GetTidStr(), Version::API10)", "rust_api": "crate::utils::PublishStateChangeEvent(bundle_name, task_id, state, uid as i32)", "mapping_type": "function", "description": "Task/state management operation", "reasoning": "[Task Analysis] C function returns an error code from a request manager pause call; Rust function publishes a state change event and returns a Result. [Similarity] Names do not refer to the same concept (PauseExec vs publish_state_change_event), and domains differ (request management vs state event publishing). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve error handling patterns (C returns error code, Rust returns Result), and both perform operations related to task/state management. Extract API mappings based on shared logic: task management and result handling."}]
+Unixcoder Score: -0.007134729530662298
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTask(uint32_t taskId, CUpdateInfo *updateInfo)
+{
+    REQUEST_HILOGD("update request_task");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("mtime", updateInfo->mtime);
+    values.PutLong("tries", updateInfo->tries);
+    // write to insertValues
+    values.PutString("mime_type", std::string(updateInfo->mimeType.cStr, updateInfo->mimeType.len));
+    values.PutLong("idx", updateInfo->progress.commonData.index);
+    values.PutLong("total_processed", updateInfo->progress.commonData.totalProcessed);
+    values.PutString("processed", std::string(updateInfo->progress.processed.cStr, updateInfo->progress.processed.len));
+    values.PutString("extras", std::string(updateInfo->progress.extras.cStr, updateInfo->progress.extras.len));
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update table1 failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn update_task_max_speed(&self, task_id: u32, max_speed: i64) {
+        let sql = format!(
+            "UPDATE request_task SET max_speed = {} WHERE task_id = {}",
+            max_speed, task_id
+        );
+        let _ = self.execute(&sql);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__NewHttpClientTask__idx1313_rank2.h", "source_rust_file": "Partial__NewHttpClientTask__idx1313_rank2.rs", "c_fragment": "auto &session = NetStack::HttpClient::HttpSession::GetInstance();\n    return session.CreateTask(request);", "rust_fragment": "let ptr = self.inner.lock().unwrap().as_ref().unwrap() as *const HttpClientTask\n                as *mut HttpClientTask;\n            Pin::new_unchecked(ptr.as_mut().unwrap()).Start()", "description": "Both involve handling of an HttpClientTask instance, though in different phases (creation vs execution).", "reasoning": "[Task Analysis] C function creates and returns a shared_ptr to an HttpClientTask via a session, while Rust method calls a Start() method on a pinned mutable reference to the same task. [Similarity] Names do not match ('NewHttpClientTask' vs 'start'), but both involve task creation/activation logic. [Knowledge Extraction] No full structural match due to different domains (creation vs execution), but there's a partial structural fragment involving task handling and no API mappings since the operations are semantically different (creation vs execution)."}]
+Unixcoder Score: -0.009353429079055786
+--------------------------------------------------
+C_Code: 
+CJRequestTask::CJRequestTask()
+{
+    config_.version = Version::API10;
+    config_.action = Action::ANY;
+    REQUEST_HILOGD("construct CJRequestTask()");
+}
+Function: 
+fn default() -> Self {
+        Self {
+            bundle_type: 0,
+            atomic_account: "ohosAnonymousUid".to_string(),
+            bundle: "xxx".to_string(),
+            url: "".to_string(),
+            title: "xxx".to_string(),
+            description: "xxx".to_string(),
+            method: "GET".to_string(),
+            headers: Default::default(),
+            data: "".to_string(),
+            token: "xxx".to_string(),
+            proxy: "".to_string(),
+            extras: Default::default(),
+            version: Version::API10,
+            form_items: vec![],
+            file_specs: vec![],
+            body_file_paths: vec![],
+            certs_path: vec![],
+            certificate_pins: "".to_string(),
+            common_data: CommonTaskConfig {
+                task_id: 0,
+                uid: 0,
+                token_id: 0,
+                action: Action::Download,
+                mode: Mode::BackGround,
+                cover: false,
+                network_config: NetworkConfig::Any,
+                metered: false,
+                roaming: false,
+                retry: false,
+                redirect: true,
+                index: 0,
+                begins: 0,
+                ends: -1,
+                gauge: false,
+                precise: false,
+                priority: 0,
+                background: false,
+                multipart: false,
+                min_speed: MinSpeed::default(),
+                timeout: Timeout::default(),
+            },
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__RemoveJSTask__idx724_rank4.c", "source_rust_file": "Partial__RemoveJSTask__idx724_rank4.rs", "c_api": "CJRequestTask::ClearTaskTemp(tid, true, true, true)", "rust_api": "ClientEvent::Unsubscribe(tid, tx)", "mapping_type": "function", "description": "Task removal operation", "reasoning": "[Task Analysis] C function removes JS tasks by checking version and type, then calls ClearTaskTemp/ClearTaskMap; Rust function handles unsubscribe via sending event and waiting for response. [Similarity] No full structural match due to different domains (task management vs event handling) and different logic flow. [Knowledge Extraction] Found partial structural similarity in conditional blocks and API mappings for task removal and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RemoveJSTask__idx724_rank4.c", "source_rust_file": "Partial__RemoveJSTask__idx724_rank4.rs", "c_api": "CJRequestTask::ClearTaskMap(tid)", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Task cleanup and event sending", "reasoning": "[Task Analysis] C function removes JS tasks by checking version and type, then calls ClearTaskTemp/ClearTaskMap; Rust function handles unsubscribe via sending event and waiting for response. [Similarity] No full structural match due to different domains (task management vs event handling) and different logic flow. [Knowledge Extraction] Found partial structural similarity in conditional blocks and API mappings for task removal and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RemoveJSTask__idx724_rank4.c", "source_rust_file": "Partial__RemoveJSTask__idx724_rank4.rs", "c_api": "REQUEST_HILOGD(\"jstask %{public}s removed\", tid.c_str())", "rust_api": "error!(\"unsubscribe failed\")", "mapping_type": "function", "description": "Logging of task removal", "reasoning": "[Task Analysis] C function removes JS tasks by checking version and type, then calls ClearTaskTemp/ClearTaskMap; Rust function handles unsubscribe via sending event and waiting for response. [Similarity] No full structural match due to different domains (task management vs event handling) and different logic flow. [Knowledge Extraction] Found partial structural similarity in conditional blocks and API mappings for task removal and event handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__RemoveJSTask__idx724_rank4.c", "source_rust_file": "Partial__RemoveJSTask__idx724_rank4.rs", "c_fragment": "if (notifyData->version == Version::API10) {\n        if (notifyData->type == SubscribeType::REMOVE) {\n            CJRequestTask::ClearTaskTemp(tid, true, true, true);\n            CJRequestTask::ClearTaskMap(tid);\n            REQUEST_HILOGD(\"jstask %{public}s removed\", tid.c_str());\n        } else if (notifyData->type == SubscribeType::COMPLETED || notifyData->type == SubscribeType::FAILED) {\n            CJRequestTask::ClearTaskTemp(tid, true, false, false);\n        }", "rust_fragment": "let (tx, rx) = channel::<ErrorCode>();\n        let event = ClientEvent::Unsubscribe(tid, tx);\n        if !self.send_event(event) {\n            return ErrorCode::Other;\n        }\n        let rx = Recv::new(rx);\n        match rx.get() {\n            Some(ret) => ret,\n            None => {\n                error!(\"unsubscribe failed\");\n                sys_event!(ExecFault, DfxCode::UDS_FAULT_03, \"unsubscribe failed\");\n                ErrorCode::Other\n            }\n        }", "description": "Both functions handle conditional logic for task removal with error handling and logging.", "reasoning": "[Task Analysis] C function removes JS tasks by checking version and type, then calls ClearTaskTemp/ClearTaskMap; Rust function handles unsubscribe via sending event and waiting for response. [Similarity] No full structural match due to different domains (task management vs event handling) and different logic flow. [Knowledge Extraction] Found partial structural similarity in conditional blocks and API mappings for task removal and event handling."}]
+Unixcoder Score: -0.015235383063554764
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTask(uint32_t taskId, CUpdateInfo *updateInfo)
+{
+    REQUEST_HILOGD("update request_task");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("mtime", updateInfo->mtime);
+    values.PutLong("tries", updateInfo->tries);
+    // write to insertValues
+    values.PutString("mime_type", std::string(updateInfo->mimeType.cStr, updateInfo->mimeType.len));
+    values.PutLong("idx", updateInfo->progress.commonData.index);
+    values.PutLong("total_processed", updateInfo->progress.commonData.totalProcessed);
+    values.PutString("processed", std::string(updateInfo->progress.processed.cStr, updateInfo->progress.processed.len));
+    values.PutString("extras", std::string(updateInfo->progress.extras.cStr, updateInfo->progress.extras.len));
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update table1 failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn update_task(&self, task_id: u32, update_info: UpdateInfo) {
+        if !self.contains_task(task_id) {
+            return;
+        }
+        let sql = format!(
+            "UPDATE request_task SET sizes = {:?}, processed = {:?}, extras = {} WHERE task_id = {}",
+            update_info.progress.sizes, update_info.progress.processed, hashmap_to_string(&update_info.progress.extras),
+            task_id,
+        );
+        self.execute(&sql).unwrap();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NewHttpClientTask__idx1261_rank2.h", "source_rust_file": "API_Mapping__NewHttpClientTask__idx1261_rank2.rs", "c_api": "session.CreateTask(request)", "rust_api": "RequestTask::from_http_request(&request)", "mapping_type": "function", "description": "Creation of HTTP client task from request", "reasoning": "[Task Analysis] C function creates and returns an HttpClientTask via a session, while Rust function sets up a test for that task. [Similarity] Names don't match exactly but both involve creating/using an HTTP client task. [Knowledge Extraction] Found API mapping for task creation and usage, but not full structural match due to different domains (creation vs testing)."}]
+Unixcoder Score: -0.01611119881272316
+--------------------------------------------------
+C_Code: 
+void OnCallback(const std::shared_ptr<HttpClientTask> &task, rust::Box<CallbackWrapper> callback)
+{
+    CallbackWrapper *raw_ptr = callback.into_raw();
+    auto shared = std::shared_ptr<CallbackWrapper>(
+        raw_ptr, [](CallbackWrapper *ptr) { rust::Box<CallbackWrapper>::from_raw(ptr); });
+    task->OnSuccess([shared](const HttpClientRequest &request, const HttpClientResponse &response) {
+        shared->on_success(request, response);
+    });
+    task->OnFail([shared](const HttpClientRequest &request, const HttpClientResponse &response,
+                     const HttpClientError &error) { shared->on_fail(request, response, error); });
+    task->OnCancel([shared](const HttpClientRequest &request, const HttpClientResponse &response) {
+        shared->on_cancel(request, response);
+    });
+    auto weak = task->weak_from_this();
+    task->OnDataReceive([shared, weak](const HttpClientRequest &, const uint8_t *data, size_t size) {
+        auto httpTask = weak.lock();
+        if (httpTask != nullptr) {
+            shared->on_data_receive(httpTask, data, size);
+        }
+    });
+    task->OnProgress([shared](const HttpClientRequest &, u_long dlTotal, u_long dlNow, u_long ulTotal, u_long ulNow) {
+        shared->on_progress(dlTotal, dlNow, ulTotal, ulNow);
+    });
+}
+Function: 
+fn on_data_receive(
+        &mut self,
+        task: SharedPtr<ffi::HttpClientTask>,
+        data: *const u8,
+        size: usize,
+    ) {
+        let Some(callback) = self.inner.as_mut() else {
+            return;
+        };
+        self.current += size as u64;
+        let data = unsafe { std::slice::from_raw_parts(data, size) };
+        let task = RequestTask::from_ffi(task);
+        callback.on_data_receive(data, task);
+    }
+Unixcoder Score: -0.01704161986708641
+--------------------------------------------------

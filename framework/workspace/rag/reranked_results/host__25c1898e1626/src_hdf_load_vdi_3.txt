@@ -1,0 +1,158 @@
+C_Code: 
+struct Obj {
+  int i;
+}
+Function: 
+pub struct MapNodeSizeInfo(pub i32);
+Unixcoder Score: 0.03106772154569626
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+pub struct Point {
+    pub x: f32,
+    pub y: f32,
+}
+Unixcoder Score: 0.03026297129690647
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+pub struct Body<'tcx> {
+    /// A list of basic blocks. References to basic block use a newtyped index type [`BasicBlock`]
+    /// that indexes into this vector.
+    pub basic_blocks: BasicBlocks<'tcx>,
+
+    /// Records how far through the "desugaring and optimization" process this particular
+    /// MIR has traversed. This is particularly useful when inlining, since in that context
+    /// we instantiate the promoted constants and add them to our promoted vector -- but those
+    /// promoted items have already been optimized, whereas ours have not. This field allows
+    /// us to see the difference and forego optimization on the inlined promoted items.
+    pub phase: MirPhase,
+
+    /// How many passses we have executed since starting the current phase. Used for debug output.
+    pub pass_count: usize,
+
+    pub source: MirSource<'tcx>,
+
+    /// A list of source scopes; these are referenced by statements
+    /// and used for debuginfo. Indexed by a `SourceScope`.
+    pub source_scopes: IndexVec<SourceScope, SourceScopeData<'tcx>>,
+
+    pub generator: Option<Box<GeneratorInfo<'tcx>>>,
+
+    /// Declarations of locals.
+    ///
+    /// The first local is the return value pointer, followed by `arg_count`
+    /// locals for the function arguments, followed by any user-declared
+    /// variables and temporaries.
+    pub local_decls: IndexVec<Local, LocalDecl<'tcx>>,
+
+    /// User type annotations.
+    pub user_type_annotations: ty::CanonicalUserTypeAnnotations<'tcx>,
+
+    /// The number of arguments this function takes.
+    ///
+    /// Starting at local 1, `arg_count` locals will be provided by the caller
+    /// and can be assumed to be initialized.
+    ///
+    /// If this MIR was built for a constant, this will be 0.
+    pub arg_count: usize,
+
+    /// Mark an argument local (which must be a tuple) as getting passed as
+    /// its individual components at the LLVM level.
+    ///
+    /// This is used for the "rust-call" ABI.
+    pub spread_arg: Option<Local>,
+
+    /// Debug information pertaining to user variables, including captures.
+    pub var_debug_info: Vec<VarDebugInfo<'tcx>>,
+
+    /// A span representing this MIR, for error reporting.
+    pub span: Span,
+
+    /// Constants that are required to evaluate successfully for this MIR to be well-formed.
+    /// We hold in this field all the constants we are not able to evaluate yet.
+    pub required_consts: Vec<Constant<'tcx>>,
+
+    /// Does this body use generic parameters. This is used for the `ConstEvaluatable` check.
+    ///
+    /// Note that this does not actually mean that this body is not computable right now.
+    /// The repeat count in the following example is polymorphic, but can still be evaluated
+    /// without knowing anything about the type parameter `T`.
+    ///
+    /// ```rust
+    /// fn test<T>() {
+    ///     let _ = [0; std::mem::size_of::<*mut T>()];
+    /// }
+    /// ```
+    ///
+    /// **WARNING**: Do not change this flags after the MIR was originally created, even if an optimization
+    /// removed the last mention of all generic params. We do not want to rely on optimizations and
+    /// potentially allow things like `[u8; std::mem::size_of::<T>() * 0]` due to this.
+    pub is_polymorphic: bool,
+
+    /// The phase at which this MIR should be "injected" into the compilation process.
+    ///
+    /// Everything that comes before this `MirPhase` should be skipped.
+    ///
+    /// This is only `Some` if the function that this body comes from was annotated with `rustc_custom_mir`.
+    pub injection_phase: Option<MirPhase>,
+
+    pub tainted_by_errors: Option<ErrorGuaranteed>,
+}
+Unixcoder Score: 0.026946861296892166
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+pub struct NormalAttr {
+    pub item: AttrItem,
+    pub tokens: Option<LazyAttrTokenStream>,
+}
+Unixcoder Score: 0.02038436383008957
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+pub struct Point {
+        pub x: f32,
+        pub y: f32,
+    }
+Unixcoder Score: 0.01443465892225504
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+pub struct FiftyBytes([u8; 50]);
+Unixcoder Score: 0.012890774756669998
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+struct OrdOnly<T: Ord>(T);
+Unixcoder Score: 0.011785042472183704
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+struct Local1<T>(Rc<T>);
+Unixcoder Score: 0.011681437492370605
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+pub(crate) struct InferOk<T> {
+    value: T,
+    goals: Vec<InEnvironment<Goal>>,
+}
+Unixcoder Score: 0.01143687590956688
+--------------------------------------------------
+C_Code: 
+struct rust_obj
+Function: 
+struct C {
+    x: usize,
+}
+Unixcoder Score: 0.010275536216795444
+--------------------------------------------------

@@ -1,0 +1,270 @@
+C_Code: 
+DownloadServiceProxy::DownloadServiceProxy(const sptr<IRemoteObject> &object)
+    : IRemoteProxy<DownloadServiceInterface>(object)
+{
+}
+Function: 
+fn on_remote_request(
+    stub: &dyn RequestServiceInterface,
+    code: u32,
+    data: &BorrowedMsgParcel,
+    reply: &mut BorrowedMsgParcel,
+) -> IpcResult<()> {
+    info!(LOG_LABEL, "on_remote_request code {}", @public(code));
+    let service_token: InterfaceToken =
+        InterfaceToken::new("OHOS.Download.RequestServiceInterface");
+    let token: InterfaceToken = match data.read::<InterfaceToken>() {
+        Ok(i) => i,
+        _ => InterfaceToken::new("token error"),
+    };
+    if service_token.get_token() != token.get_token() {
+        error!(LOG_LABEL, "token error");
+        return Err(IpcStatusCode::Failed);
+    }
+    match code.try_into()? {
+        RequestCode::Construct => stub.construct(data, reply),
+        RequestCode::Pause => stub.pause(data, reply),
+        RequestCode::Query => stub.show(data, reply),
+        RequestCode::QueryMimeType => stub.query_mime_type(data, reply),
+        RequestCode::Remove => stub.remove(data, reply),
+        RequestCode::Resume => stub.resume(data, reply),
+        RequestCode::On => stub.on(data, reply),
+        RequestCode::Off => stub.off(data, reply),
+        RequestCode::Start => stub.start(data, reply),
+        RequestCode::Stop => stub.stop(data, reply),
+        RequestCode::Show => stub.show(data, reply),
+        RequestCode::Touch => stub.touch(data, reply),
+        RequestCode::Search => stub.search(data, reply),
+        RequestCode::Clear => stub.clear(data, reply),
+    }
+}
+Unixcoder Score: 0.05746976658701897
+--------------------------------------------------
+C_Code: 
+sptr<DownloadServiceAbility> DownloadServiceAbility::GetInstance()
+{
+    if (instance_ == nullptr) {
+        std::lock_guard<std::mutex> autoLock(instanceLock_);
+        if (instance_ == nullptr) {
+            instance_ = new DownloadServiceAbility(DOWNLOAD_SERVICE_ID, true);
+        }
+    }
+    return instance_;
+}
+Function: 
+pub fn get_ability_instance() -> &'static mut RequestAbility {
+        static mut REQUESTABILITY: Option<RequestAbility> = None;
+        static ONCE: Once = Once::new();
+        unsafe {
+            ONCE.call_once(|| {
+                REQUESTABILITY = Some(RequestAbility::new(
+                    ServerRunState::NoStart,
+                    Mutex::new(HashMap::new()),
+                ));
+            });
+            REQUESTABILITY.as_mut().unwrap()
+        }
+    }
+Unixcoder Score: 0.003667348064482212
+--------------------------------------------------
+C_Code: 
+void DownloadServiceAbility::OnStop()
+{
+    DOWNLOAD_HILOGI("OnStop started.");
+    if (state_ != ServiceRunningState::STATE_RUNNING) {
+        return;
+    }
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return;
+    }
+    instance->Destroy();
+    serviceHandler_ = nullptr;
+    instance_ = nullptr;
+    state_ = ServiceRunningState::STATE_NOT_START;
+    DOWNLOAD_HILOGI("OnStop end.");
+}
+Function: 
+pub fn stop(&mut self) {
+        debug!(LOG_LABEL, "stop");
+        if ServerRunState::NoStart == self.server_state {
+            return;
+        }
+        self.server_state = ServerRunState::NoStart;
+    }
+Unixcoder Score: 0.0008638855651952326
+--------------------------------------------------
+C_Code: 
+TestServiceProxy::TestServiceProxy(const sptr<IRemoteObject> &impl)
+    : IRemoteProxy<ITestService>(impl)
+{
+}
+Function: 
+pub fn from_sptr(sptr: UniquePtr<SptrIRemoteObject>) -> Option<Self> {
+        Self::try_new(FromSptrRemote(sptr))
+    }
+Unixcoder Score: 2.002216388063971e-05
+--------------------------------------------------
+C_Code: 
+bool NetHttpClientExec::SetServerSSLCertOption(CURL *curl, OHOS::NetStack::Http::RequestContext *context)
+{
+#ifndef NO_SSL_CERTIFICATION
+#ifdef HAS_NETMANAGER_BASE
+    auto hostname = CommonUtils::GetHostnameFromURL(context->options.GetUrl());
+#if !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
+    std::vector<std::string> certs;
+    // add app cert path
+    auto ret = NetworkSecurityConfig::GetInstance().GetTrustAnchorsForHostName(hostname, certs);
+    if (ret != 0) {
+        NETSTACK_LOGE("GetTrustAnchorsForHostName error. ret [%{public}d]", ret);
+    }
+#ifdef HTTP_MULTIPATH_CERT_ENABLE
+    // add user cert path
+    certs.emplace_back(USER_CERT_ROOT_PATH);
+    certs.emplace_back(BASE_PATH + std::to_string(getuid() / UID_TRANSFORM_DIVISOR));
+    // add system cert path
+    certs.emplace_back(HTTP_PREPARE_CA_PATH);
+    context->SetCertsPath(std::move(certs), context->options.GetCaPath());
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYPEER, 1L, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYHOST, 2L, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_CAINFO, nullptr, context);
+#else
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_CAINFO, nullptr, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYPEER, 0L, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYHOST, 0L, context);
+#endif // HTTP_MULTIPATH_CERT_ENABLE
+#else
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYPEER, 0L, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYHOST, 0L, context);
+#endif //  !defined(WINDOWS_PLATFORM) && !defined(MAC_PLATFORM)
+    // pin trusted certifcate keys.
+    std::string pins;
+    if (NetworkSecurityConfig::GetInstance().GetPinSetForHostName(hostname, pins) != 0 || pins.empty()) {
+        NETSTACK_LOGD("Get no pinset by host name");
+    } else if (NetworkSecurityConfig::GetInstance().IsPinOpenModeVerifyRootCa(hostname)) {
+        context->SetPinnedPubkey(pins);
+    } else {
+        NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_PINNEDPUBLICKEY, pins.c_str(), context);
+    }
+#if defined(HTTP_MULTIPATH_CERT_ENABLE) || defined(HTTP_ONLY_VERIFY_ROOT_CA_ENABLE)
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_CTX_FUNCTION, SslCtxFunction, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_CTX_DATA, context, context);
+#endif
+#else
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_CAINFO, nullptr, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYPEER, 0L, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYHOST, 0L, context);
+#endif // HAS_NETMANAGER_BASE
+#else
+    // in real life, you should buy a ssl certification and rename it to /etc/ssl/cert.pem
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYHOST, 0L, context);
+    NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_SSL_VERIFYPEER, 0L, context);
+#endif // NO_SSL_CERTIFICATION
+
+    return true;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Unixcoder Score: -0.012866408564150333
+--------------------------------------------------
+C_Code: 
+AssistTestServiceProxy::AssistTestServiceProxy(const sptr<IRemoteObject>& object)
+    : IRemoteProxy<IAssistTestService>(object)
+{
+}
+Function: 
+pub unsafe fn from_ciremote(remote: *mut IRemoteObject) -> Option<Self> {
+        if remote.is_null() {
+            return None;
+        }
+
+        let inner = FromCIRemoteObject(remote);
+        if inner.is_null() {
+            return None;
+        }
+
+        Some(Self { inner })
+    }
+Unixcoder Score: -0.013966899365186691
+--------------------------------------------------
+C_Code: 
+AssistTestServiceProxy::AssistTestServiceProxy(const sptr<IRemoteObject>& object)
+    : IRemoteProxy<IAssistTestService>(object)
+{
+}
+Function: 
+pub fn try_new(wrap: UniquePtr<IRemoteObjectWrapper>) -> Option<Self> {
+        if wrap.is_null() {
+            return None;
+        }
+        Some(Self { inner: wrap })
+    }
+Unixcoder Score: -0.015623585321009159
+--------------------------------------------------
+C_Code: 
+AssistTestServiceProxy::AssistTestServiceProxy(const sptr<IRemoteObject>& object)
+    : IRemoteProxy<IAssistTestService>(object)
+{
+}
+Function: 
+pub fn from_sptr(sptr: UniquePtr<SptrIRemoteObject>) -> Option<Self> {
+        Self::try_new(FromSptrRemote(sptr))
+    }
+Unixcoder Score: -0.017124582082033157
+--------------------------------------------------
+C_Code: 
+DBinderTestServiceProxy::DBinderTestServiceProxy(const sptr<IRemoteObject> &impl)
+    : IRemoteProxy<IDBinderTestService>(impl)
+{}
+Function: 
+pub unsafe fn from_ciremote(remote: *mut IRemoteObject) -> Option<Self> {
+        if remote.is_null() {
+            return None;
+        }
+
+        let inner = FromCIRemoteObject(remote);
+        if inner.is_null() {
+            return None;
+        }
+
+        Some(Self { inner })
+    }
+Unixcoder Score: -0.021615346893668175
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::QueryMimeType(uint32_t taskId, std::string &mimeType)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility QueryMimeType started.");
+    return instance->QueryMimeType(taskId, IPCSkeleton::GetCallingUid(), mimeType);
+}
+Function: 
+pub fn query_mime_type(&self, uid: u64, task_id: u32) -> String {
+        log_debug!("Query a task mime type");
+        let task_map_guard = self.task_map.lock().unwrap();
+        let task = self.get_task(uid, task_id, &task_map_guard);
+        match task {
+            Some(value) => {
+                log_debug!("Query task mime type by memory");
+                let mimt_type = value.query_mime_type();
+                return mimt_type;
+            }
+            None => {
+                // API10 query in database
+                return "".into();
+            }
+        }
+    }
+Unixcoder Score: -0.02187846414744854
+--------------------------------------------------

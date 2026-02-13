@@ -1,0 +1,260 @@
+C_Code: 
+bool Serializable::GetValue(const json &node, const std::string &name, uint64_t &value)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null() || !subNode.is_number_unsigned()) {
+        return false;
+    }
+    subNode.get_to(value);
+    return true;
+}
+Function: 
+pub(crate) fn vec_raw_read<T: Deserialize>(msg_parcel: &mut MsgParcel) -> IpcResult<Vec<T>> {
+    let length = msg_parcel.read::<i32>()? as usize;
+    let mut vector = Vec::with_capacity(length);
+    for _ in 0..length {
+        let value = msg_parcel.read::<T>()?;
+        vector.push(value);
+    }
+    Ok(vector)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12101_rank2.c", "source_rust_file": "API_Mapping__main__idx12101_rank2.rs", "c_api": "if (argc == 2 && strcmp(argv[1], \"-v\") == 0)", "rust_api": "if let token::Literal(token::Lit { kind: token::Integer, symbol, suffix }) = self.token.kind", "mapping_type": "pattern", "description": "Conditional check for specific input/argument pattern", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser method for field names. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to conditional logic and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12101_rank2.c", "source_rust_file": "API_Mapping__main__idx12101_rank2.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN);", "rust_api": "self.bump();", "mapping_type": "pattern", "description": "Initialization of buffer or state tracking", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser method for field names. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to conditional logic and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12101_rank2.c", "source_rust_file": "API_Mapping__main__idx12101_rank2.rs", "c_api": "verbose = 1;", "rust_api": "Ok(Ident::new(symbol, self.prev_token.span))", "mapping_type": "pattern", "description": "Setting a flag/variable based on condition", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser method for field names. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to conditional logic and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12101_rank2.c", "source_rust_file": "API_Mapping__main__idx12101_rank2.rs", "c_api": "free(tmp);", "rust_api": "self.parse_ident_common(true)", "mapping_type": "pattern", "description": "Memory deallocation or cleanup of resources", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser method for field names. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to conditional logic and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12101_rank2.c", "source_rust_file": "API_Mapping__main__idx12101_rank2.rs", "c_api": "while (nodes) { tmp = nodes; nodes = tmp->next; ... }", "rust_api": "self.parse_ident_common(true)", "mapping_type": "pattern", "description": "Iterating through a list/sequence structure", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser method for field names. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to conditional logic and control flow patterns."}]
+Unixcoder Score: 0.015734123066067696
+--------------------------------------------------
+C_Code: 
+bool Session::Unmarshal(const json &node)
+{
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(sourceDeviceId), sourceDeviceId) && ret;
+    ret = GetValue(node, GET_NAME(targetDeviceId), targetDeviceId) && ret;
+    ret = GetValue(node, GET_NAME(sourceUserId), sourceUserId) && ret;
+    ret = GetValue(node, GET_NAME(targetUserIds), targetUserIds) && ret;
+    ret = GetValue(node, GET_NAME(appId), appId) && ret;
+    ret = GetValue(node, GET_NAME(storeId), storeId) && ret;
+    ret = GetValue(node, GET_NAME(accountId), accountId) && ret;
+    return ret;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let result = Fields(vec_raw_read::<Field>(parcel)?);
+        Ok(result)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12113_rank2.c", "source_rust_file": "API_Mapping__main__idx12113_rank2.rs", "c_api": "if (argc == 2 && strcmp(argv[1], \"-v\") == 0)", "rust_api": "match self.parse_str_lit()", "mapping_type": "pattern", "description": "Conditional logic for argument validation and parsing", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function returning an Option. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and option handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12113_rank2.c", "source_rust_file": "API_Mapping__main__idx12113_rank2.rs", "c_api": "ret = rsparse();", "rust_api": "match self.parse_str_lit()", "mapping_type": "function", "description": "Parsing function call with error propagation", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function returning an Option. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and option handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12113_rank2.c", "source_rust_file": "API_Mapping__main__idx12113_rank2.rs", "c_api": "free((void*)tmp->name)", "rust_api": "None", "mapping_type": "function", "description": "Memory deallocation for string data", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function returning an Option. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and option handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12113_rank2.c", "source_rust_file": "API_Mapping__main__idx12113_rank2.rs", "c_api": "if (nodes) { print_node(nodes, 0); }", "rust_api": "match lit.kind { ast::LitKind::Err => None, _ => ... }", "mapping_type": "pattern", "description": "Conditional handling of parsed results", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function returning an Option. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and option handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12113_rank2.c", "source_rust_file": "API_Mapping__main__idx12113_rank2.rs", "c_api": "free(tmp)", "rust_api": "None", "mapping_type": "function", "description": "Memory deallocation for node structure", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function returning an Option. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and option handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12113_rank2.c", "source_rust_file": "API_Mapping__main__idx12113_rank2.rs", "c_api": "print(\"--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\\n\", ret, n_nodes);", "rust_api": "self.sess.emit_err(NonStringAbiLiteral { span: lit.span });", "mapping_type": "function", "description": "Error reporting and logging", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function returning an Option. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs AST parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and option handling patterns."}]
+Unixcoder Score: 0.008892887271940708
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn unlink(nobe: dlist_node<T>) {
+        self.assert_mine(nobe);
+        assert self.size > 0;
+        self.link(nobe.prev, nobe.next);
+        nobe.prev = none; // Release extraneous references.
+        nobe.next = none;
+        nobe.root = none;
+        self.size -= 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__ares__remove_from_list__idx125925_rank1.c", "source_rust_file": "Full__ares__remove_from_list__idx125925_rank1.rs", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function removes an entry from a similar unsafe doubly-linked list. [Similarity] Both perform the same logical operation of unlinking a node/entry by updating prev/next pointers. [Knowledge Extraction] Full structural match with same domain (memory management, linked list manipulation), same semantic operations (unlinking nodes), and matching control flow. API mappings identified for pointer manipulation and node removal patterns.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__ares__remove_from_list__idx125925_rank1.c", "source_rust_file": "Full__ares__remove_from_list__idx125925_rank1.rs", "c_api": "node->prev->next = node->next", "rust_api": "unsafe { prev.as_mut() }.next = next", "mapping_type": "field_access", "description": "Updating the 'next' field of the previous node to point to the next node in the list", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function removes an entry from a similar unsafe doubly-linked list. [Similarity] Both perform the same logical operation of unlinking a node/entry by updating prev/next pointers. [Knowledge Extraction] Full structural match with same domain (memory management, linked list manipulation), same semantic operations (unlinking nodes), and matching control flow. API mappings identified for pointer manipulation and node removal patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__ares__remove_from_list__idx125925_rank1.c", "source_rust_file": "Full__ares__remove_from_list__idx125925_rank1.rs", "c_api": "node->next = NULL", "rust_api": "entry.next = NonNull::dangling()", "mapping_type": "pattern", "description": "Setting the next pointer of the removed node to null/invalid reference", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function removes an entry from a similar unsafe doubly-linked list. [Similarity] Both perform the same logical operation of unlinking a node/entry by updating prev/next pointers. [Knowledge Extraction] Full structural match with same domain (memory management, linked list manipulation), same semantic operations (unlinking nodes), and matching control flow. API mappings identified for pointer manipulation and node removal patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__ares__remove_from_list__idx125925_rank1.c", "source_rust_file": "Full__ares__remove_from_list__idx125925_rank1.rs", "c_api": "node->next->prev = node->prev", "rust_api": "unsafe { next.as_mut() }.prev = prev", "mapping_type": "field_access", "description": "Updating the 'prev' field of the next node to point to the previous node in the list", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function removes an entry from a similar unsafe doubly-linked list. [Similarity] Both perform the same logical operation of unlinking a node/entry by updating prev/next pointers. [Knowledge Extraction] Full structural match with same domain (memory management, linked list manipulation), same semantic operations (unlinking nodes), and matching control flow. API mappings identified for pointer manipulation and node removal patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__ares__remove_from_list__idx125925_rank1.c", "source_rust_file": "Full__ares__remove_from_list__idx125925_rank1.rs", "c_api": "node->prev = NULL", "rust_api": "entry.prev = NonNull::dangling()", "mapping_type": "pattern", "description": "Setting the previous pointer of the removed node to null/invalid reference", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function removes an entry from a similar unsafe doubly-linked list. [Similarity] Both perform the same logical operation of unlinking a node/entry by updating prev/next pointers. [Knowledge Extraction] Full structural match with same domain (memory management, linked list manipulation), same semantic operations (unlinking nodes), and matching control flow. API mappings identified for pointer manipulation and node removal patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__ares__remove_from_list__idx125925_rank1.c", "source_rust_file": "Full__ares__remove_from_list__idx125925_rank1.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "rtassert!(!self.is_empty());\n        // BEFORE:\n        //     /----\\ next ---> /-----\\ next ---> /----\\\n        // ... |prev|           |entry|           |next| ...\n        //     \\----/ <--- prev \\-----/ <--- prev \\----/\n        //\n        // AFTER:\n        //     /----\\ next ---> /----\\\n        // ... |prev|           |next| ...\n        //     \\----/ <--- prev \\----/\n        let mut prev = entry.prev;\n        let mut next = entry.next;\n        // SAFETY: `prev` and `next` must meet all requirements for a mutable reference.entry\n        unsafe { prev.as_mut() }.next = next;\n        unsafe { next.as_mut() }.prev = prev;\n        entry.next = NonNull::dangling();\n        entry.prev = NonNull::dangling();", "description": "Both functions perform the same linked list node removal logic: check if node exists, update surrounding nodes' links, and nullify the removed node's links.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function removes an entry from a similar unsafe doubly-linked list. [Similarity] Both perform the same logical operation of unlinking a node/entry by updating prev/next pointers. [Knowledge Extraction] Full structural match with same domain (memory management, linked list manipulation), same semantic operations (unlinking nodes), and matching control flow. API mappings identified for pointer manipulation and node removal patterns."}]
+Unixcoder Score: 0.0007955218316055834
+--------------------------------------------------
+C_Code: 
+bool Session::Unmarshal(const json &node)
+{
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(sourceDeviceId), sourceDeviceId) && ret;
+    ret = GetValue(node, GET_NAME(targetDeviceId), targetDeviceId) && ret;
+    ret = GetValue(node, GET_NAME(sourceUserId), sourceUserId) && ret;
+    ret = GetValue(node, GET_NAME(targetUserIds), targetUserIds) && ret;
+    ret = GetValue(node, GET_NAME(appId), appId) && ret;
+    ret = GetValue(node, GET_NAME(storeId), storeId) && ret;
+    ret = GetValue(node, GET_NAME(accountId), accountId) && ret;
+    return ret;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let result = AppInfos(string_hash_map_raw_read::<AppInfo>(parcel)?);
+        Ok(result)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx11614_rank3.c", "source_rust_file": "API_Mapping__main__idx11614_rank3.rs", "c_api": "alloc(cap)", "rust_api": "alloc(cap) as *mut Vec<u8>", "mapping_type": "function", "description": "Heap allocation", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a string construction function using unsafe memory operations. [Similarity] No structural similarity at the function level due to different domains (CLI parsing vs string construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and string handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx11614_rank3.c", "source_rust_file": "API_Mapping__main__idx11614_rank3.rs", "c_api": "free((void*)tmp->name)", "rust_api": "free(ptr as *u8)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a string construction function using unsafe memory operations. [Similarity] No structural similarity at the function level due to different domains (CLI parsing vs string construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and string handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx11614_rank3.c", "source_rust_file": "API_Mapping__main__idx11614_rank3.rs", "c_api": "free(tmp)", "rust_api": "free(ptr as *u8)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a string construction function using unsafe memory operations. [Similarity] No structural similarity at the function level due to different domains (CLI parsing vs string construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and string handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx11614_rank3.c", "source_rust_file": "API_Mapping__main__idx11614_rank3.rs", "c_api": "rsparse()", "rust_api": "for ch in iterator", "mapping_type": "function", "description": "Parsing operation", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a string construction function using unsafe memory operations. [Similarity] No structural similarity at the function level due to different domains (CLI parsing vs string construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and string handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx11614_rank3.c", "source_rust_file": "API_Mapping__main__idx11614_rank3.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "let mut cap = if lower == 0 {16} else {lower}", "mapping_type": "pattern", "description": "Buffer initialization", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a string construction function using unsafe memory operations. [Similarity] No structural similarity at the function level due to different domains (CLI parsing vs string construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and string handling."}]
+Unixcoder Score: -0.025105558335781097
+--------------------------------------------------
+C_Code: 
+bool Database::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(alias)], alias);
+    SetValue(node[GET_NAME(tables)], tables);
+    SetValue(node[GET_NAME(version)], version);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(deviceId)], deviceId);
+    SetValue(node[GET_NAME(autoSyncType)], autoSyncType);
+    return true;
+}
+Function: 
+fn try_from(value: &Database) -> Result<Self, SyncError> {
+        let mut tables = vec![];
+        for table in value.tables.values() {
+            tables.push(table.try_into()?);
+        }
+
+        Ok(ipc_conn::Database {
+            name: value.name.clone(),
+            alias: value.alias.to_string(),
+            tables: ipc_conn::SchemaOrderTables(tables),
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_api": "SetValue(node[GET_NAME(tables)], tables)", "rust_api": "fields: ipc_conn::Fields(fields)", "mapping_type": "field_access", "description": "Assignment of field value from source to destination.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_api": "SetValue(node[GET_NAME(bundleName)], bundleName)", "rust_api": "fields.push(ipc_fd)", "mapping_type": "pattern", "description": "Appending elements to a collection.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_api": "SetValue(node[GET_NAME(alias)], alias)", "rust_api": "table_name: value.name.clone()", "mapping_type": "field_access", "description": "Assignment of field value from source to destination.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_api": "SetValue(node[GET_NAME(deviceId)], deviceId)", "rust_api": "fields.push(ipc_fd)", "mapping_type": "pattern", "description": "Appending elements to a collection.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_api": "SetValue(node[GET_NAME(autoSyncType)], autoSyncType)", "rust_api": "fields.push(ipc_fd)", "mapping_type": "pattern", "description": "Appending elements to a collection.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_api": "SetValue(node[GET_NAME(version)], version)", "rust_api": "fields.push(ipc_fd)", "mapping_type": "pattern", "description": "Appending elements to a collection.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_fragment": "SetValue(node[GET_NAME(name)], name);\n    SetValue(node[GET_NAME(alias)], alias);\n    SetValue(node[GET_NAME(tables)], tables);\n    SetValue(node[GET_NAME(version)], version);\n    SetValue(node[GET_NAME(bundleName)], bundleName);\n    SetValue(node[GET_NAME(user)], user);\n    SetValue(node[GET_NAME(deviceId)], deviceId);\n    SetValue(node[GET_NAME(autoSyncType)], autoSyncType);", "rust_fragment": "let ipc_fd = ipc_conn::Field::try_from(fd)?;\n            fields.push(ipc_fd);", "description": "Field assignment and copying logic in both languages.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_api": "SetValue(node[GET_NAME(user)], user)", "rust_api": "fields.push(ipc_fd)", "mapping_type": "pattern", "description": "Appending elements to a collection.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5188_rank5.c", "source_rust_file": "Partial__Marshal__idx5188_rank5.rs", "c_api": "SetValue(node[GET_NAME(name)], name)", "rust_api": "alias: value.alias.clone()", "mapping_type": "field_access", "description": "Assignment of field value from source to destination.", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node from member variables. Rust code is a conversion function that builds an `OrderTable` from a `Table` by cloning fields and converting them. [Similarity] Names don't match (`Marshal` vs `try_from`, `name` vs `table_name`), but both perform data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (JSON marshaling vs struct conversion). Partial match in field copying logic. API mappings found for field assignment and cloning operations."}]
+Unixcoder Score: -0.02525697462260723
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn verbosity(&self) -> Verbosity {
+        if self.quiet {
+            return Verbosity::Quiet;
+        }
+        match self.verbose {
+            0 => Verbosity::Normal,
+            1 => Verbosity::Verbose,
+            _ => Verbosity::Spammy,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx77119_rank2.c", "source_rust_file": "API_Mapping__main__idx77119_rank2.rs", "c_api": "free((void*)tmp->name)", "rust_api": "Data(bytes)", "mapping_type": "pattern", "description": "Memory deallocation and data construction", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a data parsing function. [Similarity] No structural similarity at function level due to different domains (CLI handling vs data parsing). [Knowledge Extraction] No full/partial match. API mappings identified: C memset vs Rust read_bytes, C free vs Rust memory cleanup, C strcmp vs Rust string comparison logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx77119_rank2.c", "source_rust_file": "API_Mapping__main__idx77119_rank2.rs", "c_api": "strcmp(argv[1], \"-v\") == 0", "rust_api": "len > 0", "mapping_type": "pattern", "description": "Conditional logic for input validation", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a data parsing function. [Similarity] No structural similarity at function level due to different domains (CLI handling vs data parsing). [Knowledge Extraction] No full/partial match. API mappings identified: C memset vs Rust read_bytes, C free vs Rust memory cleanup, C strcmp vs Rust string comparison logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx77119_rank2.c", "source_rust_file": "API_Mapping__main__idx77119_rank2.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "io.read_bytes(len as uint)", "mapping_type": "pattern", "description": "Buffer initialization and data reading", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a data parsing function. [Similarity] No structural similarity at function level due to different domains (CLI handling vs data parsing). [Knowledge Extraction] No full/partial match. API mappings identified: C memset vs Rust read_bytes, C free vs Rust memory cleanup, C strcmp vs Rust string comparison logic."}]
+Unixcoder Score: -0.03090772219002247
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_n_before(nobe: dlist_node<T>, neighbour: dlist_node<T>) {
+        self.make_mine(nobe);
+        self.insert_left(some(nobe), neighbour);
+    }
+Unixcoder Score: -0.03532916307449341
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+unsafe fn unlink_node(&mut self, mut node: NonNull<Node<T>>) {
+        let node = unsafe { node.as_mut() }; // this one is ours now, we can create an &mut.
+
+        // Not creating new mutable (unique!) references overlapping `element`.
+        match node.prev {
+            Some(prev) => unsafe { (*prev.as_ptr()).next = node.next },
+            // this node is the head node
+            None => self.head = node.next,
+        };
+
+        match node.next {
+            Some(next) => unsafe { (*next.as_ptr()).prev = node.prev },
+            // this node is the tail node
+            None => self.tail = node.prev,
+        };
+
+        self.len -= 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx98656_rank3.c", "source_rust_file": "API_Mapping__main__idx98656_rank3.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "std::mem::forget(file)", "mapping_type": "pattern", "description": "Memory initialization vs. memory handling", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function with file I/O and syntax tree handling. [Similarity] No structural similarity at the function level due to different domains (memory management vs. parsing + syntax tree). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to parsing and memory handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx98656_rank3.c", "source_rust_file": "API_Mapping__main__idx98656_rank3.rs", "c_api": "rsparse()", "rust_api": "SourceFile::parse(&text).tree()", "mapping_type": "function", "description": "Parsing function call", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function with file I/O and syntax tree handling. [Similarity] No structural similarity at the function level due to different domains (memory management vs. parsing + syntax tree). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to parsing and memory handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx98656_rank3.c", "source_rust_file": "API_Mapping__main__idx98656_rank3.rs", "c_api": "strcmp(argv[1], \"-v\") == 0", "rust_api": "!self.no_dump", "mapping_type": "pattern", "description": "Command-line argument check for verbose mode", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function with file I/O and syntax tree handling. [Similarity] No structural similarity at the function level due to different domains (memory management vs. parsing + syntax tree). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to parsing and memory handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx98656_rank3.c", "source_rust_file": "API_Mapping__main__idx98656_rank3.rs", "c_api": "free(tmp)", "rust_api": "std::mem::forget(file)", "mapping_type": "pattern", "description": "Memory deallocation vs. memory handling", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function with file I/O and syntax tree handling. [Similarity] No structural similarity at the function level due to different domains (memory management vs. parsing + syntax tree). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to parsing and memory handling."}]
+Unixcoder Score: -0.037743713706731796
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn test_dlist_remove_one_two() {
+        let l = create::<int>();
+        l.assert_consistent(); let one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let _three = l.push_n(3);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); l.remove(one);
+        l.assert_consistent(); l.remove(two);
+        // and through and through, the vorpal blade went snicker-snack
+        l.assert_consistent(); assert l.len() == 1;
+        l.assert_consistent(); assert l.head() == 3;
+        l.assert_consistent(); assert l.tail() == 3;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__main__idx7914_rank1.c", "source_rust_file": "Partial__main__idx7914_rank1.rs", "c_fragment": "if (argc == 2 && strcmp(argv[1], \"-v\") == 0) {\n    verbose = 1;\n  } else {\n    verbose = 0;\n  }", "rust_fragment": "if args.len() >= 2 && args[1].as_slice() == \"fail\" {\n        foo();\n    } else if args.len() >= 2 && args[1].as_slice() == \"double-fail\" {\n        double();\n    } else {\n        runtest(args[0]);\n    }", "description": "Both use conditional logic to check command-line arguments and execute different code paths based on input.", "reasoning": "[Task Analysis] C main() parses command-line args and manages a linked list of nodes; Rust main() handles command-line args and dispatches tests. [Similarity] Names don't refer to same concept (main vs main), and domains differ (parsing + memory mgmt vs test dispatch). [Knowledge Extraction] No full match due to domain mismatch and different logic. Partial match found in argument parsing logic. API mappings found for command-line argument handling and conditional logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7914_rank1.c", "source_rust_file": "Partial__main__idx7914_rank1.rs", "c_api": "argc", "rust_api": "args.len()", "mapping_type": "function", "description": "Command-line argument count check", "reasoning": "[Task Analysis] C main() parses command-line args and manages a linked list of nodes; Rust main() handles command-line args and dispatches tests. [Similarity] Names don't refer to same concept (main vs main), and domains differ (parsing + memory mgmt vs test dispatch). [Knowledge Extraction] No full match due to domain mismatch and different logic. Partial match found in argument parsing logic. API mappings found for command-line argument handling and conditional logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7914_rank1.c", "source_rust_file": "Partial__main__idx7914_rank1.rs", "c_api": "argv[1]", "rust_api": "args[1]", "mapping_type": "field_access", "description": "Accessing first command-line argument", "reasoning": "[Task Analysis] C main() parses command-line args and manages a linked list of nodes; Rust main() handles command-line args and dispatches tests. [Similarity] Names don't refer to same concept (main vs main), and domains differ (parsing + memory mgmt vs test dispatch). [Knowledge Extraction] No full match due to domain mismatch and different logic. Partial match found in argument parsing logic. API mappings found for command-line argument handling and conditional logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7914_rank1.c", "source_rust_file": "Partial__main__idx7914_rank1.rs", "c_api": "strcmp(argv[1], \"-v\")", "rust_api": "args[1].as_slice() == \"fail\"", "mapping_type": "function", "description": "String comparison for argument value", "reasoning": "[Task Analysis] C main() parses command-line args and manages a linked list of nodes; Rust main() handles command-line args and dispatches tests. [Similarity] Names don't refer to same concept (main vs main), and domains differ (parsing + memory mgmt vs test dispatch). [Knowledge Extraction] No full match due to domain mismatch and different logic. Partial match found in argument parsing logic. API mappings found for command-line argument handling and conditional logic patterns."}]
+Unixcoder Score: -0.04043443873524666
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn unlink(nobe: dlist_node<T>) {
+        self.assert_mine(nobe);
+        assert self.size > 0;
+        self.link(nobe.prev, nobe.next);
+        nobe.prev = none; // Release extraneous references.
+        nobe.next = none;
+        nobe.root = none;
+        self.size -= 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12107_rank1.c", "source_rust_file": "API_Mapping__main__idx12107_rank1.rs", "c_api": "free((void*)tmp->name)", "rust_api": "free(tmp)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a token tree parsing function. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between memory management and collection operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12107_rank1.c", "source_rust_file": "API_Mapping__main__idx12107_rank1.rs", "c_api": "while (nodes) { tmp = nodes; nodes = tmp->next; ... }", "rust_api": "while self.token != token::Eof { tts.push(self.parse_token_tree()); }", "mapping_type": "pattern", "description": "Iterating through a list/sequence", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a token tree parsing function. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between memory management and collection operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12107_rank1.c", "source_rust_file": "API_Mapping__main__idx12107_rank1.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "Vec::new()", "mapping_type": "function", "description": "Memory initialization", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a token tree parsing function. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between memory management and collection operations."}]
+Unixcoder Score: -0.04081491380929947
+--------------------------------------------------

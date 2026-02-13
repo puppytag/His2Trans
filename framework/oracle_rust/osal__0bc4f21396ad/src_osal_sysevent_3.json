@@ -1,0 +1,43 @@
+{
+  "project": "osal__0bc4f21396ad",
+  "func_key": "src_osal_sysevent_3",
+  "function_name": "OnKEventReceived",
+  "source_c_file": "src/osal_sysevent.c",
+  "c_code": "static int OnKEventReceived(struct HdfDevEventlistener * listener, struct HdfIoService * service, uint32_t id, struct HdfSBuf * data)\n{\n    struct HdfSysEventNotifier *notifier = (struct HdfSysEventNotifier *)listener->priv;\n    if (notifier == NULL) {\n        return HDF_ERR_INVALID_PARAM;\n    }\n\n    if (id != HDF_SYSEVENT) {\n        return HDF_ERR_INVALID_OBJECT;\n    }\n\n    struct HdfSysEvent *receivedEvent = NULL;\n    uint32_t receivedEventLen = 0;\n\n    if (!HdfSbufReadBuffer(data, (const void **)&receivedEvent, &receivedEventLen) ||\n        receivedEventLen != sizeof(struct HdfSysEvent)) {\n        HDF_LOGE(\"failed to read kevent object\");\n        return HDF_FAILURE;\n    }\n\n    const char *eventContent = HdfSbufReadString(data);\n    eventContent = eventContent == NULL ? \"\" : eventContent;\n    OsalMutexLock(&notifier->mutex);\n\n    struct HdfSysEventNotifyNode *notifyNode = NULL;\n    DLIST_FOR_EACH_ENTRY(notifyNode, &notifier->notifyNodeList, struct HdfSysEventNotifyNode, listNode) {\n        if (receivedEvent->eventClass & notifyNode->classFilter) {\n            (void)notifyNode->callback(\n                notifyNode, receivedEvent->eventClass, receivedEvent->eventid, eventContent);\n        }\n    }\n\n    if (receivedEvent->syncToken != 0) {\n        (void)FinishEvent(service, receivedEvent);\n    }\n\n    OsalMutexUnlock(&notifier->mutex);\n\n    return HDF_SUCCESS;\n}",
+  "rust_signature": "fn OnKEventReceived(listener: *mut crate::types::HdfDevEventlistener, service: *mut crate::types::HdfIoService, id: u32, data: *mut crate::types::HdfSBuf) -> i32",
+  "rust_code": "fn OnKEventReceived(listener: *mut HdfDevEventlistener, service: *mut HdfIoService, id: u32, data: *mut HdfSBuf) -> i32 {\n    const HDF_SYSEVENT: u32 = 0xFADE;\n    const HDF_SUCCESS: i32 = 0;\n    const HDF_FAILURE: i32 = -1;\n    const HDF_ERR_INVALID_PARAM: i32 = -3;\n    const HDF_ERR_INVALID_OBJECT: i32 = -4;\n\n    unsafe fn dlist_entry<T>(node: *mut DListHead, offset: isize) -> *mut T {\n        (node as *mut u8).offset(-offset) as *mut T\n    }\n\n    unsafe {\n        if listener.is_null() {\n            return HDF_ERR_INVALID_PARAM;\n        }\n        let notifier = (*listener).priv_ as *mut HdfSysEventNotifier;\n        if notifier.is_null() {\n            return HDF_ERR_INVALID_PARAM;\n        }\n\n        if id != HDF_SYSEVENT {\n            return HDF_ERR_INVALID_OBJECT;\n        }\n\n        let mut buf_ptr: *const core::ffi::c_void = core::ptr::null();\n        let mut buf_len: u32 = 0;\n        if !HdfSbufReadBuffer(data, &mut buf_ptr as *mut _ as *mut *const core::ffi::c_void, &mut buf_len) {\n            return HDF_FAILURE;\n        }\n        if buf_len as usize != core::mem::size_of::<HdfSysEvent>() {\n            return HDF_FAILURE;\n        }\n        let received_event = buf_ptr as *const HdfSysEvent;\n        if received_event.is_null() {\n            return HDF_FAILURE;\n        }\n\n        let mut event_content = HdfSbufReadString(data);\n        if event_content.is_null() {\n            event_content = b\\\"\\0\\\".as_ptr() as *const core::ffi::c_char;\n        }\n\n        let _ = OsalMutexLock(core::ptr::addr_of_mut!((*notifier).mutex));\n\n        // DLIST_FOR_EACH_ENTRY(notifyNode, &notifier->notifyNodeList, struct HdfSysEventNotifyNode, listNode)\n        let head = core::ptr::addr_of_mut!((*notifier).notifyNodeList);\n        let mut cur = (*head).next;\n        let off = core::mem::offset_of!(HdfSysEventNotifyNode, listNode) as isize;\n        while cur != head {\n            let notify_node = dlist_entry::<HdfSysEventNotifyNode>(cur, off);\n            if !notify_node.is_null() {\n                if ((*received_event).eventClass & (*notify_node).classFilter) != 0 {\n                    if let Some(cb) = (*notify_node).callback {\n                        let _ = cb(notify_node, (*received_event).eventClass, (*received_event).eventid, event_content);\n                    }\n                }\n            }\n            cur = (*cur).next;\n        }\n\n        if (*received_event).syncToken != 0 {\n            let _ = FinishEvent(service, received_event);\n        }\n\n        let _ = OsalMutexUnlock(core::ptr::addr_of_mut!((*notifier).mutex));\n        HDF_SUCCESS\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufReadString",
+      "rust_api": "HdfSbufReadString",
+      "description": "Deserialize string from sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufReadBuffer",
+      "rust_api": "HdfSbufReadBuffer",
+      "description": "Deserialize raw buffer from sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "DLIST_FOR_EACH_ENTRY(node, head, T, field) { ... }",
+      "rust_fragment": "let mut cur = (*head).next; while cur != head { ...; cur = (*cur).next; }",
+      "description": "Translate intrusive list iteration to pointer-based while loop",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

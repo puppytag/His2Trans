@@ -1,0 +1,467 @@
+C_Code: 
+int32_t UnloadAllIdleSystemAbility() override;
+
+    /**
+     * UnloadProcess, unload process by process name list.
+     * only support for memmgrservice
+     *
+     * @return ERR_OK It means unload all process in list.
+     */
+    virtual int32_t UnloadProcess(const std::vector<std::u16string>& processList) override;
+
+    /**
+     * GetSystemProcessInfo, Get process info by said.
+     * only support for memmgrservice
+     *
+     * @param processList, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    virtual int32_t GetLruIdleSystemAbilityProc(std::vector<IdleProcessInfo>& processInfos) override;
+
+    /**
+     * GetSystemProcessInfo, Get process info by said.
+     *
+     * @param systemAbilityId, Need the said of sa which wants to get process info.
+     * @param systemProcessInfo, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    int32_t GetSystemProcessInfo(int32_t systemAbilityId, SystemProcessInfo& systemProcessInfo) override;
+
+    /**
+     * GetRunningSystemProcess, Get all processes currently running.
+     *
+     * @param systemProcessInfos, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    int32_t GetRunningSystemProcess(std::list<SystemProcessInfo>& systemProcessInfos) override;
+
+    /**
+     * SubscribeSystemProcess, Subscribe the status of process.
+     *
+     * @param listener, callback.
+     * @return ERR_OK indicates that the Subscribe successfully.
+     */
+    int32_t SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener) override;
+
+    /**
+     * SendStrategy, Send strategy to SA.
+     *
+     * @param type, type is a certain device status type.
+     * @param systemAbilityIds, Need the vector of said which wants to send strategy.
+     * @param level, level is level of a certain device status type.
+     * @param action, action is scheduling strategy.
+     * @return ERR_OK indicates that the Subscribe successfully.
+     */
+    int32_t SendStrategy(int32_t type, std::vector<int32_t>& systemAbilityIds,
+        int32_t level, std::string& action) override;
+
+    /**
+     * UnSubscribeSystemProcess, UnSubscribe the status of process.
+     *
+     * @param listener, callback.
+     * @return ERR_OK indicates that the UnSubscribe successfully.
+     */
+    int32_t UnSubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener) override;
+
+    /**
+     * GetExtensionSaIds, Return list of saId that match extension.
+     *
+     * @param extension, extension, match with profile extension.
+     * @param saIds, list of saId that match extension
+     * @return ERR_OK indicates that the list of saId that match extension success.
+     */
+    int32_t GetExtensionSaIds(const std::string& extension, std::vector<int32_t> &saIds) override;
+
+    /**
+     * GetExtensionRunningSaList, Return started list of hanlde that match extension.
+     *
+     * @param extension, extension, match with profile extension.
+     * @param saList, started list of remote obj that match extension
+     * @return ERR_OK indicates that the list of hanlde that match extension success.
+     */
+    int32_t GetExtensionRunningSaList(const std::string& extension, std::vector<sptr<IRemoteObject>>& saList) override;
+
+    /**
+     * GetLocalAbilityManagerProxy, Return local ability manager proxy.
+     *
+     * @param systemAbilityId, need to obtain the said of sa.
+     * @return nullptr indicates acquistion failure.
+     */
+    sptr<IRemoteObject> GetLocalAbilityManagerProxy(int32_t systemAbilityId) override;
+
+    int32_t GetRunningSaExtensionInfoList(const std::string& extension,
+        std::vector<SaExtensionInfo>& infoList) override;
+    int32_t GetCommonEventExtraDataIdlist(int32_t saId, std::vector<int64_t>& extraDataIdList,
+        const std::string& eventName = "") override;
+    int32_t GetOnDemandReasonExtraData(int64_t extraDataId, MessageParcel& extraDataParcel) override;
+    int32_t GetOnDemandPolicy(int32_t systemAbilityId, OnDemandPolicyType type,
+        std::vector<SystemAbilityOnDemandEvent>& abilityOnDemandEvents) override;
+    int32_t UpdateOnDemandPolicy(int32_t systemAbilityId, OnDemandPolicyType type,
+        const std::vector<SystemAbilityOnDemandEvent>& sabilityOnDemandEvents) override;
+    sptr<IRemoteObject> Recompute(int32_t systemAbilityId, int32_t code) override;
+    int32_t GetOnDemandSystemAbilityIds(std::vector<int32_t>& systemAbilityIds) override;
+private:
+    sptr<IRemoteObject> GetSystemAbilityWrapper(int32_t systemAbilityId, const std::string& deviceId = "");
+    sptr<IRemoteObject> CheckSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    sptr<IRemoteObject> CheckSystemAbilityWrapper(int32_t code, MessageParcel& data, int32_t& errCode);
+    sptr<IRemoteObject> CheckSystemAbility(int32_t systemAbilityId, const std::string& deviceId, int32_t& errCode);
+    sptr<IRemoteObject> CheckSystemAbility(int32_t systemAbilityId, bool& isExist, int32_t& errCode);
+    int32_t MarshalSAExtraProp(const SAExtraProp& extraProp, MessageParcel& data) const;
+    int32_t AddSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    int32_t RemoveSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    int32_t ReadSystemProcessFromParcel(MessageParcel& reply, std::list<SystemProcessInfo>& systemProcessInfos);
+    int32_t ReadProcessInfoFromParcel(MessageParcel& reply, SystemProcessInfo& systemProcessInfo);
+    int32_t ReadIdleProcessInfoFromParcel(MessageParcel& reply, std::vector<IdleProcessInfo>& procInfos);
+    sptr<IRemoteObject> CheckSystemAbilityTransaction(int32_t systemAbilityId);
+    bool IsOnDemandSystemAbility(int32_t systemAbilityId);
+    int32_t ListExtensionSendReq(const std::string& extension,
+        SamgrInterfaceCode cmd, MessageParcel& reply, MessageOption& option);
+private:
+    static inline BrokerDelegator<SystemAbilityManagerProxy> delegator_;
+    std::set<int32_t> onDemandSystemAbilityIdsSet_;
+    std::mutex onDemandSaLock_;
+};
+
+class SystemAbilityProxyCallback : public SystemAbilityLoadCallbackStub {
+public:
+    void OnLoadSystemAbilitySuccess(int32_t systemAbilityId,
+        const sptr<IRemoteObject> &remoteObject) override;
+    void OnLoadSystemAbilityFail(int32_t systemAbilityId) override;
+    std::mutex callbackLock_;
+    std::condition_variable cv_;
+    sptr<IRemoteObject> loadproxy_;
+}
+Function: 
+pub fn unload_all_idle_system_ability(&self) -> i32 {
+        info!("unload all idle system ability");
+        UnloadAllIdleSystemAbility()
+    }
+Unixcoder Score: 0.06463122367858887
+--------------------------------------------------
+C_Code: 
+ColorType colorType() const { return static_cast<ColorType>(fColorType); }
+Function: 
+fn output_color_type(&self) -> ffi::ColorType {
+        self.reader.output_color_type().0.into()
+    }
+Unixcoder Score: 0.04089894890785217
+--------------------------------------------------
+C_Code: 
+ColorType colorType() const { return static_cast<ColorType>(fColorType); }
+Function: 
+fn into(self) -> png::ColorType {
+        match self {
+            Self::Grayscale => png::ColorType::Grayscale,
+            Self::Rgb => png::ColorType::Rgb,
+            Self::GrayscaleAlpha => png::ColorType::GrayscaleAlpha,
+            Self::Rgba => png::ColorType::Rgba,
+
+            // `SkPngRustEncoderImpl` only uses the color types above.
+            _ => unreachable!(),
+        }
+    }
+Unixcoder Score: 0.029532868415117264
+--------------------------------------------------
+C_Code: 
+int32_t UnloadAllIdleSystemAbility() override;
+
+    /**
+     * UnloadProcess, unload process by process name list.
+     * only support for memmgrservice
+     *
+     * @return ERR_OK It means unload all process in list.
+     */
+    virtual int32_t UnloadProcess(const std::vector<std::u16string>& processList) override;
+
+    /**
+     * GetSystemProcessInfo, Get process info by said.
+     * only support for memmgrservice
+     *
+     * @param processList, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    virtual int32_t GetLruIdleSystemAbilityProc(std::vector<IdleProcessInfo>& processInfos) override;
+
+    /**
+     * GetSystemProcessInfo, Get process info by said.
+     *
+     * @param systemAbilityId, Need the said of sa which wants to get process info.
+     * @param systemProcessInfo, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    int32_t GetSystemProcessInfo(int32_t systemAbilityId, SystemProcessInfo& systemProcessInfo) override;
+
+    /**
+     * GetRunningSystemProcess, Get all processes currently running.
+     *
+     * @param systemProcessInfos, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    int32_t GetRunningSystemProcess(std::list<SystemProcessInfo>& systemProcessInfos) override;
+
+    /**
+     * SubscribeSystemProcess, Subscribe the status of process.
+     *
+     * @param listener, callback.
+     * @return ERR_OK indicates that the Subscribe successfully.
+     */
+    int32_t SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener) override;
+
+    /**
+     * SendStrategy, Send strategy to SA.
+     *
+     * @param type, type is a certain device status type.
+     * @param systemAbilityIds, Need the vector of said which wants to send strategy.
+     * @param level, level is level of a certain device status type.
+     * @param action, action is scheduling strategy.
+     * @return ERR_OK indicates that the Subscribe successfully.
+     */
+    int32_t SendStrategy(int32_t type, std::vector<int32_t>& systemAbilityIds,
+        int32_t level, std::string& action) override;
+
+    /**
+     * UnSubscribeSystemProcess, UnSubscribe the status of process.
+     *
+     * @param listener, callback.
+     * @return ERR_OK indicates that the UnSubscribe successfully.
+     */
+    int32_t UnSubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener) override;
+
+    /**
+     * GetExtensionSaIds, Return list of saId that match extension.
+     *
+     * @param extension, extension, match with profile extension.
+     * @param saIds, list of saId that match extension
+     * @return ERR_OK indicates that the list of saId that match extension success.
+     */
+    int32_t GetExtensionSaIds(const std::string& extension, std::vector<int32_t> &saIds) override;
+
+    /**
+     * GetExtensionRunningSaList, Return started list of hanlde that match extension.
+     *
+     * @param extension, extension, match with profile extension.
+     * @param saList, started list of remote obj that match extension
+     * @return ERR_OK indicates that the list of hanlde that match extension success.
+     */
+    int32_t GetExtensionRunningSaList(const std::string& extension, std::vector<sptr<IRemoteObject>>& saList) override;
+
+    /**
+     * GetLocalAbilityManagerProxy, Return local ability manager proxy.
+     *
+     * @param systemAbilityId, need to obtain the said of sa.
+     * @return nullptr indicates acquistion failure.
+     */
+    sptr<IRemoteObject> GetLocalAbilityManagerProxy(int32_t systemAbilityId) override;
+
+    int32_t GetRunningSaExtensionInfoList(const std::string& extension,
+        std::vector<SaExtensionInfo>& infoList) override;
+    int32_t GetCommonEventExtraDataIdlist(int32_t saId, std::vector<int64_t>& extraDataIdList,
+        const std::string& eventName = "") override;
+    int32_t GetOnDemandReasonExtraData(int64_t extraDataId, MessageParcel& extraDataParcel) override;
+    int32_t GetOnDemandPolicy(int32_t systemAbilityId, OnDemandPolicyType type,
+        std::vector<SystemAbilityOnDemandEvent>& abilityOnDemandEvents) override;
+    int32_t UpdateOnDemandPolicy(int32_t systemAbilityId, OnDemandPolicyType type,
+        const std::vector<SystemAbilityOnDemandEvent>& sabilityOnDemandEvents) override;
+    sptr<IRemoteObject> Recompute(int32_t systemAbilityId, int32_t code) override;
+    int32_t GetOnDemandSystemAbilityIds(std::vector<int32_t>& systemAbilityIds) override;
+private:
+    sptr<IRemoteObject> GetSystemAbilityWrapper(int32_t systemAbilityId, const std::string& deviceId = "");
+    sptr<IRemoteObject> CheckSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    sptr<IRemoteObject> CheckSystemAbilityWrapper(int32_t code, MessageParcel& data, int32_t& errCode);
+    sptr<IRemoteObject> CheckSystemAbility(int32_t systemAbilityId, const std::string& deviceId, int32_t& errCode);
+    sptr<IRemoteObject> CheckSystemAbility(int32_t systemAbilityId, bool& isExist, int32_t& errCode);
+    int32_t MarshalSAExtraProp(const SAExtraProp& extraProp, MessageParcel& data) const;
+    int32_t AddSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    int32_t RemoveSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    int32_t ReadSystemProcessFromParcel(MessageParcel& reply, std::list<SystemProcessInfo>& systemProcessInfos);
+    int32_t ReadProcessInfoFromParcel(MessageParcel& reply, SystemProcessInfo& systemProcessInfo);
+    int32_t ReadIdleProcessInfoFromParcel(MessageParcel& reply, std::vector<IdleProcessInfo>& procInfos);
+    sptr<IRemoteObject> CheckSystemAbilityTransaction(int32_t systemAbilityId);
+    bool IsOnDemandSystemAbility(int32_t systemAbilityId);
+    int32_t ListExtensionSendReq(const std::string& extension,
+        SamgrInterfaceCode cmd, MessageParcel& reply, MessageOption& option);
+private:
+    static inline BrokerDelegator<SystemAbilityManagerProxy> delegator_;
+    std::set<int32_t> onDemandSystemAbilityIdsSet_;
+    std::mutex onDemandSaLock_;
+};
+
+class SystemAbilityProxyCallback : public SystemAbilityLoadCallbackStub {
+public:
+    void OnLoadSystemAbilitySuccess(int32_t systemAbilityId,
+        const sptr<IRemoteObject> &remoteObject) override;
+    void OnLoadSystemAbilityFail(int32_t systemAbilityId) override;
+    std::mutex callbackLock_;
+    std::condition_variable cv_;
+    sptr<IRemoteObject> loadproxy_;
+}
+Function: 
+pub fn unload_all_idle_system_ability(&self) -> i32 {
+        info!("unload all idle system ability");
+        UnloadAllIdleSystemAbility()
+    }
+Unixcoder Score: 0.020052878186106682
+--------------------------------------------------
+C_Code: 
+Type getType() const { return fType; }
+Function: 
+fn from(value: png::ColorType) -> Self {
+        match value {
+            png::ColorType::Grayscale => Self::Grayscale,
+            png::ColorType::Rgb => Self::Rgb,
+            png::ColorType::Indexed => Self::Indexed,
+            png::ColorType::GrayscaleAlpha => Self::GrayscaleAlpha,
+            png::ColorType::Rgba => Self::Rgba,
+        }
+    }
+Unixcoder Score: 0.0044997320510447025
+--------------------------------------------------
+C_Code: 
+SkColorType SkAndroidCodec::computeOutputColorType(SkColorType requestedColorType) {
+    bool highPrecision = fCodec->getEncodedInfo().bitsPerComponent() > 8;
+    switch (requestedColorType) {
+        case kARGB_4444_SkColorType:
+            return kN32_SkColorType;
+        case kN32_SkColorType:
+            break;
+        case kAlpha_8_SkColorType:
+            // Fall through to kGray_8.  Before kGray_8_SkColorType existed,
+            // we allowed clients to request kAlpha_8 when they wanted a
+            // grayscale decode.
+        case kGray_8_SkColorType:
+            if (kGray_8_SkColorType == this->getInfo().colorType()) {
+                return kGray_8_SkColorType;
+            }
+            break;
+        case kRGB_565_SkColorType:
+            if (kOpaque_SkAlphaType == this->getInfo().alphaType()) {
+                return kRGB_565_SkColorType;
+            }
+            break;
+        case kRGBA_F16_SkColorType:
+            return kRGBA_F16_SkColorType;
+        default:
+            break;
+    }
+
+    // F16 is the Android default for high precision images.
+    return highPrecision ? kRGBA_F16_SkColorType : kN32_SkColorType;
+}
+Function: 
+fn output_color_type(&self) -> ffi::ColorType {
+        self.reader.output_color_type().0.into()
+    }
+Unixcoder Score: -0.00016090052668005228
+--------------------------------------------------
+C_Code: 
+GrColorType colorType() const { return fInfo.colorType(); }
+Function: 
+fn from(value: png::ColorType) -> Self {
+        match value {
+            png::ColorType::Grayscale => Self::Grayscale,
+            png::ColorType::Rgb => Self::Rgb,
+            png::ColorType::Indexed => Self::Indexed,
+            png::ColorType::GrayscaleAlpha => Self::GrayscaleAlpha,
+            png::ColorType::Rgba => Self::Rgba,
+        }
+    }
+Unixcoder Score: -0.002667841734364629
+--------------------------------------------------
+C_Code: 
+bool TLSCertificate::CertificateFromData(const std::string &data, CertType certType)
+{
+    if (data.empty()) {
+        NETSTACK_LOGE("The parameter data is empty");
+        return false;
+    }
+    BIO *bio = BIO_new_mem_buf(data.c_str(), -1);
+    if (!bio) {
+        NETSTACK_LOGE("create BIO mem buf failed!");
+        return false;
+    }
+    X509 *x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
+    BIO_free(bio);
+
+    if (!x509) {
+        NETSTACK_LOGE("x509 is null");
+        return false;
+    }
+
+    x509_ = X509_dup(x509);
+    if (!AnalysisCertificate(certType, x509)) {
+        NETSTACK_LOGE("Analysis certificate is false");
+        X509_free(x509);
+        return false;
+    }
+    X509_free(x509);
+    return true;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Unixcoder Score: -0.004261257126927376
+--------------------------------------------------
+C_Code: 
+ColorType colorType() const { return static_cast<ColorType>(fColorType); }
+Function: 
+fn from(value: png::ColorType) -> Self {
+        match value {
+            png::ColorType::Grayscale => Self::Grayscale,
+            png::ColorType::Rgb => Self::Rgb,
+            png::ColorType::Indexed => Self::Indexed,
+            png::ColorType::GrayscaleAlpha => Self::GrayscaleAlpha,
+            png::ColorType::Rgba => Self::Rgba,
+        }
+    }
+Unixcoder Score: -0.006808315869420767
+--------------------------------------------------
+C_Code: 
+SkAlphaType getAlphaType() const { return fAlphaType; }
+Function: 
+fn into(self) -> png::ColorType {
+        match self {
+            Self::Grayscale => png::ColorType::Grayscale,
+            Self::Rgb => png::ColorType::Rgb,
+            Self::GrayscaleAlpha => png::ColorType::GrayscaleAlpha,
+            Self::Rgba => png::ColorType::Rgba,
+
+            // `SkPngRustEncoderImpl` only uses the color types above.
+            _ => unreachable!(),
+        }
+    }
+Unixcoder Score: -0.012459540739655495
+--------------------------------------------------

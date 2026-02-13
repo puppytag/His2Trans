@@ -1,0 +1,1231 @@
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+unsafe fn insert_fit(
+        mut self,
+        key: K,
+        val: V,
+    ) -> Handle<NodeRef<marker::Mut<'a>, K, V, marker::Leaf>, marker::KV> {
+        debug_assert!(self.node.len() < CAPACITY);
+        let new_len = self.node.len() + 1;
+
+        unsafe {
+            slice_insert(self.node.key_area_mut(..new_len), self.idx, key);
+            slice_insert(self.node.val_area_mut(..new_len), self.idx, val);
+            *self.node.len_mut() = new_len as u16;
+
+            Handle::new_kv(self.node, self.idx)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx113974_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx113974_rank4.rs", "c_api": "free", "rust_api": "slice_insert", "mapping_type": "pattern", "description": "Memory deallocation and insertion pattern", "reasoning": "[Task Analysis] C function handles DNS resolution callback with memory management; Rust function inserts key-value into a B+ tree node. [Similarity] No structural similarity due to different domains (networking vs data structure manipulation). [Knowledge Extraction] No full/partial match. API mappings identified: C malloc/free ↔ Rust slice_insert (memory allocation/deallocation pattern)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx113974_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx113974_rank4.rs", "c_api": "malloc", "rust_api": "slice_insert", "mapping_type": "pattern", "description": "Memory allocation and insertion pattern", "reasoning": "[Task Analysis] C function handles DNS resolution callback with memory management; Rust function inserts key-value into a B+ tree node. [Similarity] No structural similarity due to different domains (networking vs data structure manipulation). [Knowledge Extraction] No full/partial match. API mappings identified: C malloc/free ↔ Rust slice_insert (memory allocation/deallocation pattern)."}]
+Unixcoder Score: -0.06728212535381317
+--------------------------------------------------
+C_Code: 
+void uv_process_getaddrinfo_req(uv_loop_t* loop, uv_getaddrinfo_t* handle,
+    uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len +
+          ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <=
+                 alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      NULL,
+                                      0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      cur_ptr,
+                                      name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  uv_unref(loop);
+}
+Function: 
+pub unsafe fn getaddrinfo(loop_: *uv_loop_t, req: *uv_getaddrinfo_t,
+               getaddrinfo_cb: uv_getaddrinfo_cb,
+               node: *c_char, service: *c_char,
+               hints: *addrinfo) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+    return rust_uv_getaddrinfo(loop_, req, getaddrinfo_cb, node, service, hints);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.c", "source_rust_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.rs", "c_fragment": "if (handle->alloc != NULL) {\n    free(handle->alloc);\n    handle->alloc = NULL;\n  }", "rust_fragment": "let (c_node, c_node_ptr) = match node {\n            Some(n) => {\n                let c_node = n.to_c_str();\n                let c_node_ptr = c_node.with_ref(|r| r);\n                (Some(c_node), c_node_ptr)\n            }\n            None => (None, null())\n        };", "description": "Both handle resource cleanup/initialization logic for string data", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function initiates a DNS lookup using FFI calls. [Similarity] Names don't match exactly but both handle getaddrinfo logic; however, domains are different: C does memory management and struct conversion, Rust does FFI call setup. [Knowledge Extraction] No full structural match due to domain mismatch. Partial fragments found in setup logic. API mappings found in FFI call patterns and memory management equivalents."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.c", "source_rust_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.rs", "c_api": "free(handle->alloc)", "rust_api": "uvll::freeaddrinfo(res)", "mapping_type": "function", "description": "Memory deallocation of address info structures", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function initiates a DNS lookup using FFI calls. [Similarity] Names don't match exactly but both handle getaddrinfo logic; however, domains are different: C does memory management and struct conversion, Rust does FFI call setup. [Knowledge Extraction] No full structural match due to domain mismatch. Partial fragments found in setup logic. API mappings found in FFI call patterns and memory management equivalents."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.c", "source_rust_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.rs", "c_api": "malloc(addrinfo_len)", "rust_api": "uvll::getaddrinfo(...)", "mapping_type": "function", "description": "Memory allocation for DNS resolution results", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function initiates a DNS lookup using FFI calls. [Similarity] Names don't match exactly but both handle getaddrinfo logic; however, domains are different: C does memory management and struct conversion, Rust does FFI call setup. [Knowledge Extraction] No full structural match due to domain mismatch. Partial fragments found in setup logic. API mappings found in FFI call patterns and memory management equivalents."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.c", "source_rust_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.rs", "c_api": "FreeAddrInfoW(handle->res)", "rust_api": "uvll::freeaddrinfo(res)", "mapping_type": "function", "description": "Freeing Windows-specific address info structures", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function initiates a DNS lookup using FFI calls. [Similarity] Names don't match exactly but both handle getaddrinfo logic; however, domains are different: C does memory management and struct conversion, Rust does FFI call setup. [Knowledge Extraction] No full structural match due to domain mismatch. Partial fragments found in setup logic. API mappings found in FFI call patterns and memory management equivalents."}, {"knowledge_type": "Partial", "source_c_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.c", "source_rust_file": "Partial__uv_process_getaddrinfo_req__idx143875_rank3.rs", "c_fragment": "if (handle->res != NULL) {\n    FreeAddrInfoW(handle->res);\n    handle->res = NULL;\n  }", "rust_fragment": "extern \"C\" fn getaddrinfo_cb(req: *uvll::uv_getaddrinfo_t,\n                                     status: c_int,\n                                     res: *uvll::addrinfo) {\n            let mut req: GetAddrInfoRequest = NativeHandle::from_native_handle(req);\n            let err = status_to_maybe_uv_error(status);\n            let addrinfo = net::UvAddrInfo(res);\n            let data = req.get_req_data();\n            (*data.getaddrinfo_cb.get_ref())(req, &addrinfo, err);\n            unsafe {\n                uvll::freeaddrinfo(res);\n            }\n        }", "description": "Both handle cleanup of allocated address info structures", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function initiates a DNS lookup using FFI calls. [Similarity] Names don't match exactly but both handle getaddrinfo logic; however, domains are different: C does memory management and struct conversion, Rust does FFI call setup. [Knowledge Extraction] No full structural match due to domain mismatch. Partial fragments found in setup logic. API mappings found in FFI call patterns and memory management equivalents."}]
+Unixcoder Score: -0.08473986387252808
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+pub unsafe fn getaddrinfo(loop_: *uv_loop_t, req: *uv_getaddrinfo_t,
+               getaddrinfo_cb: uv_getaddrinfo_cb,
+               node: *c_char, service: *c_char,
+               hints: *addrinfo) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+    return rust_uv_getaddrinfo(loop_, req, getaddrinfo_cb, node, service, hints);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.rs", "c_api": "uv_getaddrinfo_done", "rust_api": "serialize_value", "mapping_type": "function", "description": "Callback function with data processing", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function serializes a value to bytes. [Similarity] No structural similarity due to different domains (networking vs serialization). [Knowledge Extraction] No full/partial match. API mappings found: C malloc/free ↔ Rust heap allocation/deallocation via Box/Vec, C memcpy ↔ Rust memory copy via slice operations, C assert ↔ Rust panic/unchecked operations, C handle->res/ai_next ↔ Rust pointer traversal logic, C uv_getaddrinfo_done callback ↔ Rust serialize_value function signature and data flow pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.rs", "c_api": "assert", "rust_api": "panic!", "mapping_type": "function", "description": "Runtime assertion", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function serializes a value to bytes. [Similarity] No structural similarity due to different domains (networking vs serialization). [Knowledge Extraction] No full/partial match. API mappings found: C malloc/free ↔ Rust heap allocation/deallocation via Box/Vec, C memcpy ↔ Rust memory copy via slice operations, C assert ↔ Rust panic/unchecked operations, C handle->res/ai_next ↔ Rust pointer traversal logic, C uv_getaddrinfo_done callback ↔ Rust serialize_value function signature and data flow pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.rs", "c_api": "malloc", "rust_api": "Vec::with_capacity", "mapping_type": "function", "description": "Memory allocation for buffer", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function serializes a value to bytes. [Similarity] No structural similarity due to different domains (networking vs serialization). [Knowledge Extraction] No full/partial match. API mappings found: C malloc/free ↔ Rust heap allocation/deallocation via Box/Vec, C memcpy ↔ Rust memory copy via slice operations, C assert ↔ Rust panic/unchecked operations, C handle->res/ai_next ↔ Rust pointer traversal logic, C uv_getaddrinfo_done callback ↔ Rust serialize_value function signature and data flow pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.rs", "c_api": "free", "rust_api": "Vec::clear", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function serializes a value to bytes. [Similarity] No structural similarity due to different domains (networking vs serialization). [Knowledge Extraction] No full/partial match. API mappings found: C malloc/free ↔ Rust heap allocation/deallocation via Box/Vec, C memcpy ↔ Rust memory copy via slice operations, C assert ↔ Rust panic/unchecked operations, C handle->res/ai_next ↔ Rust pointer traversal logic, C uv_getaddrinfo_done callback ↔ Rust serialize_value function signature and data flow pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.rs", "c_api": "handle->res->ai_next", "rust_api": "ptr::read", "mapping_type": "pattern", "description": "Pointer traversal in linked list", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function serializes a value to bytes. [Similarity] No structural similarity due to different domains (networking vs serialization). [Knowledge Extraction] No full/partial match. API mappings found: C malloc/free ↔ Rust heap allocation/deallocation via Box/Vec, C memcpy ↔ Rust memory copy via slice operations, C assert ↔ Rust panic/unchecked operations, C handle->res/ai_next ↔ Rust pointer traversal logic, C uv_getaddrinfo_done callback ↔ Rust serialize_value function signature and data flow pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx133875_rank1.rs", "c_api": "memcpy", "rust_api": "slice::copy_from_slice", "mapping_type": "function", "description": "Memory copy operation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function serializes a value to bytes. [Similarity] No structural similarity due to different domains (networking vs serialization). [Knowledge Extraction] No full/partial match. API mappings found: C malloc/free ↔ Rust heap allocation/deallocation via Box/Vec, C memcpy ↔ Rust memory copy via slice operations, C assert ↔ Rust panic/unchecked operations, C handle->res/ai_next ↔ Rust pointer traversal logic, C uv_getaddrinfo_done callback ↔ Rust serialize_value function signature and data flow pattern."}]
+Unixcoder Score: -0.11202038079500198
+--------------------------------------------------
+C_Code: 
+void uv_process_getaddrinfo_req(uv_loop_t* loop, uv_getaddrinfo_t* handle,
+    uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len +
+          ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <=
+                 alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      NULL,
+                                      0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      cur_ptr,
+                                      name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  uv_unref(loop);
+}
+Function: 
+extern "C" fn getaddrinfo_cb(req: *uvll::uv_getaddrinfo_t,
+                                     status: c_int,
+                                     res: *uvll::addrinfo) {
+            let mut req: GetAddrInfoRequest = NativeHandle::from_native_handle(req);
+            let err = status_to_maybe_uv_error(status);
+            let addrinfo = net::UvAddrInfo(res);
+            let data = req.get_req_data();
+            (*data.getaddrinfo_cb.get_ref())(req, &addrinfo, err);
+            unsafe {
+                uvll::freeaddrinfo(res);
+            }
+        }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx133426_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx133426_rank4.rs", "c_api": "cur++", "rust_api": "set.keys()", "mapping_type": "pattern", "description": "Accessing next element in a sequence", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function processes rpaths to remove duplicates. [Similarity] No structural similarity at the block level; C uses a loop with a function pointer callback, Rust uses hashset for deduplication. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to iteration and collection handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx133426_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx133426_rank4.rs", "c_api": "for (const mod_entry* cur = map; cur->name; cur++)", "rust_api": "for rpath in rpaths", "mapping_type": "pattern", "description": "Iterating over a collection of items", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function processes rpaths to remove duplicates. [Similarity] No structural similarity at the block level; C uses a loop with a function pointer callback, Rust uses hashset for deduplication. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to iteration and collection handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx133426_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx133426_rank4.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "set.insert(rpath, ())", "mapping_type": "function", "description": "Adding an item to a collection for deduplication", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function processes rpaths to remove duplicates. [Similarity] No structural similarity at the block level; C uses a loop with a function pointer callback, Rust uses hashset for deduplication. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to iteration and collection handling."}]
+Unixcoder Score: -0.11407069116830826
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+fn error_smoke_test() {
+    let err: UvError = UvError(uvll::EOF);
+    assert_eq!(err.to_str(), ~"EOF: end of file");
+}
+
+pub fn uv_error_to_io_error(uverr: UvError) -> IoError {
+    unsafe {
+        // Importing error constants
+        use uvll::*;
+        use std::rt::io::*;
+
+        // uv error descriptions are static
+        let c_desc = uvll::strerror(*uverr);
+        let desc = str::raw::c_str_to_static_slice(c_desc);
+
+        let kind = match *uverr {
+            UNKNOWN => OtherIoError,
+            OK => OtherIoError,
+            EOF => EndOfFile,
+            EACCES => PermissionDenied,
+            ECONNREFUSED => ConnectionRefused,
+            ECONNRESET => ConnectionReset,
+            ENOTCONN => NotConnected,
+            EPIPE => BrokenPipe,
+            ECONNABORTED => ConnectionAborted,
+            err => {
+                uvdebug!("uverr.code {}", err as int);
+                // XXX: Need to map remaining uv error types
+                OtherIoError
+            }
+        };
+
+        IoError {
+            kind: kind,
+            desc: desc,
+            detail: None
+        }
+    }
+}
+
+/// Given a uv handle, convert a callback status to a UvError
+pub fn status_to_maybe_uv_error(status: c_int) -> Option<UvError>
+{
+    if status >= 0 {
+        None
+    } else {
+        Some(UvError(status))
+    }
+}
+
+/// The uv buffer type
+pub type Buf = uvll::uv_buf_t;
+
+pub fn empty_buf() -> Buf {
+    uvll::uv_buf_t {
+        base: null(),
+        len: 0,
+    }
+}
+
+/// Borrow a slice to a Buf
+pub fn slice_to_uv_buf(v: &[u8]) -> Buf {
+    let data = vec::raw::to_ptr(v);
+    unsafe { uvll::buf_init(data, v.len()) }
+}
+
+// XXX: Do these conversions without copying
+
+/// Transmute an owned vector to a Buf
+pub fn vec_to_uv_buf(v: ~[u8]) -> Buf {
+    #[fixed_stack_segment]; #[inline(never)];
+
+    unsafe {
+        let data = malloc(v.len() as size_t) as *u8;
+        assert!(data.is_not_null());
+        do v.as_imm_buf |b, l| {
+            let data = data as *mut u8;
+            ptr::copy_memory(data, b, l)
+        }
+        uvll::buf_init(data, v.len())
+    }
+}
+
+/// Transmute a Buf that was once a ~[u8] back to ~[u8]
+pub fn vec_from_uv_buf(buf: Buf) -> Option<~[u8]> {
+    #[fixed_stack_segment]; #[inline(never)];
+
+    if !(buf.len == 0 && buf.base.is_null()) {
+        let v = unsafe { vec::from_buf(buf.base, buf.len as uint) };
+        unsafe { free(buf.base as *c_void) };
+        return Some(v);
+    } else {
+        // No buffer
+        uvdebug!("No buffer!");
+        return None;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.c", "source_rust_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.rs", "c_fragment": "if (alloc_ptr != NULL) {\n      cur_ptr = alloc_ptr;\n      addrinfow_ptr = handle->res;\n\n      while (addrinfow_ptr != NULL) {\n        /* copy addrinfo struct data */\n        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);\n        addrinfo_ptr = (struct addrinfo*)cur_ptr;\n        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;\n        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;\n        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;\n        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;\n        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;\n        addrinfo_ptr->ai_canonname = NULL;\n        addrinfo_ptr->ai_addr = NULL;\n        addrinfo_ptr->ai_next = NULL;\n\n        cur_ptr += addrinfo_struct_len;\n\n        /* copy sockaddr */\n        if (addrinfo_ptr->ai_addrlen > 0) {\n          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);\n          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);\n          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;\n          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);\n        }\n\n        /* convert canonical name to UTF-8 */\n        if (addrinfow_ptr->ai_canonname != NULL) {\n          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);\n          assert(name_len > 0);\n          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);\n          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);\n          assert(name_len > 0);\n          addrinfo_ptr->ai_canonname = cur_ptr;\n          cur_ptr += ALIGNED_SIZE(name_len);\n        }\n        assert(cur_ptr <= alloc_ptr + addrinfo_len);\n\n        /* set next ptr */\n        addrinfow_ptr = addrinfow_ptr->ai_next;\n        if (addrinfow_ptr != NULL) {\n          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;\n        }\n      }\n    }", "rust_fragment": "for addr in addrs {\n        match f(Ok(&addr)) {\n            Ok(l) => return Ok(l),\n            Err(e) => last_err = Some(e),\n        }\n    }", "description": "Both iterate through address entries and perform operations on each one, though C manually copies data structures while Rust applies a function to each address.", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function performs DNS resolution and iterates over results. [Similarity] No full structural similarity due to different domains (Windows API vs standard library), different control flow, and different data structures. [Knowledge Extraction] Extract partial structural fragments and API mappings based on similar memory management and iteration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.c", "source_rust_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.rs", "c_api": "free", "rust_api": "drop", "mapping_type": "pattern", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function performs DNS resolution and iterates over results. [Similarity] No full structural similarity due to different domains (Windows API vs standard library), different control flow, and different data structures. [Knowledge Extraction] Extract partial structural fragments and API mappings based on similar memory management and iteration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.c", "source_rust_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.rs", "c_api": "memcpy", "rust_api": "copy", "mapping_type": "pattern", "description": "Memory copy operation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function performs DNS resolution and iterates over results. [Similarity] No full structural similarity due to different domains (Windows API vs standard library), different control flow, and different data structures. [Knowledge Extraction] Extract partial structural fragments and API mappings based on similar memory management and iteration patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.c", "source_rust_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.rs", "c_fragment": "while (addrinfow_ptr != NULL) {\n      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);\n      if (addrinfow_ptr->ai_canonname != NULL) {\n        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);\n        if (name_len == 0) {\n          uv_ret = uv_translate_sys_error(GetLastError());\n          goto complete;\n        }\n        addrinfo_len += ALIGNED_SIZE(name_len);\n      }\n      addrinfow_ptr = addrinfow_ptr->ai_next;\n    }", "rust_fragment": "let addrs = match addr.to_socket_addrs() {\n        Ok(addrs) => addrs,\n        Err(e) => return f(Err(e)),\n    };", "description": "Both perform iteration over a list of address entries, though C uses manual pointer traversal while Rust uses a standard library method.", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function performs DNS resolution and iterates over results. [Similarity] No full structural similarity due to different domains (Windows API vs standard library), different control flow, and different data structures. [Knowledge Extraction] Extract partial structural fragments and API mappings based on similar memory management and iteration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.c", "source_rust_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.rs", "c_api": "goto complete", "rust_api": "return f(Err(e))", "mapping_type": "pattern", "description": "Early exit/error handling", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function performs DNS resolution and iterates over results. [Similarity] No full structural similarity due to different domains (Windows API vs standard library), different control flow, and different data structures. [Knowledge Extraction] Extract partial structural fragments and API mappings based on similar memory management and iteration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.c", "source_rust_file": "Partial__uv_getaddrinfo_done__idx123029_rank2.rs", "c_api": "malloc", "rust_api": "Box::new", "mapping_type": "pattern", "description": "Memory allocation for data structures", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion from Windows-specific structures to standard POSIX structures, while Rust function performs DNS resolution and iterates over results. [Similarity] No full structural similarity due to different domains (Windows API vs standard library), different control flow, and different data structures. [Knowledge Extraction] Extract partial structural fragments and API mappings based on similar memory management and iteration patterns."}]
+Unixcoder Score: -0.12570886313915253
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+pub fn serialize_value<D: Serializer FromWriter,
+                       T: Serializable<D>>(val: &T) -> ~[u8] {
+        let bytes_writer = @BytesWriter();
+        let writer = bytes_writer as @Writer;
+        let ser = from_writer(writer);
+        val.serialize(&ser);
+        let bytes = bytes_writer.bytes.check_out(|bytes| move bytes);
+        return move bytes;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx143807_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx143807_rank4.rs", "c_api": "malloc", "rust_api": "malloc", "mapping_type": "function", "description": "Heap memory allocation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust code handles UV error conversion to IoError and buffer management. [Similarity] No structural similarity due to different domains (network resolution vs error handling/io). [Knowledge Extraction] No full/partial match due to domain mismatch. API mappings found between memory allocation/free and buffer handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx143807_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx143807_rank4.rs", "c_api": "uvll::buf_init", "rust_api": "uvll::buf_init", "mapping_type": "function", "description": "Initialize UV buffer structure", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust code handles UV error conversion to IoError and buffer management. [Similarity] No structural similarity due to different domains (network resolution vs error handling/io). [Knowledge Extraction] No full/partial match due to domain mismatch. API mappings found between memory allocation/free and buffer handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx143807_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx143807_rank4.rs", "c_api": "memcpy", "rust_api": "ptr::copy_memory", "mapping_type": "function", "description": "Memory copy operation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust code handles UV error conversion to IoError and buffer management. [Similarity] No structural similarity due to different domains (network resolution vs error handling/io). [Knowledge Extraction] No full/partial match due to domain mismatch. API mappings found between memory allocation/free and buffer handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx143807_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx143807_rank4.rs", "c_api": "free", "rust_api": "free", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust code handles UV error conversion to IoError and buffer management. [Similarity] No structural similarity due to different domains (network resolution vs error handling/io). [Knowledge Extraction] No full/partial match due to domain mismatch. API mappings found between memory allocation/free and buffer handling patterns."}]
+Unixcoder Score: -0.12712609767913818
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+pub fn splice_before(&mut self, list: LinkedList<T>) {
+        unsafe {
+            let (splice_head, splice_tail, splice_len) = match list.detach_all_nodes() {
+                Some(parts) => parts,
+                _ => return,
+            };
+            let node_prev = match self.current {
+                None => self.list.tail,
+                Some(node) => node.as_ref().prev,
+            };
+            self.list.splice_nodes(node_prev, self.current, splice_head, splice_tail, splice_len);
+            self.index += splice_len;
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.rs", "c_api": "uv_translate_eai_error(handle->retcode)", "rust_api": "uv_translate_sys_error(GetLastError())", "mapping_type": "function", "description": "Error code translation", "reasoning": "[FFI Check] -> The C code contains FFI-like operations (e.g., `free`, `malloc`, `GetLastError`, `FreeAddrInfoW`) but the Rust code is a parsing utility function with no FFI calls. -> [Task Analysis] -> The C function is a callback for DNS resolution (`uv_getaddrinfo_done`) handling memory allocation and conversion of Windows-specific `addrinfoW` to standard `addrinfo`. The Rust function is a generic syntax tree fragment parser. -> [Similarity] -> No structural similarity at the function level due to domain mismatch (networking/memory management vs syntax parsing). -> [Knowledge Extraction] -> No full or partial match. However, there are API mappings related to memory management and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.rs", "c_api": "FreeAddrInfoW(handle->res)", "rust_api": "free(alloc_ptr)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[FFI Check] -> The C code contains FFI-like operations (e.g., `free`, `malloc`, `GetLastError`, `FreeAddrInfoW`) but the Rust code is a parsing utility function with no FFI calls. -> [Task Analysis] -> The C function is a callback for DNS resolution (`uv_getaddrinfo_done`) handling memory allocation and conversion of Windows-specific `addrinfoW` to standard `addrinfo`. The Rust function is a generic syntax tree fragment parser. -> [Similarity] -> No structural similarity at the function level due to domain mismatch (networking/memory management vs syntax parsing). -> [Knowledge Extraction] -> No full or partial match. However, there are API mappings related to memory management and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.rs", "c_api": "free(handle->alloc)", "rust_api": "free(alloc_ptr)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[FFI Check] -> The C code contains FFI-like operations (e.g., `free`, `malloc`, `GetLastError`, `FreeAddrInfoW`) but the Rust code is a parsing utility function with no FFI calls. -> [Task Analysis] -> The C function is a callback for DNS resolution (`uv_getaddrinfo_done`) handling memory allocation and conversion of Windows-specific `addrinfoW` to standard `addrinfo`. The Rust function is a generic syntax tree fragment parser. -> [Similarity] -> No structural similarity at the function level due to domain mismatch (networking/memory management vs syntax parsing). -> [Knowledge Extraction] -> No full or partial match. However, there are API mappings related to memory management and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.rs", "c_api": "uv_utf16_to_utf8(...)", "rust_api": "syntax::SourceFile::parse(...)", "mapping_type": "function", "description": "String encoding conversion", "reasoning": "[FFI Check] -> The C code contains FFI-like operations (e.g., `free`, `malloc`, `GetLastError`, `FreeAddrInfoW`) but the Rust code is a parsing utility function with no FFI calls. -> [Task Analysis] -> The C function is a callback for DNS resolution (`uv_getaddrinfo_done`) handling memory allocation and conversion of Windows-specific `addrinfoW` to standard `addrinfo`. The Rust function is a generic syntax tree fragment parser. -> [Similarity] -> No structural similarity at the function level due to domain mismatch (networking/memory management vs syntax parsing). -> [Knowledge Extraction] -> No full or partial match. However, there are API mappings related to memory management and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx105758_rank1.rs", "c_api": "malloc(addrinfo_len)", "rust_api": "Box::new(...)", "mapping_type": "function", "description": "Heap allocation", "reasoning": "[FFI Check] -> The C code contains FFI-like operations (e.g., `free`, `malloc`, `GetLastError`, `FreeAddrInfoW`) but the Rust code is a parsing utility function with no FFI calls. -> [Task Analysis] -> The C function is a callback for DNS resolution (`uv_getaddrinfo_done`) handling memory allocation and conversion of Windows-specific `addrinfoW` to standard `addrinfo`. The Rust function is a generic syntax tree fragment parser. -> [Similarity] -> No structural similarity at the function level due to domain mismatch (networking/memory management vs syntax parsing). -> [Knowledge Extraction] -> No full or partial match. However, there are API mappings related to memory management and error handling patterns."}]
+Unixcoder Score: -0.12726406753063202
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+fn fragment<T: AstNode>(template: &str, s: &str) -> Result<SyntaxNode, ()> {
+    let s = s.trim();
+    let input = template.replace("{}", s);
+    let parse = syntax::SourceFile::parse(&input);
+    if !parse.errors().is_empty() {
+        return Err(());
+    }
+    let node = parse.tree().syntax().descendants().find_map(T::cast).ok_or(())?;
+    if node.syntax().text() != s {
+        return Err(());
+    }
+    Ok(node.syntax().clone_subtree())
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx90354_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx90354_rank1.rs", "c_api": "free(handle->alloc)", "rust_api": "free(alloc_ptr)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function performs safe slice splitting. [Similarity] No structural similarity due to different domains (networking vs memory slicing). [Knowledge Extraction] No full/partial match. API mappings identified: 'free' in C maps to manual memory cleanup in Rust (via Box/Vec), 'malloc' maps to heap allocation in Rust (Box::new), 'memcpy' maps to memory copy operations in Rust (likely via ptr::copy_nonoverlapping or similar)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx90354_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx90354_rank1.rs", "c_api": "memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen)", "rust_api": "ptr::copy_nonoverlapping", "mapping_type": "function", "description": "Memory copy operation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function performs safe slice splitting. [Similarity] No structural similarity due to different domains (networking vs memory slicing). [Knowledge Extraction] No full/partial match. API mappings identified: 'free' in C maps to manual memory cleanup in Rust (via Box/Vec), 'malloc' maps to heap allocation in Rust (Box::new), 'memcpy' maps to memory copy operations in Rust (likely via ptr::copy_nonoverlapping or similar)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx90354_rank1.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx90354_rank1.rs", "c_api": "malloc(addrinfo_len)", "rust_api": "Box::new(T)", "mapping_type": "function", "description": "Heap allocation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion and memory management; Rust function performs safe slice splitting. [Similarity] No structural similarity due to different domains (networking vs memory slicing). [Knowledge Extraction] No full/partial match. API mappings identified: 'free' in C maps to manual memory cleanup in Rust (via Box/Vec), 'malloc' maps to heap allocation in Rust (Box::new), 'memcpy' maps to memory copy operations in Rust (likely via ptr::copy_nonoverlapping or similar)."}]
+Unixcoder Score: -0.12953244149684906
+--------------------------------------------------
+C_Code: 
+void iter_module_map(const mod_entry* map,
+                    void (*fn)(void* fptr, void* env, const mod_entry *entry),
+                    void* fptr,
+                    void* env
+                    ) {
+    for (const mod_entry* cur = map; cur->name; cur++) {
+        fn(fptr, env, cur);
+    }
+}
+Function: 
+fn minimize_rpaths(rpaths: [str]) -> [str] {
+    let set = map::new_str_hash::<()>();
+    for rpath in rpaths { set.insert(rpath, ()); }
+    let minimized = [];
+    for each rpath in set.keys() { minimized += [rpath]; }
+    ret minimized;
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__iter_module_map__idx49914_rank3.c", "source_rust_file": "Partial__iter_module_map__idx49914_rank3.rs", "c_fragment": "for (const mod_entry* cur = map; cur->name; cur++) {\n        fn(fptr, env, cur);\n    }", "rust_fragment": "let map = items.iter().map(|ref o| Wrapper::new(o));", "description": "Both involve iterating over a collection and applying a transformation or function to each element.", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function creates an iterator over items and maps them to wrappers. [Similarity] No full structural similarity due to different domains (iteration vs. collection transformation) and different control flow patterns. [Knowledge Extraction] No full match, but there is a partial structural fragment involving iteration logic and API mappings for iterator creation and mapping operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx49914_rank3.c", "source_rust_file": "Partial__iter_module_map__idx49914_rank3.rs", "c_api": "cur->name", "rust_api": "items.iter()", "mapping_type": "pattern", "description": "C's loop condition checking for name field corresponds to Rust's iterator creation.", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function creates an iterator over items and maps them to wrappers. [Similarity] No full structural similarity due to different domains (iteration vs. collection transformation) and different control flow patterns. [Knowledge Extraction] No full match, but there is a partial structural fragment involving iteration logic and API mappings for iterator creation and mapping operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx49914_rank3.c", "source_rust_file": "Partial__iter_module_map__idx49914_rank3.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "Wrapper::new(o)", "mapping_type": "function", "description": "Callback invocation in C corresponds to mapping operation in Rust.", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function creates an iterator over items and maps them to wrappers. [Similarity] No full structural similarity due to different domains (iteration vs. collection transformation) and different control flow patterns. [Knowledge Extraction] No full match, but there is a partial structural fragment involving iteration logic and API mappings for iterator creation and mapping operations."}]
+Unixcoder Score: -0.13152983784675598
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+fn each_addr<A: ToSocketAddrs, F, T>(addr: A, mut f: F) -> io::Result<T>
+where
+    F: FnMut(io::Result<&SocketAddr>) -> io::Result<T>,
+{
+    let addrs = match addr.to_socket_addrs() {
+        Ok(addrs) => addrs,
+        Err(e) => return f(Err(e)),
+    };
+    let mut last_err = None;
+    for addr in addrs {
+        match f(Ok(&addr)) {
+            Ok(l) => return Ok(l),
+            Err(e) => last_err = Some(e),
+        }
+    }
+    Err(last_err.unwrap_or_else(|| {
+        io::const_io_error!(ErrorKind::InvalidInput, "could not resolve to any addresses")
+    }))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx113836_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx113836_rank4.rs", "c_api": "handle->res != NULL", "rust_api": "list.detach_all_nodes()", "mapping_type": "pattern", "description": "Check for valid data before processing", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion with memory management; Rust function splices linked list nodes. [Similarity] Names and domains differ significantly (networking vs data structures). [Knowledge Extraction] No full or partial structural match. API mappings found: memory allocation/deallocation and linked list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx113836_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx113836_rank4.rs", "c_api": "free", "rust_api": "drop", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion with memory management; Rust function splices linked list nodes. [Similarity] Names and domains differ significantly (networking vs data structures). [Knowledge Extraction] No full or partial structural match. API mappings found: memory allocation/deallocation and linked list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx113836_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx113836_rank4.rs", "c_api": "LinkedList<T>", "rust_api": "LinkedList<T>", "mapping_type": "type", "description": "Linked list data structure", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion with memory management; Rust function splices linked list nodes. [Similarity] Names and domains differ significantly (networking vs data structures). [Knowledge Extraction] No full or partial structural match. API mappings found: memory allocation/deallocation and linked list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_getaddrinfo_done__idx113836_rank4.c", "source_rust_file": "API_Mapping__uv_getaddrinfo_done__idx113836_rank4.rs", "c_api": "malloc", "rust_api": "Box::new", "mapping_type": "function", "description": "Memory allocation", "reasoning": "[Task Analysis] C function handles DNS resolution result conversion with memory management; Rust function splices linked list nodes. [Similarity] Names and domains differ significantly (networking vs data structures). [Knowledge Extraction] No full or partial structural match. API mappings found: memory allocation/deallocation and linked list operations."}]
+Unixcoder Score: -0.13157545030117035
+--------------------------------------------------

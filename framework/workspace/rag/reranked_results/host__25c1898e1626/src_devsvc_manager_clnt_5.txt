@@ -1,0 +1,288 @@
+C_Code: 
+int TestServiceProxy::TestPingService(const std::u16string &serviceName)
+{
+    int ret;
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    ZLOGI(LABEL, "PingService");
+    dataParcel.WriteString16(serviceName);
+    ret = Remote()->SendRequest(TRANS_ID_PING_SERVICE, dataParcel, replyParcel, option);
+    int result = (ret == ERR_NONE) ? replyParcel.ReadInt32() : -1;
+    ZLOGI(LABEL, "PingService result = %{public}d", result);
+    return result;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: 0.022971291095018387
+--------------------------------------------------
+C_Code: 
+bool AppProcessState::RegisterAppStateChanged(RegCallBack &&callback)
+{
+    REQUEST_HILOGI("RegisterAppState In");
+    sptr<AppProcessState> appProcessState = AppProcessState::GetInstance();
+    if (appProcessState == nullptr) {
+        REQUEST_HILOGE("create AppProcessState fail");
+        return false;
+    }
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        REQUEST_HILOGE("get SystemAbilityManager failed.");
+        SysEventLog::SendSysEventLog(FAULT_EVENT, SAMGR_FAULT_00, "Get SAM failed");
+        return false;
+    }
+    auto systemAbility = systemAbilityManager->GetSystemAbility(APP_MGR_SERVICE_ID);
+    if (systemAbility == nullptr) {
+        REQUEST_HILOGE("get SystemAbility failed.");
+        return false;
+    }
+    sptr<AppExecFwk::IAppMgr> appObject = iface_cast<AppExecFwk::IAppMgr>(systemAbility);
+    if (appObject) {
+        int ret = appObject->RegisterApplicationStateObserver(appProcessState);
+        if (ret == ERR_OK) {
+            {
+                std::lock_guard<std::mutex> lockApp(appStateMutex);
+                REQUEST_HILOGI("register success");
+                appStateCallback_ = callback;
+            }
+            return true;
+        }
+        REQUEST_HILOGE("register fail, ret = %{public}d", ret);
+        return false;
+    }
+    REQUEST_HILOGI("RegisterAppState Out");
+    return false;
+}
+Function: 
+extern "C" fn init() {
+        info!("begin request service init");
+        let system_ability = RequestAbility::new()
+            .build_system_ability(samgr::definition::DOWNLOAD_SERVICE_ID, false)
+            .unwrap();
+        system_ability.register();
+        info!("request service inited");
+    }
+Unixcoder Score: 0.006501533091068268
+--------------------------------------------------
+C_Code: 
+int TestServiceProxy::TestPingService(const std::u16string &serviceName)
+{
+    int ret;
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    ZLOGI(LABEL, "PingService");
+    dataParcel.WriteString16(serviceName);
+    ret = Remote()->SendRequest(TRANS_ID_PING_SERVICE, dataParcel, replyParcel, option);
+    int result = (ret == ERR_NONE) ? replyParcel.ReadInt32() : -1;
+    ZLOGI(LABEL, "PingService result = %{public}d", result);
+    return result;
+}
+Function: 
+fn parcel_write() -> MsgParcel {
+    init();
+
+    let test_service = SystemAbilityManager::get_system_ability(TEST_SYSTEM_ABILITY_ID).unwrap();
+    let mut msg = MsgParcel::new();
+
+    read_and_write(&mut msg);
+    read_and_write_vec(&mut msg);
+
+    let s = String::from("ipc hello");
+    let v = vec![s.clone(), s.clone(), s.clone()];
+    msg.write(&v).unwrap();
+
+    msg.write_string16(&s);
+    msg.write_string16_vec(&v);
+
+    test_service.send_request(0, &mut msg).unwrap()
+}
+Unixcoder Score: 0.00411569606512785
+--------------------------------------------------
+C_Code: 
+void SubscribeNotification(rust::Box<TaskManagerWrapper> taskManager)
+{
+    static auto subscriber = std::make_unique<NotificationSubscriber>(std::move(taskManager));
+    Notification::NotificationHelper::SubscribeLocalLiveViewNotification(*subscriber);
+}
+Function: 
+pub(crate) fn subscribe_notification_bar(task_manager: TaskManagerTx) {
+    SubscribeNotification(Box::new(TaskManagerWrapper::new(task_manager)));
+}
+Unixcoder Score: 0.0036661524791270494
+--------------------------------------------------
+C_Code: 
+int32_t RequestManagerImpl::Show(const std::string &tid, TaskInfo &info)
+{
+    return CallProxyMethod(&RequestServiceInterface::Show, tid, info);
+}
+Function: 
+pub fn show(&self, task_id: u32) {
+        let mut data = MsgParcel::new();
+        data.write_interface_token(SERVICE_TOKEN).unwrap();
+        data.write(&format!("{}", task_id)).unwrap();
+        let mut reply = self
+            .remote
+            .send_request(interface::SHOW, &mut data)
+            .unwrap();
+        let ret: i32 = reply.read().unwrap();
+        assert_eq!(ret, 0);
+    }
+Unixcoder Score: -0.011959598399698734
+--------------------------------------------------
+C_Code: 
+static void DoSubscribe(int32_t said)
+    {
+        cout << "subscribe system ability" << endl;
+        sptr<ISystemAbilityManager> sm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (sm == nullptr)  {
+            cout << "------------------samgr is unavailable-----------------------------------------" << endl;
+            return;
+        }
+
+        sptr<MockSaStatusChange> listen = new MockSaStatusChange();
+        int32_t res = sm->SubscribeSystemAbility(said, listen);
+        cout << "subscribe system ability result : " << ((res == 0) ? "succeed" : "failed") << endl;
+    }
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Unixcoder Score: -0.01677381433546543
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.018780866637825966
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.019649852067232132
+--------------------------------------------------
+C_Code: 
+int DBinderTestServiceProxy::PingService(std::u16string &serviceName)
+{
+    int error;
+    MessageOption option;
+    MessageParcel dataParcel, replyParcel;
+    DBINDER_LOGE(LOG_LABEL, "TestServiceProxy:PingService");
+    if (!dataParcel.WriteString16(serviceName.data())) {
+        DBINDER_LOGE(LOG_LABEL, "fail to write parcel");
+        return ERR_INVALID_STATE;
+    }
+    error = Remote()->SendRequest(REVERSEINT, dataParcel, replyParcel, option);
+    replyParcel.ReadInt32();
+    return error;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.01968858577311039
+--------------------------------------------------
+C_Code: 
+int32_t RequestManagerImpl::SubRunCount(const sptr<NotifyInterface> &listener)
+{
+    REQUEST_HILOGD("Impl SubRunCount in");
+    auto proxy = GetRequestServiceProxy(false);
+    if (proxy == nullptr) {
+        REQUEST_HILOGE("Impl SubRunCount in, get request service proxy failed.");
+        FwkRunningTaskCountManager::GetInstance()->SetSaStatus(false);
+        // Proxy does not affect sub runcount at framework.
+        return E_OK;
+    }
+    return proxy->SubRunCount(listener);
+}
+Function: 
+pub fn sub_run_count(&self, obj: RemoteObj) {
+        let mut data = MsgParcel::new();
+        data.write_interface_token(SERVICE_TOKEN).unwrap();
+        let mut reply = obj
+            .send_request(interface::SUB_RUN_COUNT, &mut data)
+            .unwrap();
+        let ret: i32 = reply.read().unwrap();
+        assert_eq!(0, ret);
+    }
+Unixcoder Score: -0.01982324942946434
+--------------------------------------------------

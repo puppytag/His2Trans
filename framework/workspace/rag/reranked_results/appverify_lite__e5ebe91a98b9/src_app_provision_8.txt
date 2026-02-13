@@ -1,0 +1,454 @@
+C_Code: 
+int32_t RdbServiceStub::OnGetDebugInfo(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::map<std::string, RdbDebugInfo> debugInfo;
+    auto status = GetDebugInfo(param, debugInfo);
+    if (!ITypesUtil::Marshal(reply, status, debugInfo)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let interval = parcel.read::<i32>()?;
+        let session_id = parcel.read::<i32>()?;
+        let result = Self {
+            interval,
+            session_id,
+        };
+        Ok(result)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "SetAccessTokenPermission", "rust_api": "unsafe { SetAccessTokenPermission() }", "mapping_type": "function", "description": "Token permission setup function", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "REQUEST_HILOGI", "rust_api": "info!", "mapping_type": "function", "description": "Logging function", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "GetAccessTokenId", "rust_api": "GetAccessTokenId", "mapping_type": "function", "description": "Get access token ID", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "SetSelfTokenID", "rust_api": "SetSelfTokenID", "mapping_type": "function", "description": "Set self token ID", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx28_rank1.rs", "c_api": "OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo", "rust_api": "OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo", "mapping_type": "function", "description": "Reload native token info", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function calls the C function and handles system ability loading. [Similarity] The C function is a setup routine, while Rust function is a usage pattern. No structural similarity at the function level. [Knowledge Extraction] No full match due to domain mismatch (permission setup vs system ability loading). No partial match due to structural differences. API mappings found: SetAccessTokenPermission <-> unsafe { SetAccessTokenPermission() }, REQUEST_HILOGI <-> info! (logging), GetAccessTokenId <-> GetAccessTokenId, SetSelfTokenID <-> SetSelfTokenID, OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo <-> OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo."}]
+Unixcoder Score: 0.03917178511619568
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::SendStrategy(int32_t type, std::vector<int32_t>& systemAbilityIds,
+    int32_t level, std::string& action)
+{
+    HILOGD("SendStrategy begin");
+    uint32_t accessToken = IPCSkeleton::GetCallingTokenID();
+    Security::AccessToken::NativeTokenInfo nativeTokenInfo;
+    int32_t result = Security::AccessToken::AccessTokenKit::GetNativeTokenInfo(accessToken, nativeTokenInfo);
+    if (result != ERR_OK || nativeTokenInfo.processName != RESOURCE_SCHEDULE_PROCESS_NAME) {
+        HILOGW("SendStrategy reject used by %{public}s", nativeTokenInfo.processName.c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+
+    for (auto saId : systemAbilityIds) {
+        CommonSaProfile saProfile;
+        if (!GetSaProfile(saId, saProfile)) {
+            HILOGW("not found SA: %{public}d.", saId);
+            return ERR_INVALID_VALUE;
+        }
+        auto procName = saProfile.process;
+        sptr<ILocalAbilityManager> procObject =
+            iface_cast<ILocalAbilityManager>(GetSystemProcess(procName));
+        if (procObject == nullptr) {
+            HILOGW("get process:%{public}s fail", Str16ToStr8(procName).c_str());
+            return ERR_INVALID_VALUE;
+        }
+        procObject->SendStrategyToSA(type, saId, level, action);
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn send_strategy(s_type: i32, saids: Vec<i32>, level: i32, action: &str) -> i32 {
+        let_cxx_string!(action = action);
+        SendStrategy(s_type, saids, level, action)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__HandlePackageRemoved__idx4484_rank1.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4484_rank1.rs", "c_fragment": "std::string appId = want.GetStringParam(APP_ID);\n    int appIndex = isSandBoxApp ? want.GetIntParam(SANDBOX_APP_INDEX, -1) : want.GetIntParam(APP_INDEX, -1);\n    if (appId.empty() || userId == INVALID_USERID || appIndex == -1) {\n        LOGE(\"[FATAL]Get removed owner info failed, userId=%{public}d, appId=%{public}s, appIndex=%{public}d\",\n            userId, appId.c_str(), appIndex);\n        return;\n    }\n    std::string owner = appId + OWNER_INFO_SEPARATOR + std::to_string(appIndex);\n    ConstAssetBlob ownerBlob = { .size = owner.size(), .data = reinterpret_cast<const uint8_t *>(owner.c_str()) };", "rust_fragment": "let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() };", "description": "Both extract and process owner information from input parameters into a blob structure.", "reasoning": "[Task Analysis] C function handles package removal event and prepares data for callback; Rust function deletes data by owner and handles cleanup. [Similarity] Names refer to different concepts (HandlePackageRemoved vs delete_data_by_owner), domains differ (event handling vs data deletion), and code lengths are significantly different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. However, both involve processing owner info and calling callbacks/operations with similar data structures. Extract partial structural fragments and API mappings based on shared logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4484_rank1.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4484_rank1.rs", "c_api": "want.GetIntParam(...)", "rust_api": "user_id: i32", "mapping_type": "function", "description": "Extracting integer parameter from input structure", "reasoning": "[Task Analysis] C function handles package removal event and prepares data for callback; Rust function deletes data by owner and handles cleanup. [Similarity] Names refer to different concepts (HandlePackageRemoved vs delete_data_by_owner), domains differ (event handling vs data deletion), and code lengths are significantly different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. However, both involve processing owner info and calling callbacks/operations with similar data structures. Extract partial structural fragments and API mappings based on shared logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4484_rank1.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4484_rank1.rs", "c_api": "want.GetStringParam(APP_ID)", "rust_api": "owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() }", "mapping_type": "function", "description": "Extracting string parameter from input structure", "reasoning": "[Task Analysis] C function handles package removal event and prepares data for callback; Rust function deletes data by owner and handles cleanup. [Similarity] Names refer to different concepts (HandlePackageRemoved vs delete_data_by_owner), domains differ (event handling vs data deletion), and code lengths are significantly different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. However, both involve processing owner info and calling callbacks/operations with similar data structures. Extract partial structural fragments and API mappings based on shared logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4484_rank1.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4484_rank1.rs", "c_api": "onPackageRemoved(...)", "rust_api": "delete_on_package_removed(&calling_info)", "mapping_type": "function", "description": "Invoking callback or operation with structured data", "reasoning": "[Task Analysis] C function handles package removal event and prepares data for callback; Rust function deletes data by owner and handles cleanup. [Similarity] Names refer to different concepts (HandlePackageRemoved vs delete_data_by_owner), domains differ (event handling vs data deletion), and code lengths are significantly different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. However, both involve processing owner info and calling callbacks/operations with similar data structures. Extract partial structural fragments and API mappings based on shared logic patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__HandlePackageRemoved__idx4484_rank1.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4484_rank1.rs", "c_fragment": "if (onPackageRemoved != nullptr) {\n        onPackageRemoved({ userId, appIndex, ownerBlob, developerIdBlob, groupIdBlobArray, bundleNameBlob });\n    }", "rust_fragment": "for calling_info in construct_calling_infos(user_id, owner.clone(), developer_id, group_ids) {\n        clear_cryptos(&calling_info);\n        let res = match delete_on_package_removed(&calling_info) {", "description": "Both involve invoking a callback or operation with structured data after validation.", "reasoning": "[Task Analysis] C function handles package removal event and prepares data for callback; Rust function deletes data by owner and handles cleanup. [Similarity] Names refer to different concepts (HandlePackageRemoved vs delete_data_by_owner), domains differ (event handling vs data deletion), and code lengths are significantly different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. However, both involve processing owner info and calling callbacks/operations with similar data structures. Extract partial structural fragments and API mappings based on shared logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4484_rank1.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4484_rank1.rs", "c_api": "ConstAssetBlob ownerBlob = { .size = owner.size(), .data = reinterpret_cast<const uint8_t *>(owner.c_str()) };", "rust_api": "let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() };", "mapping_type": "type", "description": "Converting string to byte blob for data transfer", "reasoning": "[Task Analysis] C function handles package removal event and prepares data for callback; Rust function deletes data by owner and handles cleanup. [Similarity] Names refer to different concepts (HandlePackageRemoved vs delete_data_by_owner), domains differ (event handling vs data deletion), and code lengths are significantly different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. However, both involve processing owner info and calling callbacks/operations with similar data structures. Extract partial structural fragments and API mappings based on shared logic patterns."}]
+Unixcoder Score: 0.0125752417370677
+--------------------------------------------------
+C_Code: 
+int32_t UnloadAllIdleSystemAbility() override;
+
+    /**
+     * UnloadProcess, unload process by process name list.
+     * only support for memmgrservice
+     *
+     * @return ERR_OK It means unload all process in list.
+     */
+    virtual int32_t UnloadProcess(const std::vector<std::u16string>& processList) override;
+
+    /**
+     * GetSystemProcessInfo, Get process info by said.
+     * only support for memmgrservice
+     *
+     * @param processList, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    virtual int32_t GetLruIdleSystemAbilityProc(std::vector<IdleProcessInfo>& processInfos) override;
+
+    /**
+     * GetSystemProcessInfo, Get process info by said.
+     *
+     * @param systemAbilityId, Need the said of sa which wants to get process info.
+     * @param systemProcessInfo, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    int32_t GetSystemProcessInfo(int32_t systemAbilityId, SystemProcessInfo& systemProcessInfo) override;
+
+    /**
+     * GetRunningSystemProcess, Get all processes currently running.
+     *
+     * @param systemProcessInfos, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    int32_t GetRunningSystemProcess(std::list<SystemProcessInfo>& systemProcessInfos) override;
+
+    /**
+     * SubscribeSystemProcess, Subscribe the status of process.
+     *
+     * @param listener, callback.
+     * @return ERR_OK indicates that the Subscribe successfully.
+     */
+    int32_t SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener) override;
+
+    /**
+     * SendStrategy, Send strategy to SA.
+     *
+     * @param type, type is a certain device status type.
+     * @param systemAbilityIds, Need the vector of said which wants to send strategy.
+     * @param level, level is level of a certain device status type.
+     * @param action, action is scheduling strategy.
+     * @return ERR_OK indicates that the Subscribe successfully.
+     */
+    int32_t SendStrategy(int32_t type, std::vector<int32_t>& systemAbilityIds,
+        int32_t level, std::string& action) override;
+
+    /**
+     * UnSubscribeSystemProcess, UnSubscribe the status of process.
+     *
+     * @param listener, callback.
+     * @return ERR_OK indicates that the UnSubscribe successfully.
+     */
+    int32_t UnSubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener) override;
+
+    /**
+     * GetExtensionSaIds, Return list of saId that match extension.
+     *
+     * @param extension, extension, match with profile extension.
+     * @param saIds, list of saId that match extension
+     * @return ERR_OK indicates that the list of saId that match extension success.
+     */
+    int32_t GetExtensionSaIds(const std::string& extension, std::vector<int32_t> &saIds) override;
+
+    /**
+     * GetExtensionRunningSaList, Return started list of hanlde that match extension.
+     *
+     * @param extension, extension, match with profile extension.
+     * @param saList, started list of remote obj that match extension
+     * @return ERR_OK indicates that the list of hanlde that match extension success.
+     */
+    int32_t GetExtensionRunningSaList(const std::string& extension, std::vector<sptr<IRemoteObject>>& saList) override;
+
+    /**
+     * GetLocalAbilityManagerProxy, Return local ability manager proxy.
+     *
+     * @param systemAbilityId, need to obtain the said of sa.
+     * @return nullptr indicates acquistion failure.
+     */
+    sptr<IRemoteObject> GetLocalAbilityManagerProxy(int32_t systemAbilityId) override;
+
+    int32_t GetRunningSaExtensionInfoList(const std::string& extension,
+        std::vector<SaExtensionInfo>& infoList) override;
+    int32_t GetCommonEventExtraDataIdlist(int32_t saId, std::vector<int64_t>& extraDataIdList,
+        const std::string& eventName = "") override;
+    int32_t GetOnDemandReasonExtraData(int64_t extraDataId, MessageParcel& extraDataParcel) override;
+    int32_t GetOnDemandPolicy(int32_t systemAbilityId, OnDemandPolicyType type,
+        std::vector<SystemAbilityOnDemandEvent>& abilityOnDemandEvents) override;
+    int32_t UpdateOnDemandPolicy(int32_t systemAbilityId, OnDemandPolicyType type,
+        const std::vector<SystemAbilityOnDemandEvent>& sabilityOnDemandEvents) override;
+    sptr<IRemoteObject> Recompute(int32_t systemAbilityId, int32_t code) override;
+    int32_t GetOnDemandSystemAbilityIds(std::vector<int32_t>& systemAbilityIds) override;
+private:
+    sptr<IRemoteObject> GetSystemAbilityWrapper(int32_t systemAbilityId, const std::string& deviceId = "");
+    sptr<IRemoteObject> CheckSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    sptr<IRemoteObject> CheckSystemAbilityWrapper(int32_t code, MessageParcel& data, int32_t& errCode);
+    sptr<IRemoteObject> CheckSystemAbility(int32_t systemAbilityId, const std::string& deviceId, int32_t& errCode);
+    sptr<IRemoteObject> CheckSystemAbility(int32_t systemAbilityId, bool& isExist, int32_t& errCode);
+    int32_t MarshalSAExtraProp(const SAExtraProp& extraProp, MessageParcel& data) const;
+    int32_t AddSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    int32_t RemoveSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    int32_t ReadSystemProcessFromParcel(MessageParcel& reply, std::list<SystemProcessInfo>& systemProcessInfos);
+    int32_t ReadProcessInfoFromParcel(MessageParcel& reply, SystemProcessInfo& systemProcessInfo);
+    int32_t ReadIdleProcessInfoFromParcel(MessageParcel& reply, std::vector<IdleProcessInfo>& procInfos);
+    sptr<IRemoteObject> CheckSystemAbilityTransaction(int32_t systemAbilityId);
+    bool IsOnDemandSystemAbility(int32_t systemAbilityId);
+    int32_t ListExtensionSendReq(const std::string& extension,
+        SamgrInterfaceCode cmd, MessageParcel& reply, MessageOption& option);
+private:
+    static inline BrokerDelegator<SystemAbilityManagerProxy> delegator_;
+    std::set<int32_t> onDemandSystemAbilityIdsSet_;
+    std::mutex onDemandSaLock_;
+};
+
+class SystemAbilityProxyCallback : public SystemAbilityLoadCallbackStub {
+public:
+    void OnLoadSystemAbilitySuccess(int32_t systemAbilityId,
+        const sptr<IRemoteObject> &remoteObject) override;
+    void OnLoadSystemAbilityFail(int32_t systemAbilityId) override;
+    std::mutex callbackLock_;
+    std::condition_variable cv_;
+    sptr<IRemoteObject> loadproxy_;
+}
+Function: 
+pub fn unload_all_idle_system_ability(&self) -> i32 {
+        info!("unload all idle system ability");
+        UnloadAllIdleSystemAbility()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__LoadSystemAbility__idx4888_rank4.c", "source_rust_file": "Full__LoadSystemAbility__idx4888_rank4.rs", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('SystemAbilityManager::LoadSystemAbility' vs 'load_system_ability') but both refer to loading system abilities; [Filter 2: Empty/Trivial Code] -> Neither side is empty; [Filter 3: FFI Wrapper] -> No FFI call detected; [Filter 4: Semantic Domain Mismatch] -> Both involve system ability loading logic, not unrelated domains; [Filter 5: Empty Structs] -> Not applicable; [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls; [Task Analysis] -> C function handles remote system ability loading with locking, callback management, and thread creation; Rust function wraps a call to a system ability loader with logging; [Similarity] -> Full structural similarity in terms of high-level logic (loading system ability with logging and async handling), though implementation details differ; [Knowledge Extraction] -> Extract full structural match and API mappings for system ability loading and logging patterns.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__LoadSystemAbility__idx4888_rank4.c", "source_rust_file": "Full__LoadSystemAbility__idx4888_rank4.rs", "c_api": "HILOGI(\"LoadSystemAbility already existed callback object SA:%{public}d\", systemAbilityId);", "rust_api": "debug!(\"load system ability {}\", said);", "mapping_type": "function", "description": "Logging of system ability loading status", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('SystemAbilityManager::LoadSystemAbility' vs 'load_system_ability') but both refer to loading system abilities; [Filter 2: Empty/Trivial Code] -> Neither side is empty; [Filter 3: FFI Wrapper] -> No FFI call detected; [Filter 4: Semantic Domain Mismatch] -> Both involve system ability loading logic, not unrelated domains; [Filter 5: Empty Structs] -> Not applicable; [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls; [Task Analysis] -> C function handles remote system ability loading with locking, callback management, and thread creation; Rust function wraps a call to a system ability loader with logging; [Similarity] -> Full structural similarity in terms of high-level logic (loading system ability with logging and async handling), though implementation details differ; [Knowledge Extraction] -> Extract full structural match and API mappings for system ability loading and logging patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__LoadSystemAbility__idx4888_rank4.c", "source_rust_file": "Full__LoadSystemAbility__idx4888_rank4.rs", "c_api": "callbacks.emplace_back(callback);", "rust_api": "RemoteObj::from_sptr(LoadSystemAbility(said, timeout))", "mapping_type": "function", "description": "Adding a callback or initiating system ability loading", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('SystemAbilityManager::LoadSystemAbility' vs 'load_system_ability') but both refer to loading system abilities; [Filter 2: Empty/Trivial Code] -> Neither side is empty; [Filter 3: FFI Wrapper] -> No FFI call detected; [Filter 4: Semantic Domain Mismatch] -> Both involve system ability loading logic, not unrelated domains; [Filter 5: Empty Structs] -> Not applicable; [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls; [Task Analysis] -> C function handles remote system ability loading with locking, callback management, and thread creation; Rust function wraps a call to a system ability loader with logging; [Similarity] -> Full structural similarity in terms of high-level logic (loading system ability with logging and async handling), though implementation details differ; [Knowledge Extraction] -> Extract full structural match and API mappings for system ability loading and logging patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__LoadSystemAbility__idx4888_rank4.c", "source_rust_file": "Full__LoadSystemAbility__idx4888_rank4.rs", "c_fragment": "std::string key = ToString(systemAbilityId) + \"_\" + deviceId;\n    {\n        lock_guard<samgr::mutex> autoLock(loadRemoteLock_);\n        auto& callbacks = remoteCallbacks_[key];\n        auto iter = std::find_if(callbacks.begin(), callbacks.end(), [callback](auto itemCallback) {\n            return callback->AsObject() == itemCallback->AsObject();\n        });\n        if (iter != callbacks.end()) {\n            HILOGI(\"LoadSystemAbility already existed callback object SA:%{public}d\", systemAbilityId);\n            return ERR_OK;\n        }\n        if (remoteCallbackDeath_ != nullptr) {\n            bool ret = callback->AsObject()->AddDeathRecipient(remoteCallbackDeath_);\n            HILOGI(\"LoadSystemAbility SA:%{public}d AddDeathRecipient %{public}s\",\n                systemAbilityId, ret ? \"succeed\" : \"failed\");\n        }\n        callbacks.emplace_back(callback);\n    }", "rust_fragment": "debug!(\"load system ability {}\", said);\n        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))", "description": "Both functions handle system ability loading with logging and return a result.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('SystemAbilityManager::LoadSystemAbility' vs 'load_system_ability') but both refer to loading system abilities; [Filter 2: Empty/Trivial Code] -> Neither side is empty; [Filter 3: FFI Wrapper] -> No FFI call detected; [Filter 4: Semantic Domain Mismatch] -> Both involve system ability loading logic, not unrelated domains; [Filter 5: Empty Structs] -> Not applicable; [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls; [Task Analysis] -> C function handles remote system ability loading with locking, callback management, and thread creation; Rust function wraps a call to a system ability loader with logging; [Similarity] -> Full structural similarity in terms of high-level logic (loading system ability with logging and async handling), though implementation details differ; [Knowledge Extraction] -> Extract full structural match and API mappings for system ability loading and logging patterns."}]
+Unixcoder Score: -0.018566792830824852
+--------------------------------------------------
+C_Code: 
+int32_t CloudServiceStub::OnQueryLastSyncInfo(MessageParcel &data, MessageParcel &reply)
+{
+    std::string id;
+    std::string bundleName;
+    std::string storeId;
+    if (!ITypesUtil::Unmarshal(data, id, bundleName, storeId)) {
+        ZLOGE("Unmarshal id:%{public}s, bundleName:%{public}s, storeId:%{public}s", Anonymous::Change(id).c_str(),
+            bundleName.c_str(), Anonymous::Change(storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [status, results] = QueryLastSyncInfo(id, bundleName, storeId);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let app_id = parcel.read_string16()?;
+        let bundle_name = parcel.read_string16()?;
+        let cloud_switch = parcel.read::<i32>()? != 0;
+        let instance_id = parcel.read::<i32>()?;
+
+        let result = Self {
+            app_id,
+            bundle_name,
+            cloud_switch,
+            instance_id,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.021514125168323517
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::GetSystemProcessInfoInner(MessageParcel& data, MessageParcel& reply)
+{
+    HILOGI("GetSystemProcessInfoInner called");
+    if (!CanRequest()) {
+        HILOGE("GetSystemProcessInfoInner PERMISSION DENIED!");
+        return ERR_PERMISSION_DENIED;
+    }
+    int32_t systemAbilityId = -1;
+    bool ret = data.ReadInt32(systemAbilityId);
+    if (!ret) {
+        return ERR_NULL_OBJECT;
+    }
+    if (!CheckInputSysAbilityId(systemAbilityId)) {
+        HILOGW("GetSystemProcessInfoInner read SAId failed!");
+        return ERR_NULL_OBJECT;
+    }
+    SystemProcessInfo processInfo;
+    int32_t result = GetSystemProcessInfo(systemAbilityId, processInfo);
+    ret = reply.WriteInt32(result);
+    if (!ret) {
+        HILOGW("GetSystemProcessInfoInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    if (result != ERR_OK) {
+        return ERR_OK;
+    }
+
+    ret = reply.WriteString(processInfo.processName);
+    if (!ret) {
+        HILOGW("GetSystemProcessInfoInner write procName failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    ret = reply.WriteInt32(processInfo.pid);
+    if (!ret) {
+        HILOGW("GetSystemProcessInfoInner write pid failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    ret = reply.WriteInt32(processInfo.uid);
+    if (!ret) {
+        HILOGW("GetSystemProcessInfoInner write uid failed.");
+            return ERR_FLATTEN_OBJECT;
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn get_system_process_info(said: i32) -> SystemProcessInfo {
+        info!("get system ability {} process info", said);
+        GetSystemProcessInfo(said)
+    }
+Unixcoder Score: -0.023480072617530823
+--------------------------------------------------
+C_Code: 
+bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(bundleName), bundleName);
+            GetValue(node, GET_NAME(accountId), accountId);
+            GetValue(node, GET_NAME(storeId), storeId);
+            return true;
+        }
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let app_id = parcel.read_string16()?;
+        let bundle_name = parcel.read_string16()?;
+        let cloud_switch = parcel.read::<i32>()? != 0;
+        let instance_id = parcel.read::<i32>()?;
+
+        let result = Self {
+            app_id,
+            bundle_name,
+            cloud_switch,
+            instance_id,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.02397853322327137
+--------------------------------------------------
+C_Code: 
+bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(bundleName), bundleName);
+            GetValue(node, GET_NAME(accountId), accountId);
+            GetValue(node, GET_NAME(storeId), storeId);
+            return true;
+        }
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let version = parcel.read::<i32>()?;
+        let bundle_name = parcel.read_string16()?;
+        let databases = parcel.read::<Databases>()?;
+
+        let result = Schema {
+            version,
+            bundle_name,
+            databases,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.025630244985222816
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::SendStrategy(int32_t type, std::vector<int32_t>& systemAbilityIds,
+    int32_t level, std::string& action)
+{
+    HILOGD("SendStrategy begin");
+    uint32_t accessToken = IPCSkeleton::GetCallingTokenID();
+    Security::AccessToken::NativeTokenInfo nativeTokenInfo;
+    int32_t result = Security::AccessToken::AccessTokenKit::GetNativeTokenInfo(accessToken, nativeTokenInfo);
+    if (result != ERR_OK || nativeTokenInfo.processName != RESOURCE_SCHEDULE_PROCESS_NAME) {
+        HILOGW("SendStrategy reject used by %{public}s", nativeTokenInfo.processName.c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+
+    for (auto saId : systemAbilityIds) {
+        CommonSaProfile saProfile;
+        if (!GetSaProfile(saId, saProfile)) {
+            HILOGW("not found SA: %{public}d.", saId);
+            return ERR_INVALID_VALUE;
+        }
+        auto procName = saProfile.process;
+        sptr<ILocalAbilityManager> procObject =
+            iface_cast<ILocalAbilityManager>(GetSystemProcess(procName));
+        if (procObject == nullptr) {
+            HILOGW("get process:%{public}s fail", Str16ToStr8(procName).c_str());
+            return ERR_INVALID_VALUE;
+        }
+        procObject->SendStrategyToSA(type, saId, level, action);
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn send_strategy(s_type: i32, saids: Vec<i32>, level: i32, action: &str) -> i32 {
+        let_cxx_string!(action = action);
+        SendStrategy(s_type, saids, level, action)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_api": "want.GetStringParam(DEVELOPER_ID)", "rust_api": "developer_id: ConstAssetBlob", "mapping_type": "function", "description": "Retrieval of developer ID parameter from input", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_fragment": "std::string groupIds = want.GetStringParam(GROUP_IDS);\n    std::vector<ConstAssetBlob> groupIdBlobs;\n    std::vector<std::string> groupIdStrs;\n    ConstAssetBlobArray groupIdBlobArray;\n    ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs, groupIdBlobArray);", "rust_fragment": "let group_ids_slice = unsafe { slice::from_raw_parts(group_ids.blobs, group_ids.size as usize) };", "description": "Both process group IDs from input parameters. C parses group IDs into arrays, Rust slices the group IDs array for processing.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_api": "ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs, groupIdBlobArray)", "rust_api": "let group_ids_slice = unsafe { slice::from_raw_parts(group_ids.blobs, group_ids.size as usize) };", "mapping_type": "function", "description": "Parsing of group IDs into structured data", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_api": "LOGI(...)", "rust_api": "LOGI(...)", "mapping_type": "function", "description": "Logging of informational messages", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_api": "want.GetStringParam(GROUP_IDS)", "rust_api": "group_ids: ConstAssetBlobArray", "mapping_type": "function", "description": "Retrieval of group IDs parameter from input", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_api": "want.GetBundle()", "rust_api": "bundleNameBlob", "mapping_type": "function", "description": "Retrieval of bundle name parameter from input", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_api": "want.GetIntParam(USER_ID, INVALID_USERID)", "rust_api": "user_id: i32", "mapping_type": "function", "description": "Retrieval of user ID parameter from input", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_fragment": "if (appId.empty() || userId == INVALID_USERID || appIndex == -1) {\n        LOGE(\"[FATAL]Get removed owner info failed, userId=%{public}d, appId=%{public}s, appIndex=%{public}d\",\n            userId, appId.c_str(), appIndex);\n        return;\n    }", "rust_fragment": "if !group_ids.blobs.is_null() && group_ids.size != 0 && !developer_id.data.is_null() && developer_id.size != 0 {", "description": "Both perform validation checks before proceeding with logic. C checks for empty or invalid parameters, Rust checks for null pointers and zero size.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_api": "LOGE(...)", "rust_api": "loge!([FATAL]Get GetUninstallGroups failed, res is {}.)", "mapping_type": "function", "description": "Logging of error messages", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_api": "want.GetStringParam(APP_ID)", "rust_api": "owner: Vec<u8>", "mapping_type": "function", "description": "Retrieval of application ID parameter from input", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__HandlePackageRemoved__idx4483_rank2.c", "source_rust_file": "Partial__HandlePackageRemoved__idx4483_rank2.rs", "c_fragment": "std::string owner = appId + OWNER_INFO_SEPARATOR + std::to_string(appIndex);\n    ConstAssetBlob ownerBlob = { .size = owner.size(), .data = reinterpret_cast<const uint8_t *>(owner.c_str()) };", "rust_fragment": "let mut calling_infos = vec![CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None)];", "description": "Both construct an owner identifier from app ID and index. C builds a string and wraps it in a blob, Rust creates a CallingInfo with owner data.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}]
+Unixcoder Score: -0.027233270928263664
+--------------------------------------------------
+C_Code: 
+int32_t KVDBServiceStub::OnCloudSync(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    SyncInfo syncInfo;
+    if (!ITypesUtil::Unmarshal(data, syncInfo.seqId)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = CloudSync(appId, storeId, syncInfo);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let app_id = parcel.read_string16()?;
+        let bundle_name = parcel.read_string16()?;
+        let cloud_switch = parcel.read::<i32>()? != 0;
+        let instance_id = parcel.read::<i32>()?;
+
+        let result = Self {
+            app_id,
+            bundle_name,
+            cloud_switch,
+            instance_id,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.02950303629040718
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::LoadSystemAbility(int32_t systemAbilityId, const std::string& deviceId,
+    const sptr<ISystemAbilityLoadCallback>& callback)
+{
+    std::string key = ToString(systemAbilityId) + "_" + deviceId;
+    {
+        lock_guard<samgr::mutex> autoLock(loadRemoteLock_);
+        auto& callbacks = remoteCallbacks_[key];
+        auto iter = std::find_if(callbacks.begin(), callbacks.end(), [callback](auto itemCallback) {
+            return callback->AsObject() == itemCallback->AsObject();
+        });
+        if (iter != callbacks.end()) {
+            HILOGI("LoadSystemAbility already existed callback object SA:%{public}d", systemAbilityId);
+            return ERR_OK;
+        }
+        if (remoteCallbackDeath_ != nullptr) {
+            bool ret = callback->AsObject()->AddDeathRecipient(remoteCallbackDeath_);
+            HILOGI("LoadSystemAbility SA:%{public}d AddDeathRecipient %{public}s",
+                systemAbilityId, ret ? "succeed" : "failed");
+        }
+        callbacks.emplace_back(callback);
+    }
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    auto task = [this, systemAbilityId, callingPid, callingUid, deviceId, callback] {
+        this->DoLoadRemoteSystemAbility(systemAbilityId, callingPid, callingUid, deviceId, callback);
+    };
+    std::thread thread(task);
+    thread.detach();
+    return ERR_OK;
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        debug!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: -0.029798340052366257
+--------------------------------------------------

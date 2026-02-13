@@ -1,0 +1,322 @@
+C_Code: 
+void HiSysEventRecycleWatcher(HiSysEventRustWatcherC* watcher)
+{
+    if (watcher == nullptr) {
+        return;
+    }
+    auto watcherKey = std::make_pair(watcher->onEventRustCb, watcher->onServiceDiedRustCb);
+    auto watcherIter = g_watchers.find(watcherKey);
+    if (watcherIter == g_watchers.end()) {
+        return;
+    }
+    auto listener = watcherIter->second;
+    if (listener != nullptr) {
+        listener->RecycleWatcher(watcher);
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_watchersMutex);
+        g_watchers.erase(watcherIter->first);
+    }
+}
+Function: 
+pub fn remove_watcher(watcher: &Watcher) -> i32 {
+    sys_event_manager::remove_watcher(watcher)
+}
+Unixcoder Score: 0.035869646817445755
+--------------------------------------------------
+C_Code: 
+struct HiSysEventQueryRuleWrapper {
+    char domain[MAX_LENGTH_OF_EVENT_DOMAIN];
+    char eventList[MAX_EVENT_LIST_LEN];
+    unsigned int eventListSize;
+    char* condition;
+}
+Function: 
+pub struct WatchRule<'a> {
+    /// The domain of the event.
+    pub domain: &'a str,
+
+    /// The name of the event.
+    pub name: &'a str,
+
+    /// The tag of the event.
+    pub tag: &'a str,
+
+    /// The rule of match system event.
+    pub rule_type: RuleType,
+
+    /// The type of match system event.
+    pub event_type: EventType,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__DeleteGroup__idx879_rank4.c", "source_rust_file": "Partial__DeleteGroup__idx879_rank4.rs", "c_fragment": "if (ret != ERR_NONE) {\n        REQUEST_HILOGE(\"End Request AttachGroup, failed: %{public}d\", ret);\n        if (ret != REMOTE_DIED_ERROR) {\n            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));\n        }\n        return E_SERVICE_ERROR;\n    }", "rust_fragment": "let Ok(group_id) = data.read::<String>()?.parse::<u32>() else {\n            error!(\"End Service attach_group, group_id, failed: group_id not valid\",);\n            sys_event!(\n                ExecError,\n                DfxCode::INVALID_IPC_MESSAGE_A38,\n                \"End Service attach_group, group_id, failed: group_id not valid\"\n            );\n            reply.write(&(ErrorCode::GroupNotFound as i32))?;\n            return Ok(());\n        };", "description": "Both handle invalid input data with error logging and return early", "reasoning": "[Task Analysis] C code is a service proxy method for deleting a group via IPC, Rust code is a service method for attaching a group with validation and task management. [Similarity] Names don't match but both handle IPC communication, data parsing, error handling, and system event logging. [Knowledge Extraction] Found partial structural match in error handling and IPC logic, and API mappings for IPC data read/write, error reporting, and system event logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx879_rank4.c", "source_rust_file": "Partial__DeleteGroup__idx879_rank4.rs", "c_api": "SysEventLog::SendSysEventLog(...)", "rust_api": "sys_event!(...)", "mapping_type": "function", "description": "System event logging", "reasoning": "[Task Analysis] C code is a service proxy method for deleting a group via IPC, Rust code is a service method for attaching a group with validation and task management. [Similarity] Names don't match but both handle IPC communication, data parsing, error handling, and system event logging. [Knowledge Extraction] Found partial structural match in error handling and IPC logic, and API mappings for IPC data read/write, error reporting, and system event logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx879_rank4.c", "source_rust_file": "Partial__DeleteGroup__idx879_rank4.rs", "c_api": "Remote()->SendRequest(...)", "rust_api": "TaskManagerEvent::attach_group(uid, parse_ids, group_id)", "mapping_type": "function", "description": "IPC request sending and service invocation", "reasoning": "[Task Analysis] C code is a service proxy method for deleting a group via IPC, Rust code is a service method for attaching a group with validation and task management. [Similarity] Names don't match but both handle IPC communication, data parsing, error handling, and system event logging. [Knowledge Extraction] Found partial structural match in error handling and IPC logic, and API mappings for IPC data read/write, error reporting, and system event logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx879_rank4.c", "source_rust_file": "Partial__DeleteGroup__idx879_rank4.rs", "c_api": "reply.ReadInt32()", "rust_api": "reply.write(&(ret as i32))?", "mapping_type": "function", "description": "IPC reply data reading and writing", "reasoning": "[Task Analysis] C code is a service proxy method for deleting a group via IPC, Rust code is a service method for attaching a group with validation and task management. [Similarity] Names don't match but both handle IPC communication, data parsing, error handling, and system event logging. [Knowledge Extraction] Found partial structural match in error handling and IPC logic, and API mappings for IPC data read/write, error reporting, and system event logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx879_rank4.c", "source_rust_file": "Partial__DeleteGroup__idx879_rank4.rs", "c_api": "data.WriteInterfaceToken(GetDescriptor())", "rust_api": "data.read::<String>()?.parse::<u32>()", "mapping_type": "function", "description": "IPC data serialization and deserialization", "reasoning": "[Task Analysis] C code is a service proxy method for deleting a group via IPC, Rust code is a service method for attaching a group with validation and task management. [Similarity] Names don't match but both handle IPC communication, data parsing, error handling, and system event logging. [Knowledge Extraction] Found partial structural match in error handling and IPC logic, and API mappings for IPC data read/write, error reporting, and system event logging."}, {"knowledge_type": "Partial", "source_c_file": "Partial__DeleteGroup__idx879_rank4.c", "source_rust_file": "Partial__DeleteGroup__idx879_rank4.rs", "c_fragment": "int code = reply.ReadInt32();\n    if (code != E_OK) {\n        REQUEST_HILOGE(\"End Request AttachGroup, failed: %{public}d\", code);\n        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));\n    }", "rust_fragment": "if ret != ErrorCode::ErrOk {\n            error!(\n                \"End Service attach_group, task_id: {:?}, group_id: {}, failed: ret is not ErrOk\",\n                task_ids, group_id\n            );\n            sys_event!(\n                ExecError,\n                DfxCode::INVALID_IPC_MESSAGE_A38,\n                &format!(\"End Service attach_group, task_id: {:?}, group_id: {}, failed: ret is not ErrOk\",task_ids, group_id)\n            );\n        }", "description": "Both check for non-success return codes and log errors", "reasoning": "[Task Analysis] C code is a service proxy method for deleting a group via IPC, Rust code is a service method for attaching a group with validation and task management. [Similarity] Names don't match but both handle IPC communication, data parsing, error handling, and system event logging. [Knowledge Extraction] Found partial structural match in error handling and IPC logic, and API mappings for IPC data read/write, error reporting, and system event logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx879_rank4.c", "source_rust_file": "Partial__DeleteGroup__idx879_rank4.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "error!(...)", "mapping_type": "function", "description": "Error logging", "reasoning": "[Task Analysis] C code is a service proxy method for deleting a group via IPC, Rust code is a service method for attaching a group with validation and task management. [Similarity] Names don't match but both handle IPC communication, data parsing, error handling, and system event logging. [Knowledge Extraction] Found partial structural match in error handling and IPC logic, and API mappings for IPC data read/write, error reporting, and system event logging."}]
+Unixcoder Score: 0.0034868877846747637
+--------------------------------------------------
+C_Code: 
+int OhHiSysEventRemoveRustWatcher(HiSysEventRustWatcherC* watcher)
+{
+    return HiSysEventRemoveWatcher(watcher);
+}
+Function: 
+pub fn remove_watcher(watcher: &Watcher) -> i32 {
+    sys_event_manager::remove_watcher(watcher)
+}
+Unixcoder Score: -0.0009741230169311166
+--------------------------------------------------
+C_Code: 
+struct HiSysEventQueryRuleWrapper {
+    char domain[MAX_LENGTH_OF_EVENT_DOMAIN];
+    char eventList[MAX_EVENT_LIST_LEN];
+    unsigned int eventListSize;
+    char* condition;
+}
+Function: 
+pub struct QueryRule<'a> {
+    /// The domain of the event.
+    pub domain: &'a str,
+
+    /// List of event name.
+    pub event_list: Vec<&'a str>,
+
+    /// extra condition for event query.
+    pub condition: &'a str,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__DeleteGroup__idx880_rank1.c", "source_rust_file": "Partial__DeleteGroup__idx880_rank1.rs", "c_fragment": "if (ret != ERR_NONE) {\n        REQUEST_HILOGE(\"End Request AttachGroup, failed: %{public}d\", ret);\n        if (ret != REMOTE_DIED_ERROR) {\n            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));\n        }\n        return E_SERVICE_ERROR;\n    }", "rust_fragment": "let Ok(group_id) = data.read::<String>()?.parse::<u32>() else {\n            reply.write(&(ErrorCode::GroupNotFound as i32))?\n            return Ok(())\n        };", "description": "Error handling for invalid group ID in C vs Rust", "reasoning": "[Task Analysis] C code handles IPC request for deleting a group, writing data to parcel, sending request, and handling replies. Rust code handles same logical task but with different IPC abstraction and error handling. [Similarity] Both perform group deletion logic with error checking and reply writing, but differ in structure and abstraction level. [Knowledge Extraction] Found partial structural match in error handling and reply writing logic, and API mappings for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx880_rank1.c", "source_rust_file": "Partial__DeleteGroup__idx880_rank1.rs", "c_api": "Remote()->SendRequest", "rust_api": "ipc::Skeleton::calling_uid()", "mapping_type": "function", "description": "IPC request sending and calling UID retrieval", "reasoning": "[Task Analysis] C code handles IPC request for deleting a group, writing data to parcel, sending request, and handling replies. Rust code handles same logical task but with different IPC abstraction and error handling. [Similarity] Both perform group deletion logic with error checking and reply writing, but differ in structure and abstraction level. [Knowledge Extraction] Found partial structural match in error handling and reply writing logic, and API mappings for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx880_rank1.c", "source_rust_file": "Partial__DeleteGroup__idx880_rank1.rs", "c_api": "SysEventLog::SendSysEventLog", "rust_api": "SysEventLog::SendSysEventLog", "mapping_type": "function", "description": "System event logging for IPC faults", "reasoning": "[Task Analysis] C code handles IPC request for deleting a group, writing data to parcel, sending request, and handling replies. Rust code handles same logical task but with different IPC abstraction and error handling. [Similarity] Both perform group deletion logic with error checking and reply writing, but differ in structure and abstraction level. [Knowledge Extraction] Found partial structural match in error handling and reply writing logic, and API mappings for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx880_rank1.c", "source_rust_file": "Partial__DeleteGroup__idx880_rank1.rs", "c_api": "reply.WriteInt32", "rust_api": "reply.write(&(ret as i32))", "mapping_type": "function", "description": "Writing integer reply value", "reasoning": "[Task Analysis] C code handles IPC request for deleting a group, writing data to parcel, sending request, and handling replies. Rust code handles same logical task but with different IPC abstraction and error handling. [Similarity] Both perform group deletion logic with error checking and reply writing, but differ in structure and abstraction level. [Knowledge Extraction] Found partial structural match in error handling and reply writing logic, and API mappings for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DeleteGroup__idx880_rank1.c", "source_rust_file": "Partial__DeleteGroup__idx880_rank1.rs", "c_api": "data.WriteInterfaceToken", "rust_api": "data.read::<String>()", "mapping_type": "function", "description": "Interface token writing vs reading from parcel", "reasoning": "[Task Analysis] C code handles IPC request for deleting a group, writing data to parcel, sending request, and handling replies. Rust code handles same logical task but with different IPC abstraction and error handling. [Similarity] Both perform group deletion logic with error checking and reply writing, but differ in structure and abstraction level. [Knowledge Extraction] Found partial structural match in error handling and reply writing logic, and API mappings for IPC communication and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__DeleteGroup__idx880_rank1.c", "source_rust_file": "Partial__DeleteGroup__idx880_rank1.rs", "c_fragment": "int code = reply.ReadInt32();\n    if (code != E_OK) {\n        REQUEST_HILOGE(\"End Request AttachGroup, failed: %{public}d\", code);\n        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));\n    }\n    return code;", "rust_fragment": "reply.write(&(ret as i32))?;\n        Ok(())", "description": "Reply writing and return logic in C vs Rust", "reasoning": "[Task Analysis] C code handles IPC request for deleting a group, writing data to parcel, sending request, and handling replies. Rust code handles same logical task but with different IPC abstraction and error handling. [Similarity] Both perform group deletion logic with error checking and reply writing, but differ in structure and abstraction level. [Knowledge Extraction] Found partial structural match in error handling and reply writing logic, and API mappings for IPC communication and error handling patterns."}]
+Unixcoder Score: -0.0021320064552128315
+--------------------------------------------------
+C_Code: 
+void SysEventLog::SendSysEventLog(const std::string &eventName, const uint32_t dCode, const std::string extraInfo)
+{
+    auto iter = sysEventMap_.find(eventName);
+    if (iter == sysEventMap_.end()) {
+        return;
+    }
+
+    SysEventInfo info = { .dCode = dCode, .bundleName = "", .moduleName = "", .extraInfo = extraInfo };
+    iter->second(info);
+}
+Function: 
+pub(crate) fn isys_error(dfx_code: DfxCode, extra_info: &str) {
+    SysEvent::exec_error()
+        .param(build_number_param!(PARAM_DFX_CODE, dfx_code as u32))
+        .param(build_str_param!(PARAM_BUNDLE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_MODULE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_EXTRA_INFO, extra_info))
+        .write();
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__epoll_poll__idx91157_rank4.c", "source_rust_file": "API_Mapping__epoll_poll__idx91157_rank4.rs", "c_api": "anfds [fd].events", "rust_api": "events = this.read_scalar(&events.into())?.to_u32()?", "mapping_type": "field_access", "description": "Accessing event mask from file descriptor structure", "reasoning": "[Task Analysis] C code implements epoll polling logic with event handling and kernel interaction; Rust code implements a mock epoll_ctl FFI wrapper for interpreter use. [Similarity] Names do not refer to same concept (epoll_poll vs epoll_ctl), and domains are different (real kernel polling vs interpreter mock). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve epoll operations and file descriptor management, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__epoll_poll__idx91157_rank4.c", "source_rust_file": "API_Mapping__epoll_poll__idx91157_rank4.rs", "c_api": "epoll_ctl (backend_fd, want ? EPOLL_CTL_MOD : EPOLL_CTL_DEL, fd, ev)", "rust_api": "epfd.file_descriptors.insert(fd, event)", "mapping_type": "function", "description": "Epoll control operation for modifying or deleting file descriptors", "reasoning": "[Task Analysis] C code implements epoll polling logic with event handling and kernel interaction; Rust code implements a mock epoll_ctl FFI wrapper for interpreter use. [Similarity] Names do not refer to same concept (epoll_poll vs epoll_ctl), and domains are different (real kernel polling vs interpreter mock). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve epoll operations and file descriptor management, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__epoll_poll__idx91157_rank4.c", "source_rust_file": "API_Mapping__epoll_poll__idx91157_rank4.rs", "c_api": "anfds [fd].emask", "rust_api": "data = this.read_scalar(&data.into())?", "mapping_type": "field_access", "description": "Accessing event mask from epoll event data", "reasoning": "[Task Analysis] C code implements epoll polling logic with event handling and kernel interaction; Rust code implements a mock epoll_ctl FFI wrapper for interpreter use. [Similarity] Names do not refer to same concept (epoll_poll vs epoll_ctl), and domains are different (real kernel polling vs interpreter mock). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve epoll operations and file descriptor management, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__epoll_poll__idx91157_rank4.c", "source_rust_file": "API_Mapping__epoll_poll__idx91157_rank4.rs", "c_api": "epoll_wait (backend_fd, epoll_events, epoll_eventmax, ...)", "rust_api": "this.read_scalar(event)?.to_pointer(this)?", "mapping_type": "function", "description": "Reading epoll event data from memory", "reasoning": "[Task Analysis] C code implements epoll polling logic with event handling and kernel interaction; Rust code implements a mock epoll_ctl FFI wrapper for interpreter use. [Similarity] Names do not refer to same concept (epoll_poll vs epoll_ctl), and domains are different (real kernel polling vs interpreter mock). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve epoll operations and file descriptor management, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__epoll_poll__idx91157_rank4.c", "source_rust_file": "API_Mapping__epoll_poll__idx91157_rank4.rs", "c_api": "epoll_ctl (backend_fd, want ? EPOLL_CTL_MOD : EPOLL_CTL_DEL, fd, ev)", "rust_api": "epfd.file_descriptors.remove(&fd)", "mapping_type": "function", "description": "Epoll control operation for removing file descriptors", "reasoning": "[Task Analysis] C code implements epoll polling logic with event handling and kernel interaction; Rust code implements a mock epoll_ctl FFI wrapper for interpreter use. [Similarity] Names do not refer to same concept (epoll_poll vs epoll_ctl), and domains are different (real kernel polling vs interpreter mock). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve epoll operations and file descriptor management, so API mappings can be extracted."}]
+Unixcoder Score: -0.00490497937425971
+--------------------------------------------------
+C_Code: 
+static void
+epoll_poll (EV_P_ ev_tstamp timeout)
+{
+  int i;
+  int eventcnt;
+
+  /* epoll wait times cannot be larger than (LONG_MAX - 999UL) / HZ msecs, which is below */
+  /* the default libev max wait time, however. */
+  EV_RELEASE_CB;
+  eventcnt = epoll_wait (backend_fd, epoll_events, epoll_eventmax,
+                         epoll_epermcnt ? 0 : ev_timeout_to_ms (timeout));
+  EV_ACQUIRE_CB;
+
+  if (expect_false (eventcnt < 0))
+    {
+      if (errno != EINTR)
+        ev_syserr ("(libev) epoll_wait");
+
+      return;
+    }
+
+  for (i = 0; i < eventcnt; ++i)
+    {
+      struct epoll_event *ev = epoll_events + i;
+
+      int fd = (uint32_t)ev->data.u64; /* mask out the lower 32 bits */
+      int want = anfds [fd].events;
+      int got  = (ev->events & (EPOLLOUT | EPOLLERR | EPOLLHUP) ? EV_WRITE : 0)
+               | (ev->events & (EPOLLIN  | EPOLLERR | EPOLLHUP) ? EV_READ  : 0);
+
+      /* check for spurious notification */
+      /* we assume that fd is always in range, as we never shrink the anfds array */
+      if (expect_false ((uint32_t)anfds [fd].egen != (uint32_t)(ev->data.u64 >> 32)))
+        {
+          /* recreate kernel state */
+          postfork = 1;
+          continue;
+        }
+
+      if (expect_false (got & ~want))
+        {
+          anfds [fd].emask = want;
+
+          /* we received an event but are not interested in it, try mod or del */
+          /* I don't think we ever need MOD, but let's handle it anyways */
+          ev->events = (want & EV_READ  ? EPOLLIN  : 0)
+                     | (want & EV_WRITE ? EPOLLOUT : 0);
+
+          /* pre-2.6.9 kernels require a non-null pointer with EPOLL_CTL_DEL, */
+          /* which is fortunately easy to do for us. */
+          if (epoll_ctl (backend_fd, want ? EPOLL_CTL_MOD : EPOLL_CTL_DEL, fd, ev))
+            {
+              postfork = 1; /* an error occurred, recreate kernel state */
+              continue;
+            }
+        }
+
+      fd_event (EV_A_ fd, got);
+    }
+
+  /* if the receive array was full, increase its size */
+  if (expect_false (eventcnt == epoll_eventmax))
+    {
+      ev_free (epoll_events);
+      epoll_eventmax = array_nextsize (sizeof (struct epoll_event), epoll_eventmax, epoll_eventmax + 1);
+      epoll_events = (struct epoll_event *)ev_malloc (sizeof (struct epoll_event) * epoll_eventmax);
+    }
+
+  /* now synthesize events for all fds where epoll fails, while select works... */
+  for (i = epoll_epermcnt; i--; )
+    {
+      int fd = epoll_eperms [i];
+      unsigned char events = anfds [fd].events & (EV_READ | EV_WRITE);
+
+      if (anfds [fd].emask & EV_EMASK_EPERM && events)
+        fd_event (EV_A_ fd, events);
+      else
+        epoll_eperms [i] = epoll_eperms [--epoll_epermcnt];
+    }
+}
+Function: 
+pub(crate) unsafe fn release<F: FnOnce(&C) -> bool>(&self, disconnect: F) {
+        if self.counter().senders.fetch_sub(1, Ordering::AcqRel) == 1 {
+            disconnect(&self.counter().chan);
+
+            if self.counter().destroy.swap(true, Ordering::AcqRel) {
+                drop(Box::from_raw(self.counter));
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OhHiSysEventRecycleRustWatcher__idx5560_rank5.c", "source_rust_file": "API_Mapping__OhHiSysEventRecycleRustWatcher__idx5560_rank5.rs", "c_api": "HiSysEventRecycleWatcher(watcher)", "rust_api": "sys_event_manager::remove_watcher(watcher)", "mapping_type": "function", "description": "Watcher removal operation", "reasoning": "[Task Analysis] C function is a thin wrapper calling another C function; Rust function is a public API that calls a system event manager. [Similarity] Names do not refer to the same concept (OhHiSysEventRecycleRustWatcher vs remove_watcher), and the domain is not clearly aligned (C wrapper vs Rust public API). [Knowledge Extraction] No full or partial match due to name mismatch and domain mismatch. However, there is a semantic correspondence in the operation: both involve removing/destroying a watcher, but the Rust version includes a return value and calls a system manager. This could be an API mapping if we consider the underlying operation, but the structural alignment is too weak for a full or partial match."}]
+Unixcoder Score: -0.005357882007956505
+--------------------------------------------------
+C_Code: 
+void SysEventLog::SendSysEventLog(const std::string &eventName, const uint32_t dCode, const std::string bundleName,
+    const std::string moduleName, const std::string extraInfo)
+{
+    auto iter = sysEventMap_.find(eventName);
+    if (iter == sysEventMap_.end()) {
+        return;
+    }
+
+    SysEventInfo info = { .dCode = dCode, .bundleName = bundleName, .moduleName = moduleName, .extraInfo = extraInfo };
+    iter->second(info);
+}
+Function: 
+pub(crate) fn isys_fault(dfx_code: DfxCode, extra_info: &str) {
+    SysEvent::exec_fault()
+        .param(build_number_param!(PARAM_DFX_CODE, dfx_code as u32))
+        .param(build_str_param!(PARAM_BUNDLE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_MODULE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_EXTRA_INFO, extra_info))
+        .write();
+}
+Unixcoder Score: -0.006231381092220545
+--------------------------------------------------
+C_Code: 
+void EventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &data)
+{
+    _handler->on_receive_event(
+        data.GetCode(), rust::string(data.GetData()), std::make_unique<WantWrapper>(data.GetWant()));
+}
+Function: 
+fn on_receive_event(&self, code: i32, data: String, want: UniquePtr<WantWrapper>) {
+        self.inner.on_receive_event(code, data, Want::new(want));
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__BuildNotifyData__idx508_rank2.c", "source_rust_file": "Partial__BuildNotifyData__idx508_rank2.rs", "c_fragment": "NotifyData notifyData;\n    notifyData.progress = taskInfo->progress;\n    notifyData.action = taskInfo->action;\n    notifyData.version = taskInfo->version;\n    notifyData.mode = taskInfo->mode;\n    notifyData.taskStates = taskInfo->taskStates;\n    return notifyData;", "rust_fragment": "notify_data.bundle.as_str(),\n            notify_data.task_id,\n            State::Completed.repr as i32,\n            notify_data.uid,\n        );\n        client_manager.send_notify_data(SubscribeType::Complete, notify_data)", "description": "Both code blocks handle the construction and usage of a NotifyData object, though in different contexts (C builds it from TaskInfo, Rust sends it via client manager).", "reasoning": "[Task Analysis] C function builds a NotifyData struct from TaskInfo, while Rust function sends a NotifyData via client manager. [Similarity] Names don't match ('BuildNotifyData' vs 'complete'), but both involve creating/processing a NotifyData. [Knowledge Extraction] No full structural match due to different domains (data construction vs event publishing). However, there's a partial match in the data flow pattern and API mappings for NotifyData handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildNotifyData__idx508_rank2.c", "source_rust_file": "Partial__BuildNotifyData__idx508_rank2.rs", "c_api": "taskInfo->action", "rust_api": "notify_data.action", "mapping_type": "field_access", "description": "Accessing action field from TaskInfo in C and NotifyData in Rust", "reasoning": "[Task Analysis] C function builds a NotifyData struct from TaskInfo, while Rust function sends a NotifyData via client manager. [Similarity] Names don't match ('BuildNotifyData' vs 'complete'), but both involve creating/processing a NotifyData. [Knowledge Extraction] No full structural match due to different domains (data construction vs event publishing). However, there's a partial match in the data flow pattern and API mappings for NotifyData handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildNotifyData__idx508_rank2.c", "source_rust_file": "Partial__BuildNotifyData__idx508_rank2.rs", "c_api": "taskInfo->progress", "rust_api": "notify_data.progress", "mapping_type": "field_access", "description": "Accessing progress field from TaskInfo in C and NotifyData in Rust", "reasoning": "[Task Analysis] C function builds a NotifyData struct from TaskInfo, while Rust function sends a NotifyData via client manager. [Similarity] Names don't match ('BuildNotifyData' vs 'complete'), but both involve creating/processing a NotifyData. [Knowledge Extraction] No full structural match due to different domains (data construction vs event publishing). However, there's a partial match in the data flow pattern and API mappings for NotifyData handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildNotifyData__idx508_rank2.c", "source_rust_file": "Partial__BuildNotifyData__idx508_rank2.rs", "c_api": "return notifyData", "rust_api": "client_manager.send_notify_data(SubscribeType::Complete, notify_data)", "mapping_type": "function", "description": "Returning constructed NotifyData in C and sending it via client manager in Rust", "reasoning": "[Task Analysis] C function builds a NotifyData struct from TaskInfo, while Rust function sends a NotifyData via client manager. [Similarity] Names don't match ('BuildNotifyData' vs 'complete'), but both involve creating/processing a NotifyData. [Knowledge Extraction] No full structural match due to different domains (data construction vs event publishing). However, there's a partial match in the data flow pattern and API mappings for NotifyData handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildNotifyData__idx508_rank2.c", "source_rust_file": "Partial__BuildNotifyData__idx508_rank2.rs", "c_api": "taskInfo->version", "rust_api": "notify_data.version", "mapping_type": "field_access", "description": "Accessing version field from TaskInfo in C and NotifyData in Rust", "reasoning": "[Task Analysis] C function builds a NotifyData struct from TaskInfo, while Rust function sends a NotifyData via client manager. [Similarity] Names don't match ('BuildNotifyData' vs 'complete'), but both involve creating/processing a NotifyData. [Knowledge Extraction] No full structural match due to different domains (data construction vs event publishing). However, there's a partial match in the data flow pattern and API mappings for NotifyData handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildNotifyData__idx508_rank2.c", "source_rust_file": "Partial__BuildNotifyData__idx508_rank2.rs", "c_api": "taskInfo->taskStates", "rust_api": "notify_data.taskStates", "mapping_type": "field_access", "description": "Accessing taskStates field from TaskInfo in C and NotifyData in Rust", "reasoning": "[Task Analysis] C function builds a NotifyData struct from TaskInfo, while Rust function sends a NotifyData via client manager. [Similarity] Names don't match ('BuildNotifyData' vs 'complete'), but both involve creating/processing a NotifyData. [Knowledge Extraction] No full structural match due to different domains (data construction vs event publishing). However, there's a partial match in the data flow pattern and API mappings for NotifyData handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildNotifyData__idx508_rank2.c", "source_rust_file": "Partial__BuildNotifyData__idx508_rank2.rs", "c_api": "taskInfo->mode", "rust_api": "notify_data.mode", "mapping_type": "field_access", "description": "Accessing mode field from TaskInfo in C and NotifyData in Rust", "reasoning": "[Task Analysis] C function builds a NotifyData struct from TaskInfo, while Rust function sends a NotifyData via client manager. [Similarity] Names don't match ('BuildNotifyData' vs 'complete'), but both involve creating/processing a NotifyData. [Knowledge Extraction] No full structural match due to different domains (data construction vs event publishing). However, there's a partial match in the data flow pattern and API mappings for NotifyData handling."}]
+Unixcoder Score: -0.010779081843793392
+--------------------------------------------------
+C_Code: 
+int OhHiSysEventAddRustWatcher(HiSysEventRustWatcherC* watcher, const HiSysEventWatchRule watchRules[],
+    const size_t ruleSize)
+{
+    return HiSysEventAddWatcher(watcher, watchRules, ruleSize);
+}
+Function: 
+pub fn add_watcher(watcher: &Watcher, watch_rules: &[WatchRule]) -> i32 {
+    sys_event_manager::add_watcher(watcher, watch_rules)
+}
+Unixcoder Score: -0.011280085891485214
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::On(uint32_t taskId, const std::string &type, const sptr<DownloadNotifyInterface> &listener)
+{
+    if (listener == nullptr) {
+        DOWNLOAD_HILOGI("invalid listener");
+        return false;
+    }
+    std::string combineType = type + "-" + std::to_string(taskId);
+    DOWNLOAD_HILOGI("DownloadServiceAbility::On started. type=%{public}s", combineType.c_str());
+    bool isListenerExist;
+    {
+        std::lock_guard<std::mutex> lck(listenerMapMutex_);
+        auto iter = registeredListeners_.find(combineType);
+        isListenerExist = iter != registeredListeners_.end();
+        registeredListeners_[combineType] = listener;
+    }
+    if (!isListenerExist && DoUnregisteredNotify(taskId, type)) {
+        DOWNLOAD_HILOGD("notify unregistered on event");
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility::On end.");
+    return true;
+}
+Function: 
+fn do_unregistered_notify(&self, task_id: u32, reg_type: String) {
+        match self.show_task(task_id) {
+            Some(df) => {
+                let key = reg_type.clone() + &String::from("-") + &task_id.to_string();
+                let notify = self.unregistered_notify.lock().unwrap().clone();
+                if notify.contains_key(&key) {
+                    match df.progress.common_data.state {
+                        State::COMPLETED | State::FAILED => {
+                            debug!(LOG_LABEL, "notify taskId: {} event: {}",  @public(task_id),  @public(reg_type));
+                            let mut each_file_status = Vec::<(String, Reason, String)>::new();
+                            for item in df.file_specs.iter() {
+                                each_file_status.push((
+                                    item.path.clone(),
+                                    df.reason,
+                                    String::new(),
+                                ));
+                            }
+                            let notify_data = NotifyData {
+                                progress: df.progress,
+                                action: df.common_data.action,
+                                version: Version::API9,
+                                each_file_status,
+                                task_id: df.task_id,
+                                uid: df.uid,
+                                bundle: df.bundle,
+                            };
+                            RequestAbility::notify_client(reg_type, &notify_data);
+                            self.unregistered_notify.lock().unwrap().remove(&key);
+                        }
+                        _ => {
+                            error!(LOG_LABEL, "not match status");
+                        }
+                    }
+                }
+            }
+            None => {
+                error!(LOG_LABEL, "not find task Api9 complete or fail event");
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__OnQuery__idx5548_rank2.c", "source_rust_file": "Partial__OnQuery__idx5548_rank2.rs", "c_api": "HiSysEventRecordConvertor::DeleteRecords(&records, i + 1)", "rust_api": "unsafe { HiSysEventQueryWrapper(...) }", "mapping_type": "function", "description": "Memory cleanup after failed operations", "reasoning": "[FFI Check] -> The Rust code contains an unsafe FFI call to `HiSysEventQueryWrapper`, which is a key indicator of FFI usage. [Task Analysis] -> The C code handles sys event querying with memory management and callback invocation, while the Rust code prepares arguments and calls a C FFI function. [Similarity] -> The overall task is similar (querying sys events), but the implementation domains differ significantly (C memory management vs Rust argument preparation). [Knowledge Extraction] -> Despite FFI, there are API mappings related to sys event querying and data conversion, and partial structural fragments in argument preparation and loop logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__OnQuery__idx5548_rank2.c", "source_rust_file": "Partial__OnQuery__idx5548_rank2.rs", "c_api": "querier_->onQueryWrapperCb(querier_->onQueryRustCb, records, size)", "rust_api": "HiSysEventQueryWrapper(&query_arg_wrapper as *const HiSysEventQueryArg, query_rules_wrapper.as_mut_ptr(), query_rules.len() as c_uint, querier.as_raw())", "mapping_type": "function", "description": "Calling a callback function to handle query results", "reasoning": "[FFI Check] -> The Rust code contains an unsafe FFI call to `HiSysEventQueryWrapper`, which is a key indicator of FFI usage. [Task Analysis] -> The C code handles sys event querying with memory management and callback invocation, while the Rust code prepares arguments and calls a C FFI function. [Similarity] -> The overall task is similar (querying sys events), but the implementation domains differ significantly (C memory management vs Rust argument preparation). [Knowledge Extraction] -> Despite FFI, there are API mappings related to sys event querying and data conversion, and partial structural fragments in argument preparation and loop logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__OnQuery__idx5548_rank2.c", "source_rust_file": "Partial__OnQuery__idx5548_rank2.rs", "c_fragment": "for (size_t i = 0; i < size; i++) {\n        HiSysEventRecordConvertor::InitRecord(records[i]);\n        if (HiSysEventRecordConvertor::ConvertRecord(sysEvents->at(i), records[i]) != 0) {\n            HILOG_ERROR(LOG_CORE, \"Failed to convert record, index=%{public}zu, size=%{public}zu\",  i, size);\n            HiSysEventRecordConvertor::DeleteRecords(&records, i + 1); // +1 for release the current record\n            return;\n        }\n    }", "rust_fragment": "for i in 0..query_rules.len() {\n        let condition_wrapper = CString::new(query_rules[i].condition).expect(\"Need a condition for query.\");\n        query_rules_wrapper.push(HiSysEventQueryRuleWrapper {\n            domain: [0; MAX_LENGTH_OF_EVENT_DOMAIN],\n            event_list: [0; MAX_EVENT_LIST_LEN],\n            event_list_size: MAX_NUMBER_OF_EVENT_LIST as c_uint,\n            condition: condition_wrapper.as_ptr() as *const c_char,\n        });\n        crate::utils::trans_slice_to_array(query_rules[i].domain, &mut query_rules_wrapper[i].domain);\n        let src_len = query_rules[i].event_list.len();\n        let dest_len = query_rules_wrapper[i].event_list.len();\n        let total_cnt = if src_len <= dest_len {\n            src_len\n        } else {\n            dest_len\n        };\n        query_rules_wrapper[i].event_list_size = total_cnt as c_uint;\n        let src_str = query_rules[i].event_list.join(\"|\");\n        let src_str = &src_str[..];\n        crate::utils::trans_slice_to_array(src_str, &mut query_rules_wrapper[i].event_list);\n    }", "description": "Both code blocks iterate over a collection to prepare data structures for further processing.", "reasoning": "[FFI Check] -> The Rust code contains an unsafe FFI call to `HiSysEventQueryWrapper`, which is a key indicator of FFI usage. [Task Analysis] -> The C code handles sys event querying with memory management and callback invocation, while the Rust code prepares arguments and calls a C FFI function. [Similarity] -> The overall task is similar (querying sys events), but the implementation domains differ significantly (C memory management vs Rust argument preparation). [Knowledge Extraction] -> Despite FFI, there are API mappings related to sys event querying and data conversion, and partial structural fragments in argument preparation and loop logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__OnQuery__idx5548_rank2.c", "source_rust_file": "Partial__OnQuery__idx5548_rank2.rs", "c_api": "HiSysEventRecordConvertor::ConvertRecord(sysEvents->at(i), records[i])", "rust_api": "crate::utils::trans_slice_to_array(...)", "mapping_type": "function", "description": "Data conversion from C++ to C-compatible structures", "reasoning": "[FFI Check] -> The Rust code contains an unsafe FFI call to `HiSysEventQueryWrapper`, which is a key indicator of FFI usage. [Task Analysis] -> The C code handles sys event querying with memory management and callback invocation, while the Rust code prepares arguments and calls a C FFI function. [Similarity] -> The overall task is similar (querying sys events), but the implementation domains differ significantly (C memory management vs Rust argument preparation). [Knowledge Extraction] -> Despite FFI, there are API mappings related to sys event querying and data conversion, and partial structural fragments in argument preparation and loop logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__OnQuery__idx5548_rank2.c", "source_rust_file": "Partial__OnQuery__idx5548_rank2.rs", "c_api": "HiSysEventRecordConvertor::InitRecord(records[i])", "rust_api": "query_rules_wrapper.push(HiSysEventQueryRuleWrapper { ... })", "mapping_type": "function", "description": "Initialization of a record structure before populating it", "reasoning": "[FFI Check] -> The Rust code contains an unsafe FFI call to `HiSysEventQueryWrapper`, which is a key indicator of FFI usage. [Task Analysis] -> The C code handles sys event querying with memory management and callback invocation, while the Rust code prepares arguments and calls a C FFI function. [Similarity] -> The overall task is similar (querying sys events), but the implementation domains differ significantly (C memory management vs Rust argument preparation). [Knowledge Extraction] -> Despite FFI, there are API mappings related to sys event querying and data conversion, and partial structural fragments in argument preparation and loop logic."}]
+Unixcoder Score: -0.012729004956781864
+--------------------------------------------------

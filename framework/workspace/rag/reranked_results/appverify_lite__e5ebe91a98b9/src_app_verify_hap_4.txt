@@ -1,0 +1,559 @@
+C_Code: 
+JEMALLOC_INLINE uint32_t
+hash_x86_32(const void *key, int len, uint32_t seed)
+{
+	const uint8_t *data = (const uint8_t *) key;
+	const int nblocks = len / 4;
+
+	uint32_t h1 = seed;
+
+	const uint32_t c1 = 0xcc9e2d51;
+	const uint32_t c2 = 0x1b873593;
+
+	/* body */
+	{
+		const uint32_t *blocks = (const uint32_t *) (data + nblocks*4);
+		int i;
+
+		for (i = -nblocks; i; i++) {
+			uint32_t k1 = hash_get_block_32(blocks, i);
+
+			k1 *= c1;
+			k1 = hash_rotl_32(k1, 15);
+			k1 *= c2;
+
+			h1 ^= k1;
+			h1 = hash_rotl_32(h1, 13);
+			h1 = h1*5 + 0xe6546b64;
+		}
+	}
+
+	/* tail */
+	{
+		const uint8_t *tail = (const uint8_t *) (data + nblocks*4);
+
+		uint32_t k1 = 0;
+
+		switch (len & 3) {
+		case 3: k1 ^= tail[2] << 16;
+		case 2: k1 ^= tail[1] << 8;
+		case 1: k1 ^= tail[0]; k1 *= c1; k1 = hash_rotl_32(k1, 15);
+			k1 *= c2; h1 ^= k1;
+		}
+	}
+
+	/* finalization */
+	h1 ^= len;
+
+	h1 = hash_fmix_32(h1);
+
+	return h1;
+}
+Function: 
+fn hash_with<H: Hasher, T: Hash>(mut st: H, x: &T) -> u64 {
+    x.hash(&mut st);
+    st.finish()
+}
+Unixcoder Score: 0.018224447965621948
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE uint32_t
+hash_x86_32(const void *key, int len, uint32_t seed)
+{
+	const uint8_t *data = (const uint8_t *) key;
+	const int nblocks = len / 4;
+
+	uint32_t h1 = seed;
+
+	const uint32_t c1 = 0xcc9e2d51;
+	const uint32_t c2 = 0x1b873593;
+
+	/* body */
+	{
+		const uint32_t *blocks = (const uint32_t *) (data + nblocks*4);
+		int i;
+
+		for (i = -nblocks; i; i++) {
+			uint32_t k1 = hash_get_block_32(blocks, i);
+
+			k1 *= c1;
+			k1 = hash_rotl_32(k1, 15);
+			k1 *= c2;
+
+			h1 ^= k1;
+			h1 = hash_rotl_32(h1, 13);
+			h1 = h1*5 + 0xe6546b64;
+		}
+	}
+
+	/* tail */
+	{
+		const uint8_t *tail = (const uint8_t *) (data + nblocks*4);
+
+		uint32_t k1 = 0;
+
+		switch (len & 3) {
+		case 3: k1 ^= tail[2] << 16;
+		case 2: k1 ^= tail[1] << 8;
+		case 1: k1 ^= tail[0]; k1 *= c1; k1 = hash_rotl_32(k1, 15);
+			k1 *= c2; h1 ^= k1;
+		}
+	}
+
+	/* finalization */
+	h1 ^= len;
+
+	h1 = hash_fmix_32(h1);
+
+	return h1;
+}
+Function: 
+fn hash_bytes<H: Hasher>(mut s: H, x: &[u8]) -> u64 {
+    Hasher::write(&mut s, x);
+    s.finish()
+}
+Unixcoder Score: 0.015734538435935974
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE uint32_t
+hash_x86_32(const void *key, int len, uint32_t seed)
+{
+	const uint8_t *data = (const uint8_t *) key;
+	const int nblocks = len / 4;
+
+	uint32_t h1 = seed;
+
+	const uint32_t c1 = 0xcc9e2d51;
+	const uint32_t c2 = 0x1b873593;
+
+	/* body */
+	{
+		const uint32_t *blocks = (const uint32_t *) (data + nblocks*4);
+		int i;
+
+		for (i = -nblocks; i; i++) {
+			uint32_t k1 = hash_get_block_32(blocks, i);
+
+			k1 *= c1;
+			k1 = hash_rotl_32(k1, 15);
+			k1 *= c2;
+
+			h1 ^= k1;
+			h1 = hash_rotl_32(h1, 13);
+			h1 = h1*5 + 0xe6546b64;
+		}
+	}
+
+	/* tail */
+	{
+		const uint8_t *tail = (const uint8_t *) (data + nblocks*4);
+
+		uint32_t k1 = 0;
+
+		switch (len & 3) {
+		case 3: k1 ^= tail[2] << 16;
+		case 2: k1 ^= tail[1] << 8;
+		case 1: k1 ^= tail[0]; k1 *= c1; k1 = hash_rotl_32(k1, 15);
+			k1 *= c2; h1 ^= k1;
+		}
+	}
+
+	/* finalization */
+	h1 ^= len;
+
+	h1 = hash_fmix_32(h1);
+
+	return h1;
+}
+Function: 
+fn hash_with<H: Hasher, T: Hash>(mut st: H, x: &T) -> u64 {
+    x.hash(&mut st);
+    st.finish()
+}
+Unixcoder Score: 0.01289367862045765
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+async fn handle_send_response(
+        &mut self,
+        tid: u32,
+        version: String,
+        status_code: u32,
+        reason: String,
+        headers: Headers,
+    ) {
+        let mut response = Vec::<u8>::new();
+
+        response.extend_from_slice(&REQUEST_MAGIC_NUM.to_le_bytes());
+
+        response.extend_from_slice(&self.message_id.to_le_bytes());
+        self.message_id += 1;
+
+        let message_type = MessageType::HttpResponse as u16;
+        response.extend_from_slice(&message_type.to_le_bytes());
+
+        let message_body_size: u16 = 0;
+        response.extend_from_slice(&message_body_size.to_le_bytes());
+
+        response.extend_from_slice(&tid.to_le_bytes());
+
+        response.extend_from_slice(&version.into_bytes());
+        response.push(b'\0');
+
+        response.extend_from_slice(&status_code.to_le_bytes());
+
+        response.extend_from_slice(&reason.into_bytes());
+        response.push(b'\0');
+
+        // The maximum length of the headers in uds should not exceed 8192
+        let mut buf_size = 0;
+        for (k, v) in headers {
+            buf_size += k.as_bytes().len() + v.iter().map(|f| f.len()).sum::<usize>();
+            if buf_size > HEADERS_MAX_SIZE as usize {
+                break;
+            }
+
+            response.extend_from_slice(k.as_bytes());
+            response.push(b':');
+            for (i, sub_value) in v.iter().enumerate() {
+                if i != 0 {
+                    response.push(b',');
+                }
+                response.extend_from_slice(sub_value);
+            }
+            response.push(b'\n');
+        }
+
+        let mut size = response.len() as u16;
+        if size > HEADERS_MAX_SIZE {
+            info!("send response too long");
+            response.truncate(HEADERS_MAX_SIZE as usize);
+            size = HEADERS_MAX_SIZE;
+        }
+        debug!("send response size, {:?}", size);
+        let size = size.to_le_bytes();
+        response[POSITION_OF_LENGTH as usize] = size[0];
+        response[(POSITION_OF_LENGTH + 1) as usize] = size[1];
+
+        self.send_message(response).await;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CppMessageExterns__idx6230_rank4.c", "source_rust_file": "Partial__CppMessageExterns__idx6230_rank4.rs", "c_fragment": "ctx.Emit({{\"repeated_reserve_thunk\", ThunkName(ctx, msg, \"repeated_reserve\")}}, ...)", "rust_fragment": "ProxiedInRepeated::repeated_reserve(int_repeated, additional);", "description": "Both handle repeated field reservation logic, with C emitting a thunk and Rust implementing the actual reserve operation.", "reasoning": "[Task Analysis] C++ message externs function generates Rust function signatures for various thunk operations, while Rust function reserves space in an enum repeated field. [Similarity] Names don't match but both involve repeated field operations; C emits function signatures, Rust implements a reserve operation. [Knowledge Extraction] Full match not possible due to different scopes (emission vs implementation), but partial structural match in repeated field handling and API mapping in reserve operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CppMessageExterns__idx6230_rank4.c", "source_rust_file": "Partial__CppMessageExterns__idx6230_rank4.rs", "c_api": "repeated_reserve_thunk", "rust_api": "ProxiedInRepeated::repeated_reserve", "mapping_type": "function", "description": "Reservation of space in a repeated field", "reasoning": "[Task Analysis] C++ message externs function generates Rust function signatures for various thunk operations, while Rust function reserves space in an enum repeated field. [Similarity] Names don't match but both involve repeated field operations; C emits function signatures, Rust implements a reserve operation. [Knowledge Extraction] Full match not possible due to different scopes (emission vs implementation), but partial structural match in repeated field handling and API mapping in reserve operation."}]
+Unixcoder Score: -0.014618678018450737
+--------------------------------------------------
+C_Code: 
+UPB_INLINE void upb_MdDecoder_ErrorJmp(upb_MdDecoder* d,
+                                                    const char* fmt, ...) {
+  if (d->status) {
+    va_list argp;
+    upb_Status_SetErrorMessage(d->status, "Error building mini table: ");
+    va_start(argp, fmt);
+    upb_Status_VAppendErrorFormat(d->status, fmt, argp);
+    va_end(argp);
+  }
+  UPB_LONGJMP(d->err, 1);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__CppMessageExterns__idx5685_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx5685_rank4.rs", "c_api": "ctx.Emit", "rust_api": "Self { raw }", "mapping_type": "pattern", "description": "Emitting Rust code for FFI function signatures vs constructing a struct with a field.", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}, {"knowledge_type": "Full", "source_c_file": "Full__CppMessageExterns__idx5685_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx5685_rank4.rs", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__CppMessageExterns__idx5685_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx5685_rank4.rs", "c_fragment": "ctx.Emit({{\"new_thunk\", ThunkName(ctx, msg, \"new\")},\n       {\"default_instance_thunk\", ThunkName(ctx, msg, \"default_instance\")},\n       {\"repeated_new_thunk\", ThunkName(ctx, msg, \"repeated_new\")},\n       {\"repeated_free_thunk\", ThunkName(ctx, msg, \"repeated_free\")},\n       {\"repeated_len_thunk\", ThunkName(ctx, msg, \"repeated_len\")},\n       {\"repeated_get_thunk\", ThunkName(ctx, msg, \"repeated_get\")},\n       {\"repeated_get_mut_thunk\", ThunkName(ctx, msg, \"repeated_get_mut\")},\n       {\"repeated_add_thunk\", ThunkName(ctx, msg, \"repeated_add\")},\n       {\"repeated_clear_thunk\", ThunkName(ctx, msg, \"repeated_clear\")},\n       {\"repeated_copy_from_thunk\", ThunkName(ctx, msg, \"repeated_copy_from\")},\n       {\"repeated_reserve_thunk\", ThunkName(ctx, msg, \"repeated_reserve\")},\n       {\"map_size_info_thunk\", ThunkName(ctx, msg, \"size_info\")}},", "rust_fragment": "pub unsafe fn from_raw(raw: RawRepeatedField) -> Self {\n        Self { raw }\n    }", "description": "Both functions handle initialization of a struct with a RawRepeatedField member.", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CppMessageExterns__idx5685_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx5685_rank4.rs", "c_api": "ThunkName(ctx, msg, \"repeated_new\")", "rust_api": "RawRepeatedField", "mapping_type": "type", "description": "C thunk name generation for repeated field creation vs Rust type for repeated field.", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}]
+Unixcoder Score: -0.02528824284672737
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+pub(crate) fn open_channel(&self, pid: u64) -> Result<Arc<UnixDatagram>, ErrorCode> {
+        let (tx, rx) = channel::<Result<Arc<UnixDatagram>, ErrorCode>>();
+        let event = ClientEvent::OpenChannel(pid, tx);
+        if !self.send_event(event) {
+            return Err(ErrorCode::Other);
+        }
+        let rx = Recv::new(rx);
+        match rx.get() {
+            Some(ret) => ret,
+            None => {
+                error!("open channel fail, recv none");
+                sys_event!(
+                    ExecFault,
+                    DfxCode::UDS_FAULT_03,
+                    "open channel fail, recv none"
+                );
+                Err(ErrorCode::Other)
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__CppMessageExterns__idx6762_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx6762_rank4.rs", "c_api": "ctx.Emit", "rust_api": "Self { raw }", "mapping_type": "pattern", "description": "Struct initialization pattern from raw data", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__CppMessageExterns__idx6762_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx6762_rank4.rs", "c_fragment": "ctx.Emit(...)", "rust_fragment": "pub unsafe fn from_raw(raw: RawRepeatedField) -> Self {\n        Self { raw }\n    }", "description": "Both emit or define a constructor that initializes a struct with a raw field.", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CppMessageExterns__idx6762_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx6762_rank4.rs", "c_api": "RawRepeatedField", "rust_api": "RawRepeatedField", "mapping_type": "type", "description": "Type representing a raw repeated field in both languages", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}, {"knowledge_type": "Full", "source_c_file": "Full__CppMessageExterns__idx6762_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx6762_rank4.rs", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns.", "description": "Full structural translation"}]
+Unixcoder Score: -0.03346753120422363
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+async fn send_message(&mut self, message: Vec<u8>) {
+        let ret = self.server_sock_fd.send(&message).await;
+        match ret {
+            Ok(size) => {
+                debug!("send message ok, pid: {}, size: {}", self.pid, size);
+                let mut buf: [u8; 4] = [0; 4];
+
+                match ylong_runtime::time::timeout(
+                    Duration::from_millis(500),
+                    self.server_sock_fd.recv(&mut buf),
+                )
+                .await
+                {
+                    Ok(ret) => match ret {
+                        Ok(len) => {
+                            debug!("message recv len {:}", len);
+                        }
+                        Err(e) => {
+                            debug!("message recv error: {:?}", e);
+                        }
+                    },
+                    Err(e) => {
+                        debug!("message recv {}", e);
+                        return;
+                    }
+                };
+
+                let len: u32 = u32::from_le_bytes(buf);
+                if len != message.len() as u32 {
+                    debug!("message len bad, send {:?}, recv {:?}", message.len(), len);
+                } else {
+                    debug!("notify done, pid: {}", self.pid);
+                }
+            }
+            Err(err) => {
+                error!("message send error: {:?}", err);
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CppMessageExterns__idx5693_rank3.c", "source_rust_file": "API_Mapping__CppMessageExterns__idx5693_rank3.rs", "c_api": "repeated_reserve_thunk", "rust_api": "ProxiedInRepeated::repeated_reserve", "mapping_type": "function", "description": "Reserve additional capacity in a repeated field", "reasoning": "[Task Analysis] C function generates Rust function signatures for message externs; Rust function reserves space in repeated enum container. [Similarity] Names don't match but both involve repeated field management. [Knowledge Extraction] Found API mapping for repeated field reservation operation."}]
+Unixcoder Score: -0.03497811406850815
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+async fn send_message(&mut self, message: Vec<u8>) {
+        let ret = self.server_sock_fd.send(&message).await;
+        match ret {
+            Ok(size) => {
+                debug!("send message ok, pid: {}, size: {}", self.pid, size);
+                let mut buf: [u8; 4] = [0; 4];
+
+                match ylong_runtime::time::timeout(
+                    Duration::from_millis(500),
+                    self.server_sock_fd.recv(&mut buf),
+                )
+                .await
+                {
+                    Ok(ret) => match ret {
+                        Ok(len) => {
+                            debug!("message recv len {:}", len);
+                        }
+                        Err(e) => {
+                            debug!("message recv error: {:?}", e);
+                        }
+                    },
+                    Err(e) => {
+                        debug!("message recv {}", e);
+                        return;
+                    }
+                };
+
+                let len: u32 = u32::from_le_bytes(buf);
+                if len != message.len() as u32 {
+                    debug!("message len bad, send {:?}, recv {:?}", message.len(), len);
+                } else {
+                    debug!("notify done, pid: {}", self.pid);
+                }
+            }
+            Err(err) => {
+                error!("message send error: {:?}", err);
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CppMessageExterns__idx6221_rank1.c", "source_rust_file": "Partial__CppMessageExterns__idx6221_rank1.rs", "c_fragment": "ctx.Emit({{\"new_thunk\", ThunkName(ctx, msg, \"new\")},\n       {\"default_instance_thunk\", ThunkName(ctx, msg, \"default_instance\")},\n       {\"repeated_new_thunk\", ThunkName(ctx, msg, \"repeated_new\")},\n       {\"repeated_free_thunk\", ThunkName(ctx, msg, \"repeated_free\")},\n       {\"repeated_len_thunk\", ThunkName(ctx, msg, \"repeated_len\")},\n       {\"repeated_get_thunk\", ThunkName(ctx, msg, \"repeated_get\")},\n       {\"repeated_get_mut_thunk\", ThunkName(ctx, msg, \"repeated_get_mut\")},\n       {\"repeated_add_thunk\", ThunkName(ctx, msg, \"repeated_add\")},\n       {\"repeated_clear_thunk\", ThunkName(ctx, msg, \"repeated_clear\")},\n       {\"repeated_copy_from_thunk\", ThunkName(ctx, msg, \"repeated_copy_from\")},\n       {\"repeated_reserve_thunk\", ThunkName(ctx, msg, \"repeated_reserve\")},\n       {\"map_size_info_thunk\", ThunkName(ctx, msg, \"size_info\")}},", "rust_fragment": "pub fn raw(&self) -> RawRepeatedField {\n        self.raw\n    }", "description": "C function generates multiple function signatures for message externs; Rust function returns a raw field from a struct.", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function returns a field. [Similarity] Names do not match ('CppMessageExterns' vs 'raw'), but both involve generating/returning function signatures and accessing data. [Knowledge Extraction] Full match not possible due to different domains (code generation vs data access), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CppMessageExterns__idx6221_rank1.c", "source_rust_file": "Partial__CppMessageExterns__idx6221_rank1.rs", "c_api": "ctx.Emit", "rust_api": "self.raw", "mapping_type": "function", "description": "Code generation for function signatures in C vs field access in Rust", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function returns a field. [Similarity] Names do not match ('CppMessageExterns' vs 'raw'), but both involve generating/returning function signatures and accessing data. [Knowledge Extraction] Full match not possible due to different domains (code generation vs data access), but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.03740828484296799
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+pub(crate) fn send_event(&self, event: ClientEvent) -> bool {
+        if self.tx.send(event).is_err() {
+            #[cfg(feature = "oh")]
+            unsafe {
+                if let Some(e) = PANIC_INFO.as_ref() {
+                    error!("Sends ClientManager event failed {}", e);
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::UDS_FAULT_02,
+                        &format!("Sends ClientManager event failed {}", e)
+                    );
+                } else {
+                    info!("ClientManager is unloading");
+                }
+            }
+            return false;
+        }
+        true
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CppMessageExterns__idx6761_rank2.c", "source_rust_file": "Partial__CppMessageExterns__idx6761_rank2.rs", "c_fragment": "ctx.Emit(...)", "rust_fragment": "pub fn raw(&self) -> RawRepeatedField {", "description": "Both involve emitting or returning raw repeated field data, though in different contexts (C emits function signatures, Rust returns a field).", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function returns a field. [Similarity] Names don't match but both involve accessing/returning raw repeated field data. [Knowledge Extraction] No full structural match due to different domains (C emits signatures vs Rust returns a value). However, there's a partial match in the concept of accessing raw repeated field data. API mapping identified for field access pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CppMessageExterns__idx6761_rank2.c", "source_rust_file": "Partial__CppMessageExterns__idx6761_rank2.rs", "c_api": "ctx.Emit", "rust_api": "pub fn raw(&self) -> RawRepeatedField", "mapping_type": "function", "description": "Emitting raw repeated field access function signature in C vs returning raw repeated field in Rust.", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function returns a field. [Similarity] Names don't match but both involve accessing/returning raw repeated field data. [Knowledge Extraction] No full structural match due to different domains (C emits signatures vs Rust returns a value). However, there's a partial match in the concept of accessing raw repeated field data. API mapping identified for field access pattern."}]
+Unixcoder Score: -0.04163764789700508
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+hash(const void *key, size_t len, const uint32_t seed, size_t r_hash[2])
+{
+#if (LG_SIZEOF_PTR == 3)
+	hash_x64_128(key, len, seed, (uint64_t *)r_hash);
+#else
+	uint64_t hashes[2];
+	hash_x86_128(key, len, seed, hashes);
+	r_hash[0] = (size_t)hashes[0];
+	r_hash[1] = (size_t)hashes[1];
+#endif
+}
+Function: 
+fn bench_str_under_8_bytes(b: &mut Bencher) {
+    let s = "foo";
+    b.iter(|| {
+        assert_eq!(hash(&s), 16262950014981195938);
+    })
+}
+Unixcoder Score: -0.04854965582489967
+--------------------------------------------------

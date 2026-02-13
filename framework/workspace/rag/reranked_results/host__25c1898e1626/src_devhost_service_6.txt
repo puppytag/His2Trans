@@ -1,0 +1,179 @@
+C_Code: 
+pid_t IPCSkeleton::GetCallingPid()
+    {
+        if (GetDBinderServiceStubInterface() == nullptr) {
+            return 0;
+        }
+        return GetDBinderServiceStubInterface()->GetCallingPid();
+    }
+Function: 
+fn skeleton() {
+    unsafe {
+        assert_eq!(
+            Skeleton::calling_device_id(),
+            (*GetCallingDeviceID()).to_string()
+        );
+        assert_eq!(Skeleton::calling_full_token_id(), GetCallingFullTokenID());
+        assert_eq!(Skeleton::calling_pid(), GetCallingPid());
+        assert_eq!(Skeleton::calling_real_pid(), GetCallingRealPid());
+        assert_eq!(Skeleton::calling_token_id(), GetCallingTokenID());
+        assert_eq!(Skeleton::calling_uid(), GetCallingUid());
+        assert_eq!(Skeleton::first_full_token_id(), GetFirstFullTokenID());
+        assert_eq!(Skeleton::first_token_id(), GetFirstTokenID());
+        assert_eq!(Skeleton::self_token_id(), SelfTokenID());
+        assert_eq!(Skeleton::is_local_calling(), IsLocalCalling());
+        assert_eq!(Skeleton::local_device_id(), (*LocalDeviceID()).to_string());
+        assert_eq!(
+            Skeleton::reset_calling_identity(),
+            (*ResetCallingIdentity()).to_string()
+        );
+    }
+}
+Unixcoder Score: 0.03173878788948059
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+fn new(inner: Unsubscribe) -> Self {
+        Self { inner }
+    }
+Unixcoder Score: 0.003374033374711871
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: 0.0024302122183144093
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: 0.002215626649558544
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn publish<A: RemoteStub + 'static>(&self, ability: A) -> bool {
+        let ability = Box::new(AbilityStub::new(ability));
+        let system_ability = unsafe { Pin::new_unchecked(&mut *self.inner) };
+        system_ability.PublishWrapper(ability)
+    }
+Unixcoder Score: 0.0006026829360052943
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub(crate) fn new(c_wrapper: UniquePtr<SystemAbilityWrapper>) -> Self {
+        Self { inner: c_wrapper }
+    }
+Unixcoder Score: 0.0003110336547251791
+--------------------------------------------------
+C_Code: 
+DBinderTestServiceProxy::DBinderTestServiceProxy(const sptr<IRemoteObject> &impl)
+    : IRemoteProxy<IDBinderTestService>(impl)
+{}
+Function: 
+pub fn try_new(wrap: UniquePtr<IRemoteObjectWrapper>) -> Option<Self> {
+        if wrap.is_null() {
+            return None;
+        }
+        Some(Self { inner: wrap })
+    }
+Unixcoder Score: -0.00046749773900955915
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.0004820251779165119
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(RemoteStubWrapper *ability, std::u16string descriptor) : IPCObjectStub(descriptor)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn from_stub<T: RemoteStub + 'static>(stub: T) -> Option<Self> {
+        RemoteStubWrapper::new(stub).into_remote()
+    }
+Unixcoder Score: -0.0012764408020302653
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+fn new(inner: Unsubscribe) -> Self {
+        Self { inner }
+    }
+Unixcoder Score: -0.0035977542866021395
+--------------------------------------------------

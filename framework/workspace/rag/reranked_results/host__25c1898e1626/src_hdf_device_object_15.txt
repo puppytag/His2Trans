@@ -1,0 +1,195 @@
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn test_dlist_insert_after_tail() {
+        let l = create::<int>();
+        l.assert_consistent(); let _one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); l.insert_after(3, two);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 3;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 2;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Unixcoder Score: -0.011866012588143349
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbilityWithDeviceId(int32_t systemAbilityId, const std::string &deviceId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    auto ability = sysm->GetSystemAbility(systemAbilityId, deviceId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134517_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134517_rank1.rs", "c_api": "new_node->next = old_node", "rust_api": "self.link(nobe, neighbour.next)", "mapping_type": "field_access", "description": "Setting next pointer of a node to another node in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function performs similar insertion logic in a doubly-linked list with assertions and size tracking. [Similarity] Names don't match but the core operation is semantically equivalent: inserting a node into a list structure. [Knowledge Extraction] Both perform list insertion logic, though Rust uses more safety checks and different naming. Extract API mappings for list node manipulation and structural fragments for the core insertion logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx134517_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134517_rank1.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "self.link(nobe, neighbour.next);\n        self.link(some(neighbour), nobe);\n        self.size += 1;", "description": "Inserts a new node into a doubly-linked list structure by updating next/prev pointers.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function performs similar insertion logic in a doubly-linked list with assertions and size tracking. [Similarity] Names don't match but the core operation is semantically equivalent: inserting a node into a list structure. [Knowledge Extraction] Both perform list insertion logic, though Rust uses more safety checks and different naming. Extract API mappings for list node manipulation and structural fragments for the core insertion logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134517_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134517_rank1.rs", "c_api": "old_node->prev = new_node", "rust_api": "self.link(some(neighbour), nobe)", "mapping_type": "field_access", "description": "Updating the prev pointer of the old node to point to the new node.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function performs similar insertion logic in a doubly-linked list with assertions and size tracking. [Similarity] Names don't match but the core operation is semantically equivalent: inserting a node into a list structure. [Knowledge Extraction] Both perform list insertion logic, though Rust uses more safety checks and different naming. Extract API mappings for list node manipulation and structural fragments for the core insertion logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134517_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134517_rank1.rs", "c_api": "new_node->prev = old_node->prev", "rust_api": "self.link(some(neighbour), nobe)", "mapping_type": "field_access", "description": "Setting prev pointer of a node to the previous node in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function performs similar insertion logic in a doubly-linked list with assertions and size tracking. [Similarity] Names don't match but the core operation is semantically equivalent: inserting a node into a list structure. [Knowledge Extraction] Both perform list insertion logic, though Rust uses more safety checks and different naming. Extract API mappings for list node manipulation and structural fragments for the core insertion logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134517_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134517_rank1.rs", "c_api": "old_node->prev->next = new_node", "rust_api": "self.link(nobe, neighbour.next)", "mapping_type": "field_access", "description": "Updating the next pointer of the previous node to point to the new node.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function performs similar insertion logic in a doubly-linked list with assertions and size tracking. [Similarity] Names don't match but the core operation is semantically equivalent: inserting a node into a list structure. [Knowledge Extraction] Both perform list insertion logic, though Rust uses more safety checks and different naming. Extract API mappings for list node manipulation and structural fragments for the core insertion logic."}]
+Unixcoder Score: -0.016583234071731567
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_n_before(nobe: dlist_node<T>, neighbour: dlist_node<T>) {
+        self.make_mine(nobe);
+        self.insert_left(some(nobe), neighbour);
+    }
+Unixcoder Score: -0.017417656257748604
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+unsafe fn push_front_node(&mut self, node: Unique<Node<T>>) {
+        // This method takes care not to create mutable references to whole nodes,
+        // to maintain validity of aliasing pointers into `element`.
+        unsafe {
+            (*node.as_ptr()).next = self.head;
+            (*node.as_ptr()).prev = None;
+            let node = Some(NonNull::from(node));
+
+            match self.head {
+                None => self.tail = node,
+                // Not creating new mutable (unique!) references overlapping `element`.
+                Some(head) => (*head.as_ptr()).prev = node,
+            }
+
+            self.head = node;
+            self.len += 1;
+        }
+    }
+Unixcoder Score: -0.018208611756563187
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_after_n(+data: T, neighbour: dlist_node<T>) -> dlist_node<T> {
+        let mut nobe = self.new_link(data);
+        self.insert_right(neighbour, nobe);
+        option::get(nobe)
+    }
+Unixcoder Score: -0.020365692675113678
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn test_dlist_insert_before_head() {
+        let l = create::<int>();
+        l.assert_consistent(); let one = l.push_n(1);
+        l.assert_consistent(); let _two = l.push_n(2);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); l.insert_before(3, one);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); assert l.head() == 3;
+        l.assert_consistent(); assert l.tail() == 2;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 2;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Unixcoder Score: -0.020633811131119728
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_before_n(+data: T, neighbour: dlist_node<T>) -> dlist_node<T> {
+        let mut nobe = self.new_link(data);
+        self.insert_left(nobe, neighbour);
+        option::get(nobe)
+    }
+Unixcoder Score: -0.020863426849246025
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_after(+data: T, neighbour: dlist_node<T>) {
+        self.insert_right(neighbour, self.new_link(data));
+    }
+Unixcoder Score: -0.02107929438352585
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_before(+data: T, neighbour: dlist_node<T>) {
+        self.insert_left(self.new_link(data), neighbour);
+    }
+Unixcoder Score: -0.021314170211553574
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_right(neighbour: dlist_node<T>, nobe: dlist_link<T>) {
+        self.assert_mine(neighbour);
+        assert self.size > 0;
+        self.link(nobe, neighbour.next);
+        self.link(some(neighbour), nobe);
+        self.size += 1;
+    }
+Unixcoder Score: -0.02154359593987465
+--------------------------------------------------

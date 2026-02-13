@@ -1,0 +1,304 @@
+C_Code: 
+struct FT_DriverRec_
+Function: 
+struct BitmapMetrics {
+        // Outer glyph bearings that affect the computed bounds. We distinguish
+        // those here from `inner_bearing_*` to account for CoreText behavior in
+        // SBIX placement. Where the sbix originOffsetX/Y are applied only
+        // within the bounds. Specified in font units.
+        // 0 for CBDT, CBLC.
+        bearing_x: f32,
+        bearing_y: f32,
+        // Scale factors to scale image to 1em.
+        ppem_x: f32,
+        ppem_y: f32,
+        // Account for the fact that Sbix and CBDT/CBLC have a different origin
+        // definition.
+        placement_origin_bottom_left: bool,
+        // Specified as a pixel value, to be scaled by `ppem_*` as an
+        // offset applied to placing the image within the bounds rectangle.
+        inner_bearing_x: f32,
+        inner_bearing_y: f32,
+        // Some, but not all, bitmap glyphs have a special bitmap advance
+        advance: f32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetNamedValue__idx27763_rank5.c", "source_rust_file": "API_Mapping__LLVMRustGetNamedValue__idx27763_rank5.rs", "c_api": "wrap(unwrap(M)->getNamedValue(...))", "rust_api": "let global = Instance::mono(self.tcx, def_id);", "mapping_type": "function", "description": "Retrieving and wrapping a named value", "reasoning": "[Task Analysis] C function LLVMRustGetNamedValue is a wrapper around LLVM's getNamedValue method, while Rust function get_static is part of a compiler backend (GCC) that retrieves static values. [Similarity] Names refer to different concepts (LLVM value vs static value), and domains are different (LLVM IR vs compiler backend). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to value retrieval and lookup operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetNamedValue__idx27763_rank5.c", "source_rust_file": "API_Mapping__LLVMRustGetNamedValue__idx27763_rank5.rs", "c_api": "unwrap(M)->getNamedValue", "rust_api": "self.instances.borrow().get", "mapping_type": "function", "description": "Value lookup by identifier", "reasoning": "[Task Analysis] C function LLVMRustGetNamedValue is a wrapper around LLVM's getNamedValue method, while Rust function get_static is part of a compiler backend (GCC) that retrieves static values. [Similarity] Names refer to different concepts (LLVM value vs static value), and domains are different (LLVM IR vs compiler backend). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to value retrieval and lookup operations."}]
+Unixcoder Score: 0.03877579793334007
+--------------------------------------------------
+C_Code: 
+void SysEventLog::SendSysEventLog(const std::string &eventName, const uint32_t dCode, const std::string bundleName,
+    const std::string moduleName, const std::string extraInfo)
+{
+    auto iter = sysEventMap_.find(eventName);
+    if (iter == sysEventMap_.end()) {
+        return;
+    }
+
+    SysEventInfo info = { .dCode = dCode, .bundleName = bundleName, .moduleName = moduleName, .extraInfo = extraInfo };
+    iter->second(info);
+}
+Function: 
+pub(crate) fn isys_fault(dfx_code: DfxCode, extra_info: &str) {
+    SysEvent::exec_fault()
+        .param(build_number_param!(PARAM_DFX_CODE, dfx_code as u32))
+        .param(build_str_param!(PARAM_BUNDLE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_MODULE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_EXTRA_INFO, extra_info))
+        .write();
+}
+Unixcoder Score: 0.0021747080609202385
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustGetOrInsertFunction(LLVMModuleRef M,
+                                                    const char *Name,
+                                                    size_t NameLen,
+                                                    LLVMTypeRef FunctionTy) {
+  return wrap(unwrap(M)
+                  ->getOrInsertFunction(StringRef(Name, NameLen),
+                                        unwrap<FunctionType>(FunctionTy))
+                  .getCallee()
+  );
+}
+Function: 
+fn type_of_fn(cx: crate_ctxt, inputs: [ty::arg],
+              output: ty::t, params: [ty::param_bounds]) -> TypeRef {
+    let atys: [TypeRef] = [];
+
+    // Arg 0: Output pointer.
+    atys += [T_ptr(type_of(cx, output))];
+
+    // Arg 1: Environment
+    atys += [T_opaque_box_ptr(cx)];
+
+    // Args >2: ty params, if not acquired via capture...
+    for bounds in params {
+        atys += [T_ptr(cx.tydesc_type)];
+        for bound in *bounds {
+            alt bound {
+              ty::bound_iface(_) { atys += [T_ptr(T_dict())]; }
+              _ {}
+            }
+        }
+    }
+    // ... then explicit args.
+    atys += type_of_explicit_args(cx, inputs);
+    ret T_fn(atys, llvm::LLVMVoidType());
+}
+
+// Given a function type and a count of ty params, construct an llvm type
+fn type_of_fn_from_ty(cx: crate_ctxt, fty: ty::t,
+                      param_bounds: [ty::param_bounds]) -> TypeRef {
+    type_of_fn(cx, ty::ty_fn_args(fty), ty::ty_fn_ret(fty), param_bounds)
+}
+
+fn type_of(cx: crate_ctxt, t: ty::t) -> TypeRef {
+    assert !ty::type_has_vars(t);
+    // Check the cache.
+
+    if cx.lltypes.contains_key(t) { ret cx.lltypes.get(t); }
+    let llty = alt ty::get(t).struct {
+      ty::ty_nil | ty::ty_bot { T_nil() }
+      ty::ty_bool { T_bool() }
+      ty::ty_int(t) { T_int_ty(cx, t) }
+      ty::ty_uint(t) { T_uint_ty(cx, t) }
+      ty::ty_float(t) { T_float_ty(cx, t) }
+      ty::ty_str { T_ptr(T_vec(cx, T_i8())) }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PrintBuffer__idx4697_rank5.c", "source_rust_file": "API_Mapping__PrintBuffer__idx4697_rank5.rs", "c_api": "ZLOGI(LOG_LABEL, ...)", "rust_api": "info!(...)", "mapping_type": "function", "description": "Logging with format string", "reasoning": "[Task Analysis] C function prints parcel buffer info; Rust function sets parcel size with error handling. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full/partial match due to domain mismatch (logging vs size setting). API mappings identified: C ZLOGI calls mapped to Rust logging patterns via context, and C SetDataSize mapped to Rust set_size method."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PrintBuffer__idx4697_rank5.c", "source_rust_file": "API_Mapping__PrintBuffer__idx4697_rank5.rs", "c_api": "SetDataSize(size)", "rust_api": "set_size(&mut self, size: usize)", "mapping_type": "method", "description": "Set parcel data size", "reasoning": "[Task Analysis] C function prints parcel buffer info; Rust function sets parcel size with error handling. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full/partial match due to domain mismatch (logging vs size setting). API mappings identified: C ZLOGI calls mapped to Rust logging patterns via context, and C SetDataSize mapped to Rust set_size method."}]
+Unixcoder Score: -0.0035654979292303324
+--------------------------------------------------
+C_Code: 
+struct TT_DriverRec_
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetNamedValue__idx18115_rank2.c", "source_rust_file": "API_Mapping__LLVMRustGetNamedValue__idx18115_rank2.rs", "c_api": "LLVMRustGetNamedValue", "rust_api": "llvm::LLVMGetNamedGlobal", "mapping_type": "function", "description": "Retrieving a named global from an LLVM module", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `llvm::LLVMGetNamedGlobal` and multiple `llvm::LLVMRustSetLinkage` etc., which are part of LLVM's C API. The C code is a direct wrapper around `unwrap(M)->getNamedValue`. This is a clear FFI wrapper pattern. -> [Task Analysis] -> The C function is a thin wrapper around LLVM's `getNamedValue` method, while the Rust function is a complex logic for creating or retrieving a global variable with debug script section handling. -> [Similarity] -> While both involve retrieving named values from an LLVM module, the Rust function is much more complex and involves heavy logic for constructing debug sections, whereas the C function is a simple wrapper. -> [Knowledge Extraction] -> The FFI wrapper pattern is detected, and the core LLVM API call is identified, but the structural similarity is too low to be Full or Partial, and the domains are different (simple wrapper vs complex debug section logic)."}]
+Unixcoder Score: -0.00795893743634224
+--------------------------------------------------
+C_Code: 
+void SysEventLog::SendSysEventLog(const std::string &eventName, const uint32_t dCode, const std::string bundleName,
+    const std::string moduleName, const std::string extraInfo)
+{
+    auto iter = sysEventMap_.find(eventName);
+    if (iter == sysEventMap_.end()) {
+        return;
+    }
+
+    SysEventInfo info = { .dCode = dCode, .bundleName = bundleName, .moduleName = moduleName, .extraInfo = extraInfo };
+    iter->second(info);
+}
+Function: 
+pub(crate) fn isys_fault(dfx_code: DfxCode, extra_info: &str) {
+    SysEvent::exec_fault()
+        .param(build_number_param!(PARAM_DFX_CODE, dfx_code as u32))
+        .param(build_str_param!(PARAM_BUNDLE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_MODULE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_EXTRA_INFO, extra_info))
+        .write();
+}
+Unixcoder Score: -0.01407287921756506
+--------------------------------------------------
+C_Code: 
+struct DirectDriverLoadingListLUNARG
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__LLVMRustGetOrInsertGlobal__idx60834_rank2.c", "source_rust_file": "Partial__LLVMRustGetOrInsertGlobal__idx60834_rank2.rs", "c_fragment": "if (!GV)\n    GV = new GlobalVariable(*Mod, unwrap(Ty), false,\n                            GlobalValue::ExternalLinkage, nullptr, NameRef);", "rust_fragment": "if index < self.values.len() {\n            let value = unsafe { self.values.get_unchecked_mut(index) };\n            value.get_or_insert_with(func)", "description": "Conditional creation logic when element does not exist", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertGlobal manages LLVM global variables, while Rust function get_or_insert_with operates on a sparse set with insertion logic. [Similarity] Names differ but both involve 'get or insert' semantics for managing data structures. [Knowledge Extraction] No full structural match due to domain mismatch (LLVM IR vs sparse set), but partial matching in control flow pattern and API mapping in 'get or insert' behavior."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustGetOrInsertGlobal__idx60834_rank2.c", "source_rust_file": "Partial__LLVMRustGetOrInsertGlobal__idx60834_rank2.rs", "c_api": "getOrInsertGlobal", "rust_api": "get_or_insert_with", "mapping_type": "function", "description": "Get or insert element with default value creation", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertGlobal manages LLVM global variables, while Rust function get_or_insert_with operates on a sparse set with insertion logic. [Similarity] Names differ but both involve 'get or insert' semantics for managing data structures. [Knowledge Extraction] No full structural match due to domain mismatch (LLVM IR vs sparse set), but partial matching in control flow pattern and API mapping in 'get or insert' behavior."}]
+Unixcoder Score: -0.018599381670355797
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustGetOrInsertFunction(LLVMModuleRef M,
+                                                    const char *Name,
+                                                    size_t NameLen,
+                                                    LLVMTypeRef FunctionTy) {
+  return wrap(unwrap(M)
+                  ->getOrInsertFunction(StringRef(Name, NameLen),
+                                        unwrap<FunctionType>(FunctionTy))
+                  .getCallee()
+  );
+}
+Function: 
+fn Phi(cx: &@block_ctxt, Ty: TypeRef, vals: &[ValueRef],
+       bbs: &[BasicBlockRef]) -> ValueRef {
+    let phi = llvm::LLVMBuildPhi(*cx.build, Ty, str::buf(""));
+    assert (vec::len::<ValueRef>(vals) == vec::len::<BasicBlockRef>(bbs));
+    llvm::LLVMAddIncoming(phi, vec::to_ptr(vals), vec::to_ptr(bbs),
+                          vec::len(vals));
+    ret phi;
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PrintBuffer__idx4689_rank2.c", "source_rust_file": "API_Mapping__PrintBuffer__idx4689_rank2.rs", "c_api": "GetDataSize()", "rust_api": "GetDataSize()", "mapping_type": "function", "description": "Retrieves the size of the data in the parcel", "reasoning": "[Task Analysis] C function prints buffer information using logging and data traversal; Rust function returns parcel size. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full/partial match. API mappings identified: C's GetDataSize() and Rust's GetDataSize() are functionally equivalent, both retrieving data size from a parcel object."}]
+Unixcoder Score: -0.023330578580498695
+--------------------------------------------------
+C_Code: 
+struct FT_DriverRec_
+Function: 
+struct Reader {
+    reader: png::Reader<cxx::UniquePtr<ffi::ReadTrait>>,
+    last_interlace_info: Option<png::InterlaceInfo>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.rs", "c_api": "GV = new GlobalVariable(*Mod, unwrap(Ty), false, GlobalValue::ExternalLinkage, nullptr, NameRef);", "rust_api": "mono_item.predefine::<Builder<'_, '_, '_>>(&cx, linkage, visibility);", "mapping_type": "pattern", "description": "LLVM global variable creation vs predefining monomorphized items", "reasoning": "[FFI Check] -> LLVMRustGetOrInsertGlobal is a wrapper around LLVM C API, but the Rust code is a high-level compiler module codegen function with complex logic. -> [Task Analysis] -> C function handles global variable insertion in LLVM module, Rust function handles LLVM module code generation with many steps. -> [Similarity] -> No structural similarity at the function level due to different domains (LLVM IR manipulation vs compiler codegen). -> [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to LLVM global variable handling and LLVM FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.rs", "c_api": "return wrap(GV);", "rust_api": "ModuleCodegen { name: cgu_name.to_string(), module_llvm: llvm_module, kind: ModuleKind::Regular, }", "mapping_type": "pattern", "description": "Wrapping LLVM value vs returning module codegen struct", "reasoning": "[FFI Check] -> LLVMRustGetOrInsertGlobal is a wrapper around LLVM C API, but the Rust code is a high-level compiler module codegen function with complex logic. -> [Task Analysis] -> C function handles global variable insertion in LLVM module, Rust function handles LLVM module code generation with many steps. -> [Similarity] -> No structural similarity at the function level due to different domains (LLVM IR manipulation vs compiler codegen). -> [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to LLVM global variable handling and LLVM FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.rs", "c_api": "llvm::LLVMReplaceAllUsesWith(old_g, bitcast);", "rust_api": "cx.statics_to_rauw().borrow().iter()", "mapping_type": "pattern", "description": "LLVM replace all uses with vs statics to replace all uses with", "reasoning": "[FFI Check] -> LLVMRustGetOrInsertGlobal is a wrapper around LLVM C API, but the Rust code is a high-level compiler module codegen function with complex logic. -> [Task Analysis] -> C function handles global variable insertion in LLVM module, Rust function handles LLVM module code generation with many steps. -> [Similarity] -> No structural similarity at the function level due to different domains (LLVM IR manipulation vs compiler codegen). -> [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to LLVM global variable handling and LLVM FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.rs", "c_api": "llvm::LLVMDeleteGlobal(old_g);", "rust_api": "cx.create_used_variable_impl(cstr!(\"llvm.used\"), &*cx.used_statics.borrow());", "mapping_type": "pattern", "description": "LLVM delete global vs creating used variable", "reasoning": "[FFI Check] -> LLVMRustGetOrInsertGlobal is a wrapper around LLVM C API, but the Rust code is a high-level compiler module codegen function with complex logic. -> [Task Analysis] -> C function handles global variable insertion in LLVM module, Rust function handles LLVM module code generation with many steps. -> [Similarity] -> No structural similarity at the function level due to different domains (LLVM IR manipulation vs compiler codegen). -> [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to LLVM global variable handling and LLVM FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertGlobal__idx17737_rank4.rs", "c_api": "GlobalVariable *GV = Mod->getGlobalVariable(NameRef, true);", "rust_api": "let mono_item = cx.codegen_unit.items_in_deterministic_order(cx.tcx);", "mapping_type": "pattern", "description": "LLVM global variable lookup vs codegen unit item iteration", "reasoning": "[FFI Check] -> LLVMRustGetOrInsertGlobal is a wrapper around LLVM C API, but the Rust code is a high-level compiler module codegen function with complex logic. -> [Task Analysis] -> C function handles global variable insertion in LLVM module, Rust function handles LLVM module code generation with many steps. -> [Similarity] -> No structural similarity at the function level due to different domains (LLVM IR manipulation vs compiler codegen). -> [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to LLVM global variable handling and LLVM FFI calls."}]
+Unixcoder Score: -0.024796240031719208
+--------------------------------------------------
+C_Code: 
+struct  TT_DriverRec_
+  {
+    FT_DriverRec  root;
+
+    TT_GlyphZoneRec  zone;     /* glyph loader points zone */
+
+    FT_UInt  interpreter_version;
+
+  }
+Function: 
+pub struct Glyph {
+    /// The Unicode codepoint or glyph ID of the item
+    pub codepoint: u32,
+    /// The index of the cluster in the input text where this came from
+    pub cluster: u32,
+    /// The horizontal advance of the glyph
+    pub x_advance: i32,
+    /// The vertical advance of the glyph
+    pub y_advance: i32,
+    /// The horizontal offset of the glyph
+    pub x_offset: i32,
+    /// The vertical offset of the glyph
+    pub y_offset: i32,
+    /// You can use this for whatever you like
+    pub flags: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_sched_driver__idx111526_rank1.c", "source_rust_file": "Partial__rust_sched_driver__idx111526_rank1.rs", "c_api": "sched_loop->on_pump_loop(this)", "rust_api": "uvll::uv_async_init(loop_.handle, handle, async_cb)", "mapping_type": "function", "description": "Registering a callback for event loop pumping", "reasoning": "[Task Analysis] C constructor initializes a struct and calls a method on a passed-in object; Rust function creates a queue pool with async handle setup and UV-related operations. [Similarity] Names don't match but both involve initialization logic and object setup. [Knowledge Extraction] No full structural match due to different domains (C++ constructor vs Rust function with FFI calls), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_sched_driver__idx111526_rank1.c", "source_rust_file": "Partial__rust_sched_driver__idx111526_rank1.rs", "c_api": "assert(sched_loop != NULL)", "rust_api": "assert_eq!(uvll::uv_async_init(...), 0)", "mapping_type": "pattern", "description": "Validation of non-null pointer/resource initialization", "reasoning": "[Task Analysis] C constructor initializes a struct and calls a method on a passed-in object; Rust function creates a queue pool with async handle setup and UV-related operations. [Similarity] Names don't match but both involve initialization logic and object setup. [Knowledge Extraction] No full structural match due to different domains (C++ constructor vs Rust function with FFI calls), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_sched_driver__idx111526_rank1.c", "source_rust_file": "Partial__rust_sched_driver__idx111526_rank1.rs", "c_api": "uvll::uv_unref(handle)", "rust_api": "uvll::set_data_for_uv_handle(handle, data)", "mapping_type": "function", "description": "Setting data for a UV handle", "reasoning": "[Task Analysis] C constructor initializes a struct and calls a method on a passed-in object; Rust function creates a queue pool with async handle setup and UV-related operations. [Similarity] Names don't match but both involve initialization logic and object setup. [Knowledge Extraction] No full structural match due to different domains (C++ constructor vs Rust function with FFI calls), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__rust_sched_driver__idx111526_rank1.c", "source_rust_file": "Partial__rust_sched_driver__idx111526_rank1.rs", "c_fragment": "assert(sched_loop != NULL);\n    sched_loop->on_pump_loop(this);", "rust_fragment": "unsafe {\n            assert_eq!(uvll::uv_async_init(loop_.handle, handle, async_cb), 0);\n            uvll::uv_unref(handle);\n            let data: *c_void = *cast::transmute::<&~QueuePool, &*c_void>(&q);\n            uvll::set_data_for_uv_handle(handle, data);\n        }", "description": "Both perform validation and setup of a handle with associated data.", "reasoning": "[Task Analysis] C constructor initializes a struct and calls a method on a passed-in object; Rust function creates a queue pool with async handle setup and UV-related operations. [Similarity] Names don't match but both involve initialization logic and object setup. [Knowledge Extraction] No full structural match due to different domains (C++ constructor vs Rust function with FFI calls), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.032967306673526764
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustGetOrInsertFunction(LLVMModuleRef M,
+                                                    const char *Name,
+                                                    size_t NameLen,
+                                                    LLVMTypeRef FunctionTy) {
+  return wrap(unwrap(M)
+                  ->getOrInsertFunction(StringRef(Name, NameLen),
+                                        unwrap<FunctionType>(FunctionTy))
+                  .getCallee()
+  );
+}
+Function: 
+fn declare_raw_fn<'ll>(
+    cx: &CodegenCx<'ll, '_>,
+    name: &str,
+    callconv: llvm::CallConv,
+    unnamed: llvm::UnnamedAddr,
+    visibility: llvm::Visibility,
+    ty: &'ll Type,
+) -> &'ll Value {
+    debug!("declare_raw_fn(name={:?}, ty={:?})", name, ty);
+    let llfn = unsafe {
+        llvm::LLVMRustGetOrInsertFunction(cx.llmod, name.as_ptr().cast(), name.len(), ty)
+    };
+
+    llvm::SetFunctionCallConv(llfn, callconv);
+    llvm::SetUnnamedAddress(llfn, unnamed);
+    llvm::set_visibility(llfn, visibility);
+
+    let mut attrs = SmallVec::<[_; 4]>::new();
+
+    if cx.tcx.sess.opts.cg.no_redzone.unwrap_or(cx.tcx.sess.target.disable_redzone) {
+        attrs.push(llvm::AttributeKind::NoRedZone.create_attr(cx.llcx));
+    }
+
+    attrs.extend(attributes::non_lazy_bind_attr(cx));
+
+    attributes::apply_to_llfn(llfn, Function, &attrs);
+
+    llfn
+}
+Unixcoder Score: -0.033450692892074585
+--------------------------------------------------

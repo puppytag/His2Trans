@@ -1,0 +1,403 @@
+C_Code: 
+sptr<DownloadServiceAbility> DownloadServiceAbility::GetInstance()
+{
+    if (instance_ == nullptr) {
+        std::lock_guard<std::mutex> autoLock(instanceLock_);
+        if (instance_ == nullptr) {
+            instance_ = new DownloadServiceAbility(DOWNLOAD_SERVICE_ID, true);
+        }
+    }
+    return instance_;
+}
+Function: 
+pub fn get_ability_instance() -> &'static mut RequestAbility {
+        static mut REQUESTABILITY: Option<RequestAbility> = None;
+        static ONCE: Once = Once::new();
+        unsafe {
+            ONCE.call_once(|| {
+                REQUESTABILITY = Some(RequestAbility::new(
+                    ServerRunState::NoStart,
+                    Mutex::new(HashMap::new()),
+                ));
+            });
+            REQUESTABILITY.as_mut().unwrap()
+        }
+    }
+Unixcoder Score: 0.019415874034166336
+--------------------------------------------------
+C_Code: 
+int32_t TestServiceStub::ServerPingService(MessageParcel &data, MessageParcel &reply)
+{
+    std::u16string serviceName = data.ReadString16();
+    int32_t result = TestPingService(serviceName);
+    ZLOGI(LABEL, "Result:%{public}d", result);
+    reply.WriteInt32(result);
+    return 0;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+            0
+        }
+Unixcoder Score: 0.01342717744410038
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: 0.008237904869019985
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetContextManager()
+{
+    sptr<IRemoteObject> saMgr = IPCSkeleton::GetContextObject();
+    if (saMgr == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(saMgr));
+}
+Function: 
+pub fn get_context_manager() -> Option<RemoteObj> {
+        info!("get context manager");
+        RemoteObj::from_sptr(GetContextManager())
+    }
+Unixcoder Score: -0.003360399743542075
+--------------------------------------------------
+C_Code: 
+bool RequestManagerImpl::IsSaReady()
+{
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        REQUEST_HILOGE("Getting SystemAbilityManager failed.");
+        SysEventLog::SendSysEventLog(FAULT_EVENT, SAMGR_FAULT_00, "Get SAM failed");
+        return false;
+    }
+    return systemAbilityManager->CheckSystemAbility(DOWNLOAD_SERVICE_ID) != nullptr;
+}
+Function: 
+pub(crate) fn set_mode(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let permission = PermissionChecker::check_down_permission();
+        if !permission {
+            error!("Service change_mode: no DOWNLOAD_SESSION_MANAGER permission.");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A43,
+                "Service change_mode: no DOWNLOAD_SESSION_MANAGER permission."
+            );
+            reply.write(&(ErrorCode::Permission as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let task_id: String = data.read()?;
+        info!("Service change_mode tid {}", task_id);
+        let Ok(task_id) = task_id.parse::<u32>() else {
+            error!("Service change_mode, failed: tid not valid: {}", task_id);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A44,
+                &format!("Service change_mode, failed: tid not valid: {}", task_id)
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+
+        let mode: u32 = data.read()?;
+        let mode = Mode::from(mode as u8);
+
+        let old_mode = match RequestDb::get_instance().query_task_mode(task_id) {
+            Some(m) => m,
+            None => {
+                error!(
+                    "Service change_mode, failed: old_mode not valid: {}",
+                    task_id
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A44,
+                    &format!(
+                        "Service change_mode, failed: old_mode not valid: {}",
+                        task_id
+                    )
+                );
+                reply.write(&(ErrorCode::TaskNotFound as i32))?;
+                return Err(IpcStatusCode::Failed);
+            }
+        };
+
+        if old_mode == mode || mode == Mode::Any {
+            error!("Service change_mode, mod state is ok: {}", task_id);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A44,
+                &format!("Service change_mode, mod state is ok: {}", task_id)
+            );
+            reply.write(&(ErrorCode::ErrOk as i32))?;
+            return Ok(());
+        }
+
+        let uid = match RequestDb::get_instance().query_task_uid(task_id) {
+            Some(id) => id,
+            None => {
+                reply.write(&(ErrorCode::TaskNotFound as i32))?;
+                return Err(IpcStatusCode::Failed);
+            }
+        };
+
+        let (event, rx) = TaskManagerEvent::set_mode(uid, task_id, mode);
+        if !self.task_manager.lock().unwrap().send_event(event) {
+            error!("Service change_mode, failed: task_manager err: {}", task_id);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A44,
+                &format!("Service change_mode, failed: task_manager err: {}", task_id)
+            );
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+        let ret = match rx.get() {
+            Some(ret) => ret,
+            None => {
+                error!(
+                    "Service change_mode, tid: {}, failed: receives ret failed",
+                    task_id
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A44,
+                    &format!("Service change_mode, mod state is ok: {}", task_id)
+                );
+                reply.write(&(ErrorCode::Other as i32))?;
+                return Err(IpcStatusCode::Failed);
+            }
+        };
+        reply.write(&(ret as i32))?;
+        Ok(())
+    }
+Unixcoder Score: -0.004321686457842588
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability_with_extra<A: RemoteStub + 'static>(
+        said: i32,
+        ability: A,
+        is_distributed: bool,
+        dump_flags: DumpFlagPriority,
+        capability: &str,
+        permission: &str,
+    ) -> i32 {
+        info!("add system ability {}", said);
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.006284330505877733
+--------------------------------------------------
+C_Code: 
+int32_t RemoteRequest(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
+{
+    int32_t result = ERR_NONE;
+    RPC_LOG_INFO("OnRemoteRequest called.... code = %u", code);
+    RPC_LOG_INFO("calling pid = %d, uid = %d", GetCallingPid(), GetCallingUid());
+    switch (code) {
+        case ADD_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            RPC_LOG_INFO("samgr pop said = %d....", saId);
+            SvcIdentity *sid = (SvcIdentity *)malloc(sizeof(SvcIdentity));
+            if (sid == NULL) {
+                return ERR_FAILED;
+            }
+            ReadRemoteObject(data, sid);
+            result = AddSystemAbility(saId, sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteInt32(reply, result);
+            break;
+        }
+        case GET_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity sid;
+            result = GetSystemAbility(saId, "", &sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteRemoteObject(reply, &sid);
+            break;
+        }
+        default:
+            RPC_LOG_ERROR("unknown code %u", code);
+            break;
+    }
+    return result;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+        match code {
+            0 => {
+                parcel_remote_primitive(data, reply);
+                parcel_remote_vec(data, reply);
+            }
+            _ => unreachable!(),
+        }
+        0
+    }
+Unixcoder Score: -0.006575430277734995
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetContextManager()
+{
+    sptr<IRemoteObject> saMgr = IPCSkeleton::GetContextObject();
+    if (saMgr == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(saMgr));
+}
+Function: 
+pub fn get_context_manager() -> Option<RemoteObj> {
+        info!("get context manager");
+        RemoteObj::from_sptr(GetContextManager())
+    }
+Unixcoder Score: -0.010431867092847824
+--------------------------------------------------
+C_Code: 
+static int32_t RemoteRequest(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
+{
+    int32_t result = ERR_NONE;
+    RPC_LOG_INFO("OnRemoteRequest called.... code = %u", code);
+    switch (code) {
+        case ADD_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity *sid = (SvcIdentity *)malloc(sizeof(SvcIdentity));
+            if (sid == NULL) {
+                return ERR_FAILED;
+            }
+            ReadRemoteObject(data, sid);
+            result = AddSystemAbility(saId, sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteInt32(reply, result);
+            break;
+        }
+        case GET_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity sid;
+            result = GetSystemAbility(saId, "", &sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteRemoteObject(reply, &sid);
+            break;
+        }
+        default:
+            RPC_LOG_ERROR("unknown code %u", code);
+            break;
+    }
+    return result;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+        match code {
+            0 => {
+                parcel_remote_primitive(data, reply);
+                parcel_remote_vec(data, reply);
+            }
+            _ => unreachable!(),
+        }
+        0
+    }
+Unixcoder Score: -0.011010137386620045
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability_with_extra<A: RemoteStub + 'static>(
+        said: i32,
+        ability: A,
+        is_distributed: bool,
+        dump_flags: DumpFlagPriority,
+        capability: &str,
+        permission: &str,
+    ) -> i32 {
+        info!("add system ability {}", said);
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.014458815567195415
+--------------------------------------------------

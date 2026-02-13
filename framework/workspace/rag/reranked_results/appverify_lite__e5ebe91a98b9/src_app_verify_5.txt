@@ -1,0 +1,320 @@
+C_Code: 
+struct block_info {
+    cbb_ptr block;  ///< pointer to the block
+    bb_iter iter;   ///< Iterator to the current child node being processed
+  }
+Function: 
+pub struct Blob {
+    /// Length of the blob in bytes
+    pub length: u32,
+    /// A raw pointer to the contents
+    pub data: *mut u8,
+}
+Unixcoder Score: 0.02487809583544731
+--------------------------------------------------
+C_Code: 
+struct block_info {
+    cbb_ptr block;  ///< pointer to the block
+    bb_iter iter;   ///< Iterator to the current child node being processed
+  }
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: 0.01751667633652687
+--------------------------------------------------
+C_Code: 
+static void arena_dofree(upb_Arena* a) {
+  UPB_ASSERT(_upb_Arena_RefCountFromTagged(a->parent_or_count) == 1);
+
+  while (a != NULL) {
+    // Load first since arena itself is likely from one of its blocks.
+    upb_Arena* next_arena =
+        (upb_Arena*)upb_Atomic_Load(&a->next, memory_order_acquire);
+    upb_alloc* block_alloc = upb_Arena_BlockAlloc(a);
+    _upb_MemBlock* block = upb_Atomic_Load(&a->blocks, memory_order_acquire);
+    while (block != NULL) {
+      // Load first since we are deleting block.
+      _upb_MemBlock* next_block =
+          upb_Atomic_Load(&block->next, memory_order_acquire);
+      upb_free(block_alloc, block);
+      block = next_block;
+    }
+    a = next_arena;
+  }
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            upb_Arena_Free(self.raw);
+        }
+    }
+Unixcoder Score: 0.001985903363674879
+--------------------------------------------------
+C_Code: 
+size_t upb_Arena_SpaceAllocated(upb_Arena* arena) {
+  arena = _upb_Arena_FindRoot(arena).root;
+  size_t memsize = 0;
+
+  while (arena != NULL) {
+    _upb_MemBlock* block =
+        upb_Atomic_Load(&arena->blocks, memory_order_relaxed);
+    while (block != NULL) {
+      memsize += sizeof(_upb_MemBlock) + block->size;
+      block = upb_Atomic_Load(&block->next, memory_order_relaxed);
+    }
+    arena = upb_Atomic_Load(&arena->next, memory_order_relaxed);
+  }
+
+  return memsize;
+}
+Function: 
+pub unsafe fn alloc(&self, layout: Layout) -> &mut [MaybeUninit<u8>] {
+        debug_assert!(layout.align() <= UPB_MALLOC_ALIGN);
+        // SAFETY: `self.raw` is a valid UPB arena
+        let ptr = unsafe { upb_Arena_Malloc(self.raw, layout.size()) };
+        if ptr.is_null() {
+            alloc::handle_alloc_error(layout);
+        }
+
+        // SAFETY:
+        // - `upb_Arena_Malloc` promises that if the return pointer is non-null, it is
+        //   dereferencable for `size` bytes and has an alignment of `UPB_MALLOC_ALIGN`
+        //   until the arena is destroyed.
+        // - `[MaybeUninit<u8>]` has no alignment requirement, and `ptr` is aligned to a
+        //   `UPB_MALLOC_ALIGN` boundary.
+        unsafe { slice::from_raw_parts_mut(ptr.cast(), layout.size()) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial___upb_Arena_AllocBlock__idx6059_rank1.c", "source_rust_file": "Partial___upb_Arena_AllocBlock__idx6059_rank1.rs", "c_fragment": "upb_MemBlock* block =\n      upb_malloc(_upb_ArenaInternal_BlockAlloc(ai), block_size);\n\n  if (!block) return false;\n  _upb_Arena_AddBlock(a, block, block_size);", "rust_fragment": "let ptr = unsafe { upb_Arena_Malloc(self.raw, size) };\n\n        if ptr.is_null() {\n            None\n        } else {\n            // SAFETY:\n            // - `upb_Arena_Malloc` promises that if the return pointer is non-null, it is\n            //   dereferencable for `size` bytes and has an alignment of `UPB_MALLOC_ALIGN`\n            //   until the arena is destroyed.\n            // - `[MaybeUninit<u8>]` has no alignment requirement, and `ptr` is aligned to a\n            //   `UPB_MALLOC_ALIGN` boundary.\n            Some(unsafe { slice::from_raw_parts_mut(ptr.cast(), size) })\n        }", "description": "Both functions perform memory allocation with null check and return appropriate result.", "reasoning": "[Task Analysis] C function allocates memory from an arena, Rust function does the same via FFI call. [Similarity] Both perform memory allocation with size and alignment checks, but C uses internal arena logic while Rust uses a direct FFI call. [Knowledge Extraction] Found API mapping for memory allocation via arena, partial structural match in allocation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial___upb_Arena_AllocBlock__idx6059_rank1.c", "source_rust_file": "Partial___upb_Arena_AllocBlock__idx6059_rank1.rs", "c_api": "upb_malloc(_upb_ArenaInternal_BlockAlloc(ai), block_size)", "rust_api": "upb_Arena_Malloc(self.raw, size)", "mapping_type": "function", "description": "Memory allocation from arena", "reasoning": "[Task Analysis] C function allocates memory from an arena, Rust function does the same via FFI call. [Similarity] Both perform memory allocation with size and alignment checks, but C uses internal arena logic while Rust uses a direct FFI call. [Knowledge Extraction] Found API mapping for memory allocation via arena, partial structural match in allocation logic."}]
+Unixcoder Score: -0.003863128600642085
+--------------------------------------------------
+C_Code: 
+static void _upb_Arena_DoFree(upb_ArenaInternal* ai) {
+  UPB_ASSERT(_upb_Arena_RefCountFromTagged(ai->parent_or_count) == 1);
+  while (ai != NULL) {
+    // Load first since arena itself is likely from one of its blocks.
+    upb_ArenaInternal* next_arena =
+        (upb_ArenaInternal*)upb_Atomic_Load(&ai->next, memory_order_acquire);
+    upb_alloc* block_alloc = _upb_ArenaInternal_BlockAlloc(ai);
+    upb_MemBlock* block = upb_Atomic_Load(&ai->blocks, memory_order_acquire);
+    while (block != NULL) {
+      // Load first since we are deleting block.
+      upb_MemBlock* next_block =
+          upb_Atomic_Load(&block->next, memory_order_acquire);
+      upb_free(block_alloc, block);
+      block = next_block;
+    }
+    ai = next_arena;
+  }
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            upb_Arena_Free(self.raw);
+        }
+    }
+Unixcoder Score: -0.016390277072787285
+--------------------------------------------------
+C_Code: 
+static void arena_dofree(upb_Arena* a) {
+  UPB_ASSERT(_upb_Arena_RefCountFromTagged(a->parent_or_count) == 1);
+
+  while (a != NULL) {
+    // Load first since arena itself is likely from one of its blocks.
+    upb_Arena* next_arena =
+        (upb_Arena*)upb_Atomic_Load(&a->next, memory_order_acquire);
+    upb_alloc* block_alloc = upb_Arena_BlockAlloc(a);
+    _upb_MemBlock* block = upb_Atomic_Load(&a->blocks, memory_order_acquire);
+    while (block != NULL) {
+      // Load first since we are deleting block.
+      _upb_MemBlock* next_block =
+          upb_Atomic_Load(&block->next, memory_order_acquire);
+      upb_free(block_alloc, block);
+      block = next_block;
+    }
+    a = next_arena;
+  }
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            upb_Arena_Free(self.raw);
+        }
+    }
+Unixcoder Score: -0.02088557742536068
+--------------------------------------------------
+C_Code: 
+static void _upb_Arena_AddBlock(upb_Arena* a, void* ptr, size_t size) {
+  upb_ArenaInternal* ai = upb_Arena_Internal(a);
+  upb_MemBlock* block = ptr;
+
+  // Insert into linked list.
+  block->size = (uint32_t)size;
+  upb_Atomic_Init(&block->next, ai->blocks);
+  upb_Atomic_Store(&ai->blocks, block, memory_order_release);
+
+  a->UPB_PRIVATE(ptr) = UPB_PTR_AT(block, kUpb_MemblockReserve, char);
+  a->UPB_PRIVATE(end) = UPB_PTR_AT(block, size, char);
+
+  UPB_POISON_MEMORY_REGION(a->UPB_PRIVATE(ptr),
+                           a->UPB_PRIVATE(end) - a->UPB_PRIVATE(ptr));
+}
+Function: 
+pub fn new() -> Self {
+        #[inline(never)]
+        #[cold]
+        fn arena_new_failed() -> ! {
+            panic!("Could not create a new UPB arena");
+        }
+
+        // SAFETY:
+        // - `upb_Arena_New` is assumed to be implemented correctly and always sound to
+        //   call; if it returned a non-null pointer, it is a valid arena.
+        unsafe {
+            let Some(raw) = upb_Arena_New() else { arena_new_failed() };
+            Self { raw, _not_sync: PhantomData }
+        }
+    }
+Unixcoder Score: -0.022308196872472763
+--------------------------------------------------
+C_Code: 
+static void arena_dofree(upb_Arena* a) {
+  UPB_ASSERT(_upb_Arena_RefCountFromTagged(a->parent_or_count) == 1);
+
+  while (a != NULL) {
+    // Load first since arena itself is likely from one of its blocks.
+    upb_Arena* next_arena =
+        (upb_Arena*)upb_Atomic_Load(&a->next, memory_order_acquire);
+    upb_alloc* block_alloc = upb_Arena_BlockAlloc(a);
+    _upb_MemBlock* block = upb_Atomic_Load(&a->blocks, memory_order_acquire);
+    while (block != NULL) {
+      // Load first since we are deleting block.
+      _upb_MemBlock* next_block =
+          upb_Atomic_Load(&block->next, memory_order_acquire);
+      upb_free(block_alloc, block);
+      block = next_block;
+    }
+    a = next_arena;
+  }
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            upb_Arena_Free(self.raw);
+        }
+    }
+Unixcoder Score: -0.022567037492990494
+--------------------------------------------------
+C_Code: 
+static void _upb_Arena_DoFree(upb_ArenaInternal* ai) {
+  UPB_ASSERT(_upb_Arena_RefCountFromTagged(ai->parent_or_count) == 1);
+  while (ai != NULL) {
+    // Load first since arena itself is likely from one of its blocks.
+    upb_ArenaInternal* next_arena =
+        (upb_ArenaInternal*)upb_Atomic_Load(&ai->next, memory_order_acquire);
+    upb_alloc* block_alloc = _upb_ArenaInternal_BlockAlloc(ai);
+    upb_MemBlock* block = upb_Atomic_Load(&ai->blocks, memory_order_acquire);
+    while (block != NULL) {
+      // Load first since we are deleting block.
+      upb_MemBlock* next_block =
+          upb_Atomic_Load(&block->next, memory_order_acquire);
+      upb_free(block_alloc, block);
+      block = next_block;
+    }
+    ai = next_arena;
+  }
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            upb_Arena_Free(self.raw);
+        }
+    }
+Unixcoder Score: -0.023133644834160805
+--------------------------------------------------
+C_Code: 
+TEST(ArenaTest, IsInitialized) {
+  // Allocate a large initial polluted block.
+  std::vector<char> arena_block(128 * 1024);
+  std::fill(arena_block.begin(), arena_block.end(), '\xff');
+
+  ArenaOptions options;
+  options.initial_block = &arena_block[0];
+  options.initial_block_size = arena_block.size();
+  Arena arena(options);
+
+  unittest::TestArenaMap* message =
+      Arena::CreateMessage<unittest::TestArenaMap>(&arena);
+  EXPECT_EQ(0, (*message->mutable_map_int32_int32())[0]);
+}
+Function: 
+fn map_ffi_test() {
+        // SAFETY: FFI unit test uses C API under expected patterns.
+        unsafe {
+            let arena = Arena::new();
+            let raw_arena = arena.raw();
+            let map = upb_Map_New(raw_arena, CType::Bool, CType::Double);
+            assert_eq!(upb_Map_Size(map), 0);
+            assert_eq!(
+                upb_Map_Insert(
+                    map,
+                    upb_MessageValue { bool_val: true },
+                    upb_MessageValue { double_val: 2.0 },
+                    raw_arena
+                ),
+                MapInsertStatus::Inserted
+            );
+            assert_eq!(
+                upb_Map_Insert(
+                    map,
+                    upb_MessageValue { bool_val: true },
+                    upb_MessageValue { double_val: 3.0 },
+                    raw_arena,
+                ),
+                MapInsertStatus::Replaced,
+            );
+            assert_eq!(upb_Map_Size(map), 1);
+            upb_Map_Clear(map);
+            assert_eq!(upb_Map_Size(map), 0);
+            assert_eq!(
+                upb_Map_Insert(
+                    map,
+                    upb_MessageValue { bool_val: true },
+                    upb_MessageValue { double_val: 4.0 },
+                    raw_arena
+                ),
+                MapInsertStatus::Inserted
+            );
+
+            let mut out = upb_MessageValue::zeroed();
+            assert!(upb_Map_Get(map, upb_MessageValue { bool_val: true }, &mut out));
+            assert!(matches!(out, upb_MessageValue { double_val: 4.0 }));
+        }
+    }
+Unixcoder Score: -0.0275372713804245
+--------------------------------------------------

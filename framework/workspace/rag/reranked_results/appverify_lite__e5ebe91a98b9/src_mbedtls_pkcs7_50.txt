@@ -1,0 +1,370 @@
+C_Code: 
+void debug_print(const char* label, const upb_Message* msg,
+                 const upb_MessageDef* m, const ctx* c) {
+  char buf[512];
+  upb_TextEncode(msg, m, c->symtab, UPB_TXTENC_SINGLELINE, buf, sizeof(buf));
+  fprintf(stderr, "%s: %s\n", label, buf);
+}
+Function: 
+pub unsafe fn debug_string(msg: RawMessage, mt: *const upb_MiniTable) -> String {
+    // Only find out the length first to then allocate a buffer of the minimum size
+    // needed.
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is nullptr and `buf_len` is 0
+    let len =
+        unsafe { upb_DebugString(msg, mt, Options::NoSortMaps as i32, core::ptr::null_mut(), 0) };
+    assert!(len < isize::MAX as usize);
+    // +1 for the trailing NULL
+    let mut buf = vec![0u8; len + 1];
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is legally writable for 'buf_len' bytes
+    let written_len = unsafe {
+        upb_DebugString(msg, mt, Options::NoSortMaps as i32, buf.as_mut_ptr(), buf.len())
+    };
+    assert_eq!(len, written_len);
+    String::from_utf8_lossy(buf.as_slice()).to_string()
+}
+Unixcoder Score: 0.06602603197097778
+--------------------------------------------------
+C_Code: 
+void debug_print(const char* label, const upb_Message* msg,
+                 const upb_MessageDef* m, const ctx* c) {
+  char buf[512];
+  upb_TextEncode(msg, m, c->symtab, UPB_TXTENC_SINGLELINE, buf, sizeof(buf));
+  fprintf(stderr, "%s: %s\n", label, buf);
+}
+Function: 
+pub unsafe fn debug_string(msg: RawMessage, mt: *const upb_MiniTable) -> String {
+    // Only find out the length first to then allocate a buffer of the minimum size
+    // needed.
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is nullptr and `buf_len` is 0
+    let len =
+        unsafe { upb_DebugString(msg, mt, Options::NoSortMaps as i32, core::ptr::null_mut(), 0) };
+    assert!(len < isize::MAX as usize);
+    // +1 for the trailing NULL
+    let mut buf = vec![0u8; len + 1];
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is legally writable for 'buf_len' bytes
+    let written_len = unsafe {
+        upb_DebugString(msg, mt, Options::NoSortMaps as i32, buf.as_mut_ptr(), buf.len())
+    };
+    assert_eq!(len, written_len);
+    String::from_utf8_lossy(buf.as_slice()).to_string()
+}
+Unixcoder Score: 0.05183994397521019
+--------------------------------------------------
+C_Code: 
+UPB_NOINLINE
+static size_t encode_varint64(uint64_t val, char* buf) {
+  size_t i = 0;
+  do {
+    uint8_t byte = val & 0x7fU;
+    val >>= 7;
+    if (val) byte |= 0x80U;
+    buf[i++] = byte;
+  } while (val);
+  return i;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: 0.05019489675760269
+--------------------------------------------------
+C_Code: 
+static void append_scopeid(struct sockaddr_in6 *addr6, unsigned int flags,
+                           char *buf, size_t buflen)
+{
+#ifdef HAVE_IF_INDEXTONAME
+  int is_ll, is_mcll;
+#endif
+  static const char fmt_u[] = "%u";
+  static const char fmt_lu[] = "%lu";
+  char tmpbuf[IF_NAMESIZE + 2];
+  size_t bufl;
+  const char *fmt = (sizeof(addr6->sin6_scope_id) > sizeof(unsigned int))?
+    fmt_lu:fmt_u;
+
+  tmpbuf[0] = '%';
+
+#ifdef HAVE_IF_INDEXTONAME
+  is_ll = IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr);
+  is_mcll = IN6_IS_ADDR_MC_LINKLOCAL(&addr6->sin6_addr);
+  if ((flags & ARES_NI_NUMERICSCOPE) ||
+      (!is_ll && !is_mcll))
+    {
+       sprintf(&tmpbuf[1], fmt, addr6->sin6_scope_id);
+    }
+  else
+    {
+      if (if_indextoname(addr6->sin6_scope_id, &tmpbuf[1]) == NULL)
+        sprintf(&tmpbuf[1], fmt, addr6->sin6_scope_id);
+    }
+#else
+  sprintf(&tmpbuf[1], fmt, addr6->sin6_scope_id);
+  (void) flags;
+#endif
+  tmpbuf[IF_NAMESIZE + 1] = '\0';
+  bufl = strlen(buf);
+
+  if(bufl + strlen(tmpbuf) < buflen)
+    /* only append the scopeid string if it fits in the target buffer */
+    strcpy(&buf[bufl], tmpbuf);
+}
+Function: 
+fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // If there are no alignment requirements, write the socket address directly to `f`.
+        // Otherwise, write it to a local buffer and then use `f.pad`.
+        if f.precision().is_none() && f.width().is_none() {
+            match self.scope_id() {
+                0 => write!(f, "[{}]:{}", self.ip(), self.port()),
+                scope_id => write!(f, "[{}%{}]:{}", self.ip(), scope_id, self.port()),
+            }
+        } else {
+            const LONGEST_IPV6_SOCKET_ADDR: &str =
+                "[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff%4294967296]:65536";
+
+            let mut buf = DisplayBuffer::<{ LONGEST_IPV6_SOCKET_ADDR.len() }>::new();
+            match self.scope_id() {
+                0 => write!(buf, "[{}]:{}", self.ip(), self.port()),
+                scope_id => write!(buf, "[{}%{}]:{}", self.ip(), scope_id, self.port()),
+            }
+            // Buffer is long enough for the longest possible IPv6 socket address, so this should never fail.
+            .unwrap();
+
+            f.pad(buf.as_str())
+        }
+    }
+Unixcoder Score: 0.04732298478484154
+--------------------------------------------------
+C_Code: 
+void debug_print(const char* label, const upb_Message* msg,
+                 const upb_MessageDef* m, const ctx* c) {
+  char buf[512];
+  upb_TextEncode(msg, m, c->symtab, UPB_TXTENC_SINGLELINE, buf, sizeof(buf));
+  fprintf(stderr, "%s: %s\n", label, buf);
+}
+Function: 
+pub unsafe fn debug_string(msg: RawMessage, mt: *const upb_MiniTable) -> String {
+    // Only find out the length first to then allocate a buffer of the minimum size
+    // needed.
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is nullptr and `buf_len` is 0
+    let len =
+        unsafe { upb_DebugString(msg, mt, Options::NoSortMaps as i32, core::ptr::null_mut(), 0) };
+    assert!(len < isize::MAX as usize);
+    // +1 for the trailing NULL
+    let mut buf = vec![0u8; len + 1];
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is legally writable for 'buf_len' bytes
+    let written_len = unsafe {
+        upb_DebugString(msg, mt, Options::NoSortMaps as i32, buf.as_mut_ptr(), buf.len())
+    };
+    assert_eq!(len, written_len);
+    String::from_utf8_lossy(buf.as_slice()).to_string()
+}
+Unixcoder Score: 0.04658636450767517
+--------------------------------------------------
+C_Code: 
+UPB_NOINLINE
+static size_t encode_varint64(uint64_t val, char* buf) {
+  size_t i = 0;
+  do {
+    uint8_t byte = val & 0x7fU;
+    val >>= 7;
+    if (val) byte |= 0x80U;
+    buf[i++] = byte;
+  } while (val);
+  return i;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: 0.04449267312884331
+--------------------------------------------------
+C_Code: 
+void debug_print(const char* label, const upb_Message* msg,
+                 const upb_MessageDef* m, const ctx* c) {
+  char buf[512];
+  upb_TextEncode(msg, m, c->symtab, UPB_TXTENC_SINGLELINE, buf, sizeof(buf));
+  fprintf(stderr, "%s: %s\n", label, buf);
+}
+Function: 
+pub unsafe fn debug_string(msg: RawMessage, mt: *const upb_MiniTable) -> String {
+    // Only find out the length first to then allocate a buffer of the minimum size
+    // needed.
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is nullptr and `buf_len` is 0
+    let len =
+        unsafe { upb_DebugString(msg, mt, Options::NoSortMaps as i32, core::ptr::null_mut(), 0) };
+    assert!(len < isize::MAX as usize);
+    // +1 for the trailing NULL
+    let mut buf = vec![0u8; len + 1];
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is legally writable for 'buf_len' bytes
+    let written_len = unsafe {
+        upb_DebugString(msg, mt, Options::NoSortMaps as i32, buf.as_mut_ptr(), buf.len())
+    };
+    assert_eq!(len, written_len);
+    String::from_utf8_lossy(buf.as_slice()).to_string()
+}
+Unixcoder Score: 0.04273763671517372
+--------------------------------------------------
+C_Code: 
+void debug_print(const char* label, const upb_Message* msg,
+                 const upb_MessageDef* m, const ctx* c) {
+  char buf[512];
+  upb_TextEncode(msg, m, c->symtab, UPB_TXTENC_SINGLELINE, buf, sizeof(buf));
+  fprintf(stderr, "%s: %s\n", label, buf);
+}
+Function: 
+pub unsafe fn debug_string(msg: RawMessage, mt: *const upb_MiniTable) -> String {
+    // Only find out the length first to then allocate a buffer of the minimum size
+    // needed.
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is nullptr and `buf_len` is 0
+    let len =
+        unsafe { upb_DebugString(msg, mt, Options::NoSortMaps as i32, core::ptr::null_mut(), 0) };
+    assert!(len < isize::MAX as usize);
+    // +1 for the trailing NULL
+    let mut buf = vec![0u8; len + 1];
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is legally writable for 'buf_len' bytes
+    let written_len = unsafe {
+        upb_DebugString(msg, mt, Options::NoSortMaps as i32, buf.as_mut_ptr(), buf.len())
+    };
+    assert_eq!(len, written_len);
+    String::from_utf8_lossy(buf.as_slice()).to_string()
+}
+Unixcoder Score: 0.040878504514694214
+--------------------------------------------------
+C_Code: 
+UPB_NOINLINE
+static size_t encode_varint64(uint64_t val, char* buf) {
+  size_t i = 0;
+  do {
+    uint8_t byte = val & 0x7fU;
+    val >>= 7;
+    if (val) byte |= 0x80U;
+    buf[i++] = byte;
+  } while (val);
+  return i;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: 0.039929043501615524
+--------------------------------------------------
+C_Code: 
+UPB_NOINLINE
+static size_t encode_varint64(uint64_t val, char* buf) {
+  size_t i = 0;
+  do {
+    uint8_t byte = val & 0x7fU;
+    val >>= 7;
+    if (val) byte |= 0x80U;
+    buf[i++] = byte;
+  } while (val);
+  return i;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: 0.03374515473842621
+--------------------------------------------------

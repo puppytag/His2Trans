@@ -1,0 +1,276 @@
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1564_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1564_rank1.rs", "c_api": "caps.push_back(cap)", "rust_api": "net_info.caps.push(cap)", "mapping_type": "method", "description": "Push element to vector", "reasoning": "[Task Analysis] C function processes network capabilities and bear types from a C++ object, then calls a method on an inner object. Rust function is a method that takes net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept (handling network capability changes). The structural logic is partially aligned: both iterate over collections and pass data to a downstream function. [Knowledge Extraction] Found partial structural match in loop processing and data passing. API mappings identified for collection iteration and method call patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__NetCapabilitiesChange__idx1564_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1564_rank1.rs", "c_fragment": "for (auto bearType : netAllCap->bearerTypes_) {\n        bearTypes.push_back(bearType);\n    }", "rust_fragment": "", "description": "Iterate over bearerTypes and push each element to a vector", "reasoning": "[Task Analysis] C function processes network capabilities and bear types from a C++ object, then calls a method on an inner object. Rust function is a method that takes net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept (handling network capability changes). The structural logic is partially aligned: both iterate over collections and pass data to a downstream function. [Knowledge Extraction] Found partial structural match in loop processing and data passing. API mappings identified for collection iteration and method call patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__NetCapabilitiesChange__idx1564_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1564_rank1.rs", "c_fragment": "for (auto cap : netAllCap->netCaps_) {\n        caps.push_back(cap);\n    }", "rust_fragment": "", "description": "Iterate over netCaps and push each element to a vector", "reasoning": "[Task Analysis] C function processes network capabilities and bear types from a C++ object, then calls a method on an inner object. Rust function is a method that takes net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept (handling network capability changes). The structural logic is partially aligned: both iterate over collections and pass data to a downstream function. [Knowledge Extraction] Found partial structural match in loop processing and data passing. API mappings identified for collection iteration and method call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1564_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1564_rank1.rs", "c_api": "netAllCap->netCaps_", "rust_api": "net_info.caps", "mapping_type": "field_access", "description": "Accessing network capabilities field", "reasoning": "[Task Analysis] C function processes network capabilities and bear types from a C++ object, then calls a method on an inner object. Rust function is a method that takes net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept (handling network capability changes). The structural logic is partially aligned: both iterate over collections and pass data to a downstream function. [Knowledge Extraction] Found partial structural match in loop processing and data passing. API mappings identified for collection iteration and method call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1564_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1564_rank1.rs", "c_api": "netAllCap->bearerTypes_", "rust_api": "net_info.bear_types", "mapping_type": "field_access", "description": "Accessing bearer types field", "reasoning": "[Task Analysis] C function processes network capabilities and bear types from a C++ object, then calls a method on an inner object. Rust function is a method that takes net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept (handling network capability changes). The structural logic is partially aligned: both iterate over collections and pass data to a downstream function. [Knowledge Extraction] Found partial structural match in loop processing and data passing. API mappings identified for collection iteration and method call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1564_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1564_rank1.rs", "c_api": "inner_->net_capability_changed", "rust_api": "net_capability_changed", "mapping_type": "function", "description": "Call method to handle network capability change", "reasoning": "[Task Analysis] C function processes network capabilities and bear types from a C++ object, then calls a method on an inner object. Rust function is a method that takes net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept (handling network capability changes). The structural logic is partially aligned: both iterate over collections and pass data to a downstream function. [Knowledge Extraction] Found partial structural match in loop processing and data passing. API mappings identified for collection iteration and method call patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__NetCapabilitiesChange__idx1564_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1564_rank1.rs", "c_fragment": "NetInfo info{\n        .caps = caps,\n        .bear_types = bearTypes,\n    };\n    inner_->net_capability_changed(netHandle->GetNetId(), info);\n    return 0;", "rust_fragment": "fn net_capability_changed(&self, net_id: i32, net_info: &NetInfo) {}", "description": "Create NetInfo struct and call method with net_id and net_info", "reasoning": "[Task Analysis] C function processes network capabilities and bear types from a C++ object, then calls a method on an inner object. Rust function is a method that takes net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept (handling network capability changes). The structural logic is partially aligned: both iterate over collections and pass data to a downstream function. [Knowledge Extraction] Found partial structural match in loop processing and data passing. API mappings identified for collection iteration and method call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1564_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1564_rank1.rs", "c_api": "bearTypes.push_back(bearType)", "rust_api": "net_info.bear_types.push(bearType)", "mapping_type": "method", "description": "Push element to vector", "reasoning": "[Task Analysis] C function processes network capabilities and bear types from a C++ object, then calls a method on an inner object. Rust function is a method that takes net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept (handling network capability changes). The structural logic is partially aligned: both iterate over collections and pass data to a downstream function. [Knowledge Extraction] Found partial structural match in loop processing and data passing. API mappings identified for collection iteration and method call patterns."}]
+Unixcoder Score: 0.022087834775447845
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetCapabilitiesChange__idx1520_rank1.c", "source_rust_file": "API_Mapping__NetCapabilitiesChange__idx1520_rank1.rs", "c_api": "NetInfo info{.caps = caps, .bear_types = bearTypes,};", "rust_api": "let net_info = NetInfo { caps: vec![NetCap::NET_CAPABILITY_INTERNET], bear_types: vec![NetBearType::BEARER_WIFI], };", "mapping_type": "pattern", "description": "Creation of NetInfo struct with capabilities and bearer types", "reasoning": "[Task Analysis] C function handles network capability change by iterating over capabilities and bearer types, then calls an inner method. Rust function is a test implementation that mocks the same behavior with predefined data. [Similarity] Names don't refer to the same concept (NetObserver::NetCapabilitiesChange vs ut_observer_net_capability_changed_custom_impl), and domains are mismatched (implementation vs test). [Knowledge Extraction] No full or partial match due to domain mismatch and test vs implementation. However, API mapping can be extracted for the core logic of setting up NetInfo and calling net_capability_changed."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetCapabilitiesChange__idx1520_rank1.c", "source_rust_file": "API_Mapping__NetCapabilitiesChange__idx1520_rank1.rs", "c_api": "inner_->net_capability_changed(netHandle->GetNetId(), info);", "rust_api": "mock.net_capability_changed(300, &net_info);", "mapping_type": "function", "description": "Calling net capability changed function with network ID and info", "reasoning": "[Task Analysis] C function handles network capability change by iterating over capabilities and bearer types, then calls an inner method. Rust function is a test implementation that mocks the same behavior with predefined data. [Similarity] Names don't refer to the same concept (NetObserver::NetCapabilitiesChange vs ut_observer_net_capability_changed_custom_impl), and domains are mismatched (implementation vs test). [Knowledge Extraction] No full or partial match due to domain mismatch and test vs implementation. However, API mapping can be extracted for the core logic of setting up NetInfo and calling net_capability_changed."}]
+Unixcoder Score: 0.00403164466843009
+--------------------------------------------------
+C_Code: 
+uint32_t VerifyCert(const CertBlob *cert, const CertBlob *caCert)
+{
+    uint32_t verifyResult = SSL_X509_V_ERR_UNSPECIFIED;
+    X509 *certX509 = nullptr;
+    X509 *caX509 = nullptr;
+    X509_STORE *store = nullptr;
+    X509_STORE_CTX *ctx = nullptr;
+    do {
+        certX509 = CertBlobToX509(cert);
+        if (certX509 == nullptr) {
+            NETSTACK_LOGE("x509 of cert is nullptr\n");
+        }
+        caX509 = CertBlobToX509(caCert);
+        if (caX509 == nullptr) {
+            NETSTACK_LOGE("x509 of ca is nullptr\n");
+        }
+        store = X509_STORE_new();
+        if (store == nullptr) {
+            continue;
+        }
+        if (X509_STORE_add_cert(store, caX509) != VERIFY_RESULT_SUCCESS) {
+            NETSTACK_LOGE("add ca to store failed\n");
+        }
+        ctx = X509_STORE_CTX_new();
+        if (ctx == nullptr) {
+            continue;
+        }
+        X509_STORE_CTX_init(ctx, store, certX509, nullptr);
+        verifyResult = static_cast<uint32_t>(X509_verify_cert(ctx));
+        if (verifyResult != VERIFY_RESULT_SUCCESS) {
+            verifyResult = static_cast<uint32_t>(X509_STORE_CTX_get_error(ctx) + SSL_ERROR_CODE_BASE);
+            NETSTACK_LOGE("failed to verify certificate: %{public}s (%{public}d)\n",
+                          X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)), verifyResult);
+            break;
+        } else {
+            verifyResult = X509_V_OK;
+            NETSTACK_LOGD("certificate validation succeeded.\n");
+        }
+    } while (false);
+
+    FreeResources(&certX509, &caX509, &store, &ctx);
+    return verifyResult;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "free", "rust_api": "free", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_fragment": "for (uint32_t i = 0; i < certs->len; i++) {\n        FreeCertData(certs->certDataList[i]);\n    }\n    free(certs->certDataList);\n    free(certs);", "rust_fragment": "for item in c_cert_list_ptr.iter() {\n            let cert = unsafe { &**item };\n            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };\n            match Certificate::from_pem(cert_slice) {\n                Ok(cert) => {\n                    certificates.push(cert);\n                }\n                Err(e) => {\n                    error!(\"parse security cert path failed, error is {:?}\", e);\n                    return;\n                }\n            };\n        }\n        unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Both iterate over a list of certificate data and free memory, though Rust also includes parsing logic.", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory deallocation of certificate data list", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertData", "rust_api": "FreeCertData", "mapping_type": "function", "description": "Free individual certificate data", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}]
+Unixcoder Score: -0.011392486281692982
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1525_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1525_rank1.rs", "c_api": "bearTypes.push_back(bearType)", "rust_api": "vec![NetBearType::BEARER_WIFI]", "mapping_type": "pattern", "description": "Pushing elements to a vector in C and asserting a vector with specific elements in Rust.", "reasoning": "[Task Analysis] C function processes network capabilities and bearer types from a NetAllCapabilities object, storing them in rust::vec containers and passing them to an inner function. Rust function performs assertions on the received net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept of handling network capability changes. However, the C code has real logic while the Rust code is empty (only assertions). [Knowledge Extraction] Full classification blocked by empty Rust side. Partial match found in the structure of loop processing and data passing. API mappings identified in the data flow and container operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1525_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1525_rank1.rs", "c_api": "netAllCap->netCaps_", "rust_api": "net_info.caps", "mapping_type": "field_access", "description": "Accessing network capabilities from C object and Rust struct.", "reasoning": "[Task Analysis] C function processes network capabilities and bearer types from a NetAllCapabilities object, storing them in rust::vec containers and passing them to an inner function. Rust function performs assertions on the received net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept of handling network capability changes. However, the C code has real logic while the Rust code is empty (only assertions). [Knowledge Extraction] Full classification blocked by empty Rust side. Partial match found in the structure of loop processing and data passing. API mappings identified in the data flow and container operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__NetCapabilitiesChange__idx1525_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1525_rank1.rs", "c_fragment": "for (auto bearType : netAllCap->bearerTypes_) {\n        bearTypes.push_back(bearType);\n    }", "rust_fragment": "assert_eq!(net_info.bear_types, vec![NetBearType::BEARER_WIFI]);", "description": "C iterates over bearerTypes and pushes to a vector; Rust asserts the bear_types field matches expected value.", "reasoning": "[Task Analysis] C function processes network capabilities and bearer types from a NetAllCapabilities object, storing them in rust::vec containers and passing them to an inner function. Rust function performs assertions on the received net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept of handling network capability changes. However, the C code has real logic while the Rust code is empty (only assertions). [Knowledge Extraction] Full classification blocked by empty Rust side. Partial match found in the structure of loop processing and data passing. API mappings identified in the data flow and container operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__NetCapabilitiesChange__idx1525_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1525_rank1.rs", "c_fragment": "for (auto cap : netAllCap->netCaps_) {\n        caps.push_back(cap);\n    }", "rust_fragment": "assert_eq!(net_info.caps, vec![NetCap::NET_CAPABILITY_INTERNET]);", "description": "C iterates over netCaps and pushes to a vector; Rust asserts the caps field matches expected value.", "reasoning": "[Task Analysis] C function processes network capabilities and bearer types from a NetAllCapabilities object, storing them in rust::vec containers and passing them to an inner function. Rust function performs assertions on the received net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept of handling network capability changes. However, the C code has real logic while the Rust code is empty (only assertions). [Knowledge Extraction] Full classification blocked by empty Rust side. Partial match found in the structure of loop processing and data passing. API mappings identified in the data flow and container operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1525_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1525_rank1.rs", "c_api": "netAllCap->bearerTypes_", "rust_api": "net_info.bear_types", "mapping_type": "field_access", "description": "Accessing bearer types from C object and Rust struct.", "reasoning": "[Task Analysis] C function processes network capabilities and bearer types from a NetAllCapabilities object, storing them in rust::vec containers and passing them to an inner function. Rust function performs assertions on the received net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept of handling network capability changes. However, the C code has real logic while the Rust code is empty (only assertions). [Knowledge Extraction] Full classification blocked by empty Rust side. Partial match found in the structure of loop processing and data passing. API mappings identified in the data flow and container operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetCapabilitiesChange__idx1525_rank1.c", "source_rust_file": "Partial__NetCapabilitiesChange__idx1525_rank1.rs", "c_api": "caps.push_back(cap)", "rust_api": "vec![NetCap::NET_CAPABILITY_INTERNET]", "mapping_type": "pattern", "description": "Pushing elements to a vector in C and asserting a vector with specific elements in Rust.", "reasoning": "[Task Analysis] C function processes network capabilities and bearer types from a NetAllCapabilities object, storing them in rust::vec containers and passing them to an inner function. Rust function performs assertions on the received net_id and net_info. [Similarity] Names do not match exactly but refer to the same concept of handling network capability changes. However, the C code has real logic while the Rust code is empty (only assertions). [Knowledge Extraction] Full classification blocked by empty Rust side. Partial match found in the structure of loop processing and data passing. API mappings identified in the data flow and container operations."}]
+Unixcoder Score: -0.012942985631525517
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank4.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank4.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory cleanup function for certificate data list", "reasoning": "[Task Analysis] C function FreeCertDataList calls a C++ method, Rust function update_system_cert manages certificate data and calls the same C function via FFI. [Similarity] The C function is a thin wrapper around a C++ method, while the Rust function contains the full logic including FFI call to FreeCertDataList. [Knowledge Extraction] Full structural match in the FFI call pattern, partial match in the certificate processing logic, and API mapping for FreeCertDataList between C and Rust."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank4.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank4.rs", "c_fragment": "void FreeCertDataList(struct CRequestCerts *certs)\n{\n    RequestCertManager::GetInstance().FreeCertDataList(certs);\n}", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "C function FreeCertDataList calls a C++ method, Rust function calls the same C function via FFI.", "reasoning": "[Task Analysis] C function FreeCertDataList calls a C++ method, Rust function update_system_cert manages certificate data and calls the same C function via FFI. [Similarity] The C function is a thin wrapper around a C++ method, while the Rust function contains the full logic including FFI call to FreeCertDataList. [Knowledge Extraction] Full structural match in the FFI call pattern, partial match in the certificate processing logic, and API mapping for FreeCertDataList between C and Rust."}]
+Unixcoder Score: -0.014231243170797825
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertDataList(struct CRequestCerts *certs)
+{
+    for (uint32_t i = 0; i < certs->len; i++) {
+        FreeCertData(certs->certDataList[i]);
+    }
+    free(certs->certDataList);
+    free(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: -0.019263967871665955
+--------------------------------------------------
+C_Code: 
+bool TLSCertificate::CertificateFromData(const std::string &data, CertType certType)
+{
+    if (data.empty()) {
+        NETSTACK_LOGE("The parameter data is empty");
+        return false;
+    }
+    BIO *bio = BIO_new_mem_buf(data.c_str(), -1);
+    if (!bio) {
+        NETSTACK_LOGE("create BIO mem buf failed!");
+        return false;
+    }
+    X509 *x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
+    BIO_free(bio);
+
+    if (!x509) {
+        NETSTACK_LOGE("x509 is null");
+        return false;
+    }
+
+    x509_ = X509_dup(x509);
+    if (!AnalysisCertificate(certType, x509)) {
+        NETSTACK_LOGE("Analysis certificate is false");
+        X509_free(x509);
+        return false;
+    }
+    X509_free(x509);
+    return true;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Unixcoder Score: -0.02075568586587906
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "appInfo.ret = false", "rust_api": "None", "mapping_type": "pattern", "description": "Failed result handling returning None", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "bundleMgr->GetNameAndIndexForUid", "rust_api": "ffi::GetNameAndIndex", "mapping_type": "function", "description": "Retrieves bundle name and index for a given UID from bundle manager", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "appInfo.ret = true", "rust_api": "Some((app_info.index, app_info.name))", "mapping_type": "pattern", "description": "Successful result handling returning tuple of index and name", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "systemAbilityManager->GetSystemAbility", "rust_api": "ffi::GetNameAndIndex", "mapping_type": "function", "description": "Calls system ability manager to get remote object for bundle manager", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "GetNameAndIndex", "rust_api": "get_name_and_index", "mapping_type": "function", "description": "Retrieves app name and index by UID, with error handling and system service interaction", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}]
+Unixcoder Score: -0.024381456896662712
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SendStrategy__idx4897_rank3.c", "source_rust_file": "API_Mapping__SendStrategy__idx4897_rank3.rs", "c_api": "SendStrategy", "rust_api": "SendStrategy", "mapping_type": "function", "description": "Delegation of strategy sending operation", "reasoning": "[Task Analysis] C function handles system ability strategy sending with permission checks and iteration over IDs, while Rust function is a wrapper that delegates to a C++ function. [Similarity] Names don't match exactly but refer to same concept (sending strategy). [Knowledge Extraction] Full structural match is blocked by length mismatch (Rust is a thin wrapper), but there's a clear API mapping for the function call delegation."}]
+Unixcoder Score: -0.029015840962529182
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SendStrategy__idx4867_rank2.c", "source_rust_file": "API_Mapping__SendStrategy__idx4867_rank2.rs", "c_api": "SendStrategyToSA(type, saId, level, action)", "rust_api": "SendStrategy(s_type, saids, level, action)", "mapping_type": "function", "description": "Send strategy to system ability", "reasoning": "[Task Analysis] C function is a system ability manager method that validates permissions and sends strategy to system abilities; Rust function is a wrapper that calls a C++ function via FFI. [Similarity] Names don't match exactly but refer to same concept (sending strategy to system abilities). [Knowledge Extraction] Full match blocked by FFI wrapper pattern and implementation vs usage asymmetry, but API mapping can be extracted for the core logic."}]
+Unixcoder Score: -0.034759022295475006
+--------------------------------------------------

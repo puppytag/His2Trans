@@ -1,0 +1,351 @@
+C_Code: 
+sptr<Ashmem> MessageParcel::ReadAshmem()
+{
+    int fd = ReadFileDescriptor();
+    if (fd < 0) {
+        return nullptr;
+    }
+
+    int32_t size = ReadInt32();
+    if (size <= 0) {
+        ::close(fd);
+        return nullptr;
+    }
+    return new (std::nothrow) Ashmem(fd, size);
+}
+Function: 
+pub unsafe fn read_raw_fd(&mut self) -> RawFd {
+        self.as_msg_parcel_mut().ReadFileDescriptor()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.rs", "c_api": "data.ReadUint32()", "rust_api": "config.common_data.task_id", "mapping_type": "function", "description": "Reading a value from a parcel in C corresponds to accessing a field in Rust.", "reasoning": "[Task Analysis] C function reads from a parcel and unmarshals config data; Rust function opens body files based on config. [Similarity] Names don't match but both involve data processing and file operations. [Knowledge Extraction] No full structural match due to different domains (parcel vs config-based file opening). Partial match in loop structure and data processing. API mappings found for reading data and file operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.rs", "c_fragment": "for (uint32_t i = 0; i < size; i++) {\n        std::string name = data.ReadString();\n        config.bodyFileNames.push_back(name);\n    }", "rust_fragment": "for (idx, path) in config.body_file_paths.iter().enumerate() {\n        let bundle_name = bundle_cache.get_value()?;\n        let file = open_file_readwrite(uid, &bundle_name, path).map_err(|e| {\n            error!(\"Open body_file failed - task_id: {}, idx: {}\", tid, idx);\n            sys_event!(\n                ExecFault,\n                DfxCode::SA_ERROR_02,\n                &format!(\"Open body_file failed - task_id: {}, idx: {}\", tid, idx)\n            );\n            ServiceError::IoError(e)\n        })?;\n        body_files.push(Arc::new(Mutex::new(file)))\n    }", "description": "Both contain loops that iterate over a collection and perform operations on each element.", "reasoning": "[Task Analysis] C function reads from a parcel and unmarshals config data; Rust function opens body files based on config. [Similarity] Names don't match but both involve data processing and file operations. [Knowledge Extraction] No full structural match due to different domains (parcel vs config-based file opening). Partial match in loop structure and data processing. API mappings found for reading data and file operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.rs", "c_api": "data.ReadString()", "rust_api": "config.body_file_paths.iter().enumerate()", "mapping_type": "function", "description": "Reading data from a parcel in C corresponds to iterating over file paths in Rust.", "reasoning": "[Task Analysis] C function reads from a parcel and unmarshals config data; Rust function opens body files based on config. [Similarity] Names don't match but both involve data processing and file operations. [Knowledge Extraction] No full structural match due to different domains (parcel vs config-based file opening). Partial match in loop structure and data processing. API mappings found for reading data and file operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "error!(...)", "mapping_type": "function", "description": "Logging an error in C corresponds to logging an error in Rust.", "reasoning": "[Task Analysis] C function reads from a parcel and unmarshals config data; Rust function opens body files based on config. [Similarity] Names don't match but both involve data processing and file operations. [Knowledge Extraction] No full structural match due to different domains (parcel vs config-based file opening). Partial match in loop structure and data processing. API mappings found for reading data and file operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx330_rank2.rs", "c_api": "config.bodyFileNames.push_back(name)", "rust_api": "body_files.push(Arc::new(Mutex::new(file)))", "mapping_type": "function", "description": "Adding an item to a container in C corresponds to adding a file handle to a vector in Rust.", "reasoning": "[Task Analysis] C function reads from a parcel and unmarshals config data; Rust function opens body files based on config. [Similarity] Names don't match but both involve data processing and file operations. [Knowledge Extraction] No full structural match due to different domains (parcel vs config-based file opening). Partial match in loop structure and data processing. API mappings found for reading data and file operations."}]
+Unixcoder Score: 0.07030009478330612
+--------------------------------------------------
+C_Code: 
+sptr<Ashmem> MessageParcel::ReadAshmem()
+{
+    int fd = ReadFileDescriptor();
+    if (fd < 0) {
+        return nullptr;
+    }
+
+    int32_t size = ReadInt32();
+    if (size <= 0) {
+        ::close(fd);
+        return nullptr;
+    }
+    return new (std::nothrow) Ashmem(fd, size);
+}
+Function: 
+pub fn read_file(&mut self) -> IpcResult<File> {
+        let fd = self.as_msg_parcel_mut().ReadFileDescriptor();
+        unsafe { Ok(File::from_raw_fd(fd)) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7657_rank3.c", "source_rust_file": "Partial__Sync__idx7657_rank3.rs", "c_api": "Box::into_raw(Box::new(reader)) as *mut c_void", "rust_api": "InstantiateReaderIterator(env, iterator, offset).val_", "mapping_type": "function", "description": "Wrapping reader in a boxed structure for FFI", "reasoning": "[Task Analysis] C function is a N-API callback that reads lines from a file using a reader iterator; Rust function is a low-level FFI wrapper for creating a reader iterator from a file path. [Similarity] Names don't match but both perform file reading logic with error handling and null checks. [Knowledge Extraction] Found partial structural match in file path validation and error handling, and API mapping for file reading/iterator creation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Sync__idx7657_rank3.c", "source_rust_file": "Partial__Sync__idx7657_rank3.rs", "c_fragment": "let path = CStr::from_ptr(path);\n    let path = match path.to_str() {\n        Ok(p) => p,\n        Err(_) => {\n            return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n        }\n    };", "rust_fragment": "auto [succPath, path, ignore] = NVal(env, funcArg[NARG_POS::FIRST]).ToUTF8StringPath();\n    if (!succPath) {\n        HILOGE(\"Invalid path from JS first argument\");\n        NError(EINVAL).ThrowErr(env);\n        return nullptr;\n    }", "description": "Conversion of C string to Rust string with error handling", "reasoning": "[Task Analysis] C function is a N-API callback that reads lines from a file using a reader iterator; Rust function is a low-level FFI wrapper for creating a reader iterator from a file path. [Similarity] Names don't match but both perform file reading logic with error handling and null checks. [Knowledge Extraction] Found partial structural match in file path validation and error handling, and API mapping for file reading/iterator creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7657_rank3.c", "source_rust_file": "Partial__Sync__idx7657_rank3.rs", "c_api": "File::open(path)?", "rust_api": "::ReaderIterator(path.get())", "mapping_type": "function", "description": "File opening and reader creation", "reasoning": "[Task Analysis] C function is a N-API callback that reads lines from a file using a reader iterator; Rust function is a low-level FFI wrapper for creating a reader iterator from a file path. [Similarity] Names don't match but both perform file reading logic with error handling and null checks. [Knowledge Extraction] Found partial structural match in file path validation and error handling, and API mapping for file reading/iterator creation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Sync__idx7657_rank3.c", "source_rust_file": "Partial__Sync__idx7657_rank3.rs", "c_fragment": "if (path.is_null()) {\n        return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n    }", "rust_fragment": "if (path.is_null()) {\n        return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n    }", "description": "Null pointer check for input path", "reasoning": "[Task Analysis] C function is a N-API callback that reads lines from a file using a reader iterator; Rust function is a low-level FFI wrapper for creating a reader iterator from a file path. [Similarity] Names don't match but both perform file reading logic with error handling and null checks. [Knowledge Extraction] Found partial structural match in file path validation and error handling, and API mapping for file reading/iterator creation."}]
+Unixcoder Score: 0.06158728152513504
+--------------------------------------------------
+C_Code: 
+sptr<Ashmem> MessageParcel::ReadAshmem()
+{
+    int fd = ReadFileDescriptor();
+    if (fd < 0) {
+        return nullptr;
+    }
+
+    int32_t size = ReadInt32();
+    if (size <= 0) {
+        ::close(fd);
+        return nullptr;
+    }
+    return new (std::nothrow) Ashmem(fd, size);
+}
+Function: 
+pub fn read_file(&mut self) -> IpcResult<File> {
+        let fd = self.as_msg_parcel_mut().ReadFileDescriptor();
+        unsafe { Ok(File::from_raw_fd(fd)) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_fragment": "if (iterator == nullptr) {\n        HILOGE(\"Failed to read lines of the file, error: %{public}d\", errno);\n        NError(errno).ThrowErr(env);\n        return nullptr;\n    }", "rust_fragment": "if iter.is_null() {\n        return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n    }", "description": "Null pointer check and error reporting for invalid input", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_api": "ReaderIterator(path.get())", "rust_api": "BufReader<File>", "mapping_type": "function", "description": "File reading iterator initialization", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_fragment": "auto iterator = ::ReaderIterator(path.get());\n    if (iterator == nullptr) {\n        HILOGE(\"Failed to read lines of the file, error: %{public}d\", errno);\n        NError(errno).ThrowErr(env);\n        return nullptr;\n    }", "rust_fragment": "let reader = &mut *(iter as *mut BufReader<File>);", "description": "File reader initialization and setup", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_api": "NError(errno).ThrowErr(env)", "rust_api": "Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"))", "mapping_type": "function", "description": "Error throwing/propagation", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_api": "read_line(&mut line)", "rust_api": "reader.read_line(&mut line)", "mapping_type": "method", "description": "Reading a line from file buffer", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}]
+Unixcoder Score: 0.05435069277882576
+--------------------------------------------------
+C_Code: 
+sptr<Ashmem> MessageParcel::ReadAshmem()
+{
+    int fd = ReadFileDescriptor();
+    if (fd < 0) {
+        return nullptr;
+    }
+
+    int32_t size = ReadInt32();
+    if (size <= 0) {
+        ::close(fd);
+        return nullptr;
+    }
+    return new (std::nothrow) Ashmem(fd, size);
+}
+Function: 
+pub fn read_file(&mut self) -> IpcResult<File> {
+        let fd = self.as_msg_parcel_mut().ReadFileDescriptor();
+        unsafe { Ok(File::from_raw_fd(fd)) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "file.seek(...)", "rust_api": "file.seek(...)", "mapping_type": "method", "description": "File position seeking", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "NError(...).ThrowErr(env)", "rust_api": "Err(Error)", "mapping_type": "function", "description": "Error throwing/propagation", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "File::from_raw_fd(fd as RawFd)", "rust_api": "unsafe { File::from_raw_fd(fd as RawFd) }", "mapping_type": "function", "description": "Raw file descriptor to File conversion", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "mem::forget(file)", "rust_api": "mem::forget(file)", "mapping_type": "function", "description": "Prevent resource cleanup (memory management)", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "HILOGE(...)", "rust_api": "log::error! or similar logging macro", "mapping_type": "function", "description": "Error logging", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}]
+Unixcoder Score: 0.053595852106809616
+--------------------------------------------------
+C_Code: 
+static NError AsyncExec(ReaderIteratorArg &readerIterator, const string &pathStr)
+{
+    readerIterator.iterator = ::ReaderIterator(pathStr.c_str());
+    if (readerIterator.iterator == nullptr) {
+        HILOGE("Failed to read lines of the file, error: %{public}d", errno);
+        return NError(errno);
+    }
+    int ret = GetFileSize(pathStr, readerIterator.offset);
+    if (ret < 0) {
+        HILOGE("Failed to get size of the file ret %{public}d", ret);
+        return NError(ret);
+    }
+
+    return NError(ERRNO_NOERR);
+}
+Function: 
+pub(crate) unsafe fn reader_iterator(path: *const c_char) -> Result<*mut c_void, Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = CStr::from_ptr(path);
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+    Ok(Box::into_raw(Box::new(reader)) as *mut c_void)
+}
+Unixcoder Score: 0.013991395942866802
+--------------------------------------------------
+C_Code: 
+FsResult<int64_t> FsStream::Seek(const int64_t &offset, const optional<int32_t> &typeOpt)
+{
+    int whence = SEEK_SET;
+
+    auto fp = GetFilePtr();
+    if (fp == nullptr) {
+        HILOGE("Failed to get file ptr");
+        return FsResult<int64_t>::Error(ENOENT);
+    }
+
+    if (typeOpt.has_value()) {
+        int pos = typeOpt.value();
+        if (pos < SEEK_SET || pos > SEEK_END) {
+            HILOGE("Invalid whence");
+            return FsResult<int64_t>::Error(EINVAL);
+        }
+        whence = pos;
+    }
+
+    if (offset >= 0) {
+        int ret = fseek(fp.get(), static_cast<long>(offset), whence);
+        if (ret < 0) {
+            HILOGE("Failed to set the offset location of the file stream pointer, ret: %{public}d", ret);
+            return FsResult<int64_t>::Error(errno);
+        }
+    }
+
+    int64_t res = ftell(fp.get());
+    if (res < 0) {
+        HILOGE("Failed to tell, error:%{public}d", errno);
+        return FsResult<int64_t>::Error(errno);
+    }
+
+    return FsResult<int64_t>::Success(res);
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.method = data.ReadString();", "rust_api": "mime_type: \"\".to_string(),", "mapping_type": "field_access", "description": "Assignment of string field from data stream to struct field", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.token = data.ReadString();", "rust_api": "token: \"\".to_string(),", "mapping_type": "field_access", "description": "Assignment of string field from data stream to struct field", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.url = data.ReadString();", "rust_api": "url: \"\".to_string(),", "mapping_type": "field_access", "description": "Assignment of string field from data stream to struct field", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.form_items = ...", "rust_api": "form_items: vec![],", "mapping_type": "field_access", "description": "Initialization of vector field in struct", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.bundleName = data.ReadString();", "rust_api": "bundle: \"\".to_string(),", "mapping_type": "field_access", "description": "Assignment of string field from data stream to struct field", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.file_specs = ...", "rust_api": "file_specs: vec![],", "mapping_type": "field_access", "description": "Initialization of vector field in struct", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.description = data.ReadString();", "rust_api": "description: \"\".to_string(),", "mapping_type": "field_access", "description": "Assignment of string field from data stream to struct field", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.title = data.ReadString();", "rust_api": "title: \"\".to_string(),", "mapping_type": "field_access", "description": "Assignment of string field from data stream to struct field", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.data = data.ReadString();", "rust_api": "data: \"\".to_string(),", "mapping_type": "field_access", "description": "Assignment of string field from data stream to struct field", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnMarshalConfig__idx379_rank1.c", "source_rust_file": "API_Mapping__UnMarshalConfig__idx379_rank1.rs", "c_api": "config.extras = ...", "rust_api": "extras: HashMap::new(),", "mapping_type": "field_access", "description": "Initialization of HashMap field in struct", "reasoning": "[Task Analysis] C function reads data from a parcel and populates a Config struct; Rust function creates a new Config struct with default values. [Similarity] Names do not refer to the same concept (UnMarshalConfig vs new), and domains are different (deserialization vs initialization). [Knowledge Extraction] No full structural match, but there are API mappings for field assignment and container initialization."}]
+Unixcoder Score: 0.013575605116784573
+--------------------------------------------------
+C_Code: 
+int ares__read_line(FILE *fp, char **buf, size_t *bufsize)
+{
+  char *newbuf;
+  size_t offset = 0;
+  size_t len;
+
+  if (*buf == NULL)
+    {
+      *buf = malloc(128);
+      if (!*buf)
+        return ARES_ENOMEM;
+      *bufsize = 128;
+    }
+
+  for (;;)
+    {
+      int bytestoread = aresx_uztosi(*bufsize - offset);
+
+      if (!fgets(*buf + offset, bytestoread, fp))
+        return (offset != 0) ? 0 : (ferror(fp)) ? ARES_EFILE : ARES_EOF;
+      len = offset + strlen(*buf + offset);
+      if ((*buf)[len - 1] == '\n')
+        {
+          (*buf)[len - 1] = 0;
+          break;
+        }
+      offset = len;
+      if(len < *bufsize - 1)
+        continue;
+
+      /* Allocate more space. */
+      newbuf = realloc(*buf, *bufsize * 2);
+      if (!newbuf)
+        return ARES_ENOMEM;
+      *buf = newbuf;
+      *bufsize *= 2;
+    }
+  return ARES_SUCCESS;
+}
+Function: 
+pub fn read_line(&self, buf: &mut String) -> io::Result<usize> {
+        self.lock().read_line(buf)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfig__idx838_rank1.c", "source_rust_file": "Partial__UnMarshalConfig__idx838_rank1.rs", "c_api": "data.ReadUint32()", "rust_api": "parcel.read::<u32>()?", "mapping_type": "function", "description": "Reading a u32 value from parcel", "reasoning": "[Task Analysis] C function reads fields from a parcel and constructs a Config struct; Rust function reads fields from a parcel and constructs a NotificationConfig struct. [Similarity] Names don't match but both perform deserialization from a parcel. [Knowledge Extraction] Found partial structural match in field reading logic and API mappings for parcel read operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfig__idx838_rank1.c", "source_rust_file": "Partial__UnMarshalConfig__idx838_rank1.rs", "c_api": "data.ReadInt64()", "rust_api": "parcel.read::<i64>()?", "mapping_type": "function", "description": "Reading an i64 value from parcel", "reasoning": "[Task Analysis] C function reads fields from a parcel and constructs a Config struct; Rust function reads fields from a parcel and constructs a NotificationConfig struct. [Similarity] Names don't match but both perform deserialization from a parcel. [Knowledge Extraction] Found partial structural match in field reading logic and API mappings for parcel read operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfig__idx838_rank1.c", "source_rust_file": "Partial__UnMarshalConfig__idx838_rank1.rs", "c_api": "data.ReadString()", "rust_api": "parcel.read::<String>()?", "mapping_type": "function", "description": "Reading a string from parcel", "reasoning": "[Task Analysis] C function reads fields from a parcel and constructs a Config struct; Rust function reads fields from a parcel and constructs a NotificationConfig struct. [Similarity] Names don't match but both perform deserialization from a parcel. [Knowledge Extraction] Found partial structural match in field reading logic and API mappings for parcel read operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UnMarshalConfig__idx838_rank1.c", "source_rust_file": "Partial__UnMarshalConfig__idx838_rank1.rs", "c_fragment": "config.bundleName = data.ReadString();\n    config.url = data.ReadString();\n    config.title = data.ReadString();\n    config.description = data.ReadString();\n    config.method = data.ReadString();", "rust_fragment": "let title = if parcel.read::<bool>()? {\n            Some(parcel.read::<String>()?)\n        } else {\n            None\n        };\n\n        let text = if parcel.read::<bool>()? {\n            Some(parcel.read::<String>()?)\n        } else {\n            None\n        };", "description": "Reading string fields from parcel with optional presence check", "reasoning": "[Task Analysis] C function reads fields from a parcel and constructs a Config struct; Rust function reads fields from a parcel and constructs a NotificationConfig struct. [Similarity] Names don't match but both perform deserialization from a parcel. [Knowledge Extraction] Found partial structural match in field reading logic and API mappings for parcel read operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfig__idx838_rank1.c", "source_rust_file": "Partial__UnMarshalConfig__idx838_rank1.rs", "c_api": "data.ReadBool()", "rust_api": "parcel.read::<bool>()?", "mapping_type": "function", "description": "Reading a boolean value from parcel", "reasoning": "[Task Analysis] C function reads fields from a parcel and constructs a Config struct; Rust function reads fields from a parcel and constructs a NotificationConfig struct. [Similarity] Names don't match but both perform deserialization from a parcel. [Knowledge Extraction] Found partial structural match in field reading logic and API mappings for parcel read operations."}]
+Unixcoder Score: 0.011234338395297527
+--------------------------------------------------
+C_Code: 
+static NError AsyncExec(ReaderIteratorArg &readerIterator, const string &pathStr)
+{
+    readerIterator.iterator = ::ReaderIterator(pathStr.c_str());
+    if (readerIterator.iterator == nullptr) {
+        HILOGE("Failed to read lines of the file, error: %{public}d", errno);
+        return NError(errno);
+    }
+    int ret = GetFileSize(pathStr, readerIterator.offset);
+    if (ret < 0) {
+        HILOGE("Failed to get size of the file ret %{public}d", ret);
+        return NError(ret);
+    }
+
+    return NError(ERRNO_NOERR);
+}
+Function: 
+pub(crate) unsafe fn reader_iterator(path: *const c_char) -> Result<*mut c_void, Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = CStr::from_ptr(path);
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+    Ok(Box::into_raw(Box::new(reader)) as *mut c_void)
+}
+Unixcoder Score: 0.0070870304480195045
+--------------------------------------------------
+C_Code: 
+int uv_fs_read(uv_loop_t* loop, uv_fs_t* req, uv_file fd, void* buf,
+    size_t length, off_t offset, uv_fs_cb cb) {
+  uv_fs_req_init(loop, req, UV_FS_READ, NULL, cb);
+
+  if (cb) {
+    /* async */
+    uv_ref(loop);
+    req->eio = eio_read(fd, buf, length, offset, EIO_PRI_DEFAULT,
+        uv__fs_after, req);
+
+    if (!req->eio) {
+      uv__set_sys_error(loop, ENOMEM);
+      return -1;
+    }
+
+  } else {
+    /* sync */
+    req->result = offset < 0 ?
+      read(fd, buf, length) :
+      pread(fd, buf, length, offset);
+
+    if (req->result < 0) {
+      uv__set_sys_error(loop, errno);
+      return -1;
+    }
+
+    return req->result;
+  }
+
+  return 0;
+}
+Function: 
+pub fn read(self, loop_: &Loop, fd: c_int, buf: Buf, offset: i64, cb: FsCallback) {
+        let complete_cb_ptr = {
+            let mut me = self;
+            me.req_boilerplate(Some(cb))
+        };
+        let buf_ptr = buf.base as *c_void;
+        let len = buf.len as uint;
+        let ret = unsafe {
+            uvll::fs_read(loop_.native_handle(), self.native_handle(),
+                           fd, buf_ptr,
+                           len, offset, complete_cb_ptr)
+        };
+        assert_eq!(ret, 0);
+    }
+Unixcoder Score: 0.006999726872891188
+--------------------------------------------------
+C_Code: 
+static NError AsyncExec(ReaderIteratorArg &readerIterator, const string &pathStr)
+{
+    readerIterator.iterator = ::ReaderIterator(pathStr.c_str());
+    if (readerIterator.iterator == nullptr) {
+        HILOGE("Failed to read lines of the file, error: %{public}d", errno);
+        return NError(errno);
+    }
+    int ret = GetFileSize(pathStr, readerIterator.offset);
+    if (ret < 0) {
+        HILOGE("Failed to get size of the file ret %{public}d", ret);
+        return NError(ret);
+    }
+
+    return NError(ERRNO_NOERR);
+}
+Function: 
+pub(crate) unsafe fn next_line(iter: *mut c_void) -> Result<*mut Str, Error> {
+    if iter.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let reader = &mut *(iter as *mut BufReader<File>);
+    let mut line = String::new();
+    let len = reader.read_line(&mut line)? as c_uint;
+    if len > 0 {
+        let line_bytes = line.into_bytes();
+        let line = CString::from_vec_unchecked(line_bytes);
+        let item = Str {
+            str: line.into_raw(),
+            len,
+        };
+        Ok(Box::into_raw(Box::new(item)))
+    } else {
+        Ok(null_mut())
+    }
+}
+Unixcoder Score: 0.0069131688214838505
+--------------------------------------------------

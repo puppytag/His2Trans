@@ -1,0 +1,326 @@
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "(*p & 0x80)", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Check continuation bit in LEB128 encoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "Full", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = self.read::<u8>();\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Iterative byte processing with continuation condition based on MSB flag", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "++p", "rust_api": "self.read::<u8>()", "mapping_type": "function", "description": "Advance to next byte in stream", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "++ret", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Accumulate size/shift during LEB128 decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}]
+Unixcoder Score: 0.05918534845113754
+--------------------------------------------------
+C_Code: 
+std::pair<const char*, uint32> VarintParseSlow32(const char* p, uint32 res) {
+  for (std::uint32_t i = 2; i < 5; i++) {
+    uint32 byte = static_cast<uint8>(p[i]);
+    res += (byte - 1) << (7 * i);
+    if (PROTOBUF_PREDICT_TRUE(byte < 128)) {
+      return {p + i + 1, res};
+    }
+  }
+  // Accept >5 bytes
+  for (std::uint32_t i = 5; i < 10; i++) {
+    uint32 byte = static_cast<uint8>(p[i]);
+    if (PROTOBUF_PREDICT_TRUE(byte < 128)) {
+      return {p + i + 1, res};
+    }
+  }
+  return {nullptr, 0};
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: 0.05819116160273552
+--------------------------------------------------
+C_Code: 
+static uint32_t
+read_uint32 (struct dwarf_buf *buf)
+{
+  const unsigned char *p = buf->buf;
+
+  if (!advance (buf, 4))
+    return 0;
+  if (buf->is_bigendian)
+    return (((uint32_t) p[0] << 24) | ((uint32_t) p[1] << 16)
+	    | ((uint32_t) p[2] << 8) | (uint32_t) p[3]);
+  else
+    return (((uint32_t) p[3] << 24) | ((uint32_t) p[2] << 16)
+	    | ((uint32_t) p[1] << 8) | (uint32_t) p[0]);
+}
+Function: 
+pub unsafe fn read<T: Copy>(&mut self) -> T {
+        let Unaligned(result) = *(self.ptr as *const Unaligned<T>);
+        self.ptr = self.ptr.add(mem::size_of::<T>());
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5011_rank3.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5011_rank3.rs", "c_api": "OhCloudExtVectorGetLength(pValKeys.get(), reinterpret_cast<unsigned int *>(&valKeysLen))", "rust_api": "vector.len()", "mapping_type": "function", "description": "Getting the length of a vector", "reasoning": "[Task Analysis] C function `ConvertBucket` processes a hash map and converts it into a `DBVBucket` (a Rust HashMap-like structure), while Rust function `OhCloudExtVectorGet` retrieves elements from a vector with FFI safety checks. [Similarity] Names do not match (`ConvertBucket` vs `OhCloudExtVectorGet`), and domains differ: C is about data conversion and iteration, Rust is about low-level vector access. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, there are API mappings related to vector access and data retrieval patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5011_rank3.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5011_rank3.rs", "c_api": "OhCloudExtVectorGetLength(pValValues.get(), reinterpret_cast<unsigned int *>(&valValuesLen))", "rust_api": "vector.len()", "mapping_type": "function", "description": "Getting the length of a vector", "reasoning": "[Task Analysis] C function `ConvertBucket` processes a hash map and converts it into a `DBVBucket` (a Rust HashMap-like structure), while Rust function `OhCloudExtVectorGet` retrieves elements from a vector with FFI safety checks. [Similarity] Names do not match (`ConvertBucket` vs `OhCloudExtVectorGet`), and domains differ: C is about data conversion and iteration, Rust is about low-level vector access. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, there are API mappings related to vector access and data retrieval patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5011_rank3.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5011_rank3.rs", "c_api": "OhCloudExtVectorGet(pValValues.get(), j, &valueItem, reinterpret_cast<unsigned int *>(&valueItemLen))", "rust_api": "OhCloudExtVector::get_inner_ref(vector, SafetyCheckId::Vector)", "mapping_type": "function", "description": "Retrieving an element from a vector by index with length validation", "reasoning": "[Task Analysis] C function `ConvertBucket` processes a hash map and converts it into a `DBVBucket` (a Rust HashMap-like structure), while Rust function `OhCloudExtVectorGet` retrieves elements from a vector with FFI safety checks. [Similarity] Names do not match (`ConvertBucket` vs `OhCloudExtVectorGet`), and domains differ: C is about data conversion and iteration, Rust is about low-level vector access. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, there are API mappings related to vector access and data retrieval patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5011_rank3.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5011_rank3.rs", "c_api": "OhCloudExtVectorGet(pValKeys.get(), j, &keyItem, reinterpret_cast<unsigned int *>(&keyItemLen))", "rust_api": "OhCloudExtVector::get_inner_ref(vector, SafetyCheckId::Vector)", "mapping_type": "function", "description": "Retrieving an element from a vector by index with length validation", "reasoning": "[Task Analysis] C function `ConvertBucket` processes a hash map and converts it into a `DBVBucket` (a Rust HashMap-like structure), while Rust function `OhCloudExtVectorGet` retrieves elements from a vector with FFI safety checks. [Similarity] Names do not match (`ConvertBucket` vs `OhCloudExtVectorGet`), and domains differ: C is about data conversion and iteration, Rust is about low-level vector access. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, there are API mappings related to vector access and data retrieval patterns."}]
+Unixcoder Score: 0.03940241038799286
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE unsigned
+atomic_add_u(unsigned *p, unsigned x)
+{
+
+#if (LG_SIZEOF_INT == 3)
+	return ((unsigned)atomic_add_uint64((uint64_t *)p, (uint64_t)x));
+#elif (LG_SIZEOF_INT == 2)
+	return ((unsigned)atomic_add_uint32((uint32_t *)p, (uint32_t)x));
+#endif
+}
+Function: 
+fn atomic_u64() {
+    static ATOMIC: AtomicU64 = AtomicU64::new(0);
+
+    ATOMIC.store(1, SeqCst);
+    assert_eq!(ATOMIC.compare_exchange(0, 0x100, AcqRel, Acquire), Err(1));
+    assert_eq!(ATOMIC.compare_exchange(0, 1, Release, Relaxed), Err(1));
+    assert_eq!(ATOMIC.compare_exchange(1, 0, AcqRel, Relaxed), Ok(1));
+    assert_eq!(ATOMIC.compare_exchange(0, 1, Relaxed, Relaxed), Ok(0));
+    compare_exchange_weak_loop!(ATOMIC, 1, 0x100, AcqRel, Acquire);
+    assert_eq!(ATOMIC.compare_exchange_weak(0, 2, Acquire, Relaxed), Err(0x100));
+    assert_eq!(ATOMIC.compare_exchange_weak(0, 1, Release, Relaxed), Err(0x100));
+    assert_eq!(ATOMIC.load(Relaxed), 0x100);
+
+    assert_eq!(ATOMIC.fetch_max(0x10, SeqCst), 0x100);
+    assert_eq!(ATOMIC.fetch_max(0x100, SeqCst), 0x100);
+    assert_eq!(ATOMIC.fetch_max(0x1000, SeqCst), 0x100);
+    assert_eq!(ATOMIC.fetch_max(0x1000, SeqCst), 0x1000);
+    assert_eq!(ATOMIC.fetch_max(0x2000, SeqCst), 0x1000);
+    assert_eq!(ATOMIC.fetch_max(0x2000, SeqCst), 0x2000);
+
+    assert_eq!(ATOMIC.fetch_min(0x2000, SeqCst), 0x2000);
+    assert_eq!(ATOMIC.fetch_min(0x2000, SeqCst), 0x2000);
+    assert_eq!(ATOMIC.fetch_min(0x1000, SeqCst), 0x2000);
+    assert_eq!(ATOMIC.fetch_min(0x1000, SeqCst), 0x1000);
+    assert_eq!(ATOMIC.fetch_min(0x100, SeqCst), 0x1000);
+    assert_eq!(ATOMIC.fetch_min(0x10, SeqCst), 0x100);
+}
+Unixcoder Score: 0.038184985518455505
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "++ret", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Accumulate bit shift for value decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "(*p & 0x80)", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Check continuation bit in LEB128 encoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "++p", "rust_api": "self.read::<u8>()", "mapping_type": "function", "description": "Advance to next byte in stream", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = unsafe { self.read::<u8>() };\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Iterative byte processing with continuation condition based on MSB flag", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}]
+Unixcoder Score: 0.02352283149957657
+--------------------------------------------------
+C_Code: 
+static uint64_t
+read_uint64 (struct dwarf_buf *buf)
+{
+  const unsigned char *p = buf->buf;
+
+  if (!advance (buf, 8))
+    return 0;
+  if (buf->is_bigendian)
+    return (((uint64_t) p[0] << 56) | ((uint64_t) p[1] << 48)
+	    | ((uint64_t) p[2] << 40) | ((uint64_t) p[3] << 32)
+	    | ((uint64_t) p[4] << 24) | ((uint64_t) p[5] << 16)
+	    | ((uint64_t) p[6] << 8) | (uint64_t) p[7]);
+  else
+    return (((uint64_t) p[7] << 56) | ((uint64_t) p[6] << 48)
+	    | ((uint64_t) p[5] << 40) | ((uint64_t) p[4] << 32)
+	    | ((uint64_t) p[3] << 24) | ((uint64_t) p[2] << 16)
+	    | ((uint64_t) p[1] << 8) | (uint64_t) p[0]);
+}
+Function: 
+pub unsafe fn read<T: Copy>(&mut self) -> T {
+        unsafe {
+            let result = self.ptr.cast::<T>().read_unaligned();
+            self.ptr = self.ptr.byte_add(mem::size_of::<T>());
+            result
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fd_read_char__idx111904_rank4.c", "source_rust_file": "API_Mapping__fd_read_char__idx111904_rank4.rs", "c_api": "read(fd, &c, 1)", "rust_api": "r.read_exact(&mut b)?", "mapping_type": "function", "description": "Reading data from a file descriptor/reader", "reasoning": "[Task Analysis] C function reads a character from a file descriptor with timeout using poll and read; Rust function reads a little-endian u16 from a reader. [Similarity] No full structural similarity due to different domains (low-level I/O vs high-level data parsing), different control flow, and different data types. [Knowledge Extraction] Extract API mappings for I/O operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fd_read_char__idx111904_rank4.c", "source_rust_file": "API_Mapping__fd_read_char__idx111904_rank4.rs", "c_api": "return -1;", "rust_api": "io::Result<u16>", "mapping_type": "pattern", "description": "Error propagation in I/O operations", "reasoning": "[Task Analysis] C function reads a character from a file descriptor with timeout using poll and read; Rust function reads a little-endian u16 from a reader. [Similarity] No full structural similarity due to different domains (low-level I/O vs high-level data parsing), different control flow, and different data types. [Knowledge Extraction] Extract API mappings for I/O operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fd_read_char__idx111904_rank4.c", "source_rust_file": "API_Mapping__fd_read_char__idx111904_rank4.rs", "c_api": "poll(&p, 1, timeout)", "rust_api": "io::Result<u16>", "mapping_type": "pattern", "description": "Handling I/O operations with timeout/error propagation", "reasoning": "[Task Analysis] C function reads a character from a file descriptor with timeout using poll and read; Rust function reads a little-endian u16 from a reader. [Similarity] No full structural similarity due to different domains (low-level I/O vs high-level data parsing), different control flow, and different data types. [Knowledge Extraction] Extract API mappings for I/O operations and error handling patterns."}]
+Unixcoder Score: 0.021674467250704765
+--------------------------------------------------
+C_Code: 
+std::pair<const char*, int32> ReadSizeFallback(const char* p, uint32 res) {
+  for (std::uint32_t i = 1; i < 4; i++) {
+    uint32 byte = static_cast<uint8>(p[i]);
+    res += (byte - 1) << (7 * i);
+    if (PROTOBUF_PREDICT_TRUE(byte < 128)) {
+      return {p + i + 1, res};
+    }
+  }
+  std::uint32_t byte = static_cast<uint8>(p[4]);
+  if (PROTOBUF_PREDICT_FALSE(byte >= 8)) return {nullptr, 0};  // size >= 2gb
+  res += (byte - 1) << 28;
+  // Protect against sign integer overflow in PushLimit. Limits are relative
+  // to buffer ends and ptr could potential be kSlopBytes beyond a buffer end.
+  // To protect against overflow we reject limits absurdly close to INT_MAX.
+  if (PROTOBUF_PREDICT_FALSE(res > INT_MAX - ParseContext::kSlopBytes)) {
+    return {nullptr, 0};
+  }
+  return {p + 5, res};
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "calloc(maxlen, sizeof(char))", "rust_api": "Err(super::unimpl())", "mapping_type": "function", "description": "Memory allocation (calloc) vs error return in stub", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "strstr(menv[i], \"=\")", "rust_api": "super::unimpl()", "mapping_type": "function", "description": "String search (strstr) vs unimplemented logic", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "strncmp(key, \"PATH\", maxlen)", "rust_api": "super::unimpl()", "mapping_type": "function", "description": "String comparison (strncmp) vs unimplemented logic", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "free(menv)", "rust_api": "Err(super::unimpl())", "mapping_type": "function", "description": "Memory deallocation (free) vs error return in stub", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "memcpy(p, val, *sz)", "rust_api": "super::unimpl()", "mapping_type": "function", "description": "Memory copy (memcpy) vs unimplemented logic", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "sysctl(mib, 4, NULL, &maxlen, NULL, 0)", "rust_api": "super::unimpl()", "mapping_type": "function", "description": "System call to retrieve system information (sysctl) vs unimplemented stub", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}]
+Unixcoder Score: 0.008318093605339527
+--------------------------------------------------
+C_Code: 
+bool VerifyFromPointer(const uint8_t *const p, const size_t len) {
+    return Verify(static_cast<size_t>(p - buf_), len);
+  }
+Function: 
+pub fn size_prefixed_root<'buf, T>(data: &'buf [u8]) -> Result<T::Inner, InvalidFlatbuffer>
+where
+    T: 'buf + Follow<'buf> + Verifiable,
+{
+    let opts = VerifierOptions::default();
+    size_prefixed_root_with_opts::<T>(&opts, data)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__fd_read_char__idx111906_rank2.c", "source_rust_file": "Partial__fd_read_char__idx111906_rank2.rs", "c_fragment": "if (poll(&p, 1, timeout) == 0) {\n        /* timeout */\n        return -1;\n    }", "rust_fragment": "match r.bytes().next() {\n        Some(s) => s,\n        None => Err(io::Error::new(io::ErrorKind::Other, \"end of file\")),\n    }", "description": "Both handle read failure cases with early return/error propagation", "reasoning": "[Task Analysis] C function reads a byte from a file descriptor with timeout using poll and read; Rust function reads a byte from a reader with error handling. [Similarity] Names don't match but both perform byte-level I/O with error handling. [Knowledge Extraction] No full structural match due to different control flow and APIs. Partial match in error handling pattern. No API mappings due to semantic mismatch in domain (low-level I/O vs high-level reader abstraction)."}]
+Unixcoder Score: 0.0054504903964698315
+--------------------------------------------------
+C_Code: 
+bool VerifyFromPointer(const uint8_t *const p, const size_t len) {
+    return Verify(static_cast<size_t>(p - buf_), len);
+  }
+Function: 
+pub fn root_with_opts<'opts, 'buf, T>(
+    opts: &'opts VerifierOptions,
+    data: &'buf [u8],
+) -> Result<T::Inner, InvalidFlatbuffer>
+where
+    T: 'buf + Follow<'buf> + Verifiable,
+{
+    let mut v = Verifier::new(opts, data);
+    <ForwardsUOffset<T>>::run_verifier(&mut v, 0)?;
+    // Safety:
+    // Run verifier above
+    Ok(unsafe { root_unchecked::<T>(data) })
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GenerateSerializeWithCachedSizesToArray__idx5587_rank5.c", "source_rust_file": "API_Mapping__GenerateSerializeWithCachedSizesToArray__idx5587_rank5.rs", "c_api": "p->Emit(...)", "rust_api": "self.inner.as_bytes()", "mapping_type": "method", "description": "Data access pattern for retrieving serialized data", "reasoning": "[Task Analysis] C code is a C++ method for generating serialized message data, involving conditional logic, string emission, and serialization operations. Rust code is a simple getter method returning a slice of bytes from an internal field. [Similarity] No structural similarity at the function level; C has complex control flow and string templating, while Rust has a trivial getter. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping in data access patterns (retrieving data from internal storage)."}]
+Unixcoder Score: 0.0014303365023806691
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "byte & 0x80", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Checking continuation bit in variable-length encoded data", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "self.read::<u8>()", "rust_api": "*p", "mapping_type": "function", "description": "Reading a byte from input stream for decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "++p", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Advancing through data stream during decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = self.read::<u8>();\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Both implement iterative decoding of variable-length encoded data using bit masking and loop control.", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}]
+Unixcoder Score: -0.008795099332928658
+--------------------------------------------------

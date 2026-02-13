@@ -1,0 +1,335 @@
+C_Code: 
+constexpr bool IsBtree() const { return tag == BTREE; }
+Function: 
+pub fn reference_table(&self, tag: &str) -> Blob {
+        let mut tag_u: u32 = 0;
+        let mut chars = tag.chars();
+        tag_u |= (chars.next().unwrap() as u32) << 24;
+        tag_u |= (chars.next().unwrap() as u32) << 16;
+        tag_u |= (chars.next().unwrap() as u32) << 8;
+        tag_u |= chars.next().unwrap() as u32;
+        let mut blob = Blob {
+            data: std::ptr::null_mut(),
+            length: 0,
+        };
+        unsafe {
+            face_copy_table(self.0, tag_u, &mut blob);
+        }
+        blob
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_dbg_unpack_option_u64__idx57036_rank3.c", "source_rust_file": "Partial__rust_dbg_unpack_option_u64__idx57036_rank3.rs", "c_api": "rust_dbg_unpack_option_u64", "rust_api": "rust_dbg_unpack_option_u64u64", "mapping_type": "function", "description": "Unpacking function for tagged enum option into two u64 values.", "reasoning": "[Task Analysis] C function handles unpacking a tagged enum option into a u64 value, while Rust function tests the behavior of the enum and its unpacking. [Similarity] Names do not match (rust_dbg_unpack_option_u64 vs enum_passing_and_return_pair), but there's a clear semantic alignment in the unpacking logic. [Knowledge Extraction] Found partial structural match in unpacking logic and API mapping for the unpacking function call."}, {"knowledge_type": "Partial", "source_c_file": "Partial__rust_dbg_unpack_option_u64__idx57036_rank3.c", "source_rust_file": "Partial__rust_dbg_unpack_option_u64__idx57036_rank3.rs", "c_fragment": "switch (o.tag) {\n    case OPTION_TAG_SOME:\n        *into = o.some;\n        return 1;\n    case OPTION_TAG_NONE:\n        return 0;\n    default:\n        assert(0 && \"unexpected tag\");\n        return 0;\n    }", "rust_fragment": "if let U8TaggedEnumOptionU64U64::Some(a, b) = some_u64u64 {\n            assert_eq!(10, a);\n            assert_eq!(20, b);\n        } else {\n            panic!(\"unexpected none\");\n        }", "description": "Both handle unpacking of an option-like tagged enum, with different control flow patterns (switch vs match).", "reasoning": "[Task Analysis] C function handles unpacking a tagged enum option into a u64 value, while Rust function tests the behavior of the enum and its unpacking. [Similarity] Names do not match (rust_dbg_unpack_option_u64 vs enum_passing_and_return_pair), but there's a clear semantic alignment in the unpacking logic. [Knowledge Extraction] Found partial structural match in unpacking logic and API mapping for the unpacking function call."}]
+Unixcoder Score: 0.10083992779254913
+--------------------------------------------------
+C_Code: 
+napi_status ParseAssetAttribute(const napi_env env, napi_value tag, napi_value value, AssetAttr &attr)
+{
+    // parse tag
+    napi_valuetype type = napi_undefined;
+    NAPI_CALL_RETURN_ERR(env, napi_typeof(env, tag, &type));
+    NAPI_THROW_RETURN_ERR(
+        env, type != napi_number, SEC_ASSET_INVALID_ARGUMENT, "The tag type of map should be number.");
+    NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, tag, &attr.tag));
+
+    // parse value
+    NAPI_CALL_RETURN_ERR(env, napi_typeof(env, value, &type));
+    switch (attr.tag & SEC_ASSET_TAG_TYPE_MASK) {
+        case SEC_ASSET_TYPE_BOOL:
+            CHECK_ASSET_TAG(env, type != napi_boolean, attr.tag, "Expect type napi_boolean.");
+            NAPI_CALL_RETURN_ERR(env, napi_get_value_bool(env, value, &attr.value.boolean));
+            break;
+        case SEC_ASSET_TYPE_NUMBER:
+            CHECK_ASSET_TAG(env, type != napi_number, attr.tag, "Expect type napi_number.");
+            NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, value, &attr.value.u32));
+            break;
+        case SEC_ASSET_TYPE_BYTES:
+            CHECK_ASSET_TAG(env, type != napi_object, attr.tag, "Expect type napi_object.");
+            NAPI_CALL_RETURN_ERR(env, ParseByteArray(env, value, attr.tag, attr.value.blob));
+            break;
+        default:
+            CHECK_ASSET_TAG(env, true, attr.tag, "Invalid tag argument.");
+    }
+    return napi_ok;
+}
+Function: 
+fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
+    let mut aad = Vec::new();
+    for column in &AAD_ATTR {
+        if !check_if_need_addition_aad(column, attrs) {
+            continue;
+        }
+        match attrs.get(column) {
+            Some(Value::Bytes(bytes)) => aad.extend(bytes),
+            Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
+            Some(Value::Bool(num)) => aad.push(*num as u8),
+            None => continue,
+        }
+    }
+    aad
+}
+Unixcoder Score: 0.012537294998764992
+--------------------------------------------------
+C_Code: 
+UPB_FORCEINLINE
+bool _upb_Decoder_TryFastDispatch(upb_Decoder* d, const char** ptr,
+                                  upb_Message* msg, const upb_MiniTable* m) {
+#if UPB_FASTTABLE
+  if (m && m->UPB_PRIVATE(table_mask) != (unsigned char)-1) {
+    uint16_t tag = _upb_FastDecoder_LoadTag(*ptr);
+    intptr_t table = decode_totable(m);
+    *ptr = _upb_FastDecoder_TagDispatch(d, *ptr, msg, table, 0, tag);
+    return true;
+  }
+#endif
+  return false;
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__compute_tag_size__idx8297_rank1.c", "source_rust_file": "Partial__compute_tag_size__idx8297_rank1.rs", "c_fragment": "for (uint16_t i = 0; i < n_largest_variants; i++) {\n        uint16_t variant_id = get_u16_bump(tinfo.largest_variants_ptr);\n        std::pair<const uint8_t *,const uint8_t *> variant_ptr_and_end =\n            get_variant_sp(tinfo, variant_id);\n        const uint8_t *variant_ptr = variant_ptr_and_end.first;\n        const uint8_t *variant_end = variant_ptr_and_end.second;\n\n        size_of sub(*this, variant_ptr, NULL);\n        sub.align = false;\n\n        // Compute the size of this variant.\n        size_align variant_sa;\n        bool first = true;\n        while (sub.sp != variant_end) {\n            if (!first)\n                variant_sa.size = align_to(variant_sa.size, sub.sa.alignment);\n            sub.walk();\n            sub.align = true, first = false;\n\n            variant_sa.add(sub.sa.size, sub.sa.alignment);\n        }\n\n        if (tinfo.tag_sa.size < variant_sa.size)\n            tinfo.tag_sa = variant_sa;\n    }", "rust_fragment": "for vid : uint in largest_variants {\n        // We increment a \"virtual data pointer\" to compute the size.\n        let lltys = ~[];\n        for typ : ty::t in variants.(vid).args {\n            lltys += ~[trans::type_of(ccx, fake_span(), typ)];\n        }\n\n        let llty = trans_common::T_struct(lltys);\n        let dp = trans::llsize_of_real(ccx, llty) as u16;\n        let variant_align = trans::llalign_of_real(ccx, llty) as u8;\n\n        if max_size < dp { max_size = dp; }\n        if max_align < variant_align { max_align = variant_align; }\n    }", "description": "Loop over variants to compute size and alignment", "reasoning": "[Task Analysis] C function computes tag size using variant traversal and alignment logic; Rust function computes static tag size using variant types and alignment. [Similarity] Names don't match exactly but both compute tag size with similar domain (type size/alignment). [Knowledge Extraction] Found partial structural match in loop and alignment logic, and API mappings for variant traversal and size computation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__compute_tag_size__idx8297_rank1.c", "source_rust_file": "Partial__compute_tag_size__idx8297_rank1.rs", "c_api": "get_u16_bump", "rust_api": "variants.(vid).args", "mapping_type": "function", "description": "Access variant arguments for size computation", "reasoning": "[Task Analysis] C function computes tag size using variant traversal and alignment logic; Rust function computes static tag size using variant types and alignment. [Similarity] Names don't match exactly but both compute tag size with similar domain (type size/alignment). [Knowledge Extraction] Found partial structural match in loop and alignment logic, and API mappings for variant traversal and size computation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__compute_tag_size__idx8297_rank1.c", "source_rust_file": "Partial__compute_tag_size__idx8297_rank1.rs", "c_api": "variant_sa.add", "rust_api": "if max_size < dp { max_size = dp; }", "mapping_type": "function", "description": "Accumulate maximum size from variants", "reasoning": "[Task Analysis] C function computes tag size using variant traversal and alignment logic; Rust function computes static tag size using variant types and alignment. [Similarity] Names don't match exactly but both compute tag size with similar domain (type size/alignment). [Knowledge Extraction] Found partial structural match in loop and alignment logic, and API mappings for variant traversal and size computation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__compute_tag_size__idx8297_rank1.c", "source_rust_file": "Partial__compute_tag_size__idx8297_rank1.rs", "c_api": "get_variant_sp", "rust_api": "ty::tag_variants", "mapping_type": "function", "description": "Retrieve variant information", "reasoning": "[Task Analysis] C function computes tag size using variant traversal and alignment logic; Rust function computes static tag size using variant types and alignment. [Similarity] Names don't match exactly but both compute tag size with similar domain (type size/alignment). [Knowledge Extraction] Found partial structural match in loop and alignment logic, and API mappings for variant traversal and size computation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__compute_tag_size__idx8297_rank1.c", "source_rust_file": "Partial__compute_tag_size__idx8297_rank1.rs", "c_api": "align_to", "rust_api": "trans::llalign_of_real", "mapping_type": "function", "description": "Alignment computation for data structures", "reasoning": "[Task Analysis] C function computes tag size using variant traversal and alignment logic; Rust function computes static tag size using variant types and alignment. [Similarity] Names don't match exactly but both compute tag size with similar domain (type size/alignment). [Knowledge Extraction] Found partial structural match in loop and alignment logic, and API mappings for variant traversal and size computation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__compute_tag_size__idx8297_rank1.c", "source_rust_file": "Partial__compute_tag_size__idx8297_rank1.rs", "c_api": "tinfo.tag_sa.set", "rust_api": "max_size = dp", "mapping_type": "function", "description": "Set computed size for tag", "reasoning": "[Task Analysis] C function computes tag size using variant traversal and alignment logic; Rust function computes static tag size using variant types and alignment. [Similarity] Names don't match exactly but both compute tag size with similar domain (type size/alignment). [Knowledge Extraction] Found partial structural match in loop and alignment logic, and API mappings for variant traversal and size computation."}]
+Unixcoder Score: 0.008878298103809357
+--------------------------------------------------
+C_Code: 
+UPB_FORCEINLINE
+bool _upb_Decoder_CheckEnum(upb_Decoder* d, const char* ptr, upb_Message* msg,
+                            const upb_MiniTableEnum* e,
+                            const upb_MiniTableField* field, wireval* val) {
+  const uint32_t v = val->uint32_val;
+
+  if (UPB_LIKELY(upb_MiniTableEnum_CheckValue(e, v))) return true;
+
+  // Unrecognized enum goes into unknown fields.
+  // For packed fields the tag could be arbitrarily far in the past,
+  // so we just re-encode the tag and value here.
+  const uint32_t tag =
+      ((uint32_t)field->UPB_PRIVATE(number) << 3) | kUpb_WireType_Varint;
+  upb_Message* unknown_msg =
+      field->UPB_PRIVATE(mode) & kUpb_LabelFlags_IsExtension ? d->unknown_msg
+                                                             : msg;
+  _upb_Decoder_AddUnknownVarints(d, unknown_msg, tag, v);
+  return false;
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckAssetRequiredTag__idx4474_rank1.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4474_rank1.rs", "c_api": "std::find_if(attrs.begin(), attrs.end(), [requiredTag](const AssetAttr &attr) { return attr.tag == requiredTag; })", "rust_api": "attrs.contains_key(tag)", "mapping_type": "function", "description": "Check existence of a tag in a collection.", "reasoning": "[Task Analysis] C function uses N-API and checks for required asset tags; Rust function checks asset map for required tags. [Similarity] Both perform iteration and conditional checks for missing elements, but C uses std::find_if and Rust uses contains_key. [Knowledge Extraction] Full match blocked by domain mismatch (C uses N-API, Rust uses Result/ErrCode), but partial structural fragments and API mappings found."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckAssetRequiredTag__idx4474_rank1.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4474_rank1.rs", "c_api": "RETURN_JS_ERROR(env, errorCode, \"Missing required tag[asset.Tag.%s].\", TAG_MAP.at(requiredTag))", "rust_api": "log_throw_error!(ErrCode::InvalidArgument, \"[FATAL]The required tag [{}] is missing.\", tag)", "mapping_type": "function", "description": "Throw an error when a required tag is missing.", "reasoning": "[Task Analysis] C function uses N-API and checks for required asset tags; Rust function checks asset map for required tags. [Similarity] Both perform iteration and conditional checks for missing elements, but C uses std::find_if and Rust uses contains_key. [Knowledge Extraction] Full match blocked by domain mismatch (C uses N-API, Rust uses Result/ErrCode), but partial structural fragments and API mappings found."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckAssetRequiredTag__idx4474_rank1.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4474_rank1.rs", "c_fragment": "for (uint32_t requiredTag : requiredTags) {\n        auto it = std::find_if(attrs.begin(), attrs.end(), [requiredTag](const AssetAttr &attr) {\n            return attr.tag == requiredTag;\n        });\n        if (it == attrs.end()) {\n            RETURN_JS_ERROR(env, errorCode, \"Missing required tag[asset.Tag.%s].\", TAG_MAP.at(requiredTag));\n        }\n    }", "rust_fragment": "for tag in required_tags {\n        if !attrs.contains_key(tag) {\n            return log_throw_error!(ErrCode::InvalidArgument, \"[FATAL]The required tag [{}] is missing.\", tag);\n        }\n    }", "description": "Iterate over required tags and check if each exists in the asset map, returning an error if missing.", "reasoning": "[Task Analysis] C function uses N-API and checks for required asset tags; Rust function checks asset map for required tags. [Similarity] Both perform iteration and conditional checks for missing elements, but C uses std::find_if and Rust uses contains_key. [Knowledge Extraction] Full match blocked by domain mismatch (C uses N-API, Rust uses Result/ErrCode), but partial structural fragments and API mappings found."}]
+Unixcoder Score: 0.006351875606924295
+--------------------------------------------------
+C_Code: 
+int    onGetTableTags(SkFontTableTag tags[]) const override { return 0; }
+Function: 
+fn table_tags(font_ref: &BridgeFontRef, tags: &mut [u32]) -> u16 {
+    font_ref
+        .with_font(|f| {
+            let table_directory = &f.table_directory;
+            let table_tags_iter = table_directory
+                .table_records()
+                .iter()
+                .map(|table| u32::from_be_bytes(table.tag.get().into_bytes()));
+            tags.iter_mut()
+                .zip(table_tags_iter)
+                .for_each(|(out_tag, table_tag)| *out_tag = table_tag);
+            Some(table_directory.num_tables())
+        })
+        .unwrap_or_default()
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseAssetAttribute__idx4459_rank1.c", "source_rust_file": "Partial__ParseAssetAttribute__idx4459_rank1.rs", "c_api": "napi_get_value_bool", "rust_api": "Value::Bool(num)", "mapping_type": "method", "description": "Extracting boolean value from N-API value to Rust enum variant", "reasoning": "[FFI Check] -> [Task Analysis] The C code is a N-API wrapper for parsing asset attributes, while the Rust code builds a byte vector from database map attributes. These are different domains (FFI glue vs data processing). -> [Similarity] No full structural similarity due to different logic scopes and domains. -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared patterns like loop iteration and conditional logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ParseAssetAttribute__idx4459_rank1.c", "source_rust_file": "Partial__ParseAssetAttribute__idx4459_rank1.rs", "c_fragment": "for (int i = 0; i < len; i++) {\n        if (condition) {\n            continue;\n        }\n        // logic\n    }", "rust_fragment": "for column in &AAD_ATTR {\n        if !check_if_need_addition_aad(column, attrs) {\n            continue;\n        }\n        match attrs.get(column) {\n            Some(Value::Bytes(bytes)) => aad.extend(bytes),\n            Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),\n            Some(Value::Bool(num)) => aad.push(*num as u8),\n            None => continue,\n        }\n    }", "description": "Both use iteration over a collection with conditional checks and continue statements.", "reasoning": "[FFI Check] -> [Task Analysis] The C code is a N-API wrapper for parsing asset attributes, while the Rust code builds a byte vector from database map attributes. These are different domains (FFI glue vs data processing). -> [Similarity] No full structural similarity due to different logic scopes and domains. -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared patterns like loop iteration and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseAssetAttribute__idx4459_rank1.c", "source_rust_file": "Partial__ParseAssetAttribute__idx4459_rank1.rs", "c_api": "ParseByteArray", "rust_api": "Value::Bytes(bytes)", "mapping_type": "function", "description": "Parsing byte array from N-API value to Rust enum variant", "reasoning": "[FFI Check] -> [Task Analysis] The C code is a N-API wrapper for parsing asset attributes, while the Rust code builds a byte vector from database map attributes. These are different domains (FFI glue vs data processing). -> [Similarity] No full structural similarity due to different logic scopes and domains. -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared patterns like loop iteration and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseAssetAttribute__idx4459_rank1.c", "source_rust_file": "Partial__ParseAssetAttribute__idx4459_rank1.rs", "c_api": "NAPI_CALL_RETURN_ERR", "rust_api": "CHECK_ASSET_TAG", "mapping_type": "function", "description": "Error handling and validation check in N-API context", "reasoning": "[FFI Check] -> [Task Analysis] The C code is a N-API wrapper for parsing asset attributes, while the Rust code builds a byte vector from database map attributes. These are different domains (FFI glue vs data processing). -> [Similarity] No full structural similarity due to different logic scopes and domains. -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared patterns like loop iteration and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseAssetAttribute__idx4459_rank1.c", "source_rust_file": "Partial__ParseAssetAttribute__idx4459_rank1.rs", "c_api": "napi_get_value_uint32", "rust_api": "Value::Number(num)", "mapping_type": "method", "description": "Extracting numeric value from N-API value to Rust enum variant", "reasoning": "[FFI Check] -> [Task Analysis] The C code is a N-API wrapper for parsing asset attributes, while the Rust code builds a byte vector from database map attributes. These are different domains (FFI glue vs data processing). -> [Similarity] No full structural similarity due to different logic scopes and domains. -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared patterns like loop iteration and conditional logic."}]
+Unixcoder Score: 0.0047723231837153435
+--------------------------------------------------
+C_Code: 
+constexpr uint64_t MakeTagType(uint64_t tag, WireType type) {
+  return tag << 3 | static_cast<uint64_t>(type);
+}
+Function: 
+fn build_mask_lut_16() -> Vec<u8> {
+    vello_encoding::make_mask_lut_16()
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115765_rank1.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115765_rank1.rs", "c_api": "rust_dbg_unpack_option_u64", "rust_api": "unwrap_or", "mapping_type": "function", "description": "Unwraps an Option-like structure with a default value", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('rust_dbg_unpack_option_u64' vs 'test_unwrap_or'), but both involve Option-like logic. [Filter 2: Empty/Trivial Code] -> C code has logic, Rust code has test logic. [Filter 3: FFI Wrapper] -> No FFI detected. [Filter 4: Semantic Domain Mismatch] -> C handles tagged enum unpacking, Rust tests Option unwrap_or behavior. Domains are related but not identical. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C is a function definition, Rust is a test function. However, the test function is testing logic equivalent to the C function's behavior. [Full BLOCKERS] -> Code length mismatch (C: ~10 lines, Rust: ~10 lines, but different scope). [Semantic & Domain Consistency] -> Both involve Option/None handling, but C is unpacking a tagged enum while Rust is testing unwrap_or. [Partial Match] -> No direct structural match. [API Mappings] -> C function 'rust_dbg_unpack_option_u64' performs unpacking of a tagged enum into a value or returns 0 if None. Rust test uses 'unwrap_or' which does similar logic. [None] -> No full match, no partial match, but API mapping exists."}]
+Unixcoder Score: 0.0031046709045767784
+--------------------------------------------------
+C_Code: 
+UPB_FORCEINLINE
+bool _upb_Decoder_CheckEnum(upb_Decoder* d, const char* ptr, upb_Message* msg,
+                            const upb_MiniTableEnum* e,
+                            const upb_MiniTableField* field, wireval* val) {
+  const uint32_t v = val->uint32_val;
+
+  if (UPB_LIKELY(upb_MiniTableEnum_CheckValue(e, v))) return true;
+
+  // Unrecognized enum goes into unknown fields.
+  // For packed fields the tag could be arbitrarily far in the past,
+  // so we just re-encode the tag and value here.
+  const uint32_t tag =
+      ((uint32_t)field->UPB_PRIVATE(number) << 3) | kUpb_WireType_Varint;
+  upb_Message* unknown_msg =
+      field->UPB_PRIVATE(mode) & kUpb_LabelFlags_IsExtension ? d->unknown_msg
+                                                             : msg;
+  _upb_Decoder_AddUnknownVarints(d, unknown_msg, tag, v);
+  return false;
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckAssetRequiredTag__idx4476_rank5.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4476_rank5.rs", "c_api": "std::find_if", "rust_api": "attrs.get", "mapping_type": "function", "description": "Searching for specific elements in collections", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks for required tags in asset attributes and returns error if missing; Rust function validates group validity based on asset map and calling info, returning errors for invalid conditions. -> [Similarity] -> No full structural similarity due to different domains (tag validation vs group validity checks), different control flow, and different APIs. -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted based on shared patterns like error handling and conditional logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckAssetRequiredTag__idx4476_rank5.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4476_rank5.rs", "c_fragment": "if (it == attrs.end()) {\n            RETURN_JS_ERROR(env, errorCode, \"Missing required tag[asset.Tag.%s].\", TAG_MAP.at(requiredTag));\n        }", "rust_fragment": "if attrs.get(&Tag::GroupId).is_some() {\n        if let Some(Value::Bool(true)) = attrs.get(&Tag::IsPersistent) {\n            return log_throw_error!(\n                ErrCode::InvalidArgument,\n                \"[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.\",\n                &Tag::IsPersistent,\n                &Tag::GroupId\n            );\n        }", "description": "Both blocks check for missing or invalid conditions and return an error.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks for required tags in asset attributes and returns error if missing; Rust function validates group validity based on asset map and calling info, returning errors for invalid conditions. -> [Similarity] -> No full structural similarity due to different domains (tag validation vs group validity checks), different control flow, and different APIs. -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted based on shared patterns like error handling and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckAssetRequiredTag__idx4476_rank5.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4476_rank5.rs", "c_api": "requiredTags", "rust_api": "attrs", "mapping_type": "pattern", "description": "Collections of data being validated", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks for required tags in asset attributes and returns error if missing; Rust function validates group validity based on asset map and calling info, returning errors for invalid conditions. -> [Similarity] -> No full structural similarity due to different domains (tag validation vs group validity checks), different control flow, and different APIs. -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted based on shared patterns like error handling and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckAssetRequiredTag__idx4476_rank5.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4476_rank5.rs", "c_api": "RETURN_JS_ERROR", "rust_api": "log_throw_error!", "mapping_type": "function", "description": "Error reporting mechanism in both languages", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks for required tags in asset attributes and returns error if missing; Rust function validates group validity based on asset map and calling info, returning errors for invalid conditions. -> [Similarity] -> No full structural similarity due to different domains (tag validation vs group validity checks), different control flow, and different APIs. -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted based on shared patterns like error handling and conditional logic."}]
+Unixcoder Score: -0.0017405715771019459
+--------------------------------------------------
+C_Code: 
+uint64_t t_add(T a, T b) {
+  if (a.tag == A && b.tag == A) {
+    return a.a._0 + b.a._0;
+  } else if (a.tag == AA) {
+    return a.a._0;
+  } else if (b.tag == BB) {
+    return b.a._0;
+  } else {
+    return 0;
+  }
+}
+Function: 
+pub extern "C" fn t_add(a: T, b: T) -> u64 {
+    match (a, b) {
+        (T::A(a), T::A(b)) => a + b,
+        (T::A(a), T::B) => a,
+        (T::B, T::A(b)) => b,
+        _ => 0,
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckAssetRequiredTag__idx4475_rank5.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4475_rank5.rs", "c_api": "RETURN_JS_ERROR(env, errorCode, \"Missing required tag[asset.Tag.%s].\", TAG_MAP.at(requiredTag))", "rust_api": "log_throw_error!(ErrCode::InvalidArgument, \"[FATAL]The tag [{}] is illegal.\", tag)", "mapping_type": "function", "description": "Error reporting with formatted message", "reasoning": "[Task Analysis] C function checks for required asset tags using std::find_if and returns error if missing; Rust function checks if all asset tags are valid using contains and returns error if invalid. [Similarity] Both perform validation loops over collections with early exit on failure, but differ in domain (asset tag validation vs general tag validation). [Knowledge Extraction] Names don't refer to same concept (CheckAssetRequiredTag vs check_tag_validity), and domains are different (asset attribute validation vs general tag validation). However, both have matching structural patterns (loop + condition + early return) and API mappings for collection iteration and validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckAssetRequiredTag__idx4475_rank5.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4475_rank5.rs", "c_api": "std::find_if(attrs.begin(), attrs.end(), [requiredTag](const AssetAttr &attr) { return attr.tag == requiredTag; })", "rust_api": "valid_tags.contains(tag)", "mapping_type": "function", "description": "Collection element lookup/containment check", "reasoning": "[Task Analysis] C function checks for required asset tags using std::find_if and returns error if missing; Rust function checks if all asset tags are valid using contains and returns error if invalid. [Similarity] Both perform validation loops over collections with early exit on failure, but differ in domain (asset tag validation vs general tag validation). [Knowledge Extraction] Names don't refer to same concept (CheckAssetRequiredTag vs check_tag_validity), and domains are different (asset attribute validation vs general tag validation). However, both have matching structural patterns (loop + condition + early return) and API mappings for collection iteration and validation logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckAssetRequiredTag__idx4475_rank5.c", "source_rust_file": "Partial__CheckAssetRequiredTag__idx4475_rank5.rs", "c_fragment": "for (uint32_t requiredTag : requiredTags) {\n        auto it = std::find_if(attrs.begin(), attrs.end(), [requiredTag](const AssetAttr &attr) {\n            return attr.tag == requiredTag;\n        });\n        if (it == attrs.end()) {\n            RETURN_JS_ERROR(env, errorCode, \"Missing required tag[asset.Tag.%s].\", TAG_MAP.at(requiredTag));\n        }\n    }", "rust_fragment": "for tag in attrs.keys() {\n        if !valid_tags.contains(tag) {\n            return log_throw_error!(ErrCode::InvalidArgument, \"[FATAL]The tag [{}] is illegal.\", tag);\n        }\n    }", "description": "Loop over collection with conditional check and early return on failure", "reasoning": "[Task Analysis] C function checks for required asset tags using std::find_if and returns error if missing; Rust function checks if all asset tags are valid using contains and returns error if invalid. [Similarity] Both perform validation loops over collections with early exit on failure, but differ in domain (asset tag validation vs general tag validation). [Knowledge Extraction] Names don't refer to same concept (CheckAssetRequiredTag vs check_tag_validity), and domains are different (asset attribute validation vs general tag validation). However, both have matching structural patterns (loop + condition + early return) and API mappings for collection iteration and validation logic."}]
+Unixcoder Score: -0.012487278319895267
+--------------------------------------------------
+C_Code: 
+bool ExtensionSet::ParseMessageSet(io::CodedInputStream* input,
+                                   ExtensionFinder* extension_finder,
+                                   MessageSetFieldSkipper* field_skipper) {
+  while (true) {
+    const uint32 tag = input->ReadTag();
+    switch (tag) {
+      case 0:
+        return true;
+      case WireFormatLite::kMessageSetItemStartTag:
+        if (!ParseMessageSetItem(input, extension_finder, field_skipper)) {
+          return false;
+        }
+        break;
+      default:
+        if (!ParseField(tag, input, extension_finder, field_skipper)) {
+          return false;
+        }
+        break;
+    }
+  }
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AddCommonGenParams__idx4571_rank3.c", "source_rust_file": "API_Mapping__AddCommonGenParams__idx4571_rank3.rs", "c_api": "HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams))", "rust_api": "self.get(key)", "mapping_type": "function", "description": "Adding parameters to a set (C) vs retrieving a value from a map (Rust), both involve adding or accessing data structures.", "reasoning": "[Task Analysis] C function initializes a parameter set with common cryptographic parameters and calls HksAddParams; Rust function retrieves a byte vector from a map-like structure with error handling. [Similarity] No structural similarity at the function level due to different domains (crypto param setup vs map lookup). [Knowledge Extraction] No full or partial match. API mappings identified: HksAddParams ↔ Vec::push (both add elements to collections, though types differ)."}]
+Unixcoder Score: -0.017207695171236992
+--------------------------------------------------
+C_Code: 
+int32_t
+rust_dbg_unpack_option_u64(struct U8TaggedEnumOptionU64 o, uint64_t *into) {
+    assert(into);
+    switch (o.tag) {
+    case OPTION_TAG_SOME:
+        *into = o.some;
+        return 1;
+    case OPTION_TAG_NONE:
+        return 0;
+    default:
+        assert(0 && "unexpected tag");
+        return 0;
+    }
+}
+Function: 
+fn match_opt_some() -> i8 {
+    let x = Some(13);
+    match x {
+        Some(data) => data,
+        None => 20,
+    }
+}
+Unixcoder Score: -0.01742895133793354
+--------------------------------------------------

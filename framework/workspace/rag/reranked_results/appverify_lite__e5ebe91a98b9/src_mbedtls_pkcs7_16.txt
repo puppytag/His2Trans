@@ -1,0 +1,223 @@
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        self.head.is_none()
+    }
+Unixcoder Score: 0.10403167456388474
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        self.head.is_none()
+    }
+Unixcoder Score: 0.08929788321256638
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Unixcoder Score: 0.07663130760192871
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn main() {
+    unsafe { assert_eq!(S, *(S as *const *const u8)); }
+
+    let mut test_vec = Vec::new();
+    let mut cur = &L1;
+    loop {
+        test_vec.push(cur.data);
+        cur = cur.next;
+        if cur.head { break }
+    }
+    assert_eq!(&test_vec, &[1,2,3]);
+
+    let mut test_vec = Vec::new();
+    let mut cur = &L1;
+    loop {
+        cur = cur.prev;
+        test_vec.push(cur.data);
+        if cur.head { break }
+    }
+    assert_eq!(&test_vec, &[3,2,1]);
+}
+Unixcoder Score: 0.0699487179517746
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Unixcoder Score: 0.06798206269741058
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Unixcoder Score: 0.06506066024303436
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Unixcoder Score: 0.06364312767982483
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+fn test_dlist_pop_tail() {
+        let l = from_vec(~[1,2,3]);
+        assert l.pop_tail().get() == 3;
+        assert l.tail() == 2;
+        assert l.head() == 1;
+        assert l.pop_tail().get() == 2;
+        assert l.tail() == 1;
+        assert l.head() == 1;
+        assert l.pop_tail().get() == 1;
+        assert l.is_empty();
+        assert l.pop_tail().is_none();
+    }
+Unixcoder Score: 0.06291700899600983
+--------------------------------------------------
+C_Code: 
+int32_t ISystemAbilityManagerMock::GetCommonEventExtraDataIdlist(int32_t saId, std::vector<int64_t>& extraDataIdList,
+    const std::string& eventName)
+{
+    return 0;
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_task__idx79250_rank4.c", "source_rust_file": "API_Mapping__rust_task__idx79250_rank4.rs", "c_api": "new_stack(init_stack_sz)", "rust_api": "mmap(stackaddr, PAGE_SIZE as libc::size_t, PROT_NONE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0)", "mapping_type": "function", "description": "Stack/guard page allocation", "reasoning": "[Task Analysis] C code is a constructor for a Rust task struct, initializing fields and calling new_stack(). Rust code is a memory management initialization function using libc syscalls. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and system calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_task__idx79250_rank4.c", "source_rust_file": "API_Mapping__rust_task__idx79250_rank4.rs", "c_api": "libc::sysconf(libc::consts::os::sysconf::_SC_PAGESIZE)", "rust_api": "libc::sysconf(libc::consts::os::sysconf::_SC_PAGESIZE)", "mapping_type": "function", "description": "Get system page size", "reasoning": "[Task Analysis] C code is a constructor for a Rust task struct, initializing fields and calling new_stack(). Rust code is a memory management initialization function using libc syscalls. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and system calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_task__idx79250_rank4.c", "source_rust_file": "API_Mapping__rust_task__idx79250_rank4.rs", "c_api": "mmap(...)", "rust_api": "mmap(...)", "mapping_type": "function", "description": "Memory mapping for guard page", "reasoning": "[Task Analysis] C code is a constructor for a Rust task struct, initializing fields and calling new_stack(). Rust code is a memory management initialization function using libc syscalls. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and system calls."}]
+Unixcoder Score: 0.024089938029646873
+--------------------------------------------------
+C_Code: 
+int32_t CloudCursorImpl::GetColumnName(int32_t col, std::string &name) const
+{
+    if (names_.size() <= static_cast<size_t>(col)) {
+        return DBErr::E_INVALID_ARGS;
+    }
+    name = names_[col];
+    return DBErr::E_OK;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtFieldGetColName(
+    fd: *const OhCloudExtField,
+    name: *mut *const c_uchar,
+    len: *mut c_uint,
+) -> c_int {
+    if fd.is_null() || name.is_null() || len.is_null() {
+        return ERRNO_NULLPTR;
+    }
+
+    let fd_struct = match OhCloudExtField::get_inner_ref(fd, SafetyCheckId::Field) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+    *name = fd_struct.col_name.as_ptr() as *const c_uchar;
+    *len = fd_struct.col_name.len() as c_uint;
+    ERRNO_SUCCESS
+}
+Unixcoder Score: 0.017406918108463287
+--------------------------------------------------

@@ -1,0 +1,293 @@
+C_Code: 
+uint64_t SelfTokenID()
+{
+    return IPCSkeleton::GetSelfTokenID();
+}
+Function: 
+fn skeleton() {
+    unsafe {
+        assert_eq!(
+            Skeleton::calling_device_id(),
+            (*GetCallingDeviceID()).to_string()
+        );
+        assert_eq!(Skeleton::calling_full_token_id(), GetCallingFullTokenID());
+        assert_eq!(Skeleton::calling_pid(), GetCallingPid());
+        assert_eq!(Skeleton::calling_real_pid(), GetCallingRealPid());
+        assert_eq!(Skeleton::calling_token_id(), GetCallingTokenID());
+        assert_eq!(Skeleton::calling_uid(), GetCallingUid());
+        assert_eq!(Skeleton::first_full_token_id(), GetFirstFullTokenID());
+        assert_eq!(Skeleton::first_token_id(), GetFirstTokenID());
+        assert_eq!(Skeleton::self_token_id(), SelfTokenID());
+        assert_eq!(Skeleton::is_local_calling(), IsLocalCalling());
+        assert_eq!(Skeleton::local_device_id(), (*LocalDeviceID()).to_string());
+        assert_eq!(
+            Skeleton::reset_calling_identity(),
+            (*ResetCallingIdentity()).to_string()
+        );
+    }
+}
+Unixcoder Score: 0.008120591752231121
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn fail_bounds_check(file: *u8, line: uint, index: uint, len: uint) -> ! {
+    #[allow(ctypes)]
+    extern { fn rust_fail_bounds_check(file: *u8, line: uint,
+                                       index: uint, len: uint,) -> !; }
+    unsafe { rust_fail_bounds_check(file, line, index, len) }
+}
+Unixcoder Score: -0.0007407635566778481
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub fn begin_unwind(msg: &str, file: &'static str, line: uint) -> ! {
+    #[allow(ctypes)]
+    extern { fn rust_begin_unwind(msg: &str, file: &'static str,
+                                  line: uint) -> !; }
+    unsafe { rust_begin_unwind(msg, file, line) }
+}
+Unixcoder Score: -0.0019423288758844137
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub fn begin_unwind(&mut self, cause: ~Any) -> ! {
+        rtdebug!("begin_unwind()");
+
+        self.unwinding = true;
+        self.cause = Some(cause);
+
+        unsafe {
+            let exception = ~_Unwind_Exception {
+                exception_class: rust_exception_class(),
+                exception_cleanup: exception_cleanup,
+                private_1: 0,
+                private_2: 0
+            };
+            let error = _Unwind_RaiseException(transmute(exception));
+            rtabort!("Could not unwind stack, error = {}", error as int)
+        }
+
+        extern "C" fn exception_cleanup(_unwind_code: _Unwind_Reason_Code,
+                                        exception: *_Unwind_Exception) {
+            rtdebug!("exception_cleanup()");
+            unsafe {
+                let _: ~_Unwind_Exception = transmute(exception);
+            }
+        }
+    }
+Unixcoder Score: -0.0075983707793056965
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub extern "C" fn rust_eh_personality(
+        version: c_int,
+        actions: uw::_Unwind_Action,
+        exception_class: uw::_Unwind_Exception_Class,
+        ue_header: *mut uw::_Unwind_Exception,
+        context: *mut uw::_Unwind_Context
+    ) -> uw::_Unwind_Reason_Code
+    {
+        unsafe {
+            __gcc_personality_sj0(version, actions, exception_class, ue_header,
+                                  context)
+        }
+    }
+Unixcoder Score: -0.00923239253461361
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub unsafe extern fn __rust_start_panic(data: usize, vtable: usize) -> u32 {
+    imp::panic(mem::transmute(raw::TraitObject {
+        data: data as *mut (),
+        vtable: vtable as *mut (),
+    }))
+}
+Unixcoder Score: -0.011491418816149235
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+extern "C" fn inner(
+                _version: c_int,
+                actions: uw::_Unwind_Action,
+                _exception_class: uw::_Unwind_Exception_Class,
+                _ue_header: *mut uw::_Unwind_Exception,
+                _context: *mut uw::_Unwind_Context
+            ) -> uw::_Unwind_Reason_Code
+        {
+            if (actions as c_int & uw::_UA_SEARCH_PHASE as c_int) != 0 { // search phase
+                uw::_URC_HANDLER_FOUND // catch!
+            }
+            else { // cleanup phase
+                uw::_URC_INSTALL_CONTEXT
+            }
+        }
+Unixcoder Score: -0.011625852435827255
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn main() {
+    let mut map: HashMap<SendStr, uint> = HashMap::new();
+    assert!(map.insert(SendStrStatic("foo"), 42));
+    assert!(!map.insert(SendStrOwned(~"foo"), 42));
+    assert!(!map.insert(SendStrStatic("foo"), 42));
+    assert!(!map.insert(SendStrOwned(~"foo"), 42));
+
+    assert!(!map.insert(SendStrStatic("foo"), 43));
+    assert!(!map.insert(SendStrOwned(~"foo"), 44));
+    assert!(!map.insert(SendStrStatic("foo"), 45));
+    assert!(!map.insert(SendStrOwned(~"foo"), 46));
+
+    let v = 46;
+
+    assert_eq!(map.find(&SendStrOwned(~"foo")), Some(&v));
+    assert_eq!(map.find(&SendStrStatic("foo")), Some(&v));
+
+    let (a, b, c, d) = (50, 51, 52, 53);
+
+    assert!(map.insert(SendStrStatic("abc"), a));
+    assert!(map.insert(SendStrOwned(~"bcd"), b));
+    assert!(map.insert(SendStrStatic("cde"), c));
+    assert!(map.insert(SendStrOwned(~"def"), d));
+
+    assert!(!map.insert(SendStrStatic("abc"), a));
+    assert!(!map.insert(SendStrOwned(~"bcd"), b));
+    assert!(!map.insert(SendStrStatic("cde"), c));
+    assert!(!map.insert(SendStrOwned(~"def"), d));
+
+    assert!(!map.insert(SendStrOwned(~"abc"), a));
+    assert!(!map.insert(SendStrStatic("bcd"), b));
+    assert!(!map.insert(SendStrOwned(~"cde"), c));
+    assert!(!map.insert(SendStrStatic("def"), d));
+
+    assert_eq!(map.find_equiv(&("abc")), Some(&a));
+    assert_eq!(map.find_equiv(&("bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&("cde")), Some(&c));
+    assert_eq!(map.find_equiv(&("def")), Some(&d));
+
+    assert_eq!(map.find_equiv(&(~"abc")), Some(&a));
+    assert_eq!(map.find_equiv(&(~"bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&(~"cde")), Some(&c));
+    assert_eq!(map.find_equiv(&(~"def")), Some(&d));
+
+    assert_eq!(map.find_equiv(&(@"abc")), Some(&a));
+    assert_eq!(map.find_equiv(&(@"bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&(@"cde")), Some(&c));
+    assert_eq!(map.find_equiv(&(@"def")), Some(&d));
+
+    assert_eq!(map.find_equiv(&SendStrStatic("abc")), Some(&a));
+    assert_eq!(map.find_equiv(&SendStrStatic("bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&SendStrStatic("cde")), Some(&c));
+    assert_eq!(map.find_equiv(&SendStrStatic("def")), Some(&d));
+
+    assert_eq!(map.find_equiv(&SendStrOwned(~"abc")), Some(&a));
+    assert_eq!(map.find_equiv(&SendStrOwned(~"bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&SendStrOwned(~"cde")), Some(&c));
+    assert_eq!(map.find_equiv(&SendStrOwned(~"def")), Some(&d));
+}
+Unixcoder Score: -0.012019849382340908
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn parse_type_alias(&mut self, defaultness: Defaultness) -> PResult<'a, ItemInfo> {
+        let ident = self.parse_ident()?;
+        let mut generics = self.parse_generics()?;
+
+        // Parse optional colon and param bounds.
+        let bounds =
+            if self.eat(&token::Colon) { self.parse_generic_bounds()? } else { Vec::new() };
+        let before_where_clause = self.parse_where_clause()?;
+
+        let ty = if self.eat(&token::Eq) { Some(self.parse_ty()?) } else { None };
+
+        let after_where_clause = self.parse_where_clause()?;
+
+        let where_clauses = (
+            TyAliasWhereClause(before_where_clause.has_where_token, before_where_clause.span),
+            TyAliasWhereClause(after_where_clause.has_where_token, after_where_clause.span),
+        );
+        let where_predicates_split = before_where_clause.predicates.len();
+        let mut predicates = before_where_clause.predicates;
+        predicates.extend(after_where_clause.predicates.into_iter());
+        let where_clause = WhereClause {
+            has_where_token: before_where_clause.has_where_token
+                || after_where_clause.has_where_token,
+            predicates,
+            span: DUMMY_SP,
+        };
+        generics.where_clause = where_clause;
+
+        self.expect_semi()?;
+
+        Ok((
+            ident,
+            ItemKind::TyAlias(Box::new(TyAlias {
+                defaultness,
+                generics,
+                where_clauses,
+                where_predicates_split,
+                bounds,
+                ty,
+            })),
+        ))
+    }
+Unixcoder Score: -0.014720138162374496
+--------------------------------------------------
+C_Code: 
+CDECL uintptr_t
+rust_try(rust_try_fn f, void *fptr, void *env) {
+    try {
+        f(fptr, env);
+    } catch (uintptr_t token) {
+        assert(token != 0);
+        return token;
+    }
+    return 0;
+}
+Function: 
+fn read_all(input: &mut Reader) -> ~str {
+    let mut ret = ~"";
+    let mut buf = [0, ..1024];
+    loop {
+        match input.read(buf) {
+            None | Some(0) => { break }
+            Some(n) => { ret = ret + str::from_utf8(buf.slice_to(n)); }
+        }
+    }
+    return ret;
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__rust_begin_unwind__idx8485_rank1.c", "source_rust_file": "Full__rust_begin_unwind__idx8485_rank1.rs", "c_api": "throw token", "rust_api": "imp::panic(...)", "mapping_type": "function", "description": "Panic/exception throwing mechanism", "reasoning": "[Task Analysis] C function `rust_begin_unwind` and Rust function `__rust_start_panic` both handle panic/exception unwinding. [Similarity] Both are low-level panic handlers, with similar input parameters (token/data, vtable) and purpose (triggering panic). [Knowledge Extraction] Full structural match in purpose and control flow; API mappings identified for panic handling mechanisms."}, {"knowledge_type": "Partial", "source_c_file": "Full__rust_begin_unwind__idx8485_rank1.c", "source_rust_file": "Full__rust_begin_unwind__idx8485_rank1.rs", "c_fragment": "CDECL void\nrust_begin_unwind(uintptr_t token) {\n    throw token;\n}", "rust_fragment": "pub unsafe extern fn __rust_start_panic(data: usize, vtable: usize) -> u32 {\n    imp::panic(mem::transmute(raw::TraitObject {\n        data: data as *mut (),\n        vtable: vtable as *mut (),\n    }))\n}", "description": "Both functions handle panic unwinding, with similar input parameters and purpose.", "reasoning": "[Task Analysis] C function `rust_begin_unwind` and Rust function `__rust_start_panic` both handle panic/exception unwinding. [Similarity] Both are low-level panic handlers, with similar input parameters (token/data, vtable) and purpose (triggering panic). [Knowledge Extraction] Full structural match in purpose and control flow; API mappings identified for panic handling mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__rust_begin_unwind__idx8485_rank1.c", "source_rust_file": "Full__rust_begin_unwind__idx8485_rank1.rs", "c_api": "uintptr_t token", "rust_api": "data: usize, vtable: usize", "mapping_type": "pattern", "description": "Token/vtable parameters for panic handling", "reasoning": "[Task Analysis] C function `rust_begin_unwind` and Rust function `__rust_start_panic` both handle panic/exception unwinding. [Similarity] Both are low-level panic handlers, with similar input parameters (token/data, vtable) and purpose (triggering panic). [Knowledge Extraction] Full structural match in purpose and control flow; API mappings identified for panic handling mechanisms."}, {"knowledge_type": "Full", "source_c_file": "Full__rust_begin_unwind__idx8485_rank1.c", "source_rust_file": "Full__rust_begin_unwind__idx8485_rank1.rs", "reasoning": "[Task Analysis] C function `rust_begin_unwind` and Rust function `__rust_start_panic` both handle panic/exception unwinding. [Similarity] Both are low-level panic handlers, with similar input parameters (token/data, vtable) and purpose (triggering panic). [Knowledge Extraction] Full structural match in purpose and control flow; API mappings identified for panic handling mechanisms.", "description": "Full structural translation"}]
+Unixcoder Score: -0.019138501957058907
+--------------------------------------------------

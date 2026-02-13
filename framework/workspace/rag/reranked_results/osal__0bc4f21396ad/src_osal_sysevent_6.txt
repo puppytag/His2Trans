@@ -1,0 +1,234 @@
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_right(neighbour: dlist_node<T>, nobe: dlist_link<T>) {
+        self.assert_mine(neighbour);
+        assert self.size > 0;
+        self.link(nobe, neighbour.next);
+        self.link(some(neighbour), nobe);
+        self.size += 1;
+    }
+Unixcoder Score: 0.07401645928621292
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_after_n(+data: T, neighbour: dlist_node<T>) -> dlist_node<T> {
+        let mut nobe = self.new_link(data);
+        self.insert_right(neighbour, nobe);
+        option::get(nobe)
+    }
+Unixcoder Score: 0.06688810139894485
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn test_dlist_insert_n_before() {
+        let l = create::<int>();
+        l.assert_consistent(); let _one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let three = create_node(3);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); l.insert_n_before(three, two);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 2;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.pop().get() == 2;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Unixcoder Score: 0.0647936761379242
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn test_dlist_insert_n_after() {
+        let l = create::<int>();
+        l.assert_consistent(); let one = l.push_n(1);
+        l.assert_consistent(); let _two = l.push_n(2);
+        l.assert_consistent(); let three = create_node(3);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); l.insert_n_after(three, one);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 2;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.pop().get() == 2;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Unixcoder Score: 0.06162281706929207
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+unsafe fn split_off_before_node(
+        &mut self,
+        split_node: Option<NonNull<Node<T>>>,
+        at: usize,
+    ) -> Self
+    where
+        A: Clone,
+    {
+        // The split node is the new head node of the second part
+        if let Some(mut split_node) = split_node {
+            let first_part_head;
+            let first_part_tail;
+            unsafe {
+                first_part_tail = split_node.as_mut().prev.take();
+            }
+            if let Some(mut tail) = first_part_tail {
+                unsafe {
+                    tail.as_mut().next = None;
+                }
+                first_part_head = self.head;
+            } else {
+                first_part_head = None;
+            }
+
+            let first_part = LinkedList {
+                head: first_part_head,
+                tail: first_part_tail,
+                len: at,
+                alloc: self.alloc.clone(),
+                marker: PhantomData,
+            };
+
+            // Fix the head ptr of the second part
+            self.head = Some(split_node);
+            self.len = self.len - at;
+
+            first_part
+        } else {
+            mem::replace(self, LinkedList::new_in(self.alloc.clone()))
+        }
+    }
+Unixcoder Score: 0.05481497943401337
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_after_n(+data: T, neighbour: dlist_node<T>) -> dlist_node<T> {
+        let mut nobe = self.new_link(data);
+        self.insert_right(neighbour, nobe);
+        option::get(nobe)
+    }
+Unixcoder Score: 0.05113033205270767
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_after(+data: T, neighbour: dlist_node<T>) {
+        self.insert_right(neighbour, self.new_link(data));
+    }
+Unixcoder Score: 0.05083652213215828
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+pub fn split_after(&mut self) -> LinkedList<T, A>
+    where
+        A: Clone,
+    {
+        let split_off_idx = if self.index == self.list.len { 0 } else { self.index + 1 };
+        if self.index == self.list.len {
+            // The "ghost" non-element's index has changed to 0.
+            self.index = 0;
+        }
+        unsafe { self.list.split_off_after_node(self.current, split_off_idx) }
+    }
+Unixcoder Score: 0.05033069849014282
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn test_dlist_insert_n_before() {
+        let l = create::<int>();
+        l.assert_consistent(); let _one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let three = create_node(3);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); l.insert_n_before(three, two);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 2;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.pop().get() == 2;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Unixcoder Score: 0.04955229535698891
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_right(neighbour: dlist_node<T>, nobe: dlist_link<T>) {
+        self.assert_mine(neighbour);
+        assert self.size > 0;
+        self.link(nobe, neighbour.next);
+        self.link(some(neighbour), nobe);
+        self.size += 1;
+    }
+Unixcoder Score: 0.049422625452280045
+--------------------------------------------------

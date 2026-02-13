@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_svcmgr_ioservice_6",
+  "function_name": "SvcMgrIoserviceConstruct",
+  "source_c_file": "src/svcmgr_ioservice.c",
+  "c_code": "static void SvcMgrIoserviceConstruct(struct ISvcMgrIoservice * svcmgrInst)\n{\n    svcmgrInst->RegisterServiceStatusListener = SvcMgrIoserviceRegSvcStatListener;\n    svcmgrInst->UnregisterServiceStatusListener = SvcMgrIoserviceUnRegSvcStatListener;\n}",
+  "rust_signature": "fn SvcMgrIoserviceConstruct(svcmgrInst: *mut crate::types::ISvcMgrIoservice)",
+  "rust_code": "fn SvcMgrIoserviceConstruct(svcmgrInst: *mut ISvcMgrIoservice) {\n    unsafe {\n        (*svcmgrInst).RegisterServiceStatusListener = Some(SvcMgrIoserviceRegSvcStatListener);\n        (*svcmgrInst).UnregisterServiceStatusListener = Some(SvcMgrIoserviceUnRegSvcStatListener);\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "return foo(...);",
+      "rust_fragment": "return foo(...);",
+      "description": "Direct call/return pattern is preserved in Rust",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

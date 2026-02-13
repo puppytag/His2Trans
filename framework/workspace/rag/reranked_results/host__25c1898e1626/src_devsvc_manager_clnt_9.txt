@@ -1,0 +1,256 @@
+C_Code: 
+int32_t CancelUnloadSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->CancelUnloadSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn cancel_unload_system_ability(said: i32) -> i32 {
+        info!("cancel unload system ability {}", said);
+        CancelUnloadSystemAbility(said)
+    }
+Unixcoder Score: 0.0452679879963398
+--------------------------------------------------
+C_Code: 
+int32_t CancelUnloadSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->CancelUnloadSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn cancel_unload_system_ability(said: i32) -> i32 {
+        info!("cancel unload system ability {}", said);
+        CancelUnloadSystemAbility(said)
+    }
+Unixcoder Score: 0.04242580756545067
+--------------------------------------------------
+C_Code: 
+int32_t CancelUnloadSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->CancelUnloadSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn cancel_unload_system_ability(said: i32) -> i32 {
+        info!("cancel unload system ability {}", said);
+        CancelUnloadSystemAbility(said)
+    }
+Unixcoder Score: 0.03952958807349205
+--------------------------------------------------
+C_Code: 
+int32_t GetOnDemandReasonExtraData(int64_t extraDataId, MessageParcel &parcel)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->GetOnDemandReasonExtraData(extraDataId, parcel);
+}
+Function: 
+pub fn get_on_demand_reason_extra_date(extra_data_id: i64, parcel: &mut MsgParcel) -> i32 {
+        GetOnDemandReasonExtraData(extra_data_id, parcel.pin_mut().unwrap())
+    }
+Unixcoder Score: 0.016262639313936234
+--------------------------------------------------
+C_Code: 
+int32_t GetOnDemandReasonExtraData(int64_t extraDataId, MessageParcel &parcel)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->GetOnDemandReasonExtraData(extraDataId, parcel);
+}
+Function: 
+pub fn get_on_demand_reason_extra_date(extra_data_id: i64, parcel: &mut MsgParcel) -> i32 {
+        GetOnDemandReasonExtraData(extra_data_id, parcel.pin_mut().unwrap())
+    }
+Unixcoder Score: 0.014867028221487999
+--------------------------------------------------
+C_Code: 
+int32_t GetOnDemandReasonExtraData(int64_t extraDataId, MessageParcel &parcel)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->GetOnDemandReasonExtraData(extraDataId, parcel);
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Unixcoder Score: 0.012509193271398544
+--------------------------------------------------
+C_Code: 
+std::pair<bool, StoreMetaData> AppDataListenerWrap::LoadMetaData(const std::string &bundleName,
+    const std::string &storeId, int32_t userId)
+{
+    StoreMetaData metaData;
+    metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData.bundleName = bundleName;
+    metaData.storeId = storeId;
+    metaData.user = std::to_string(userId);
+    auto ret = MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
+    if (!ret) {
+        metaData.user = SYSTEM_USER;
+        ret = MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
+    }
+    return { ret, metaData };
+}
+Function: 
+pub fn get_app_schema(&mut self, bundle_name: &str) -> SyncResult<SchemaMeta> {
+        let schema_ipc = self.connect.get_app_schema(self.user_id, bundle_name)?;
+        Ok(SchemaMeta::from(schema_ipc.deref()))
+    }
+Unixcoder Score: 0.006622073706239462
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.001703877467662096
+--------------------------------------------------
+C_Code: 
+static void DoAdd()
+    {
+        cout << "add mock system ability : " << DISTRIBUTED_SCHED_TEST_TT_ID << endl;
+        sptr<ISystemAbilityManager> sm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (sm == nullptr)  {
+            cout << "------------------samgr is unavailable-----------------------------------------" << endl;
+            return;
+        }
+        sptr<IRemoteObject> testAbility = new TestTransactionService();
+        int32_t res = sm->AddSystemAbility(DISTRIBUTED_SCHED_TEST_TT_ID, testAbility);
+        cout << "add system ability result : " << ((res == 0) ? "succeed" : "failed") << endl;
+    }
+Function: 
+fn add_systemability_test() {
+    init_access_token();
+    let service = TestStub::new_remote_stub(TestService).expect("create TestService failed");
+    let sapro = SAExtraProp::default();
+    let samgr_proxy = get_systemability_manager();
+    samgr_proxy
+        .add_systemability(&service.as_object().unwrap(), TEST_AUDIO_ID, sapro)
+        .expect("add_systemability failed");
+}
+Unixcoder Score: -0.0019066852983087301
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: -0.0061964974738657475
+--------------------------------------------------

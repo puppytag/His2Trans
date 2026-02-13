@@ -1,0 +1,289 @@
+C_Code: 
+struct  FT_GlyphLoaderRec_
+  {
+    FT_Memory        memory;
+    FT_UInt          max_points;
+    FT_UInt          max_contours;
+    FT_UInt          max_subglyphs;
+    FT_Bool          use_extra;
+
+    FT_GlyphLoadRec  base;
+    FT_GlyphLoadRec  current;
+
+    void*            other;            /* for possible future extension? */
+
+  }
+Function: 
+pub struct Glyph {
+    /// The Unicode codepoint or glyph ID of the item
+    pub codepoint: u32,
+    /// The index of the cluster in the input text where this came from
+    pub cluster: u32,
+    /// The horizontal advance of the glyph
+    pub x_advance: i32,
+    /// The vertical advance of the glyph
+    pub y_advance: i32,
+    /// The horizontal offset of the glyph
+    pub x_offset: i32,
+    /// The vertical offset of the glyph
+    pub y_offset: i32,
+    /// You can use this for whatever you like
+    pub flags: u32,
+}
+Unixcoder Score: 0.03166982904076576
+--------------------------------------------------
+C_Code: 
+struct FT_DriverRec_
+Function: 
+struct Reader {
+    reader: png::Reader<cxx::UniquePtr<ffi::ReadTrait>>,
+    last_interlace_info: Option<png::InterlaceInfo>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__signal__idx10458_rank5.c", "source_rust_file": "Partial__signal__idx10458_rank5.rs", "c_fragment": "lock.signal();", "rust_fragment": "(*lock).signal();", "description": "Both code blocks perform a signal operation on a lock object.", "reasoning": "[Task Analysis] C code is a simple signal method in a scheduler driver; Rust code is a complex wake method with multiple branches for green and native tasks. [Similarity] Names don't match (`signal` vs `wake`), but both involve signaling a lock. The core logic of acquiring a lock, signaling it, and releasing it is present in both, though Rust has more complex branching. [Knowledge Extraction] Found partial structural match in lock signaling and a potential API mapping for lock signaling operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__signal__idx10458_rank5.c", "source_rust_file": "Partial__signal__idx10458_rank5.rs", "c_api": "lock.signal()", "rust_api": "(*lock).signal()", "mapping_type": "method", "description": "Lock signaling operation", "reasoning": "[Task Analysis] C code is a simple signal method in a scheduler driver; Rust code is a complex wake method with multiple branches for green and native tasks. [Similarity] Names don't match (`signal` vs `wake`), but both involve signaling a lock. The core logic of acquiring a lock, signaling it, and releasing it is present in both, though Rust has more complex branching. [Knowledge Extraction] Found partial structural match in lock signaling and a potential API mapping for lock signaling operations."}]
+Unixcoder Score: 0.013601064682006836
+--------------------------------------------------
+C_Code: 
+void clear_dbg_line_insts() { dbg_line_insts_.clear(); }
+Function: 
+fn new(verbs: &'a mut Vec<u8>, points: &'a mut Vec<FfiPoint>) -> Self {
+        verbs.clear();
+        points.clear();
+        verbs.reserve(PATH_EXTRACTION_RESERVE);
+        points.reserve(PATH_EXTRACTION_RESERVE);
+        Self {
+            verbs,
+            points,
+            started: false,
+            current: FfiPoint::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx5154_rank2.c", "source_rust_file": "API_Mapping__Download__idx5154_rank2.rs", "c_api": "AssetLoader::Download", "rust_api": "ipc_conn::AssetLoader::download", "mapping_type": "function", "description": "Download asset operation", "reasoning": "[Task Analysis] C function returns E_NOT_SUPPORT, Rust function delegates to upload_download_inner with a closure. [Similarity] Names don't match exactly but both represent a download operation; C has a stub implementation, Rust has a full implementation. [Knowledge Extraction] Full classification blocked by implementation vs test mismatch (C is stub, Rust is full impl), but API mapping exists for download operation."}]
+Unixcoder Score: 0.0011041290126740932
+--------------------------------------------------
+C_Code: 
+struct  FT_GlyphLoaderRec_
+  {
+    FT_Memory        memory;
+    FT_UInt          max_points;
+    FT_UInt          max_contours;
+    FT_UInt          max_subglyphs;
+    FT_Bool          use_extra;
+
+    FT_GlyphLoadRec  base;
+    FT_GlyphLoadRec  current;
+
+    void*            other;            /* for possible future extension? */
+
+  }
+Function: 
+struct CGlyphOutline {
+    n_points: usize,
+    points: *mut CGlyphOutlinePoint,
+    n_contours: usize,
+    contours: *mut usize,
+}
+Unixcoder Score: 0.0008391409646719694
+--------------------------------------------------
+C_Code: 
+void AssetLoader::Download(const std::string &tableName, std::vector<AssetsRecord> &assetsRecords)
+{
+    (void)assetsRecords;
+    return;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudAssetLoaderDownload(
+    loader: *mut OhCloudExtCloudAssetLoader,
+    info: *const OhCloudExtUpDownloadInfo,
+    assets: *mut OhCloudExtVector,
+) -> c_int {
+    if loader.is_null() || info.is_null() || assets.is_null() {
+        return ERRNO_NULLPTR;
+    }
+    let info = &*info;
+    let loader =
+        match OhCloudExtCloudAssetLoader::get_inner_mut(loader, SafetyCheckId::CloudAssetLoader) {
+            None => return ERRNO_WRONG_TYPE,
+            Some(v) => v,
+        };
+    let table_name_bytes = &*slice_from_raw_parts(info.table_name, info.table_name_len as usize);
+    let table_name = std::str::from_utf8_unchecked(table_name_bytes);
+
+    let gid_bytes = &*slice_from_raw_parts(info.gid, info.gid_len as usize);
+    let gid = std::str::from_utf8_unchecked(gid_bytes);
+
+    let prefix_bytes = &*slice_from_raw_parts(info.prefix, info.prefix_len as usize);
+    let prefix = std::str::from_utf8_unchecked(prefix_bytes);
+
+    let assets = match OhCloudExtVector::get_inner_ref(assets, SafetyCheckId::Vector) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let assets = match assets {
+        VectorCffi::CloudAsset(re) => re,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match loader.download(table_name, gid, prefix, assets) {
+        Ok(_) => ERRNO_SUCCESS,
+        Err(e) => map_single_sync_err(&e),
+    }
+}
+Unixcoder Score: -0.00265112379565835
+--------------------------------------------------
+C_Code: 
+struct TT_LoaderRec_
+Function: 
+pub struct Buffer<T: BufferItem> {
+    _ptr: u32,
+    /// Glyphs in the buffer
+    pub glyphs: Vec<T>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "slice_from_raw_parts", "rust_api": "slice_from_raw_parts", "mapping_type": "function", "description": "Creating slice from raw pointer and length", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "loader->download(...)", "rust_api": "loader.download(...)", "mapping_type": "method", "description": "Download operation on asset loader", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "return E_NOT_SUPPORT", "rust_api": "return ERRNO_SUCCESS", "mapping_type": "function", "description": "Error code return for unsupported operation", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "assets->push_back(...)", "rust_api": "assets.push(...)", "mapping_type": "method", "description": "Pushing asset to vector", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "info->prefix", "rust_api": "info.prefix", "mapping_type": "field_access", "description": "Accessing prefix field from info struct", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "info->gid", "rust_api": "info.gid", "mapping_type": "field_access", "description": "Accessing gid field from info struct", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "std::string", "rust_api": "std::str::from_utf8_unchecked", "mapping_type": "type", "description": "String conversion from raw bytes", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "info->table_name", "rust_api": "info.table_name", "mapping_type": "field_access", "description": "Accessing table name field from info struct", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Download__idx4979_rank2.c", "source_rust_file": "API_Mapping__Download__idx4979_rank2.rs", "c_api": "assets.push_back(...)", "rust_api": "assets.push(...)", "mapping_type": "method", "description": "Adding asset to collection", "reasoning": "[Task Analysis] C function is a C++ method returning E_NOT_SUPPORT; Rust function is an FFI wrapper implementing the logic. [Similarity] Names refer to different concepts (AssetLoader::Download vs OhCloudExtCloudAssetLoaderDownload), and domains are different (C++ stub vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, API mappings can be extracted for the core logic operations like download and error handling."}]
+Unixcoder Score: -0.0071555571630597115
+--------------------------------------------------
+C_Code: 
+struct FT_DriverRec_
+Function: 
+struct BitmapMetrics {
+        // Outer glyph bearings that affect the computed bounds. We distinguish
+        // those here from `inner_bearing_*` to account for CoreText behavior in
+        // SBIX placement. Where the sbix originOffsetX/Y are applied only
+        // within the bounds. Specified in font units.
+        // 0 for CBDT, CBLC.
+        bearing_x: f32,
+        bearing_y: f32,
+        // Scale factors to scale image to 1em.
+        ppem_x: f32,
+        ppem_y: f32,
+        // Account for the fact that Sbix and CBDT/CBLC have a different origin
+        // definition.
+        placement_origin_bottom_left: bool,
+        // Specified as a pixel value, to be scaled by `ppem_*` as an
+        // offset applied to placing the image within the bounds rectangle.
+        inner_bearing_x: f32,
+        inner_bearing_y: f32,
+        // Some, but not all, bitmap glyphs have a special bitmap advance
+        advance: f32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "errno", "rust_api": "errno", "mapping_type": "pattern", "description": "Return error code from error handling block", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "Ok(()) => ERRNO_SUCCESS", "rust_api": "Ok(()) => ERRNO_SUCCESS", "mapping_type": "pattern", "description": "Successful operation return code", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "if (server.is_null() || relations.is_null() || err.is_null())", "rust_api": "if server.is_null() || relations.is_null() || err.is_null()", "mapping_type": "pattern", "description": "Null pointer validation check", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "*err = OhCloudExtVector::new(ret, SafetyCheckId::Vector).into_ptr();", "rust_api": "*err = OhCloudExtVector::new(ret, SafetyCheckId::Vector).into_ptr();", "mapping_type": "function", "description": "Set error output pointer with new vector", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "return ERRNO_WRONG_TYPE;", "rust_api": "return ERRNO_WRONG_TYPE;", "mapping_type": "function", "description": "Return error code for wrong type", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "match OhCloudExtCloudSync::get_inner_mut(server, SafetyCheckId::CloudSync)", "rust_api": "match OhCloudExtCloudSync::get_inner_mut(server, SafetyCheckId::CloudSync)", "mapping_type": "function", "description": "Get mutable reference with safety check", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "match cloud_server.unsubscribe(relations)", "rust_api": "match cloud_server.unsubscribe(relations)", "mapping_type": "function", "description": "Subscription operation with error handling", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "let errno = map_single_sync_err(&e);", "rust_api": "let errno = map_single_sync_err(&e);", "mapping_type": "function", "description": "Map sync error to errno", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "return ERRNO_INVALID_INPUT_TYPE;", "rust_api": "return ERRNO_INVALID_INPUT_TYPE;", "mapping_type": "function", "description": "Return error code for invalid input type", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "return ERRNO_NULLPTR;", "rust_api": "return ERRNO_NULLPTR;", "mapping_type": "function", "description": "Return error code for null pointer", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "if errno == ERRNO_IPC_ERRORS", "rust_api": "if errno == ERRNO_IPC_ERRORS", "mapping_type": "pattern", "description": "Conditional check for IPC errors", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "match relations", "rust_api": "match relations", "mapping_type": "pattern", "description": "Pattern matching on enum variant", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "Err(e) => { ... }", "rust_api": "Err(e) => { ... }", "mapping_type": "pattern", "description": "Error handling block", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "match OhCloudExtHashMap::get_inner_ref(relations, SafetyCheckId::HashMap)", "rust_api": "match OhCloudExtHashMap::get_inner_ref(relations, SafetyCheckId::HashMap)", "mapping_type": "function", "description": "Get reference with safety check", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "if let SyncError::IPCErrors(vec) = e", "rust_api": "if let SyncError::IPCErrors(vec) = e", "mapping_type": "pattern", "description": "Pattern matching for specific error type", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "let ret = VectorCffi::I32(vec.iter().map(map_ipc_err).collect());", "rust_api": "let ret = VectorCffi::I32(vec.iter().map(map_ipc_err).collect());", "mapping_type": "function", "description": "Transform and collect IPC errors into vector", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}]
+Unixcoder Score: -0.015589455142617226
+--------------------------------------------------
+C_Code: 
+struct  TT_DriverRec_
+  {
+    FT_DriverRec  root;
+
+    TT_GlyphZoneRec  zone;     /* glyph loader points zone */
+
+    FT_UInt  interpreter_version;
+
+  }
+Function: 
+pub struct Glyph {
+    /// The Unicode codepoint or glyph ID of the item
+    pub codepoint: u32,
+    /// The index of the cluster in the input text where this came from
+    pub cluster: u32,
+    /// The horizontal advance of the glyph
+    pub x_advance: i32,
+    /// The vertical advance of the glyph
+    pub y_advance: i32,
+    /// The horizontal offset of the glyph
+    pub x_offset: i32,
+    /// The vertical offset of the glyph
+    pub y_offset: i32,
+    /// You can use this for whatever you like
+    pub flags: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_sched_driver__idx76536_rank2.c", "source_rust_file": "API_Mapping__rust_sched_driver__idx76536_rank2.rs", "c_api": "sched_loop->on_pump_loop(this)", "rust_api": "sched.run()", "mapping_type": "method", "description": "Starting the event loop execution", "reasoning": "[Task Analysis] C code is a constructor initializing a struct with a pointer and calling a method; Rust code is a function that spawns a thread and runs a task loop. [Similarity] Names don't refer to the same concept (constructor vs function), and domains are different (C++ object initialization vs Rust thread/task scheduling). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, some API patterns may be extracted based on similar control flow and data handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_sched_driver__idx76536_rank2.c", "source_rust_file": "API_Mapping__rust_sched_driver__idx76536_rank2.rs", "c_api": "sched_loop->on_pump_loop(this)", "rust_api": "sched.task_queue.push_back(task)", "mapping_type": "method", "description": "Scheduling a task for execution in the event loop", "reasoning": "[Task Analysis] C code is a constructor initializing a struct with a pointer and calling a method; Rust code is a function that spawns a thread and runs a task loop. [Similarity] Names don't refer to the same concept (constructor vs function), and domains are different (C++ object initialization vs Rust thread/task scheduling). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, some API patterns may be extracted based on similar control flow and data handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_sched_driver__idx76536_rank2.c", "source_rust_file": "API_Mapping__rust_sched_driver__idx76536_rank2.rs", "c_api": "assert(sched_loop != NULL)", "rust_api": "use unstable::run_in_bare_thread", "mapping_type": "pattern", "description": "Thread initialization and error handling pattern", "reasoning": "[Task Analysis] C code is a constructor initializing a struct with a pointer and calling a method; Rust code is a function that spawns a thread and runs a task loop. [Similarity] Names don't refer to the same concept (constructor vs function), and domains are different (C++ object initialization vs Rust thread/task scheduling). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, some API patterns may be extracted based on similar control flow and data handling."}]
+Unixcoder Score: -0.0206696018576622
+--------------------------------------------------
+C_Code: 
+void AssetLoader::Download(const std::string &tableName, std::vector<AssetsRecord> &assetsRecords)
+{
+    (void)assetsRecords;
+    return;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudAssetLoaderDownload(
+    loader: *mut OhCloudExtCloudAssetLoader,
+    info: *const OhCloudExtUpDownloadInfo,
+    assets: *mut OhCloudExtVector,
+) -> c_int {
+    if loader.is_null() || info.is_null() || assets.is_null() {
+        return ERRNO_NULLPTR;
+    }
+    let info = &*info;
+    let loader =
+        match OhCloudExtCloudAssetLoader::get_inner_mut(loader, SafetyCheckId::CloudAssetLoader) {
+            None => return ERRNO_WRONG_TYPE,
+            Some(v) => v,
+        };
+    let table_name_bytes = &*slice_from_raw_parts(info.table_name, info.table_name_len as usize);
+    let table_name = std::str::from_utf8_unchecked(table_name_bytes);
+
+    let gid_bytes = &*slice_from_raw_parts(info.gid, info.gid_len as usize);
+    let gid = std::str::from_utf8_unchecked(gid_bytes);
+
+    let prefix_bytes = &*slice_from_raw_parts(info.prefix, info.prefix_len as usize);
+    let prefix = std::str::from_utf8_unchecked(prefix_bytes);
+
+    let assets = match OhCloudExtVector::get_inner_ref(assets, SafetyCheckId::Vector) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let assets = match assets {
+        VectorCffi::CloudAsset(re) => re,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match loader.download(table_name, gid, prefix, assets) {
+        Ok(_) => ERRNO_SUCCESS,
+        Err(e) => map_single_sync_err(&e),
+    }
+}
+Unixcoder Score: -0.024499110877513885
+--------------------------------------------------
+C_Code: 
+struct  T1_BuilderRec_
+  {
+    FT_Memory       memory;
+    FT_Face         face;
+    FT_GlyphSlot    glyph;
+    FT_GlyphLoader  loader;
+    FT_Outline*     base;
+    FT_Outline*     current;
+
+    FT_Pos          pos_x;
+    FT_Pos          pos_y;
+
+    FT_Vector       left_bearing;
+    FT_Vector       advance;
+
+    FT_BBox         bbox;          /* bounding box */
+    T1_ParseState   parse_state;
+    FT_Bool         load_points;
+    FT_Bool         no_recurse;
+
+    FT_Bool         metrics_only;
+
+    void*           hints_funcs;    /* hinter-specific */
+    void*           hints_globals;  /* hinter-specific */
+
+    T1_Builder_FuncsRec  funcs;
+
+  }
+Function: 
+struct FfiPoint {
+        x: f32,
+        y: f32,
+    }
+Unixcoder Score: -0.02935737371444702
+--------------------------------------------------

@@ -1,0 +1,571 @@
+C_Code: 
+void fs__read(uv_fs_t* req, uv_file file, void *buf, size_t length,
+    off_t offset) {
+  HANDLE handle;
+  OVERLAPPED overlapped, *overlapped_ptr;
+  LARGE_INTEGER offset_;
+  DWORD bytes;
+
+  VERIFY_UV_FILE(file, req);
+
+  handle = (HANDLE) _get_osfhandle(file);
+  if (handle == INVALID_HANDLE_VALUE) {
+    SET_REQ_RESULT(req, -1);
+    return;
+  }
+
+  if (length > INT_MAX) {
+    SET_REQ_ERROR(req, ERROR_INSUFFICIENT_BUFFER);
+    return;
+  }
+
+  if (offset != -1) {
+    memset(&overlapped, 0, sizeof overlapped);
+
+    offset_.QuadPart = offset;
+    overlapped.Offset = offset_.LowPart;
+    overlapped.OffsetHigh = offset_.HighPart;
+
+    overlapped_ptr = &overlapped;
+  } else {
+    overlapped_ptr = NULL;
+  }
+
+  if (ReadFile(handle, buf, length, &bytes, overlapped_ptr)) {
+    SET_REQ_RESULT(req, bytes);
+  } else {
+    SET_REQ_ERROR(req, GetLastError());
+  }
+}
+Function: 
+pub fn read(self, loop_: &Loop, fd: c_int, buf: Buf, offset: i64, cb: FsCallback) {
+        let complete_cb_ptr = {
+            let mut me = self;
+            me.req_boilerplate(Some(cb))
+        };
+        let buf_ptr = buf.base as *c_void;
+        let len = buf.len as uint;
+        let ret = unsafe {
+            uvll::fs_read(loop_.native_handle(), self.native_handle(),
+                           fd, buf_ptr,
+                           len, offset, complete_cb_ptr)
+        };
+        assert_eq!(ret, 0);
+    }
+Unixcoder Score: 0.07104399055242538
+--------------------------------------------------
+C_Code: 
+FT_CALLBACK_DEF( unsigned long )
+  ft_ansi_stream_io( FT_Stream       stream,
+                     unsigned long   offset,
+                     unsigned char*  buffer,
+                     unsigned long   count )
+  {
+    FT_FILE*  file;
+
+
+    if ( offset > stream->size && !count )
+      return 1;
+
+    file = STREAM_FILE( stream );
+
+    if ( stream->pos != offset )
+      ft_fseek( file, (long)offset, SEEK_SET );
+
+    /* Avoid calling `fread` with `buffer=NULL` and `count=0`, */
+    /* which is undefined behaviour.                           */
+    if ( !count )
+      return 0;
+
+    return (unsigned long)ft_fread( buffer, 1, count, file );
+  }
+Function: 
+fn table_data(font_ref: &BridgeFontRef, tag: u32, offset: usize, data: &mut [u8]) -> usize {
+    let table_data = font_ref
+        .with_font(|f| f.table_data(Tag::from_be_bytes(tag.to_be_bytes())))
+        .unwrap_or_default();
+    let table_data = table_data.as_ref();
+    // Remaining table data size measured from offset to end, or 0 if offset is
+    // too large.
+    let mut to_copy_length = table_data.len().saturating_sub(offset);
+    match data.len() {
+        0 => to_copy_length,
+        _ => {
+            to_copy_length = to_copy_length.min(data.len());
+            let table_offset_data = table_data
+                .get(offset..offset + to_copy_length)
+                .unwrap_or_default();
+            data.get_mut(..table_offset_data.len())
+                .map_or(0, |data_slice| {
+                    data_slice.copy_from_slice(table_offset_data);
+                    data_slice.len()
+                })
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__read__idx143913_rank5.c", "source_rust_file": "API_Mapping__fs__read__idx143913_rank5.rs", "c_api": "SET_REQ_ERROR(req, GetLastError())", "rust_api": "assert_eq!(ret, 0)", "mapping_type": "function", "description": "Error handling for file read operation", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `uvll::fs_read` which is a wrapper around libuv's fs_read function. The C code also makes a direct Windows API call to `ReadFile`. Both are low-level system calls, but the Rust code is a higher-level wrapper. -> [Task Analysis] -> The C function `fs__read` is a low-level file reading implementation using Windows API, while the Rust function `read` is a wrapper that calls into a libuv FFI function. They are both performing the same high-level task (asynchronous file read) but with different underlying mechanisms. -> [Similarity] -> The C code has a direct Windows API call (`ReadFile`) and error handling logic, while the Rust code wraps a libuv FFI call (`uvll::fs_read`) with similar error handling. The control flow is conceptually similar, but the implementation details differ significantly due to platform abstraction and FFI boundaries. -> [Knowledge Extraction] -> Full classification is blocked due to FFI wrapper nature and domain mismatch (Windows API vs libuv FFI). However, there are API mappings between the file reading operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__read__idx143913_rank5.c", "source_rust_file": "API_Mapping__fs__read__idx143913_rank5.rs", "c_api": "ReadFile(handle, buf, length, &bytes, overlapped_ptr)", "rust_api": "uvll::fs_read(loop_.native_handle(), self.native_handle(), fd, buf_ptr, len, offset, complete_cb_ptr)", "mapping_type": "function", "description": "Asynchronous file read operation", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `uvll::fs_read` which is a wrapper around libuv's fs_read function. The C code also makes a direct Windows API call to `ReadFile`. Both are low-level system calls, but the Rust code is a higher-level wrapper. -> [Task Analysis] -> The C function `fs__read` is a low-level file reading implementation using Windows API, while the Rust function `read` is a wrapper that calls into a libuv FFI function. They are both performing the same high-level task (asynchronous file read) but with different underlying mechanisms. -> [Similarity] -> The C code has a direct Windows API call (`ReadFile`) and error handling logic, while the Rust code wraps a libuv FFI call (`uvll::fs_read`) with similar error handling. The control flow is conceptually similar, but the implementation details differ significantly due to platform abstraction and FFI boundaries. -> [Knowledge Extraction] -> Full classification is blocked due to FFI wrapper nature and domain mismatch (Windows API vs libuv FFI). However, there are API mappings between the file reading operations and error handling patterns."}]
+Unixcoder Score: 0.06061343848705292
+--------------------------------------------------
+C_Code: 
+upb_DecodeStatus upb_DecodeLengthPrefixed(const char* buf, size_t size,
+                                          upb_Message* msg,
+                                          size_t* num_bytes_read,
+                                          const upb_MiniTable* mt,
+                                          const upb_ExtensionRegistry* extreg,
+                                          int options, upb_Arena* arena) {
+  // To avoid needing to make a Decoder just to decode the initial length,
+  // hand-decode the leading varint for the message length here.
+  uint64_t msg_len = 0;
+  for (size_t i = 0;; ++i) {
+    if (i >= size || i > 9) {
+      return kUpb_DecodeStatus_Malformed;
+    }
+    uint64_t b = *buf;
+    buf++;
+    msg_len += (b & 0x7f) << (i * 7);
+    if ((b & 0x80) == 0) {
+      *num_bytes_read = i + 1 + msg_len;
+      break;
+    }
+  }
+
+  // If the total number of bytes we would read (= the bytes from the varint
+  // plus however many bytes that varint says we should read) is larger then the
+  // input buffer then error as malformed.
+  if (*num_bytes_read > size) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+  if (msg_len > INT32_MAX) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+
+  return upb_Decode(buf, msg_len, msg, mt, extreg, options, arena);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: 0.037172917276620865
+--------------------------------------------------
+C_Code: 
+upb_DecodeStatus upb_DecodeLengthPrefixed(const char* buf, size_t size,
+                                          upb_Message* msg,
+                                          size_t* num_bytes_read,
+                                          const upb_MiniTable* mt,
+                                          const upb_ExtensionRegistry* extreg,
+                                          int options, upb_Arena* arena) {
+  // To avoid needing to make a Decoder just to decode the initial length,
+  // hand-decode the leading varint for the message length here.
+  uint64_t msg_len = 0;
+  for (size_t i = 0;; ++i) {
+    if (i >= size || i > 9) {
+      return kUpb_DecodeStatus_Malformed;
+    }
+    uint64_t b = *buf;
+    buf++;
+    msg_len += (b & 0x7f) << (i * 7);
+    if ((b & 0x80) == 0) {
+      *num_bytes_read = i + 1 + msg_len;
+      break;
+    }
+  }
+
+  // If the total number of bytes we would read (= the bytes from the varint
+  // plus however many bytes that varint says we should read) is larger then the
+  // input buffer then error as malformed.
+  if (*num_bytes_read > size) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+  if (msg_len > INT32_MAX) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+
+  return upb_Decode(buf, msg_len, msg, mt, extreg, options, arena);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: 0.03136061504483223
+--------------------------------------------------
+C_Code: 
+upb_DecodeStatus upb_DecodeLengthPrefixed(const char* buf, size_t size,
+                                          upb_Message* msg,
+                                          size_t* num_bytes_read,
+                                          const upb_MiniTable* mt,
+                                          const upb_ExtensionRegistry* extreg,
+                                          int options, upb_Arena* arena) {
+  // To avoid needing to make a Decoder just to decode the initial length,
+  // hand-decode the leading varint for the message length here.
+  uint64_t msg_len = 0;
+  for (size_t i = 0;; ++i) {
+    if (i >= size || i > 9) {
+      return kUpb_DecodeStatus_Malformed;
+    }
+    uint64_t b = *buf;
+    buf++;
+    msg_len += (b & 0x7f) << (i * 7);
+    if ((b & 0x80) == 0) {
+      *num_bytes_read = i + 1 + msg_len;
+      break;
+    }
+  }
+
+  // If the total number of bytes we would read (= the bytes from the varint
+  // plus however many bytes that varint says we should read) is larger then the
+  // input buffer then error as malformed.
+  if (*num_bytes_read > size) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+  if (msg_len > INT32_MAX) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+
+  return upb_Decode(buf, msg_len, msg, mt, extreg, options, arena);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: 0.02544388733804226
+--------------------------------------------------
+C_Code: 
+upb_DecodeStatus upb_DecodeLengthPrefixed(const char* buf, size_t size,
+                                          upb_Message* msg,
+                                          size_t* num_bytes_read,
+                                          const upb_MiniTable* mt,
+                                          const upb_ExtensionRegistry* extreg,
+                                          int options, upb_Arena* arena) {
+  // To avoid needing to make a Decoder just to decode the initial length,
+  // hand-decode the leading varint for the message length here.
+  uint64_t msg_len = 0;
+  for (size_t i = 0;; ++i) {
+    if (i >= size || i > 9) {
+      return kUpb_DecodeStatus_Malformed;
+    }
+    uint64_t b = *buf;
+    buf++;
+    msg_len += (b & 0x7f) << (i * 7);
+    if ((b & 0x80) == 0) {
+      *num_bytes_read = i + 1 + msg_len;
+      break;
+    }
+  }
+
+  // If the total number of bytes we would read (= the bytes from the varint
+  // plus however many bytes that varint says we should read) is larger then the
+  // input buffer then error as malformed.
+  if (*num_bytes_read > size) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+  if (msg_len > INT32_MAX) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+
+  return upb_Decode(buf, msg_len, msg, mt, extreg, options, arena);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: 0.024958008900284767
+--------------------------------------------------
+C_Code: 
+upb_DecodeStatus upb_DecodeLengthPrefixed(const char* buf, size_t size,
+                                          upb_Message* msg,
+                                          size_t* num_bytes_read,
+                                          const upb_MiniTable* mt,
+                                          const upb_ExtensionRegistry* extreg,
+                                          int options, upb_Arena* arena) {
+  // To avoid needing to make a Decoder just to decode the initial length,
+  // hand-decode the leading varint for the message length here.
+  uint64_t msg_len = 0;
+  for (size_t i = 0;; ++i) {
+    if (i >= size || i > 9) {
+      return kUpb_DecodeStatus_Malformed;
+    }
+    uint64_t b = *buf;
+    buf++;
+    msg_len += (b & 0x7f) << (i * 7);
+    if ((b & 0x80) == 0) {
+      *num_bytes_read = i + 1 + msg_len;
+      break;
+    }
+  }
+
+  // If the total number of bytes we would read (= the bytes from the varint
+  // plus however many bytes that varint says we should read) is larger then the
+  // input buffer then error as malformed.
+  if (*num_bytes_read > size) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+  if (msg_len > INT32_MAX) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+
+  return upb_Decode(buf, msg_len, msg, mt, extreg, options, arena);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: 0.02156294696033001
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+pub(crate) fn open_channel(&self, pid: u64) -> Result<Arc<UnixDatagram>, ErrorCode> {
+        let (tx, rx) = channel::<Result<Arc<UnixDatagram>, ErrorCode>>();
+        let event = ClientEvent::OpenChannel(pid, tx);
+        if !self.send_event(event) {
+            return Err(ErrorCode::Other);
+        }
+        let rx = Recv::new(rx);
+        match rx.get() {
+            Some(ret) => ret,
+            None => {
+                error!("open channel fail, recv none");
+                sys_event!(
+                    ExecFault,
+                    DfxCode::UDS_FAULT_03,
+                    "open channel fail, recv none"
+                );
+                Err(ErrorCode::Other)
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__HandleInotify__idx1151_rank1.c", "source_rust_file": "Partial__HandleInotify__idx1151_rank1.rs", "c_fragment": "if (!callback_->history_exist_or_create()) {\n                REQUEST_HILOGE(\"recreate history dir fail.\");\n                running_ = false;\n                return;\n            };", "rust_fragment": "if !self.history.exist() {\n            return self.history.create();\n        }\n        true", "description": "Checking if history directory exists and creating it if not", "reasoning": "[Task Analysis] C code handles inotify events for directory monitoring, Rust code checks and creates a history directory. [Similarity] Names don't match but both involve checking existence and creating directories. [Knowledge Extraction] No full structural match due to different domains (file system event handling vs directory existence check). Partial match in logic flow. API mappings found for directory existence check and creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandleInotify__idx1151_rank1.c", "source_rust_file": "Partial__HandleInotify__idx1151_rank1.rs", "c_api": "callback_->history_exist_or_create()", "rust_api": "self.history.exist()", "mapping_type": "function", "description": "Check if history directory exists", "reasoning": "[Task Analysis] C code handles inotify events for directory monitoring, Rust code checks and creates a history directory. [Similarity] Names don't match but both involve checking existence and creating directories. [Knowledge Extraction] No full structural match due to different domains (file system event handling vs directory existence check). Partial match in logic flow. API mappings found for directory existence check and creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__HandleInotify__idx1151_rank1.c", "source_rust_file": "Partial__HandleInotify__idx1151_rank1.rs", "c_api": "callback_->history_exist_or_create()", "rust_api": "self.history.create()", "mapping_type": "function", "description": "Create history directory", "reasoning": "[Task Analysis] C code handles inotify events for directory monitoring, Rust code checks and creates a history directory. [Similarity] Names don't match but both involve checking existence and creating directories. [Knowledge Extraction] No full structural match due to different domains (file system event handling vs directory existence check). Partial match in logic flow. API mappings found for directory existence check and creation."}]
+Unixcoder Score: 0.01947712153196335
+--------------------------------------------------
+C_Code: 
+upb_DecodeStatus upb_DecodeLengthPrefixed(const char* buf, size_t size,
+                                          upb_Message* msg,
+                                          size_t* num_bytes_read,
+                                          const upb_MiniTable* mt,
+                                          const upb_ExtensionRegistry* extreg,
+                                          int options, upb_Arena* arena) {
+  // To avoid needing to make a Decoder just to decode the initial length,
+  // hand-decode the leading varint for the message length here.
+  uint64_t msg_len = 0;
+  for (size_t i = 0;; ++i) {
+    if (i >= size || i > 9) {
+      return kUpb_DecodeStatus_Malformed;
+    }
+    uint64_t b = *buf;
+    buf++;
+    msg_len += (b & 0x7f) << (i * 7);
+    if ((b & 0x80) == 0) {
+      *num_bytes_read = i + 1 + msg_len;
+      break;
+    }
+  }
+
+  // If the total number of bytes we would read (= the bytes from the varint
+  // plus however many bytes that varint says we should read) is larger then the
+  // input buffer then error as malformed.
+  if (*num_bytes_read > size) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+  if (msg_len > INT32_MAX) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+
+  return upb_Decode(buf, msg_len, msg, mt, extreg, options, arena);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: 0.018886713311076164
+--------------------------------------------------
+C_Code: 
+upb_DecodeStatus upb_DecodeLengthPrefixed(const char* buf, size_t size,
+                                          upb_Message* msg,
+                                          size_t* num_bytes_read,
+                                          const upb_MiniTable* mt,
+                                          const upb_ExtensionRegistry* extreg,
+                                          int options, upb_Arena* arena) {
+  // To avoid needing to make a Decoder just to decode the initial length,
+  // hand-decode the leading varint for the message length here.
+  uint64_t msg_len = 0;
+  for (size_t i = 0;; ++i) {
+    if (i >= size || i > 9) {
+      return kUpb_DecodeStatus_Malformed;
+    }
+    uint64_t b = *buf;
+    buf++;
+    msg_len += (b & 0x7f) << (i * 7);
+    if ((b & 0x80) == 0) {
+      *num_bytes_read = i + 1 + msg_len;
+      break;
+    }
+  }
+
+  // If the total number of bytes we would read (= the bytes from the varint
+  // plus however many bytes that varint says we should read) is larger then the
+  // input buffer then error as malformed.
+  if (*num_bytes_read > size) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+  if (msg_len > INT32_MAX) {
+    return kUpb_DecodeStatus_Malformed;
+  }
+
+  return upb_Decode(buf, msg_len, msg, mt, extreg, options, arena);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: 0.018570341169834137
+--------------------------------------------------

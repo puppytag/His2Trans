@@ -1,0 +1,196 @@
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.03717627376317978
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.03652293235063553
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.03304049000144005
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.030664194375276566
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        info!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.029092412441968918
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> ISystemAbilityManagerMock::GetSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    return nullptr;
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.02903060056269169
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.028198810294270515
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.027435369789600372
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::GetSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    return CheckSystemAbility(systemAbilityId, deviceId);
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.02707747556269169
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        debug!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.026175606995821
+--------------------------------------------------

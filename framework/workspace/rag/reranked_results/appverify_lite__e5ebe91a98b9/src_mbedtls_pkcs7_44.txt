@@ -1,0 +1,367 @@
+C_Code: 
+static int VerifyCallback(int preverifyOk, X509_STORE_CTX *ctx)
+{
+    X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+    int err = X509_STORE_CTX_get_error(ctx);
+    int depth = X509_STORE_CTX_get_error_depth(ctx);
+
+    NETSTACK_LOGI("X509_STORE_CTX error code %{public}d, depth %{public}d", err, depth);
+
+    SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+    SSL_CTX *sslctx = SSL_get_SSL_CTX(ssl);
+    RequestContext *requestContext = static_cast<RequestContext *>(SSL_CTX_get_ex_data(sslctx,
+        SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX));
+    if (requestContext == nullptr) {
+        NETSTACK_LOGE("creat requestContext instance failed");
+        return 0;
+    }
+    if (requestContext->IsRootCaVerifiedOk()) {
+        // root CA hash verified, normal procedure.
+        return preverifyOk;
+    }
+
+    int verifyResult = VerifyCertPubkey(cert, requestContext->GetPinnedPubkey());
+    if (!requestContext->IsRootCaVerified()) {
+        // not verified yet, so this is the root CA verifying.
+        NETSTACK_LOGD("Verifying Root CA.");
+        requestContext->SetRootCaVerifiedOk(verifyResult == CURLE_OK);
+        requestContext->SetRootCaVerified();
+    }
+    if (verifyResult != CURLE_OK && depth == 0) {
+        // peer site certificate, since root ca verify not ok, and peer site is also not ok
+        // return failed.
+        return 0;
+    }
+    return preverifyOk;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGE(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Error logging during certificate handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGI(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Logging certificate verification status", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error_depth(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Certificate chain depth information", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error(ctx)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Certificate validation result handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGD(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Debug logging for root CA verification", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "VerifyCertPubkey(cert, requestContext->GetPinnedPubkey())", "rust_api": "self.0.add_root_certificate(cert)", "mapping_type": "function", "description": "Public key verification for certificate", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_current_cert(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Extract certificate from SSL context", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}]
+Unixcoder Score: 0.06289360672235489
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetRoot__idx2541_rank1.h", "source_rust_file": "API_Mapping__GetRoot__idx2541_rank1.rs", "c_api": "clone", "rust_api": "r.clone()", "mapping_type": "method", "description": "Shallow cloning of flatbuffer reader", "reasoning": "[Task Analysis] C function 'GetRoot' is a flatbuffer deserialization helper, Rust function 'clone_is_shallow' is a test for shallow cloning of a flatbuffer reader. [Similarity] Names do not refer to the same concept, code lengths are vastly different, and domains are mismatched (deserialization vs cloning/assertion). [Knowledge Extraction] No full or partial match. However, there are API mappings related to flatbuffer operations: 'GetRoot' in C maps to 'Reader::get_root' in Rust, and 'clone' in C maps to 'r.clone()' in Rust."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetRoot__idx2541_rank1.h", "source_rust_file": "API_Mapping__GetRoot__idx2541_rank1.rs", "c_api": "GetRoot", "rust_api": "Reader::get_root", "mapping_type": "function", "description": "Flatbuffer root deserialization", "reasoning": "[Task Analysis] C function 'GetRoot' is a flatbuffer deserialization helper, Rust function 'clone_is_shallow' is a test for shallow cloning of a flatbuffer reader. [Similarity] Names do not refer to the same concept, code lengths are vastly different, and domains are mismatched (deserialization vs cloning/assertion). [Knowledge Extraction] No full or partial match. However, there are API mappings related to flatbuffer operations: 'GetRoot' in C maps to 'Reader::get_root' in Rust, and 'clone' in C maps to 'r.clone()' in Rust."}]
+Unixcoder Score: -0.0033490878995507956
+--------------------------------------------------
+C_Code: 
+static void LoadCaCertFromMemory(X509_STORE *store, const std::string &pemCerts)
+{
+    if (!store || pemCerts.empty() || pemCerts.size() > static_cast<size_t>(INT_MAX)) {
+        return;
+    }
+
+    auto cbio = BIO_new_mem_buf(pemCerts.data(), static_cast<int>(pemCerts.size()));
+    if (!cbio) {
+        return;
+    }
+
+    auto inf = PEM_X509_INFO_read_bio(cbio, nullptr, nullptr, nullptr);
+    if (!inf) {
+        BIO_free(cbio);
+        return;
+    }
+
+    /* add each entry from PEM file to x509_store */
+    for (int i = 0; i < static_cast<int>(sk_X509_INFO_num(inf)); ++i) {
+        auto itmp = sk_X509_INFO_value(inf, i);
+        if (!itmp) {
+            continue;
+        }
+        if (itmp->x509) {
+            X509_STORE_add_cert(store, itmp->x509);
+        }
+        if (itmp->crl) {
+            X509_STORE_add_crl(store, itmp->crl);
+        }
+    }
+
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    BIO_free(cbio);
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ParseParams__idx5338_rank1.c", "source_rust_file": "Partial__ParseParams__idx5338_rank1.rs", "c_fragment": "options.SetMethod(std::string(ops->method));", "rust_fragment": "r.method = method;", "description": "Setting HTTP method in request options", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP method on a builder. [Similarity] Names don't match ('ParseParams' vs 'method'), but both involve setting HTTP method. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs builder pattern). However, there's a partial match in the method-setting logic and API mapping for setting HTTP method."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseParams__idx5338_rank1.c", "source_rust_file": "Partial__ParseParams__idx5338_rank1.rs", "c_api": "options.SetMethod", "rust_api": "r.method = method", "mapping_type": "method", "description": "Setting HTTP method on request object", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP method on a builder. [Similarity] Names don't match ('ParseParams' vs 'method'), but both involve setting HTTP method. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs builder pattern). However, there's a partial match in the method-setting logic and API mapping for setting HTTP method."}]
+Unixcoder Score: -0.015256389044225216
+--------------------------------------------------
+C_Code: 
+bool TLSContextServer::SetDefaultCa(TLSContextServer *tlsContext, const TLSConfiguration &configuration)
+{
+#ifdef HAS_NETMANAGER_BASE
+    auto hostname = CommonUtils::GetHostnameFromURL(configuration.GetNetAddress().GetAddress());
+    // customize trusted CAs.
+    std::vector<std::string> cert_paths;
+
+    if (NetManagerStandard::NetworkSecurityConfig::GetInstance().
+        GetTrustAnchorsForHostName(hostname, cert_paths) != 0) {
+        NETSTACK_LOGE("get customize trusted CAs failed");
+        return false;
+    }
+    for (const auto &path : cert_paths) {
+        if (!X509_STORE_load_path(SSL_CTX_get_cert_store(tlsContext->ctx_), path.c_str())) {
+            NETSTACK_LOGE("load customize certificates failed");
+            return false;
+        }
+    }
+#endif // HAS_NETMANAGER_BASE
+
+    if (access(ROOT_CERT_PATH.c_str(), F_OK | R_OK) == 0) {
+        NETSTACK_LOGD("root CA certificates folder exist and can read");
+        if (!X509_STORE_load_path(SSL_CTX_get_cert_store(tlsContext->ctx_), ROOT_CERT_PATH.c_str())) {
+            NETSTACK_LOGE("load root certificates failed");
+            return false;
+        }
+    } else {
+        NETSTACK_LOGD("root CA certificates folder not exist or can not read");
+    }
+    std::string userCertPath = BASE_PATH + std::to_string(getuid() / UID_TRANSFORM_DIVISOR);
+    if (access(userCertPath.c_str(), F_OK | R_OK) == 0) {
+        NETSTACK_LOGD("user CA certificates folder exist and can read");
+        if (!X509_STORE_load_path(SSL_CTX_get_cert_store(tlsContext->ctx_), userCertPath.c_str())) {
+            NETSTACK_LOGE("load user certificates failed");
+            return false;
+        }
+    } else {
+        NETSTACK_LOGD("user CA certificates folder not exist or can not read");
+    }
+    if (!X509_STORE_load_path(SSL_CTX_get_cert_store(tlsContext->ctx_), SYSTEM_REPLACE_CA_PATH.c_str())) {
+        NETSTACK_LOGE("load system replace certificates failed");
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetServerSSLCertOption__idx5357_rank4.c", "source_rust_file": "API_Mapping__SetServerSSLCertOption__idx5357_rank4.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_CAINFO, nullptr, context)", "rust_api": "self.0.add_root_certificate(cert)", "mapping_type": "function", "description": "Setting CA info option in CURL to use system certificates", "reasoning": "[Task Analysis] C function sets SSL certificate options for a CURL handle based on network security config; Rust function adds root certificates to a builder pattern. [Similarity] Names don't match but both involve certificate handling logic. [Knowledge Extraction] Found API mapping for certificate addition in builder pattern, no full or partial structural match due to domain mismatch (network config vs certificate builder)."}]
+Unixcoder Score: -0.016659880056977272
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const std::vector<uint8_t> &buffer) {
+  return GetRoot(buffer.data(), buffer.size());
+}
+Function: 
+fn singleton_vector_uint_4_16bit() {
+    let mut builder = Builder::default();
+    let mut v = builder.start_vector();
+    v.push(2u8);
+    v.push(3u8);
+    v.push(5u8);
+    v.end_vector();
+    let buf1 = builder.view();
+    let buf2 = singleton(&[2u8, 3, 5]);
+    assert_eq!(buf1, buf2.as_slice());
+
+    let r = Reader::get_root(buf1).unwrap().as_vector();
+    assert_eq!(r.idx(0).get_u64(), Ok(2));
+    assert_eq!(r.idx(1).get_u64(), Ok(3));
+    assert_eq!(r.idx(2).get_u64(), Ok(5));
+    assert_eq!(r.index(3).unwrap_err(), ReaderError::IndexOutOfBounds);
+}
+Unixcoder Score: -0.01796293817460537
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const std::vector<uint8_t> &buffer) {
+  return GetRoot(buffer.data(), buffer.size());
+}
+Function: 
+pub fn get_root(buffer: B) -> Result<Self, Error> {
+        let end = buffer.len();
+        if end < 3 {
+            return Err(Error::FlexbufferOutOfBounds);
+        }
+        // Last byte is the root width.
+        let root_width = BitWidth::from_nbytes(buffer[end - 1]).ok_or(Error::InvalidRootWidth)?;
+        // Second last byte is root type.
+        let (fxb_type, width) = unpack_type(buffer[end - 2])?;
+        // Location of root data. (BitWidth bits before root type)
+        let address = safe_sub(end - 2, root_width.n_bytes())?;
+        Self::new(buffer, address, fxb_type, width, root_width)
+    }
+Unixcoder Score: -0.019633078947663307
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetRoot__idx2262_rank2.h", "source_rust_file": "API_Mapping__GetRoot__idx2262_rank2.rs", "c_api": "GetRoot(buffer.data(), buffer.size())", "rust_api": "Reader::get_root(builder.view()).unwrap().as_vector()", "mapping_type": "function", "description": "Reading root data structure from buffer", "reasoning": "[Task Analysis] C function is a wrapper for getting a root reference from a buffer, while Rust function benchmarks a monster building process. [Similarity] Names do not refer to the same concept (GetRoot vs read_monsters), and domains are different (data access vs benchmarking). [Knowledge Extraction] No full or partial match due to domain mismatch and different purposes. However, there are API mappings related to vector operations and data access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetRoot__idx2262_rank2.h", "source_rust_file": "API_Mapping__GetRoot__idx2262_rank2.rs", "c_api": "buffer.size()", "rust_api": "builder.view().len()", "mapping_type": "method", "description": "Getting buffer size", "reasoning": "[Task Analysis] C function is a wrapper for getting a root reference from a buffer, while Rust function benchmarks a monster building process. [Similarity] Names do not refer to the same concept (GetRoot vs read_monsters), and domains are different (data access vs benchmarking). [Knowledge Extraction] No full or partial match due to domain mismatch and different purposes. However, there are API mappings related to vector operations and data access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetRoot__idx2262_rank2.h", "source_rust_file": "API_Mapping__GetRoot__idx2262_rank2.rs", "c_api": "buffer.data()", "rust_api": "builder.view()", "mapping_type": "method", "description": "Accessing underlying buffer data", "reasoning": "[Task Analysis] C function is a wrapper for getting a root reference from a buffer, while Rust function benchmarks a monster building process. [Similarity] Names do not refer to the same concept (GetRoot vs read_monsters), and domains are different (data access vs benchmarking). [Knowledge Extraction] No full or partial match due to domain mismatch and different purposes. However, there are API mappings related to vector operations and data access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetRoot__idx2262_rank2.h", "source_rust_file": "API_Mapping__GetRoot__idx2262_rank2.rs", "c_api": "std::vector<uint8_t>", "rust_api": "Builder", "mapping_type": "type", "description": "Buffer type for data serialization", "reasoning": "[Task Analysis] C function is a wrapper for getting a root reference from a buffer, while Rust function benchmarks a monster building process. [Similarity] Names do not refer to the same concept (GetRoot vs read_monsters), and domains are different (data access vs benchmarking). [Knowledge Extraction] No full or partial match due to domain mismatch and different purposes. However, there are API mappings related to vector operations and data access patterns."}]
+Unixcoder Score: -0.023922119289636612
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__add_root_table__idx3158_rank2.h", "source_rust_file": "Full__add_root_table__idx3158_rank2.rs", "reasoning": "[Task Analysis] C function adds a root table offset using FlatBuffers API; Rust function adds a foo table offset using equivalent FlatBuffers API. [Similarity] Both perform similar operations: adding/offset to a FlatBuffers builder. [Knowledge Extraction] Full structural similarity in operation (adding offset to builder), partial in naming and type. API mappings identified for FlatBuffers offset handling and slot pushing.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__add_root_table__idx3158_rank2.h", "source_rust_file": "Full__add_root_table__idx3158_rank2.rs", "c_fragment": "fbb_.AddOffset(Schema::VT_ROOT_TABLE, root_table);", "rust_fragment": "self.fbb_.push_slot_always::<flatbuffers::WIPOffset<namespace_b::TableInNestedNS>>(TableInFirstNS::VT_FOO_TABLE, foo_table);", "description": "Both add an offset to a FlatBuffers builder with a specific table field.", "reasoning": "[Task Analysis] C function adds a root table offset using FlatBuffers API; Rust function adds a foo table offset using equivalent FlatBuffers API. [Similarity] Both perform similar operations: adding/offset to a FlatBuffers builder. [Knowledge Extraction] Full structural similarity in operation (adding offset to builder), partial in naming and type. API mappings identified for FlatBuffers offset handling and slot pushing."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__add_root_table__idx3158_rank2.h", "source_rust_file": "Full__add_root_table__idx3158_rank2.rs", "c_api": "Schema::VT_ROOT_TABLE", "rust_api": "TableInFirstNS::VT_FOO_TABLE", "mapping_type": "field_access", "description": "Accessing a table field identifier in FlatBuffers schema", "reasoning": "[Task Analysis] C function adds a root table offset using FlatBuffers API; Rust function adds a foo table offset using equivalent FlatBuffers API. [Similarity] Both perform similar operations: adding/offset to a FlatBuffers builder. [Knowledge Extraction] Full structural similarity in operation (adding offset to builder), partial in naming and type. API mappings identified for FlatBuffers offset handling and slot pushing."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__add_root_table__idx3158_rank2.h", "source_rust_file": "Full__add_root_table__idx3158_rank2.rs", "c_api": "fbb_.AddOffset", "rust_api": "self.fbb_.push_slot_always", "mapping_type": "function", "description": "Adding an offset to a FlatBuffers builder", "reasoning": "[Task Analysis] C function adds a root table offset using FlatBuffers API; Rust function adds a foo table offset using equivalent FlatBuffers API. [Similarity] Both perform similar operations: adding/offset to a FlatBuffers builder. [Knowledge Extraction] Full structural similarity in operation (adding offset to builder), partial in naming and type. API mappings identified for FlatBuffers offset handling and slot pushing."}]
+Unixcoder Score: -0.026600493118166924
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const std::vector<uint8_t> &buffer) {
+  return GetRoot(buffer.data(), buffer.size());
+}
+Function: 
+pub fn get_root(buffer: B) -> Result<Self, Error> {
+        let end = buffer.len();
+        if end < 3 {
+            return Err(Error::FlexbufferOutOfBounds);
+        }
+        // Last byte is the root width.
+        let root_width = BitWidth::from_nbytes(buffer[end - 1]).ok_or(Error::InvalidRootWidth)?;
+        // Second last byte is root type.
+        let (fxb_type, width) = unpack_type(buffer[end - 2])?;
+        // Location of root data. (BitWidth bits before root type)
+        let address = safe_sub(end - 2, root_width.n_bytes())?;
+        Self::new(buffer, address, fxb_type, width, root_width)
+    }
+Unixcoder Score: -0.029581736773252487
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const std::vector<uint8_t> &buffer) {
+  return GetRoot(buffer.data(), buffer.size());
+}
+Function: 
+fn validate_monster(flexbuffer: &[u8]) {
+    let r = Reader::get_root(flexbuffer).unwrap().as_map();
+
+    assert!(!r.is_empty());
+    assert!(r.index_key("not_a_field").is_none());
+
+    assert_eq!(r.len(), 7);
+    assert_eq!(r.idx("type").as_str(), "great orc");
+    assert_eq!(r.idx("age").as_u8(), 100);
+    assert_eq!(r.idx("name").as_str(), "Mr. Orc");
+
+    let coins = r.idx("coins").as_vector();
+    for (i, &c) in [1, 25, 50, 100, 250].iter().enumerate() {
+        assert_eq!(coins.idx(i).as_u16(), c);
+    }
+    let color = r.idx("color").as_vector();
+    for (i, &c) in [255, 0, 0, 0].iter().enumerate() {
+        assert_eq!(color.idx(i).as_i32(), c);
+    }
+    let weapons = r.idx("weapons").as_vector();
+    assert_eq!(weapons.len(), 2);
+
+    let hammer = weapons.idx(0).as_map();
+    assert_eq!(hammer.idx("name").as_str(), "hammer");
+    assert_eq!(hammer.idx("damage type").as_str(), "crush");
+    assert_eq!(hammer.idx("damage").as_u64(), 20);
+
+    let axe = weapons.idx(1).as_map();
+    assert_eq!(axe.idx("name").as_str(), "Great Axe");
+    assert_eq!(axe.idx("damage type").as_str(), "slash");
+    assert_eq!(axe.idx("damage").as_u64(), 30);
+
+    let sounds = r.idx("sounds").as_vector();
+    for (i, &s) in ["grr", "rawr", "muahaha"].iter().enumerate() {
+        assert_eq!(sounds.idx(i).as_str(), s);
+    }
+}
+Unixcoder Score: -0.03172888234257698
+--------------------------------------------------

@@ -1,0 +1,147 @@
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct PkgId {
+    /// Remote path: for example, github.com/mozilla/quux-whatever
+    remote_path: RemotePath,
+    /// Local path: for example, /home/quux/github.com/mozilla/quux_whatever
+    /// Note that '-' normalizes to '_' when mapping a remote path
+    /// onto a local path
+    /// Also, this will change when we implement #6407, though we'll still
+    /// need to keep track of separate local and remote paths
+    local_path: LocalPath,
+    /// Short name. This is the local path's filestem, but we store it
+    /// redundantly so as to not call get() everywhere (filestem() returns an
+    /// option)
+    short_name: ~str,
+    version: Version
+}
+Unixcoder Score: 0.11316192150115967
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "byte & 0x80", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Checking continuation bit in variable-length encoded data", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "self.read::<u8>()", "rust_api": "*p", "mapping_type": "function", "description": "Reading a byte from input stream for decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "++p", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Advancing through data stream during decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = self.read::<u8>();\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Both implement iterative decoding of variable-length encoded data using bit masking and loop control.", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}]
+Unixcoder Score: 0.09298331290483475
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct Loaf<T: Sized, const N: usize = 1> {
+    head: [T; N],
+    slice: [T],
+}
+Unixcoder Score: 0.08877769112586975
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice<T> {
+    data: *const T,
+    len: usize,
+}
+Unixcoder Score: 0.08659707754850388
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Test<T: ?Sized>(T);
+Unixcoder Score: 0.08179320394992828
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct ConstBytes<const T: &'static [u8]>;
+Unixcoder Score: 0.07737285643815994
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct SliceRepr {
+    ptr: *const u8,
+    len: usize,
+}
+Unixcoder Score: 0.07656672596931458
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice<T> {
+    data: *const T,
+    len: usize,
+}
+Unixcoder Score: 0.06923332810401917
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice { slice: [u8] }
+Unixcoder Score: 0.06702340394258499
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct MultiplePointers<T: ?Sized>{
+    ptr1: *const T,
+    ptr2: *const T,
+}
+Unixcoder Score: 0.06586223095655441
+--------------------------------------------------

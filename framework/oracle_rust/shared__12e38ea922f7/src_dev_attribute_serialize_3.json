@@ -1,0 +1,43 @@
+{
+  "project": "shared__12e38ea922f7",
+  "func_key": "src_dev_attribute_serialize_3",
+  "function_name": "DeviceAttributeDeserialize",
+  "source_c_file": "src/dev_attribute_serialize.c",
+  "c_code": "struct HdfDeviceInfo * DeviceAttributeDeserialize(struct HdfSBuf * sbuf)\n{\n    if (sbuf == NULL) {\n        return NULL;\n    }\n\n    struct HdfDeviceInfo *attribute = HdfDeviceInfoNewInstance();\n    if (attribute == NULL) {\n        HDF_LOGE(\"OsalMemCalloc failed, attribute is null\");\n        return NULL;\n    }\n\n    if (attribute->deviceMatchAttr == NULL) {\n        HDF_LOGW(\"OsalMemCalloc failed, attribute->deviceMatchAttr is null\");\n    }\n\n    if (!HdfSbufReadUint32(sbuf, &attribute->deviceId) || !HdfSbufReadUint16(sbuf, &attribute->policy)) {\n        HDF_LOGE(\"invalid deviceId or policy\");\n        DeviceSerializedAttributeRelease(attribute);\n        return NULL;\n    }\n\n    if (DeviceAttributeSet(attribute, sbuf)) {\n        return attribute;\n    }\n\n    DeviceSerializedAttributeRelease(attribute);\n    return NULL;\n}",
+  "rust_signature": "pub extern \"C\" fn DeviceAttributeDeserialize(sbuf: *mut HdfSBuf) -> *mut HdfDeviceInfo",
+  "rust_code": "pub extern \"C\" fn DeviceAttributeDeserialize(sbuf: *mut HdfSBuf) -> *mut HdfDeviceInfo {\n    if sbuf.is_null() {\n        return ::core::ptr::null_mut();\n    }\n\n    let attribute = unsafe { HdfDeviceInfoNewInstance() };\n    if attribute.is_null() {\n        return ::core::ptr::null_mut();\n    }\n\n    unsafe {\n        if !HdfSbufReadUint32(sbuf, &mut (*attribute).deviceId)\n            || !HdfSbufReadUint16(sbuf, &mut (*attribute).policy)\n        {\n            DeviceSerializedAttributeRelease(attribute);\n            return ::core::ptr::null_mut();\n        }\n    }\n\n    if DeviceAttributeSet(attribute, sbuf) {\n        return attribute;\n    }\n\n    DeviceSerializedAttributeRelease(attribute);\n    ::core::ptr::null_mut()\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemCalloc",
+      "rust_api": "OsalMemCalloc",
+      "description": "Allocate zeroed memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufReadUint16",
+      "rust_api": "HdfSbufReadUint16",
+      "description": "Deserialize u16 from sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufReadUint32",
+      "rust_api": "HdfSbufReadUint32",
+      "description": "Deserialize u32 from sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

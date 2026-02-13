@@ -1,0 +1,286 @@
+C_Code: 
+bigint
+bi_scan( FILE* f )
+    {
+    int sign;
+    int c;
+    bigint biR;
+
+    sign = 1;
+    c = getc( f );
+    if ( c == '-' )
+	sign = -1;
+    else
+	ungetc( c, f );
+
+    biR = bi_0;
+    for (;;)
+	{
+	c = getc( f );
+	if ( c < '0' || c > '9' )
+	    break;
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), c - '0' );
+	}
+
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn from_slice(sign: Sign, slice: &[BigDigit]) -> BigInt {
+        BigInt::from_biguint(sign, BigUint::from_slice(slice))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__LLVMRustBuildVectorReduceMin__idx27946_rank1.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMin__idx27946_rank1.rs", "c_fragment": "LLVMRustBuildVectorReduceMin(LLVMBuilderRef B, LLVMValueRef Src, bool IsSigned) {\n    return wrap(unwrap(B)->CreateIntMinReduce(unwrap(Src), IsSigned));\n}", "rust_fragment": "pub fn vector_reduce_min(&mut self, src: RValue<'gcc>) -> RValue<'gcc> {\n        self.vector_reduce(src, |a, b, context| {\n            let differences_or_zeros = difference_or_zero(a, b, context);\n            context.new_binary_op(None, BinaryOp::Plus, b.get_type(), b, differences_or_zeros)\n        })\n    }", "description": "Both functions perform vector reduction operations with min logic, though implemented differently in LLVM vs GCC IR contexts.", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an int min reduce, while Rust function performs a vector reduce with a custom binary operation. [Similarity] Names do not match but both perform vector reduction operations with min logic. [Knowledge Extraction] No full structural similarity due to different domains (LLVM IR vs GCC IR), but there's a partial match in the concept of vector reduction. No API mappings due to domain mismatch and different function signatures."}]
+Unixcoder Score: 0.04526940733194351
+--------------------------------------------------
+C_Code: 
+bigint
+bi_scan( FILE* f )
+    {
+    int sign;
+    int c;
+    bigint biR;
+
+    sign = 1;
+    c = getc( f );
+    if ( c == '-' )
+	sign = -1;
+    else
+	ungetc( c, f );
+
+    biR = bi_0;
+    for (;;)
+	{
+	c = getc( f );
+	if ( c < '0' || c > '9' )
+	    break;
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), c - '0' );
+	}
+
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn test_from_str_radix() {
+        assert BigInt::from_biguint(Plus, BigUint::from_uint(10)) ==
+            BigInt::from_str_radix(~"10", 10).get();
+        assert BigInt::one()== BigInt::from_str_radix(~"1", 10).get();
+        assert BigInt::zero() == BigInt::from_str_radix(~"0", 10).get();
+        assert (-BigInt::one()) == BigInt::from_str_radix(~"-1", 10).get();
+        assert BigInt::from_biguint(Minus, BigUint::from_uint(10)) ==
+            BigInt::from_str_radix(~"-10", 10).get();
+
+        assert BigInt::from_str_radix(~"Z", 10) == None;
+        assert BigInt::from_str_radix(~"_", 2) == None;
+        assert BigInt::from_str_radix(~"-1", 10) ==
+            Some(BigInt::from_biguint(Minus, BigUint::one()));
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx23678_rank2.c", "source_rust_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx23678_rank2.rs", "c_api": "CreateIntMaxReduce", "rust_api": "iconst", "mapping_type": "function", "description": "Integer max reduction operation in LLVM vs constant integer creation in Cranelift", "reasoning": "[FFI Check] -> C code is a LLVM FFI wrapper, but Rust code is not FFI. -> [Task Analysis] -> C function wraps a LLVM builder call, Rust function computes min/max values for integer types. -> [Similarity] -> Names refer to different concepts (LLVMRustBuildVectorReduceMax vs type_min_max_value), domains are different (LLVM IR building vs type constant computation), and code lengths are very different (C: 1 line, Rust: ~40 lines). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between LLVM builder operations and Cranelift IR instructions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx23678_rank2.c", "source_rust_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx23678_rank2.rs", "c_api": "unwrap(B)->CreateIntMaxReduce", "rust_api": "iconst", "mapping_type": "function", "description": "LLVM IR builder operation for max reduction vs Cranelift instruction for integer constant", "reasoning": "[FFI Check] -> C code is a LLVM FFI wrapper, but Rust code is not FFI. -> [Task Analysis] -> C function wraps a LLVM builder call, Rust function computes min/max values for integer types. -> [Similarity] -> Names refer to different concepts (LLVMRustBuildVectorReduceMax vs type_min_max_value), domains are different (LLVM IR building vs type constant computation), and code lengths are very different (C: 1 line, Rust: ~40 lines). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between LLVM builder operations and Cranelift IR instructions."}]
+Unixcoder Score: 0.032684843987226486
+--------------------------------------------------
+C_Code: 
+bigint
+bi_scan( FILE* f )
+    {
+    int sign;
+    int c;
+    bigint biR;
+
+    sign = 1;
+    c = getc( f );
+    if ( c == '-' )
+	sign = -1;
+    else
+	ungetc( c, f );
+
+    biR = bi_0;
+    for (;;)
+	{
+	c = getc( f );
+	if ( c < '0' || c > '9' )
+	    break;
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), c - '0' );
+	}
+
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn test_from_str_radix() {
+        assert BigInt::from_biguint(Plus, BigUint::from_uint(10)) ==
+            BigInt::from_str_radix(~"10", 10).get();
+        assert BigInt::one()== BigInt::from_str_radix(~"1", 10).get();
+        assert BigInt::zero() == BigInt::from_str_radix(~"0", 10).get();
+        assert (-BigInt::one()) == BigInt::from_str_radix(~"-1", 10).get();
+        assert BigInt::from_biguint(Minus, BigUint::from_uint(10)) ==
+            BigInt::from_str_radix(~"-10", 10).get();
+
+        assert BigInt::from_str_radix(~"Z", 10) == None;
+        assert BigInt::from_str_radix(~"_", 2) == None;
+        assert BigInt::from_str_radix(~"-1", 10) ==
+            Some(BigInt::from_biguint(Minus, BigUint::one()));
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__LLVMRustBuildVectorReduceMax__idx17718_rank4.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMax__idx17718_rank4.rs", "c_fragment": "return wrap(unwrap(B)->CreateIntMaxReduce(unwrap(Src), IsSigned));", "rust_fragment": "unsafe { let instr = llvm::LLVMRustBuildVectorReduceFMax(self.llbuilder, src, /*NoNaNs:*/ true); llvm::LLVMRustSetFastMath(instr); instr }", "description": "Both perform vector reduction operations using LLVM builder APIs, with similar control flow (unwrap, call, return).", "reasoning": "[Task Analysis] C function wraps LLVM's CreateIntMaxReduce, Rust function calls LLVMRustBuildVectorReduceFMax with fast math enabled. [Similarity] Both perform vector reduction operations, but with different semantics (int max vs float max), and different optimization flags. [Knowledge Extraction] No full structural match due to semantic differences in operation type (int vs float), but there is a partial match in the general pattern of vector reduction and a clear API mapping for the core LLVM operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustBuildVectorReduceMax__idx17718_rank4.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMax__idx17718_rank4.rs", "c_api": "CreateIntMaxReduce", "rust_api": "LLVMRustBuildVectorReduceFMax", "mapping_type": "function", "description": "LLVM IR vector max reduction operation", "reasoning": "[Task Analysis] C function wraps LLVM's CreateIntMaxReduce, Rust function calls LLVMRustBuildVectorReduceFMax with fast math enabled. [Similarity] Both perform vector reduction operations, but with different semantics (int max vs float max), and different optimization flags. [Knowledge Extraction] No full structural match due to semantic differences in operation type (int vs float), but there is a partial match in the general pattern of vector reduction and a clear API mapping for the core LLVM operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustBuildVectorReduceMax__idx17718_rank4.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMax__idx17718_rank4.rs", "c_api": "LLVMRustBuildVectorReduceMax", "rust_api": "LLVMRustBuildVectorReduceFMax", "mapping_type": "function", "description": "Vector reduction operation (max) with fast math flag", "reasoning": "[Task Analysis] C function wraps LLVM's CreateIntMaxReduce, Rust function calls LLVMRustBuildVectorReduceFMax with fast math enabled. [Similarity] Both perform vector reduction operations, but with different semantics (int max vs float max), and different optimization flags. [Knowledge Extraction] No full structural match due to semantic differences in operation type (int vs float), but there is a partial match in the general pattern of vector reduction and a clear API mapping for the core LLVM operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustBuildVectorReduceMax__idx17718_rank4.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMax__idx17718_rank4.rs", "c_api": "LLVMRustSetFastMath", "rust_api": "/*NoNaNs:*/ true", "mapping_type": "pattern", "description": "Fast math optimization flag setting", "reasoning": "[Task Analysis] C function wraps LLVM's CreateIntMaxReduce, Rust function calls LLVMRustBuildVectorReduceFMax with fast math enabled. [Similarity] Both perform vector reduction operations, but with different semantics (int max vs float max), and different optimization flags. [Knowledge Extraction] No full structural match due to semantic differences in operation type (int vs float), but there is a partial match in the general pattern of vector reduction and a clear API mapping for the core LLVM operation."}]
+Unixcoder Score: 0.016471566632390022
+--------------------------------------------------
+C_Code: 
+bigint
+bi_scan( FILE* f )
+    {
+    int sign;
+    int c;
+    bigint biR;
+
+    sign = 1;
+    c = getc( f );
+    if ( c == '-' )
+	sign = -1;
+    else
+	ungetc( c, f );
+
+    biR = bi_0;
+    for (;;)
+	{
+	c = getc( f );
+	if ( c < '0' || c > '9' )
+	    break;
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), c - '0' );
+	}
+
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn parse_bytes(buf: &[u8], radix: uint)
+        -> Option<BigInt> {
+        if buf.is_empty() { return None; }
+        let mut sign  = Plus;
+        let mut start = 0;
+        if buf[0] == ('-' as u8) {
+            sign  = Minus;
+            start = 1;
+        }
+        return BigUint::parse_bytes(vec::view(buf, start, buf.len()), radix)
+            .map(|bu| BigInt::from_biguint(sign, *bu));
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx17716_rank3.c", "source_rust_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx17716_rank3.rs", "c_api": "LLVMRustBuildVectorReduceMax", "rust_api": "LLVMRustBuildVectorReduceFMax", "mapping_type": "function", "description": "Vector reduction max operation", "reasoning": "[Task Analysis] C function wraps a LLVM builder call, Rust function calls an FFI wrapper for the same operation. [Similarity] Both perform vector reduction max operations, but with different signatures and wrappers. [Knowledge Extraction] Names don't match exactly but refer to same concept (vector reduce max). C uses CreateIntMaxReduce, Rust calls LLVMRustBuildVectorReduceFMax. The core operation is the same, just with different APIs and types. [API Mapping] Extracted mapping between LLVMRustBuildVectorReduceMax and CreateIntMaxReduce as both perform vector reduction max operation. [Structural Match] No full or partial structural match due to different control flow and wrapper patterns. [Domain Consistency] Both are LLVM IR builder operations, so domain is consistent."}]
+Unixcoder Score: 0.007734613958746195
+--------------------------------------------------
+C_Code: 
+bigint
+bi_scan( FILE* f )
+    {
+    int sign;
+    int c;
+    bigint biR;
+
+    sign = 1;
+    c = getc( f );
+    if ( c == '-' )
+	sign = -1;
+    else
+	ungetc( c, f );
+
+    biR = bi_0;
+    for (;;)
+	{
+	c = getc( f );
+	if ( c < '0' || c > '9' )
+	    break;
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), c - '0' );
+	}
+
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn parse_bytes(buf: &[u8], radix: uint)
+        -> Option<BigInt> {
+        if buf.is_empty() { return None; }
+        let mut sign  = Plus;
+        let mut start = 0;
+        if buf[0] == ('-' as u8) {
+            sign  = Minus;
+            start = 1;
+        }
+        return BigUint::parse_bytes(vec::view(buf, start, buf.len()), radix)
+            .map(|bu| BigInt::from_biguint(sign, *bu));
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27947_rank1.c", "source_rust_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27947_rank1.rs", "c_api": "LLVMRustBuildVectorReduceMax", "rust_api": "vector_reduce_max", "mapping_type": "function", "description": "Vector reduction operation (max)", "reasoning": "[Task Analysis] C function wraps a LLVM builder call, Rust function performs vector reduction with custom logic. [Similarity] Names don't match but both perform vector reduction operations. [Knowledge Extraction] No full structural match due to different domains (LLVM IR vs GCC IR), but API mapping exists for vector reduction operation."}]
+Unixcoder Score: 0.007076457142829895
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn add_signed_enum(&mut self, signed_enum: Race) {
+    self.fbb_.push_slot::<Race>(Monster::VT_SIGNED_ENUM, signed_enum, Race::None);
+  }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27777_rank4.c", "source_rust_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27777_rank4.rs", "c_api": "unwrap(B)->CreateIntMaxReduce", "rust_api": "new_function", "mapping_type": "function", "description": "LLVM IR builder operation vs GCC IR function creation", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an int max reduce, while Rust function performs a multiplicative operation with binary op handling and fallback to external function calls. [Similarity] No structural similarity at the function level due to different operations and control flow. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to LLVM/GCC IR operations and function creation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27777_rank4.c", "source_rust_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27777_rank4.rs", "c_api": "wrap(unwrap(B)->CreateIntMaxReduce(...))", "rust_api": "new_call", "mapping_type": "function", "description": "Wrapping LLVM IR operation result vs calling a function in GCC IR", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an int max reduce, while Rust function performs a multiplicative operation with binary op handling and fallback to external function calls. [Similarity] No structural similarity at the function level due to different operations and control flow. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to LLVM/GCC IR operations and function creation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27777_rank4.c", "source_rust_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27777_rank4.rs", "c_api": "CreateIntMaxReduce", "rust_api": "new_binary_op", "mapping_type": "function", "description": "Creating an integer max reduction operation in LLVM IR vs creating a binary operation in GCC IR", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an int max reduce, while Rust function performs a multiplicative operation with binary op handling and fallback to external function calls. [Similarity] No structural similarity at the function level due to different operations and control flow. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to LLVM/GCC IR operations and function creation patterns."}]
+Unixcoder Score: -0.013079511001706123
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn add_signed_enum(&mut self, signed_enum: Race) {
+    self.fbb_.push_slot::<Race>(Monster::VT_SIGNED_ENUM, signed_enum, Race::None);
+  }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__LLVMRustBuildVectorReduceMin__idx17702_rank2.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMin__idx17702_rank2.rs", "c_fragment": "return wrap(unwrap(B)->CreateIntMinReduce(unwrap(Src), IsSigned));", "rust_fragment": "unsafe { llvm::LLVMRustBuildMinNum(self.llbuilder, lhs, rhs) }", "description": "Both functions perform vector reduction with min operation using LLVM builder APIs.", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an int min reduce, while Rust function calls an FFI to perform the same operation with a minnum function. [Similarity] The core operation is the same: reducing a vector to its minimum value using integer comparison, with a signedness flag. [Knowledge Extraction] Both perform vector reduction with min operation, but use different APIs (CreateIntMinReduce vs LLVMRustBuildMinNum) and different naming conventions. The function signatures differ in parameters and return types, but the semantic intent is equivalent. [API Mapping] The core mapping is between the LLVM builder operations that perform vector reduction with min logic. [Structural Match] There is a partial structural match in the core logic of vector reduction, but not full function structure due to different parameter handling and wrapping patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustBuildVectorReduceMin__idx17702_rank2.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMin__idx17702_rank2.rs", "c_api": "CreateIntMinReduce", "rust_api": "LLVMRustBuildMinNum", "mapping_type": "function", "description": "Vector reduction with minimum value operation using integer comparison", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an int min reduce, while Rust function calls an FFI to perform the same operation with a minnum function. [Similarity] The core operation is the same: reducing a vector to its minimum value using integer comparison, with a signedness flag. [Knowledge Extraction] Both perform vector reduction with min operation, but use different APIs (CreateIntMinReduce vs LLVMRustBuildMinNum) and different naming conventions. The function signatures differ in parameters and return types, but the semantic intent is equivalent. [API Mapping] The core mapping is between the LLVM builder operations that perform vector reduction with min logic. [Structural Match] There is a partial structural match in the core logic of vector reduction, but not full function structure due to different parameter handling and wrapping patterns."}]
+Unixcoder Score: -0.0234220027923584
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    serializer.serialize_unit_variant("Race", self.0 as u32, self.variant_name().unwrap())
+  }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__LLVMRustBuildVectorReduceMax__idx17719_rank4.c", "source_rust_file": "Full__LLVMRustBuildVectorReduceMax__idx17719_rank4.rs", "c_fragment": "return wrap(unwrap(B)->CreateIntMinReduce(unwrap(Src), IsSigned));", "rust_fragment": "unsafe { llvm::LLVMRustBuildVectorReduceMin(self.llbuilder, src, is_signed) }", "description": "Both perform a vector reduce min operation using LLVM builder.", "reasoning": "[Task Analysis] C function wraps a LLVM builder call, Rust function calls the same FFI function with a different name. [Similarity] Names don't match but the core operation is identical: vector reduce min. [Knowledge Extraction] Full match on semantic operation, API mapping identified."}, {"knowledge_type": "Full", "source_c_file": "Full__LLVMRustBuildVectorReduceMax__idx17719_rank4.c", "source_rust_file": "Full__LLVMRustBuildVectorReduceMax__idx17719_rank4.rs", "reasoning": "[Task Analysis] C function wraps a LLVM builder call, Rust function calls the same FFI function with a different name. [Similarity] Names don't match but the core operation is identical: vector reduce min. [Knowledge Extraction] Full match on semantic operation, API mapping identified.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__LLVMRustBuildVectorReduceMax__idx17719_rank4.c", "source_rust_file": "Full__LLVMRustBuildVectorReduceMax__idx17719_rank4.rs", "c_api": "LLVMRustBuildVectorReduceMin", "rust_api": "LLVMRustBuildVectorReduceMin", "mapping_type": "function", "description": "Vector reduce min operation in LLVM", "reasoning": "[Task Analysis] C function wraps a LLVM builder call, Rust function calls the same FFI function with a different name. [Similarity] Names don't match but the core operation is identical: vector reduce min. [Knowledge Extraction] Full match on semantic operation, API mapping identified."}]
+Unixcoder Score: -0.024149395525455475
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn signed_enum(&self) -> Race {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<Race>(Monster::VT_SIGNED_ENUM, Some(Race::None)).unwrap()}
+  }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustBuildVectorReduceMin__idx17717_rank5.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMin__idx17717_rank5.rs", "c_api": "LLVMRustBuildVectorReduceMin", "rust_api": "LLVMRustBuildVectorReduceFMin", "mapping_type": "function", "description": "Vector reduction min operation with fast math flag", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an integer min reduce, while Rust function builds a vector reduce fmin with fast math enabled. [Similarity] Names don't match but both perform vector reduction operations with specific floating-point behavior. [Knowledge Extraction] Found partial structural match in vector reduction logic and API mapping for vector reduction operation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__LLVMRustBuildVectorReduceMin__idx17717_rank5.c", "source_rust_file": "Partial__LLVMRustBuildVectorReduceMin__idx17717_rank5.rs", "c_fragment": "return wrap(unwrap(B)->CreateIntMinReduce(unwrap(Src), IsSigned));", "rust_fragment": "unsafe { let instr = llvm::LLVMRustBuildVectorReduceFMin(self.llbuilder, src, /*NoNaNs:*/ true); llvm::LLVMRustSetFastMath(instr); instr }", "description": "Both perform vector reduction operations with specific floating-point behavior (min reduction)", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an integer min reduce, while Rust function builds a vector reduce fmin with fast math enabled. [Similarity] Names don't match but both perform vector reduction operations with specific floating-point behavior. [Knowledge Extraction] Found partial structural match in vector reduction logic and API mapping for vector reduction operation."}]
+Unixcoder Score: -0.024315858259797096
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn add_signed_enum(&mut self, signed_enum: Race) {
+    self.fbb_.push_slot::<Race>(Monster::VT_SIGNED_ENUM, signed_enum, Race::None);
+  }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27954_rank2.c", "source_rust_file": "API_Mapping__LLVMRustBuildVectorReduceMax__idx27954_rank2.rs", "c_api": "CreateIntMaxReduce", "rust_api": "vector_reduce_fmax", "mapping_type": "function", "description": "Vector reduction max operation", "reasoning": "[Task Analysis] C function wraps a LLVM builder call to create an int max reduce operation, while Rust function is a placeholder stub with `unimplemented!()`. [Similarity] Names do not refer to the same concept (`LLVMRustBuildVectorReduceMax` vs `vector_reduce_fmax`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial structural match due to name mismatch and empty Rust implementation. However, there is a semantic mapping between the operations: both represent vector reduction max operations, even though the Rust version is not implemented. [API Mappings] The C API `CreateIntMaxReduce` and the Rust pattern `vector_reduce_fmax` both perform the same logical operation (vector reduction max), so an API mapping is extracted."}]
+Unixcoder Score: -0.0248660109937191
+--------------------------------------------------

@@ -1,0 +1,140 @@
+C_Code: 
+struct kevent
+Function: 
+pub struct kevent {
+    pub ident: uintptr_t,
+    pub filter: int16_t,
+    pub flags: uint16_t,
+    pub fflags: uint32_t,
+    pub data: intptr_t,
+    pub udata: *mut c_void,
+}
+Unixcoder Score: 0.22586365044116974
+--------------------------------------------------
+C_Code: 
+struct kevent
+Function: 
+pub struct HalSetLayouts {
+    vertex_layout: <Back as Backend>::DescriptorSetLayout,
+}
+Unixcoder Score: 0.21209926903247833
+--------------------------------------------------
+C_Code: 
+struct kevent
+Function: 
+pub struct kevent {
+    pub ident: uintptr_t,
+    pub filter: int16_t,
+    pub flags: uint16_t,
+    pub fflags: uint32_t,
+    pub data: intptr_t,
+    pub udata: *mut c_void,
+}
+Unixcoder Score: 0.19518889486789703
+--------------------------------------------------
+C_Code: 
+struct kevent
+Function: 
+pub struct kevent {
+    pub ident: uintptr_t,
+    pub filter: int16_t,
+    pub flags: uint16_t,
+    pub fflags: uint32_t,
+    pub data: intptr_t,
+    pub udata: *mut c_void,
+}
+Unixcoder Score: 0.17516158521175385
+--------------------------------------------------
+C_Code: 
+struct kevent
+Function: 
+pub struct kevent {
+    pub ident: uintptr_t,
+    pub filter: int16_t,
+    pub flags: uint16_t,
+    pub fflags: uint32_t,
+    pub data: intptr_t,
+    pub udata: *mut c_void,
+}
+Unixcoder Score: 0.16545531153678894
+--------------------------------------------------
+C_Code: 
+struct kevent
+Function: 
+pub struct kevent {
+    pub ident: uintptr_t,
+    pub filter: int16_t,
+    pub flags: uint16_t,
+    pub fflags: uint32_t,
+    pub data: intptr_t,
+    pub udata: *mut c_void,
+}
+Unixcoder Score: 0.16528922319412231
+--------------------------------------------------
+C_Code: 
+struct kevent
+Function: 
+pub struct kevent {
+    pub ident: uintptr_t,
+    pub filter: int16_t,
+    pub flags: uint16_t,
+    pub fflags: uint32_t,
+    pub data: intptr_t,
+    pub udata: *mut c_void,
+}
+Unixcoder Score: 0.15462563931941986
+--------------------------------------------------
+C_Code: 
+struct kevent
+Function: 
+pub struct kevent {
+    pub ident: uintptr_t,
+    pub filter: int16_t,
+    pub flags: uint16_t,
+    pub fflags: uint32_t,
+    pub data: intptr_t,
+    pub udata: *mut c_void,
+}
+Unixcoder Score: 0.14853250980377197
+--------------------------------------------------
+C_Code: 
+struct kevent
+Function: 
+pub struct kevent {
+    pub ident: uintptr_t,
+    pub filter: int16_t,
+    pub flags: uint16_t,
+    pub fflags: uint32_t,
+    pub data: intptr_t,
+    pub udata: *mut c_void,
+}
+Unixcoder Score: 0.14761990308761597
+--------------------------------------------------
+C_Code: 
+void HiSysEventRecycleWatcher(HiSysEventRustWatcherC* watcher)
+{
+    if (watcher == nullptr) {
+        return;
+    }
+    auto watcherKey = std::make_pair(watcher->onEventRustCb, watcher->onServiceDiedRustCb);
+    auto watcherIter = g_watchers.find(watcherKey);
+    if (watcherIter == g_watchers.end()) {
+        return;
+    }
+    auto listener = watcherIter->second;
+    if (listener != nullptr) {
+        listener->RecycleWatcher(watcher);
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_watchersMutex);
+        g_watchers.erase(watcherIter->first);
+    }
+}
+Function: 
+pub fn remove_watcher(watcher: &Watcher) -> i32 {
+    sys_event_manager::remove_watcher(watcher)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_io_start__idx125923_rank2.c", "source_rust_file": "API_Mapping__ev_io_start__idx125923_rank2.rs", "c_api": "fd_change (EV_A_ fd, w->events & EV__IOFDSET | EV_ANFD_REIFY)", "rust_api": "unsafe { entry.as_mut() }.next = self.head_tail", "mapping_type": "pattern", "description": "Updating state or metadata related to a resource", "reasoning": "[Task Analysis] C code is a libev event loop IO start function; Rust code is a linked list push operation. [Similarity] No structural similarity at the function level due to different domains (event loop vs list manipulation). [Knowledge Extraction] No full match, no partial match, but both involve control flow and data structure manipulation. API mappings identified based on shared patterns like list/node manipulation and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_io_start__idx125923_rank2.c", "source_rust_file": "API_Mapping__ev_io_start__idx125923_rank2.rs", "c_api": "if (expect_false (ev_is_active (w)))", "rust_api": "unsafe { self.init() }", "mapping_type": "pattern", "description": "Conditional early return check for active state", "reasoning": "[Task Analysis] C code is a libev event loop IO start function; Rust code is a linked list push operation. [Similarity] No structural similarity at the function level due to different domains (event loop vs list manipulation). [Knowledge Extraction] No full match, no partial match, but both involve control flow and data structure manipulation. API mappings identified based on shared patterns like list/node manipulation and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_io_start__idx125923_rank2.c", "source_rust_file": "API_Mapping__ev_io_start__idx125923_rank2.rs", "c_api": "wlist_add (&anfds[fd].head, (WL)w)", "rust_api": "unsafe { entry.as_mut() }.prev = prev_tail", "mapping_type": "pattern", "description": "Adding an element to a list/chain structure", "reasoning": "[Task Analysis] C code is a libev event loop IO start function; Rust code is a linked list push operation. [Similarity] No structural similarity at the function level due to different domains (event loop vs list manipulation). [Knowledge Extraction] No full match, no partial match, but both involve control flow and data structure manipulation. API mappings identified based on shared patterns like list/node manipulation and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_io_start__idx125923_rank2.c", "source_rust_file": "API_Mapping__ev_io_start__idx125923_rank2.rs", "c_api": "assert ((\"libev: ev_io_start called with negative fd\", fd >= 0))", "rust_api": "let mut prev_tail = mem::replace(&mut unsafe { self.head_tail.as_mut() }.prev, entry)", "mapping_type": "pattern", "description": "Validation of input parameters before proceeding", "reasoning": "[Task Analysis] C code is a libev event loop IO start function; Rust code is a linked list push operation. [Similarity] No structural similarity at the function level due to different domains (event loop vs list manipulation). [Knowledge Extraction] No full match, no partial match, but both involve control flow and data structure manipulation. API mappings identified based on shared patterns like list/node manipulation and conditional logic."}]
+Unixcoder Score: 0.0952373743057251
+--------------------------------------------------

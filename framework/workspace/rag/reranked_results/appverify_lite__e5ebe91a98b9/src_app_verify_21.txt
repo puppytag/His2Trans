@@ -1,0 +1,260 @@
+C_Code: 
+static uv_buf_t buf_alloc(uv_handle_t* handle, size_t size) {
+  buf_list_t* buf;
+
+  buf = buf_freelist;
+  if (buf != NULL) {
+    buf_freelist = buf->next;
+    return buf->uv_buf_t;
+  }
+
+  buf = (buf_list_t*) malloc(size + sizeof *buf);
+  buf->uv_buf_t.len = (unsigned int)size;
+  buf->uv_buf_t.base = ((char*) buf) + sizeof *buf;
+
+  return buf->uv_buf_t;
+}
+Function: 
+pub unsafe fn malloc_buf_base_of(suggested_size: size_t) -> *u8 {
+    return rust_uv_malloc_buf_base_of(suggested_size);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__outputChars__idx121684_rank1.c", "source_rust_file": "Partial__outputChars__idx121684_rank1.rs", "c_fragment": "return write(current->fd, buf, len);", "rust_fragment": "self.extend(buf);", "description": "Both perform write-like operations, with C using system call and Rust extending internal buffer.", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust method 'write' operates on a mutable self with a byte slice, extending internal buffer and returning result. [Similarity] Both perform write operations to a destination (file descriptor vs internal buffer), but differ in abstraction level and data handling. [Knowledge Extraction] No full structural match due to different domains (system I/O vs internal buffer extension). However, both represent write operations with similar intent and data flow. Extract partial match and API mapping for write operation pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__outputChars__idx121684_rank1.c", "source_rust_file": "Partial__outputChars__idx121684_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.extend(buf)", "mapping_type": "function", "description": "Write operation to a destination (file descriptor in C, internal buffer in Rust)", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust method 'write' operates on a mutable self with a byte slice, extending internal buffer and returning result. [Similarity] Both perform write operations to a destination (file descriptor vs internal buffer), but differ in abstraction level and data handling. [Knowledge Extraction] No full structural match due to different domains (system I/O vs internal buffer extension). However, both represent write operations with similar intent and data flow. Extract partial match and API mapping for write operation pattern."}]
+Unixcoder Score: 0.07876703143119812
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let newline_idx = match memchr::memrchr(b'\n', buf) {
+            // If there are no new newlines (that is, if this write is less than
+            // one line), just do a regular buffered write (which may flush if
+            // we exceed the inner buffer's size)
+            None => {
+                self.flush_if_completed_line()?;
+                return self.buffer.write(buf);
+            }
+            // Otherwise, arrange for the lines to be written directly to the
+            // inner writer.
+            Some(newline_idx) => newline_idx + 1,
+        };
+
+        // Flush existing content to prepare for our write. We have to do this
+        // before attempting to write `buf` in order to maintain consistency;
+        // if we add `buf` to the buffer then try to flush it all at once,
+        // we're obligated to return Ok(), which would mean suppressing any
+        // errors that occur during flush.
+        self.buffer.flush_buf()?;
+
+        // This is what we're going to try to write directly to the inner
+        // writer. The rest will be buffered, if nothing goes wrong.
+        let lines = &buf[..newline_idx];
+
+        // Write `lines` directly to the inner writer. In keeping with the
+        // `write` convention, make at most one attempt to add new (unbuffered)
+        // data. Because this write doesn't touch the BufWriter state directly,
+        // and the buffer is known to be empty, we don't need to worry about
+        // self.buffer.panicked here.
+        let flushed = self.inner_mut().write(lines)?;
+
+        // If buffer returns Ok(0), propagate that to the caller without
+        // doing additional buffering; otherwise we're just guaranteeing
+        // an "ErrorKind::WriteZero" later.
+        if flushed == 0 {
+            return Ok(0);
+        }
+
+        // Now that the write has succeeded, buffer the rest (or as much of
+        // the rest as possible). If there were any unwritten newlines, we
+        // only buffer out to the last unwritten newline that fits in the
+        // buffer; this helps prevent flushing partial lines on subsequent
+        // calls to LineWriterShim::write.
+
+        // Handle the cases in order of most-common to least-common, under
+        // the presumption that most writes succeed in totality, and that most
+        // writes are smaller than the buffer.
+        // - Is this a partial line (ie, no newlines left in the unwritten tail)
+        // - If not, does the data out to the last unwritten newline fit in
+        //   the buffer?
+        // - If not, scan for the last newline that *does* fit in the buffer
+        let tail = if flushed >= newline_idx {
+            &buf[flushed..]
+        } else if newline_idx - flushed <= self.buffer.capacity() {
+            &buf[flushed..newline_idx]
+        } else {
+            let scan_area = &buf[flushed..];
+            let scan_area = &scan_area[..self.buffer.capacity()];
+            match memchr::memrchr(b'\n', scan_area) {
+                Some(newline_idx) => &scan_area[..newline_idx + 1],
+                None => scan_area,
+            }
+        };
+
+        let buffered = self.buffer.write_to_buf(tail);
+        Ok(flushed + buffered)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__outputChars__idx121492_rank1.c", "source_rust_file": "Full__outputChars__idx121492_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "(&*self).write(buf)", "mapping_type": "function", "description": "Low-level file/stream write operation", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args. Rust function 'write' is a method on a struct that delegates to a raw write call. [Similarity] Both perform low-level write operations to a file descriptor/stream. [Knowledge Extraction] Full structural match on core operation (write to stream), partial match on function signature differences (C has fd, Rust has self), API mapping identified for write operation."}, {"knowledge_type": "Full", "source_c_file": "Full__outputChars__idx121492_rank1.c", "source_rust_file": "Full__outputChars__idx121492_rank1.rs", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args. Rust function 'write' is a method on a struct that delegates to a raw write call. [Similarity] Both perform low-level write operations to a file descriptor/stream. [Knowledge Extraction] Full structural match on core operation (write to stream), partial match on function signature differences (C has fd, Rust has self), API mapping identified for write operation.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__outputChars__idx121492_rank1.c", "source_rust_file": "Full__outputChars__idx121492_rank1.rs", "c_fragment": "return write(current->fd, buf, len);", "rust_fragment": "(&*self).write(buf)", "description": "Both perform a write operation to a file descriptor/stream", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args. Rust function 'write' is a method on a struct that delegates to a raw write call. [Similarity] Both perform low-level write operations to a file descriptor/stream. [Knowledge Extraction] Full structural match on core operation (write to stream), partial match on function signature differences (C has fd, Rust has self), API mapping identified for write operation."}]
+Unixcoder Score: 0.02734193205833435
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        handle_ebadf(self.0.write_all(buf), ())
+    }
+Unixcoder Score: 0.0260213240981102
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn main() {
+    let mut v = Vec::new();
+
+    // These should fail
+    write!(v, "Hello\n");
+    write!(v, "Hello {}\n", "world");
+    write!(v, "Hello {} {}\n", "world", "#2");
+    write!(v, "{}\n", 1265);
+    write!(v, "\n");
+
+    // These should be fine
+    write!(v, "");
+    write!(v, "Hello");
+    writeln!(v, "Hello");
+    writeln!(v, "Hello\n");
+    writeln!(v, "Hello {}\n", "world");
+    write!(v, "Issue\n{}", 1265);
+    write!(v, "{}", 1265);
+    write!(v, "\n{}", 1275);
+    write!(v, "\n\n");
+    write!(v, "like eof\n\n");
+    write!(v, "Hello {} {}\n\n", "world", "#2");
+    writeln!(v, "\ndon't\nwarn\nfor\nmultiple\nnewlines\n"); // #3126
+    writeln!(v, "\nbla\n\n"); // #3126
+
+    // Escaping
+    write!(v, "\\n"); // #3514
+    write!(v, "\\\n"); // should fail
+    write!(v, "\\\\n");
+
+    // Raw strings
+    write!(v, r"\n"); // #3778
+
+    // Literal newlines should also fail
+    write!(
+        v,
+        "
+"
+    );
+    write!(
+        v,
+        r"
+"
+    );
+
+    // Don't warn on CRLF (#4208)
+    write!(v, "\r\n");
+    write!(v, "foo\r\n");
+    write!(v, "\\r\n");
+    write!(v, "foo\rbar\n");
+
+    // Ignore expanded format strings
+    macro_rules! newline {
+        () => {
+            "\n"
+        };
+    }
+    write!(v, newline!());
+}
+Unixcoder Score: 0.02536303922533989
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        handle_ebadf(self.0.write(buf), buf.len())
+    }
+Unixcoder Score: 0.025031540542840958
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        handle_ebadf(self.0.write_all(buf), ())
+    }
+Unixcoder Score: 0.02481301873922348
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.lock().write(buf)
+    }
+Unixcoder Score: 0.024654768407344818
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let st: NonNull<r_efi::efi::SystemTable> = uefi::env::system_table().cast();
+        let stdout = unsafe { (*st.as_ptr()).con_out };
+
+        write(stdout, buf)
+    }
+Unixcoder Score: 0.02460789494216442
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        #[repr(C, align(4096))]
+        struct LendBuffer([u8; 4096]);
+        let mut lend_buffer = LendBuffer([0u8; 4096]);
+        let connection = log_server();
+        for chunk in buf.chunks(lend_buffer.0.len()) {
+            for (dest, src) in lend_buffer.0.iter_mut().zip(chunk) {
+                *dest = *src;
+            }
+            lend(connection, LogLend::StandardOutput.into(), &lend_buffer.0, 0, chunk.len())
+                .unwrap();
+        }
+        Ok(buf.len())
+    }
+Unixcoder Score: 0.023242546245455742
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        vec_write(&mut self.pos, self.inner, buf)
+    }
+Unixcoder Score: 0.023046378046274185
+--------------------------------------------------

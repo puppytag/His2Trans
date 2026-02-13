@@ -1,0 +1,43 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_svcmgr_ioservice_8",
+  "function_name": "SvcMgrIoserviceRelease",
+  "source_c_file": "src/svcmgr_ioservice.c",
+  "c_code": "void SvcMgrIoserviceRelease(struct ISvcMgrIoservice * svcmgr)\n{\n    if (svcmgr == NULL) {\n        return;\n    }\n    struct SvcMgrIoservice *svcmgrInst = CONTAINER_OF(svcmgr, struct SvcMgrIoservice, svcmgr);\n    HdfIoServiceRecycle(svcmgrInst->iosvc);\n    OsalMemFree(svcmgrInst);\n}",
+  "rust_signature": "pub extern \"C\" fn SvcMgrIoserviceRelease(svcmgr: *mut crate::types::ISvcMgrIoservice)",
+  "rust_code": "pub extern \\\"C\\\" fn SvcMgrIoserviceRelease(svcmgr: *mut ISvcMgrIoservice) {\n    if svcmgr.is_null() {\n        return;\n    }\n    unsafe {\n        let svcmgrInst = (svcmgr as *mut u8).offset(-(core::mem::offset_of!(SvcMgrIoservice, svcmgr) as isize)) as *mut SvcMgrIoservice;\n        HdfIoServiceRecycle((*svcmgrInst).iosvc);\n        OsalMemFree(svcmgrInst as *mut core::ffi::c_void);\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemFree",
+      "rust_api": "OsalMemFree",
+      "description": "Free memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceRecycle",
+      "rust_api": "HdfIoServiceRecycle",
+      "description": "Recycle HDF I/O service",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "CONTAINER_OF(p, T, field)",
+      "rust_fragment": "(p as *mut u8).offset(-(offset_of!(T, field) as isize)) as *mut T",
+      "description": "Implement container_of via `offset_of!` + pointer arithmetic",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

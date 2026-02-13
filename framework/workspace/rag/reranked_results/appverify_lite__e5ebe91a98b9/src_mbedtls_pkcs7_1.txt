@@ -1,0 +1,388 @@
+C_Code: 
+static upb_EncodeStatus upb_Encoder_Encode(upb_encstate* const encoder,
+                                           const upb_Message* const msg,
+                                           const upb_MiniTable* const l,
+                                           char** const buf, size_t* const size,
+                                           bool prepend_len) {
+  // Unfortunately we must continue to perform hackery here because there are
+  // code paths which blindly copy the returned pointer without bothering to
+  // check for errors until much later (b/235839510). So we still set *buf to
+  // NULL on error and we still set it to non-NULL on a successful empty result.
+  if (UPB_SETJMP(encoder->err) == 0) {
+    size_t encoded_msg_size;
+    encode_message(encoder, msg, l, &encoded_msg_size);
+    if (prepend_len) {
+      encode_varint(encoder, encoded_msg_size);
+    }
+    *size = encoder->limit - encoder->ptr;
+    if (*size == 0) {
+      static char ch;
+      *buf = &ch;
+    } else {
+      UPB_ASSERT(encoder->ptr);
+      *buf = encoder->ptr;
+    }
+  } else {
+    UPB_ASSERT(encoder->status != kUpb_EncodeStatus_Ok);
+    *buf = NULL;
+    *size = 0;
+  }
+
+  _upb_mapsorter_destroy(&encoder->sorter);
+  return encoder->status;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.007958040572702885
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus upb_Encoder_Encode(upb_encstate* const encoder,
+                                           const upb_Message* const msg,
+                                           const upb_MiniTable* const l,
+                                           char** const buf, size_t* const size,
+                                           bool prepend_len) {
+  // Unfortunately we must continue to perform hackery here because there are
+  // code paths which blindly copy the returned pointer without bothering to
+  // check for errors until much later (b/235839510). So we still set *buf to
+  // NULL on error and we still set it to non-NULL on a successful empty result.
+  if (UPB_SETJMP(encoder->err) == 0) {
+    size_t encoded_msg_size;
+    encode_message(encoder, msg, l, &encoded_msg_size);
+    if (prepend_len) {
+      encode_varint(encoder, encoded_msg_size);
+    }
+    *size = encoder->limit - encoder->ptr;
+    if (*size == 0) {
+      static char ch;
+      *buf = &ch;
+    } else {
+      UPB_ASSERT(encoder->ptr);
+      *buf = encoder->ptr;
+    }
+  } else {
+    UPB_ASSERT(encoder->status != kUpb_EncodeStatus_Ok);
+    *buf = NULL;
+    *size = 0;
+  }
+
+  _upb_mapsorter_destroy(&encoder->sorter);
+  return encoder->status;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.014908229932188988
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus upb_Encoder_Encode(upb_encstate* const encoder,
+                                           const upb_Message* const msg,
+                                           const upb_MiniTable* const l,
+                                           char** const buf, size_t* const size,
+                                           bool prepend_len) {
+  // Unfortunately we must continue to perform hackery here because there are
+  // code paths which blindly copy the returned pointer without bothering to
+  // check for errors until much later (b/235839510). So we still set *buf to
+  // NULL on error and we still set it to non-NULL on a successful empty result.
+  if (UPB_SETJMP(encoder->err) == 0) {
+    size_t encoded_msg_size;
+    encode_message(encoder, msg, l, &encoded_msg_size);
+    if (prepend_len) {
+      encode_varint(encoder, encoded_msg_size);
+    }
+    *size = encoder->limit - encoder->ptr;
+    if (*size == 0) {
+      static char ch;
+      *buf = &ch;
+    } else {
+      UPB_ASSERT(encoder->ptr);
+      *buf = encoder->ptr;
+    }
+  } else {
+    UPB_ASSERT(encoder->status != kUpb_EncodeStatus_Ok);
+    *buf = NULL;
+    *size = 0;
+  }
+
+  _upb_mapsorter_destroy(&encoder->sorter);
+  return encoder->status;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.016574764624238014
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus upb_Encoder_Encode(upb_encstate* const encoder,
+                                           const upb_Message* const msg,
+                                           const upb_MiniTable* const l,
+                                           char** const buf, size_t* const size,
+                                           bool prepend_len) {
+  // Unfortunately we must continue to perform hackery here because there are
+  // code paths which blindly copy the returned pointer without bothering to
+  // check for errors until much later (b/235839510). So we still set *buf to
+  // NULL on error and we still set it to non-NULL on a successful empty result.
+  if (UPB_SETJMP(encoder->err) == 0) {
+    size_t encoded_msg_size;
+    encode_message(encoder, msg, l, &encoded_msg_size);
+    if (prepend_len) {
+      encode_varint(encoder, encoded_msg_size);
+    }
+    *size = encoder->limit - encoder->ptr;
+    if (*size == 0) {
+      static char ch;
+      *buf = &ch;
+    } else {
+      UPB_ASSERT(encoder->ptr);
+      *buf = encoder->ptr;
+    }
+  } else {
+    UPB_ASSERT(encoder->status != kUpb_EncodeStatus_Ok);
+    *buf = NULL;
+    *size = 0;
+  }
+
+  _upb_mapsorter_destroy(&encoder->sorter);
+  return encoder->status;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.017345769330859184
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus upb_Encoder_Encode(upb_encstate* const encoder,
+                                           const upb_Message* const msg,
+                                           const upb_MiniTable* const l,
+                                           char** const buf, size_t* const size,
+                                           bool prepend_len) {
+  // Unfortunately we must continue to perform hackery here because there are
+  // code paths which blindly copy the returned pointer without bothering to
+  // check for errors until much later (b/235839510). So we still set *buf to
+  // NULL on error and we still set it to non-NULL on a successful empty result.
+  if (UPB_SETJMP(encoder->err) == 0) {
+    size_t encoded_msg_size;
+    encode_message(encoder, msg, l, &encoded_msg_size);
+    if (prepend_len) {
+      encode_varint(encoder, encoded_msg_size);
+    }
+    *size = encoder->limit - encoder->ptr;
+    if (*size == 0) {
+      static char ch;
+      *buf = &ch;
+    } else {
+      UPB_ASSERT(encoder->ptr);
+      *buf = encoder->ptr;
+    }
+  } else {
+    UPB_ASSERT(encoder->status != kUpb_EncodeStatus_Ok);
+    *buf = NULL;
+    *size = 0;
+  }
+
+  _upb_mapsorter_destroy(&encoder->sorter);
+  return encoder->status;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.01739697903394699
+--------------------------------------------------
+C_Code: 
+inline bool MonsterBufferHasIdentifier(const void *buf) {
+  return ::flatbuffers::BufferHasIdentifier(
+      buf, MonsterIdentifier());
+}
+Function: 
+pub fn scalar_stuff_buffer_has_identifier(buf: &[u8]) -> bool {
+  flatbuffers::buffer_has_identifier(buf, SCALAR_STUFF_IDENTIFIER, false)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__MonsterBufferHasIdentifier__idx3695_rank4.c", "source_rust_file": "Full__MonsterBufferHasIdentifier__idx3695_rank4.rs", "c_fragment": "inline bool MonsterBufferHasIdentifier(const void *buf) {\n  return ::flatbuffers::BufferHasIdentifier(\n      buf, MonsterIdentifier());\n}", "rust_fragment": "pub fn monster_size_prefixed_buffer_has_identifier(buf: &[u8]) -> bool {\n  flatbuffers::buffer_has_identifier(buf, MONSTER_IDENTIFIER, true)\n}", "description": "Both functions check if a buffer has a specific flatbuffers identifier.", "reasoning": "[Task Analysis] C and Rust code both check if a buffer has a specific flatbuffers identifier. [Similarity] Names differ but refer to same concept (buffer identifier validation). Code structure is high-level and semantically equivalent. [Knowledge Extraction] Full match on logic and purpose; API mappings identified for flatbuffers identifier checking functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__MonsterBufferHasIdentifier__idx3695_rank4.c", "source_rust_file": "Full__MonsterBufferHasIdentifier__idx3695_rank4.rs", "c_api": "::flatbuffers::BufferHasIdentifier", "rust_api": "flatbuffers::buffer_has_identifier", "mapping_type": "function", "description": "Buffer identifier validation function", "reasoning": "[Task Analysis] C and Rust code both check if a buffer has a specific flatbuffers identifier. [Similarity] Names differ but refer to same concept (buffer identifier validation). Code structure is high-level and semantically equivalent. [Knowledge Extraction] Full match on logic and purpose; API mappings identified for flatbuffers identifier checking functions."}, {"knowledge_type": "Full", "source_c_file": "Full__MonsterBufferHasIdentifier__idx3695_rank4.c", "source_rust_file": "Full__MonsterBufferHasIdentifier__idx3695_rank4.rs", "reasoning": "[Task Analysis] C and Rust code both check if a buffer has a specific flatbuffers identifier. [Similarity] Names differ but refer to same concept (buffer identifier validation). Code structure is high-level and semantically equivalent. [Knowledge Extraction] Full match on logic and purpose; API mappings identified for flatbuffers identifier checking functions.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__MonsterBufferHasIdentifier__idx3695_rank4.c", "source_rust_file": "Full__MonsterBufferHasIdentifier__idx3695_rank4.rs", "c_api": "MonsterIdentifier()", "rust_api": "MONSTER_IDENTIFIER", "mapping_type": "function", "description": "Flatbuffers identifier constant", "reasoning": "[Task Analysis] C and Rust code both check if a buffer has a specific flatbuffers identifier. [Similarity] Names differ but refer to same concept (buffer identifier validation). Code structure is high-level and semantically equivalent. [Knowledge Extraction] Full match on logic and purpose; API mappings identified for flatbuffers identifier checking functions."}]
+Unixcoder Score: -0.021928314119577408
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus upb_Encoder_Encode(upb_encstate* const encoder,
+                                           const upb_Message* const msg,
+                                           const upb_MiniTable* const l,
+                                           char** const buf, size_t* const size,
+                                           bool prepend_len) {
+  // Unfortunately we must continue to perform hackery here because there are
+  // code paths which blindly copy the returned pointer without bothering to
+  // check for errors until much later (b/235839510). So we still set *buf to
+  // NULL on error and we still set it to non-NULL on a successful empty result.
+  if (UPB_SETJMP(encoder->err) == 0) {
+    size_t encoded_msg_size;
+    encode_message(encoder, msg, l, &encoded_msg_size);
+    if (prepend_len) {
+      encode_varint(encoder, encoded_msg_size);
+    }
+    *size = encoder->limit - encoder->ptr;
+    if (*size == 0) {
+      static char ch;
+      *buf = &ch;
+    } else {
+      UPB_ASSERT(encoder->ptr);
+      *buf = encoder->ptr;
+    }
+  } else {
+    UPB_ASSERT(encoder->status != kUpb_EncodeStatus_Ok);
+    *buf = NULL;
+    *size = 0;
+  }
+
+  _upb_mapsorter_destroy(&encoder->sorter);
+  return encoder->status;
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.02467050962150097
+--------------------------------------------------
+C_Code: 
+inline bool MonsterBufferHasIdentifier(const void *buf) {
+  return ::flatbuffers::BufferHasIdentifier(
+      buf, MonsterIdentifier());
+}
+Function: 
+pub fn monster_buffer_has_identifier(buf: &[u8]) -> bool {
+  flatbuffers::buffer_has_identifier(buf, MONSTER_IDENTIFIER, false)
+}
+Unixcoder Score: -0.02749883010983467
+--------------------------------------------------
+C_Code: 
+inline bool MonsterBufferHasIdentifier(const void *buf) {
+  return ::flatbuffers::BufferHasIdentifier(
+      buf, MonsterIdentifier());
+}
+Function: 
+pub fn monster_buffer_has_identifier(buf: &[u8]) -> bool {
+  flatbuffers::buffer_has_identifier(buf, MONSTER_IDENTIFIER, false)
+}
+Unixcoder Score: -0.027506962418556213
+--------------------------------------------------
+C_Code: 
+inline bool MonsterBufferHasIdentifier(const void *buf) {
+  return ::flatbuffers::BufferHasIdentifier(
+      buf, MonsterIdentifier());
+}
+Function: 
+pub fn scalar_stuff_size_prefixed_buffer_has_identifier(buf: &[u8]) -> bool {
+  flatbuffers::buffer_has_identifier(buf, SCALAR_STUFF_IDENTIFIER, true)
+}
+Unixcoder Score: -0.028226828202605247
+--------------------------------------------------

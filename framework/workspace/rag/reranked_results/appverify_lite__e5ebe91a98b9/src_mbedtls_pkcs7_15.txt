@@ -1,0 +1,406 @@
+C_Code: 
+struct StringOffsetCompare {
+    explicit StringOffsetCompare(const std::vector<uint8_t> &buf)
+        : buf_(&buf) {}
+    bool operator()(const StringOffset &a, const StringOffset &b) const {
+      auto stra = buf_->data() + a.first;
+      auto strb = buf_->data() + b.first;
+      auto cr = memcmp(stra, strb, (std::min)(a.second, b.second) + 1);
+      return cr < 0 || (cr == 0 && a.second < b.second);
+    }
+Function: 
+pub struct Builder {
+    buffer: Vec<u8>,
+    values: Vec<Value>,
+    key_pool: Option<Vec<CachedKey>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__walk_variant2__idx29869_rank4.c", "source_rust_file": "API_Mapping__walk_variant2__idx29869_rank4.rs", "c_api": "variant_ptr_and_end.first", "rust_api": "self.project_field(bx, tag_field)", "mapping_type": "field_access", "description": "Pointer to variant data in C vs field projection in Rust", "reasoning": "[Task Analysis] C function logs variant data using a sub-logger and walks through a buffer; Rust function generates code for setting discriminant values in a layout. [Similarity] No structural similarity at the function level due to different domains (logging vs code generation). [Knowledge Extraction] No full or partial match, but there are API mappings related to variant handling and field access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__walk_variant2__idx29869_rank4.c", "source_rust_file": "API_Mapping__walk_variant2__idx29869_rank4.rs", "c_api": "sub.walk()", "rust_api": "self.layout.for_variant(bx.cx(), variant_index).abi.is_uninhabited()", "mapping_type": "function", "description": "Walk/visit variant data in C vs check if variant is uninhabited in Rust", "reasoning": "[Task Analysis] C function logs variant data using a sub-logger and walks through a buffer; Rust function generates code for setting discriminant values in a layout. [Similarity] No structural similarity at the function level due to different domains (logging vs code generation). [Knowledge Extraction] No full or partial match, but there are API mappings related to variant handling and field access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__walk_variant2__idx29869_rank4.c", "source_rust_file": "API_Mapping__walk_variant2__idx29869_rank4.rs", "c_api": "sub.align = true", "rust_api": "ptr.align", "mapping_type": "field_access", "description": "Alignment setting in C vs alignment access in Rust", "reasoning": "[Task Analysis] C function logs variant data using a sub-logger and walks through a buffer; Rust function generates code for setting discriminant values in a layout. [Similarity] No structural similarity at the function level due to different domains (logging vs code generation). [Knowledge Extraction] No full or partial match, but there are API mappings related to variant handling and field access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__walk_variant2__idx29869_rank4.c", "source_rust_file": "API_Mapping__walk_variant2__idx29869_rank4.rs", "c_api": "variant_ptr_and_end.second", "rust_api": "self.layout.ty.discriminant_for_variant(bx.tcx(), variant_index).unwrap().val", "mapping_type": "field_access", "description": "End pointer in C vs discriminant value in Rust", "reasoning": "[Task Analysis] C function logs variant data using a sub-logger and walks through a buffer; Rust function generates code for setting discriminant values in a layout. [Similarity] No structural similarity at the function level due to different domains (logging vs code generation). [Knowledge Extraction] No full or partial match, but there are API mappings related to variant handling and field access patterns."}]
+Unixcoder Score: 0.020980726927518845
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: 0.020840387791395187
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: 0.020680777728557587
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: 0.0048243203200399876
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: -0.0019647344015538692
+--------------------------------------------------
+C_Code: 
+static bool match(int* first, int* second, int count, int tol) {
+    int delta;
+    for (int i = 0; i < count; ++i) {
+        delta = first[i] - second[i];
+        if (delta > tol || delta < -tol) {
+            return false;
+        }
+    }
+
+    return true;
+}
+Function: 
+fn normalized_coords_equal(a: &BridgeNormalizedCoords, b: &BridgeNormalizedCoords) -> bool {
+    a.normalized_coords.coords() == b.normalized_coords.coords()
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__walk_vec2__idx117816_rank1.c", "source_rust_file": "Partial__walk_vec2__idx117816_rank1.rs", "c_fragment": "while (!result && sub.dp < data_end) {\n        sub.walk_reset();\n        result = sub.result;\n        sub.align = true;\n    }", "rust_fragment": "let mut order = unsafe { memcmp(left.as_ptr(), right.as_ptr(), len) as isize };", "description": "Loop-based iteration and state update in C matches memory comparison in Rust.", "reasoning": "[Task Analysis] C function performs vector walking and comparison logic; Rust function compares slices using memcmp and length. [Similarity] Names and domains differ (C: walk_vec2, Rust: compare), but both perform element-wise comparison with fallback to length. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for slice comparison via memcmp."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__walk_vec2__idx117816_rank1.c", "source_rust_file": "Partial__walk_vec2__idx117816_rank1.rs", "c_api": "memcmp", "rust_api": "memcmp", "mapping_type": "function", "description": "Memory comparison operation", "reasoning": "[Task Analysis] C function performs vector walking and comparison logic; Rust function compares slices using memcmp and length. [Similarity] Names and domains differ (C: walk_vec2, Rust: compare), but both perform element-wise comparison with fallback to length. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for slice comparison via memcmp."}]
+Unixcoder Score: -0.007272944785654545
+--------------------------------------------------
+C_Code: 
+int utf8_range(const unsigned char *data, int len)
+{
+    if (len >= 16) {
+        uint8x16_t prev_input = vdupq_n_u8(0);
+        uint8x16_t prev_first_len = vdupq_n_u8(0);
+
+        /* Cached tables */
+        const uint8x16_t first_len_tbl = vld1q_u8(_first_len_tbl);
+        const uint8x16_t first_range_tbl = vld1q_u8(_first_range_tbl);
+        const uint8x16_t range_min_tbl = vld1q_u8(_range_min_tbl);
+        const uint8x16_t range_max_tbl = vld1q_u8(_range_max_tbl);
+        const uint8x16x2_t range_adjust_tbl = vld2q_u8(_range_adjust_tbl);
+
+        /* Cached values */
+        const uint8x16_t const_1 = vdupq_n_u8(1);
+        const uint8x16_t const_2 = vdupq_n_u8(2);
+        const uint8x16_t const_e0 = vdupq_n_u8(0xE0);
+
+        /* We use two error registers to remove a dependency. */
+        uint8x16_t error1 = vdupq_n_u8(0);
+        uint8x16_t error2 = vdupq_n_u8(0);
+
+        while (len >= 16) {
+            const uint8x16_t input = vld1q_u8(data);
+
+            /* high_nibbles = input >> 4 */
+            const uint8x16_t high_nibbles = vshrq_n_u8(input, 4);
+
+            /* first_len = legal character length minus 1 */
+            /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+            /* first_len = first_len_tbl[high_nibbles] */
+            const uint8x16_t first_len =
+                vqtbl1q_u8(first_len_tbl, high_nibbles);
+
+            /* First Byte: set range index to 8 for bytes within 0xC0 ~ 0xFF */
+            /* range = first_range_tbl[high_nibbles] */
+            uint8x16_t range = vqtbl1q_u8(first_range_tbl, high_nibbles);
+
+            /* Second Byte: set range index to first_len */
+            /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+            /* range |= (first_len, prev_first_len) << 1 byte */
+            range =
+                vorrq_u8(range, vextq_u8(prev_first_len, first_len, 15));
+
+            /* Third Byte: set range index to saturate_sub(first_len, 1) */
+            /* 0 for 00~7F, 0 for C0~DF, 1 for E0~EF, 2 for F0~FF */
+            uint8x16_t tmp1, tmp2;
+            /* tmp1 = (first_len, prev_first_len) << 2 bytes */
+            tmp1 = vextq_u8(prev_first_len, first_len, 14);
+            /* tmp1 = saturate_sub(tmp1, 1) */
+            tmp1 = vqsubq_u8(tmp1, const_1);
+            /* range |= tmp1 */
+            range = vorrq_u8(range, tmp1);
+
+            /* Fourth Byte: set range index to saturate_sub(first_len, 2) */
+            /* 0 for 00~7F, 0 for C0~DF, 0 for E0~EF, 1 for F0~FF */
+            /* tmp2 = (first_len, prev_first_len) << 3 bytes */
+            tmp2 = vextq_u8(prev_first_len, first_len, 13);
+            /* tmp2 = saturate_sub(tmp2, 2) */
+            tmp2 = vqsubq_u8(tmp2, const_2);
+            /* range |= tmp2 */
+            range = vorrq_u8(range, tmp2);
+
+            /*
+             * Now we have below range indices calculated
+             * Correct cases:
+             * - 8 for C0~FF
+             * - 3 for 1st byte after F0~FF
+             * - 2 for 1st byte after E0~EF or 2nd byte after F0~FF
+             * - 1 for 1st byte after C0~DF or 2nd byte after E0~EF or
+             *         3rd byte after F0~FF
+             * - 0 for others
+             * Error cases:
+             *   9,10,11 if non ascii First Byte overlaps
+             *   E.g., F1 80 C2 90 --> 8 3 10 2, where 10 indicates error
+             */
+
+            /* Adjust Second Byte range for special First Bytes(E0,ED,F0,F4) */
+            /* See _range_adjust_tbl[] definition for details */
+            /* Overlaps lead to index 9~15, which are illegal in range table */
+            uint8x16_t shift1 = vextq_u8(prev_input, input, 15);
+            uint8x16_t pos = vsubq_u8(shift1, const_e0);
+            range = vaddq_u8(range, vqtbl2q_u8(range_adjust_tbl, pos));
+
+            /* Load min and max values per calculated range index */
+            uint8x16_t minv = vqtbl1q_u8(range_min_tbl, range);
+            uint8x16_t maxv = vqtbl1q_u8(range_max_tbl, range);
+
+            /* Check value range */
+            error1 = vorrq_u8(error1, vcltq_u8(input, minv));
+            error2 = vorrq_u8(error2, vcgtq_u8(input, maxv));
+
+            prev_input = input;
+            prev_first_len = first_len;
+
+            data += 16;
+            len -= 16;
+        }
+        /* Merge our error counters together */
+        error1 = vorrq_u8(error1, error2);
+
+        /* Delay error check till loop ends */
+        if (vmaxvq_u8(error1))
+            return -1;
+
+        /* Find previous token (not 80~BF) */
+        uint32_t token4;
+        vst1q_lane_u32(&token4, vreinterpretq_u32_u8(prev_input), 3);
+
+        const int8_t *token = (const int8_t *)&token4;
+        int lookahead = 0;
+        if (token[3] > (int8_t)0xBF)
+            lookahead = 1;
+        else if (token[2] > (int8_t)0xBF)
+            lookahead = 2;
+        else if (token[1] > (int8_t)0xBF)
+            lookahead = 3;
+
+        data -= lookahead;
+        len += lookahead;
+    }
+
+    /* Check remaining bytes with naive method */
+    return utf8_naive(data, len);
+}
+Function: 
+pub fn utf8_chunks(&self) -> impl Iterator<Item = Result<&str, &[u8]>> + '_ {
+        Utf8Chunks::new(self.as_bytes()).flat_map(|chunk| {
+            let valid = chunk.valid();
+            let invalid = chunk.invalid();
+            (!valid.is_empty())
+                .then_some(Ok(valid))
+                .into_iter()
+                .chain((!invalid.is_empty()).then_some(Err(invalid)))
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__tdefl_flush_block__idx27147_rank2.c", "source_rust_file": "API_Mapping__tdefl_flush_block__idx27147_rank2.rs", "c_api": "TDEFL_PUT_BITS(...)", "rust_api": "self.file.write(guard.remaining())", "mapping_type": "function", "description": "Writing compressed data to output buffer", "reasoning": "[Task Analysis] C function `tdefl_flush_block` is a low-level deflate compression block flushing routine; Rust function `flush` is a buffered writer flush implementation. [Similarity] Names refer to different concepts (`tdefl_flush_block` vs `flush`), and domains are different (compression vs I/O buffering). [Knowledge Extraction] No full or partial structural match. However, both involve flushing/committing buffered data with error handling and buffer management patterns. API mappings identified: C's buffer write/flush logic maps to Rust's `write`/`consume`/`copy_within` buffer management and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__tdefl_flush_block__idx27147_rank2.c", "source_rust_file": "API_Mapping__tdefl_flush_block__idx27147_rank2.rs", "c_api": "d->m_pOutput_buf = pSaved_output_buf; d->m_bit_buffer = saved_bit_buf, d->m_bits_in = saved_bits_in;", "rust_api": "self.buffer.copy_within(self.flushed.., 0);", "mapping_type": "pattern", "description": "Buffer state restoration and shifting", "reasoning": "[Task Analysis] C function `tdefl_flush_block` is a low-level deflate compression block flushing routine; Rust function `flush` is a buffered writer flush implementation. [Similarity] Names refer to different concepts (`tdefl_flush_block` vs `flush`), and domains are different (compression vs I/O buffering). [Knowledge Extraction] No full or partial structural match. However, both involve flushing/committing buffered data with error handling and buffer management patterns. API mappings identified: C's buffer write/flush logic maps to Rust's `write`/`consume`/`copy_within` buffer management and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__tdefl_flush_block__idx27147_rank2.c", "source_rust_file": "API_Mapping__tdefl_flush_block__idx27147_rank2.rs", "c_api": "if (d->m_pPut_buf_func) { ... } else if (pOutput_buf_start == d->m_output_buf) { ... } else { ... }", "rust_api": "match self.file.write(guard.remaining()) { ... }", "mapping_type": "pattern", "description": "Conditional output buffer write logic", "reasoning": "[Task Analysis] C function `tdefl_flush_block` is a low-level deflate compression block flushing routine; Rust function `flush` is a buffered writer flush implementation. [Similarity] Names refer to different concepts (`tdefl_flush_block` vs `flush`), and domains are different (compression vs I/O buffering). [Knowledge Extraction] No full or partial structural match. However, both involve flushing/committing buffered data with error handling and buffer management patterns. API mappings identified: C's buffer write/flush logic maps to Rust's `write`/`consume`/`copy_within` buffer management and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__tdefl_flush_block__idx27147_rank2.c", "source_rust_file": "API_Mapping__tdefl_flush_block__idx27147_rank2.rs", "c_api": "memset(&d->m_huff_count[0][0], 0, ...)", "rust_api": "BufGuard::new(...)", "mapping_type": "pattern", "description": "Buffer state initialization and reset", "reasoning": "[Task Analysis] C function `tdefl_flush_block` is a low-level deflate compression block flushing routine; Rust function `flush` is a buffered writer flush implementation. [Similarity] Names refer to different concepts (`tdefl_flush_block` vs `flush`), and domains are different (compression vs I/O buffering). [Knowledge Extraction] No full or partial structural match. However, both involve flushing/committing buffered data with error handling and buffer management patterns. API mappings identified: C's buffer write/flush logic maps to Rust's `write`/`consume`/`copy_within` buffer management and error handling patterns."}]
+Unixcoder Score: -0.03250567242503166
+--------------------------------------------------
+C_Code: 
+static return_type Read(const uint8_t *const p, const offset_type i) {
+    // Offsets are relative to themselves, so first update the pointer to
+    // point to the offset location.
+    const uint8_t *const offset_location = p + i * element_stride;
+
+    // Then read the scalar value of the offset (which may be 32 or 64-bits) and
+    // then determine the relative location from the offset location.
+    return reinterpret_cast<return_type>(
+        offset_location + ReadScalar<offset_type>(offset_location));
+  }
+Function: 
+unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+        let slice = &buf[loc..loc + SIZE_UOFFSET];
+        let off = read_scalar::<u32>(slice) as usize;
+        T::follow(buf, loc + off)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx140640_rank5.c", "source_rust_file": "Full__leb128_len__idx140640_rank5.rs", "c_api": "(*p & 0x80) != 0", "rust_api": "byte & 0x80 == 0", "mapping_type": "pattern", "description": "Check for continuation bit in LEB128 encoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for LEB128 decoding logic."}, {"knowledge_type": "Full", "source_c_file": "Full__leb128_len__idx140640_rank5.c", "source_rust_file": "Full__leb128_len__idx140640_rank5.rs", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for LEB128 decoding logic.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__leb128_len__idx140640_rank5.c", "source_rust_file": "Full__leb128_len__idx140640_rank5.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = unsafe { self.read::<u8>() };\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Iterative byte processing with continuation check using MSB flag (0x80)", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for LEB128 decoding logic."}]
+Unixcoder Score: -0.03872907534241676
+--------------------------------------------------
+C_Code: 
+static return_type Read(const uint8_t *const p, const offset_type i) {
+    // Offsets are relative to themselves, so first update the pointer to
+    // point to the offset location.
+    const uint8_t *const offset_location = p + i * element_stride;
+
+    // Then read the scalar value of the offset (which may be 32 or 64-bits) and
+    // then determine the relative location from the offset location.
+    return reinterpret_cast<return_type>(
+        offset_location + ReadScalar<offset_type>(offset_location));
+  }
+Function: 
+fn read_usize(buffer: &[u8], address: usize, width: BitWidth) -> usize {
+    let cursor = &buffer[address..];
+    match width {
+        BitWidth::W8 => cursor[0] as usize,
+        BitWidth::W16 => cursor
+            .get(0..2)
+            .and_then(|s| s.try_into().ok())
+            .map(<u16>::from_le_bytes)
+            .unwrap_or_default() as usize,
+        BitWidth::W32 => cursor
+            .get(0..4)
+            .and_then(|s| s.try_into().ok())
+            .map(<u32>::from_le_bytes)
+            .unwrap_or_default() as usize,
+        BitWidth::W64 => cursor
+            .get(0..8)
+            .and_then(|s| s.try_into().ok())
+            .map(<u64>::from_le_bytes)
+            .unwrap_or_default() as usize,
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "++ret", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Accumulate bit shift for value decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "(*p & 0x80)", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Check continuation bit in LEB128 encoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "++p", "rust_api": "self.read::<u8>()", "mapping_type": "function", "description": "Advance to next byte in stream", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = unsafe { self.read::<u8>() };\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Iterative byte processing with continuation condition based on MSB flag", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}]
+Unixcoder Score: -0.051852352917194366
+--------------------------------------------------
+C_Code: 
+int utf8_fromunicode(char *p, unsigned short uc)
+{
+    if (uc <= 0x7f) {
+        *p = uc;
+        return 1;
+    }
+    else if (uc <= 0x7ff) {
+        *p++ = 0xc0 | ((uc & 0x7c0) >> 6);
+        *p = 0x80 | (uc & 0x3f);
+        return 2;
+    }
+    else {
+        *p++ = 0xe0 | ((uc & 0xf000) >> 12);
+        *p++ = 0x80 | ((uc & 0xfc0) >> 6);
+        *p = 0x80 | (uc & 0x3f);
+        return 3;
+    }
+}
+Function: 
+fn utf8_char_width(b: u8) -> uint {
+    let byte: uint = b as uint;
+    if byte < 128u { ret 1u; }
+    if byte < 192u {
+        ret 0u; // Not a valid start byte
+
+    }
+    if byte < 224u { ret 2u; }
+    if byte < 240u { ret 3u; }
+    if byte < 248u { ret 4u; }
+    if byte < 252u { ret 5u; }
+    ret 6u;
+}
+Unixcoder Score: -0.054365646094083786
+--------------------------------------------------

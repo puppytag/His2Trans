@@ -1,0 +1,358 @@
+C_Code: 
+void CesStateListener::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HILOGI("DeviceSwitchCollect OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        HILOGE("DeviceSwitchCollect OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+        return;
+    }
+    auto deviceSwitchCollect = deviceSwitchCollect_.promote();
+    if (deviceSwitchCollect == nullptr) {
+        HILOGE("DeviceSwitchCollect switchEventSubscriber is nullptr");
+        return;
+    }
+    auto task = [this] () {
+        auto deviceSwitchCollect = deviceSwitchCollect_.promote();
+        if (deviceSwitchCollect == nullptr) {
+            HILOGE("DeviceSwitchCollect switchEventSubscriber is nullptr");
+            return;
+        }
+        deviceSwitchCollect->SubscribeSwitchEvent();
+    };
+    deviceSwitchCollect->PostDelayTask(task, 0);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.034171294420957565
+--------------------------------------------------
+C_Code: 
+void CesStateListener::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HILOGI("DeviceSwitchCollect OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        HILOGE("DeviceSwitchCollect OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+        return;
+    }
+    auto deviceSwitchCollect = deviceSwitchCollect_.promote();
+    if (deviceSwitchCollect == nullptr) {
+        HILOGE("DeviceSwitchCollect switchEventSubscriber is nullptr");
+        return;
+    }
+    auto task = [this] () {
+        auto deviceSwitchCollect = deviceSwitchCollect_.promote();
+        if (deviceSwitchCollect == nullptr) {
+            HILOGE("DeviceSwitchCollect switchEventSubscriber is nullptr");
+            return;
+        }
+        deviceSwitchCollect->SubscribeSwitchEvent();
+    };
+    deviceSwitchCollect->PostDelayTask(task, 0);
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.030924038961529732
+--------------------------------------------------
+C_Code: 
+void CesStateListener::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HILOGI("DeviceSwitchCollect OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        HILOGE("DeviceSwitchCollect OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+        return;
+    }
+    auto deviceSwitchCollect = deviceSwitchCollect_.promote();
+    if (deviceSwitchCollect == nullptr) {
+        HILOGE("DeviceSwitchCollect switchEventSubscriber is nullptr");
+        return;
+    }
+    auto task = [this] () {
+        auto deviceSwitchCollect = deviceSwitchCollect_.promote();
+        if (deviceSwitchCollect == nullptr) {
+            HILOGE("DeviceSwitchCollect switchEventSubscriber is nullptr");
+            return;
+        }
+        deviceSwitchCollect->SubscribeSwitchEvent();
+    };
+    deviceSwitchCollect->PostDelayTask(task, 0);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.022408872842788696
+--------------------------------------------------
+C_Code: 
+void MockLoadCallback::OnLoadSACompleteForRemote(const std::string& deviceId, int32_t systemAbilityId,
+        const sptr<IRemoteObject>& remoteObject)
+    {
+        cout << "OnLoadSACompleteForRemote systemAbilityId:" << systemAbilityId <<  "ret : "<<
+            ((remoteObject != nullptr) ? "succeed" : "failed") << endl;
+    }
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.018136313185095787
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::LoadRemoteSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t systemAbilityId = -1;
+    bool ret = false;
+    std::string deviceId = "";
+    sptr<IRemoteObject> remoteObject = nullptr;
+    sptr<ISystemAbilityLoadCallback> callback = nullptr;
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_readData");
+        ret = data.ReadInt32(systemAbilityId);
+        if (!ret) {
+            HILOGW("LoadRemoteSystemAbilityInner read SAId invalid");
+            return ERR_INVALID_VALUE;
+        }
+        int32_t checkRet = LoadRemoteSACheck(systemAbilityId);
+        if (checkRet != ERR_OK) {
+            return checkRet;
+        }
+        deviceId = data.ReadString();
+        if (deviceId.empty()) {
+            HILOGW("LoadRemoteSystemAbilityInner read deviceId failed");
+            return ERR_INVALID_VALUE;
+        }
+        remoteObject = data.ReadRemoteObject();
+        if (remoteObject == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner read callback failed!");
+            return ERR_INVALID_VALUE;
+        }
+        callback = iface_cast<ISystemAbilityLoadCallback>(remoteObject);
+        if (callback == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner iface_cast failed!");
+            return ERR_INVALID_VALUE;
+        }
+    }
+
+    int32_t result = LoadSystemAbility(systemAbilityId, deviceId, callback);
+    HILOGD("LoadRemoteSystemAbilityInner result is %{public}d", result);
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_writeResult_" + ToString(systemAbilityId));
+        ret = reply.WriteInt32(result);
+    }
+    if (!ret) {
+        HILOGW("LoadRemoteSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        debug!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.015867004171013832
+--------------------------------------------------
+C_Code: 
+DeviceCreateInfo( VkDeviceCreateInfo const & rhs ) VULKAN_HPP_NOEXCEPT : DeviceCreateInfo( *reinterpret_cast<DeviceCreateInfo const *>( &rhs ) ) {}
+Function: 
+fn from(src: &vello_encoding::BufferSizes) -> Self {
+        Self {
+            path_reduced: src.path_reduced.size_in_bytes(),
+            path_reduced2: src.path_reduced2.size_in_bytes(),
+            path_reduced_scan: src.path_reduced_scan.size_in_bytes(),
+            path_monoids: src.path_monoids.size_in_bytes(),
+            path_bboxes: src.path_bboxes.size_in_bytes(),
+            draw_reduced: src.draw_reduced.size_in_bytes(),
+            draw_monoids: src.draw_monoids.size_in_bytes(),
+            info: src.info.size_in_bytes(),
+            clip_inps: src.clip_inps.size_in_bytes(),
+            clip_els: src.clip_els.size_in_bytes(),
+            clip_bics: src.clip_bics.size_in_bytes(),
+            clip_bboxes: src.clip_bboxes.size_in_bytes(),
+            draw_bboxes: src.draw_bboxes.size_in_bytes(),
+            bump_alloc: src.bump_alloc.size_in_bytes(),
+            indirect_count: src.indirect_count.size_in_bytes(),
+            bin_headers: src.bin_headers.size_in_bytes(),
+            paths: src.paths.size_in_bytes(),
+            lines: src.lines.size_in_bytes(),
+            bin_data: src.bin_data.size_in_bytes(),
+            tiles: src.tiles.size_in_bytes(),
+            seg_counts: src.seg_counts.size_in_bytes(),
+            segments: src.segments.size_in_bytes(),
+            ptcl: src.ptcl.size_in_bytes(),
+        }
+    }
+Unixcoder Score: 0.01043303869664669
+--------------------------------------------------
+C_Code: 
+struct VkBufferCopy {
+    VkDeviceSize    srcOffset;
+    VkDeviceSize    dstOffset;
+    VkDeviceSize    size;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: 0.0086588803678751
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::LoadRemoteSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t systemAbilityId = -1;
+    bool ret = false;
+    std::string deviceId = "";
+    sptr<IRemoteObject> remoteObject = nullptr;
+    sptr<ISystemAbilityLoadCallback> callback = nullptr;
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_readData");
+        ret = data.ReadInt32(systemAbilityId);
+        if (!ret) {
+            HILOGW("LoadRemoteSystemAbilityInner read SAId invalid");
+            return ERR_INVALID_VALUE;
+        }
+        int32_t checkRet = LoadRemoteSACheck(systemAbilityId);
+        if (checkRet != ERR_OK) {
+            return checkRet;
+        }
+        deviceId = data.ReadString();
+        if (deviceId.empty()) {
+            HILOGW("LoadRemoteSystemAbilityInner read deviceId failed");
+            return ERR_INVALID_VALUE;
+        }
+        remoteObject = data.ReadRemoteObject();
+        if (remoteObject == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner read callback failed!");
+            return ERR_INVALID_VALUE;
+        }
+        callback = iface_cast<ISystemAbilityLoadCallback>(remoteObject);
+        if (callback == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner iface_cast failed!");
+            return ERR_INVALID_VALUE;
+        }
+    }
+
+    int32_t result = LoadSystemAbility(systemAbilityId, deviceId, callback);
+    HILOGD("LoadRemoteSystemAbilityInner result is %{public}d", result);
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_writeResult_" + ToString(systemAbilityId));
+        ret = reply.WriteInt32(result);
+    }
+    if (!ret) {
+        HILOGW("LoadRemoteSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        debug!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: -0.008950772695243359
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceBufferDeviceAddressFeatures
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: -0.020595891401171684
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceShaderObjectPropertiesEXT
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LoadRemoteSystemAbilityInner__idx4888_rank3.c", "source_rust_file": "API_Mapping__LoadRemoteSystemAbilityInner__idx4888_rank3.rs", "c_api": "LoadSystemAbility", "rust_api": "LoadSystemAbility", "mapping_type": "function", "description": "Load system ability by ID and timeout", "reasoning": "[Task Analysis] C function handles remote system ability loading with data parsing and error checking; Rust function performs a simplified load with logging. [Similarity] Names do not refer to the same concept (LoadRemoteSystemAbilityInner vs load_system_ability), and domains differ (low-level IPC stub vs high-level system call). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different scopes. However, both involve system ability loading logic, so API mapping is extracted."}]
+Unixcoder Score: -0.021519675850868225
+--------------------------------------------------

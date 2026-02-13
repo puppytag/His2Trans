@@ -1,0 +1,35 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_io_service_2",
+  "function_name": "HdfIoServiceRecycle",
+  "source_c_file": "src/hdf_io_service.c",
+  "c_code": "void HdfIoServiceRecycle(struct HdfIoService * service)\n{\n    HdfIoServiceAdapterRecycle(service);\n}",
+  "rust_signature": "pub extern \"C\" fn HdfIoServiceRecycle(service: *mut crate::types::HdfIoService)",
+  "rust_code": "pub extern \\\"C\\\" fn HdfIoServiceRecycle(service: *mut HdfIoService) {\n    unsafe { HdfIoServiceAdapterRecycle(service) };\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceRecycle",
+      "rust_api": "HdfIoServiceRecycle",
+      "description": "Recycle HDF I/O service",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceAdapterRecycle",
+      "rust_api": "HdfIoServiceAdapterRecycle",
+      "description": "Recycle io service via adapter",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "return foo(...);",
+      "rust_fragment": "return foo(...);",
+      "description": "Direct call/return pattern is preserved in Rust",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

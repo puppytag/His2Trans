@@ -1,0 +1,305 @@
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.06334612518548965
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn build_task_certificate_pins(
+    config: &TaskConfig,
+) -> Result<Option<PubKeyPins>, Box<dyn Error + Send + Sync>> {
+    if config.certificate_pins.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(cvt_res_error!(
+        PubKeyPins::builder()
+            .add(&config.url, &config.certificate_pins)
+            .build()
+            .map_err(Box::new),
+        "Create task certificate pinned_key failed",
+    )))
+}
+Unixcoder Score: 0.04778776317834854
+--------------------------------------------------
+C_Code: 
+int32_t DownloadServiceManager::AddTask(const DownloadConfig &config, uint32_t &taskId)
+{
+    if (!initialized_) {
+        DOWNLOAD_HILOGE("service ability init fail");
+        return ErrorCodeInner::ERROR_SERVICE_NOT_INITIALIZE;
+    }
+    if (saQuitFlag_) {
+        DOWNLOAD_HILOGE("service ability is quitting");
+        return ErrorCodeInner::ERROR_SERVICE_SA_QUITTING;
+    }
+    std::lock_guard<std::recursive_mutex> autoLock(mutex_);
+    taskId = GetCurrentTaskId();
+    if (taskMap_.find(taskId) != taskMap_.end()) {
+        DOWNLOAD_HILOGD("Invalid case: duplicate taskId");
+        return ErrorCodeInner::ERROR_SERVICE_DUPLICATE_TASK_ID;
+    }
+    auto task = std::make_shared<DownloadServiceTask>(taskId, config);
+    if (task == nullptr) {
+        DOWNLOAD_HILOGD("No mem to add task");
+        return ErrorCodeInner::ERROR_SERVICE_NULL_POINTER;
+    }
+    // move new task into pending queue
+    task->SetRetryTime(timeoutRetry_);
+    taskMap_[taskId] = task;
+    MoveTaskToQueue(taskId, task);
+    return ErrorCodeInner::ERROR_NO_ERR;
+}
+Function: 
+pub fn construct_download_task(
+    task_id: &mut u32,
+    uid: u64,
+    file_name: &str,
+    mode: Mode,
+    version: Version,
+) -> ErrorCode {
+    let conf = TaskConfig {
+        bundle: "xxx".into(),
+        url: "http://110.41.6.210:9029/fota-tmp/UltraEdit_x64.xp510.com.rar".into(),
+        title: "test".into(),
+        description: "xxxx".into(),
+        method: "get".into(),
+        headers: HashMap::<String, String>::new(),
+        data: "xxx".into(),
+        token: "12312".into(),
+        extras: HashMap::<String, String>::new(),
+        version,
+        form_items: vec![FormItem {
+            name: "name".to_string(),
+            value: "123".to_string(),
+        }],
+        file_specs: {
+            vec![FileSpec {
+                name: "file".to_string(),
+                path: "test.txt".to_string(),
+                file_name: "test.txt".to_string(),
+                mime_type: "txt".to_string(),
+            }]
+        },
+        common_data: CommonTaskConfig {
+            action: Action::DOWNLOAD,
+            mode,
+            cover: true,
+            network: Network::ANY,
+            metered: false,
+            roaming: true,
+            retry: true,
+            redirect: true,
+            index: 10,
+            begins: 0,
+            ends: -1,
+            gauge: false,
+            precise: false,
+            background: true,
+        },
+    };
+    let files = vec![File::create(file_name).expect("create file failed")];
+    TaskManager::get_instance().construct_task(Arc::new(conf), uid, task_id, files)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx80136_rank5.c", "source_rust_file": "API_Mapping__etp_init__idx80136_rank5.rs", "c_api": "thread::spawn(move || {", "rust_api": "thread::spawn(move || {", "mapping_type": "function", "description": "Thread spawning", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C function 'etp_init' initializes a thread pool, while Rust function 'spawn' creates a server with threads. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with low-level thread synchronization and queue initialization, whereas Rust code handles high-level async networking and thread spawning. These domains are fundamentally different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are function definitions. -> [Classification] -> No Full/Partial match due to domain mismatch. API mappings are possible but must be contextually valid. -> [Knowledge Extraction] -> No full or partial match. Some API patterns may be similar but not semantically equivalent. Extracting only potential API mappings based on control flow and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx80136_rank5.c", "source_rust_file": "API_Mapping__etp_init__idx80136_rank5.rs", "c_api": "X_COND_CREATE  (reqwait)", "rust_api": "crossbeam_channel::unbounded::<ClippyWarning>()", "mapping_type": "function", "description": "Condition variable or channel creation", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C function 'etp_init' initializes a thread pool, while Rust function 'spawn' creates a server with threads. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with low-level thread synchronization and queue initialization, whereas Rust code handles high-level async networking and thread spawning. These domains are fundamentally different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are function definitions. -> [Classification] -> No Full/Partial match due to domain mismatch. API mappings are possible but must be contextually valid. -> [Knowledge Extraction] -> No full or partial match. Some API patterns may be similar but not semantically equivalent. Extracting only potential API mappings based on control flow and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx80136_rank5.c", "source_rust_file": "API_Mapping__etp_init__idx80136_rank5.rs", "c_api": "X_MUTEX_CREATE (reqlock)", "rust_api": "Mutex::default()", "mapping_type": "function", "description": "Mutex initialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C function 'etp_init' initializes a thread pool, while Rust function 'spawn' creates a server with threads. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with low-level thread synchronization and queue initialization, whereas Rust code handles high-level async networking and thread spawning. These domains are fundamentally different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are function definitions. -> [Classification] -> No Full/Partial match due to domain mismatch. API mappings are possible but must be contextually valid. -> [Knowledge Extraction] -> No full or partial match. Some API patterns may be similar but not semantically equivalent. Extracting only potential API mappings based on control flow and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx80136_rank5.c", "source_rust_file": "API_Mapping__etp_init__idx80136_rank5.rs", "c_api": "TcpListener::bind(\"localhost:0\")", "rust_api": "TcpListener::bind(\"localhost:0\")", "mapping_type": "function", "description": "TCP listener binding", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C function 'etp_init' initializes a thread pool, while Rust function 'spawn' creates a server with threads. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with low-level thread synchronization and queue initialization, whereas Rust code handles high-level async networking and thread spawning. These domains are fundamentally different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are function definitions. -> [Classification] -> No Full/Partial match due to domain mismatch. API mappings are possible but must be contextually valid. -> [Knowledge Extraction] -> No full or partial match. Some API patterns may be similar but not semantically equivalent. Extracting only potential API mappings based on control flow and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx80136_rank5.c", "source_rust_file": "API_Mapping__etp_init__idx80136_rank5.rs", "c_api": "reqq_init (&res_queue)", "rust_api": "crossbeam_channel::unbounded::<ClippyWarning>()", "mapping_type": "function", "description": "Queue initialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C function 'etp_init' initializes a thread pool, while Rust function 'spawn' creates a server with threads. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with low-level thread synchronization and queue initialization, whereas Rust code handles high-level async networking and thread spawning. These domains are fundamentally different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are function definitions. -> [Classification] -> No Full/Partial match due to domain mismatch. API mappings are possible but must be contextually valid. -> [Knowledge Extraction] -> No full or partial match. Some API patterns may be similar but not semantically equivalent. Extracting only potential API mappings based on control flow and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx80136_rank5.c", "source_rust_file": "API_Mapping__etp_init__idx80136_rank5.rs", "c_api": "X_MUTEX_CREATE (reslock)", "rust_api": "Mutex::default()", "mapping_type": "function", "description": "Mutex initialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C function 'etp_init' initializes a thread pool, while Rust function 'spawn' creates a server with threads. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with low-level thread synchronization and queue initialization, whereas Rust code handles high-level async networking and thread spawning. These domains are fundamentally different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are function definitions. -> [Classification] -> No Full/Partial match due to domain mismatch. API mappings are possible but must be contextually valid. -> [Knowledge Extraction] -> No full or partial match. Some API patterns may be similar but not semantically equivalent. Extracting only potential API mappings based on control flow and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx80136_rank5.c", "source_rust_file": "API_Mapping__etp_init__idx80136_rank5.rs", "c_api": "X_MUTEX_CREATE (wrklock)", "rust_api": "Mutex::default()", "mapping_type": "function", "description": "Mutex initialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C function 'etp_init' initializes a thread pool, while Rust function 'spawn' creates a server with threads. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with low-level thread synchronization and queue initialization, whereas Rust code handles high-level async networking and thread spawning. These domains are fundamentally different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are function definitions. -> [Classification] -> No Full/Partial match due to domain mismatch. API mappings are possible but must be contextually valid. -> [Knowledge Extraction] -> No full or partial match. Some API patterns may be similar but not semantically equivalent. Extracting only potential API mappings based on control flow and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx80136_rank5.c", "source_rust_file": "API_Mapping__etp_init__idx80136_rank5.rs", "c_api": "reqq_init (&req_queue)", "rust_api": "crossbeam_channel::unbounded::<ClippyWarning>()", "mapping_type": "function", "description": "Queue initialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C function 'etp_init' initializes a thread pool, while Rust function 'spawn' creates a server with threads. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with low-level thread synchronization and queue initialization, whereas Rust code handles high-level async networking and thread spawning. These domains are fundamentally different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are function definitions. -> [Classification] -> No Full/Partial match due to domain mismatch. API mappings are possible but must be contextually valid. -> [Knowledge Extraction] -> No full or partial match. Some API patterns may be similar but not semantically equivalent. Extracting only potential API mappings based on control flow and data handling patterns."}]
+Unixcoder Score: 0.018522311002016068
+--------------------------------------------------
+C_Code: 
+int uv_idle_init(uv_loop_t* loop, uv_idle_t* idle) {
+  uv__handle_init(loop, (uv_handle_t*)idle, UV_IDLE);
+  loop->counters.idle_init++;
+
+  ev_idle_init(&idle->idle_watcher, uv__idle);
+  idle->idle_watcher.data = idle;
+
+  idle->idle_cb = NULL;
+
+  return 0;
+}
+Function: 
+pub unsafe fn idle_init(loop_handle: *uv_loop_t,
+                        handle: *uv_idle_t) -> libc::c_int {
+    rustrt::rust_uv_idle_init(loop_handle, handle)
+}
+Unixcoder Score: 0.012302749790251255
+--------------------------------------------------
+C_Code: 
+int uv_idle_init(uv_loop_t* loop, uv_idle_t* idle) {
+  uv__handle_init(loop, (uv_handle_t*)idle, UV_IDLE);
+  loop->counters.idle_init++;
+
+  ev_idle_init(&idle->idle_watcher, uv__idle);
+  idle->idle_watcher.data = idle;
+
+  idle->idle_cb = NULL;
+
+  return 0;
+}
+Function: 
+pub unsafe fn idle_init(loop_handle: *uv_loop_t, handle: *uv_idle_t) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+
+    rust_uv_idle_init(loop_handle, handle)
+}
+Unixcoder Score: 0.0032909202855080366
+--------------------------------------------------
+C_Code: 
+int uv_idle_init(uv_loop_t* loop, uv_idle_t* idle) {
+  uv__handle_init(loop, (uv_handle_t*)idle, UV_IDLE);
+  loop->counters.idle_init++;
+
+  ev_idle_init(&idle->idle_watcher, uv__idle);
+  idle->idle_watcher.data = idle;
+
+  idle->idle_cb = NULL;
+
+  return 0;
+}
+Function: 
+fn idle_init(loop: *loop_t, idle: *idle_t) -> ctypes::c_int {
+    uv::rust_uv_idle_init(loop, idle)
+}
+Unixcoder Score: 0.0026248465292155743
+--------------------------------------------------
+C_Code: 
+int uv_idle_init(uv_loop_t* loop, uv_idle_t* idle) {
+  uv__handle_init(loop, (uv_handle_t*)idle, UV_IDLE);
+  loop->counters.idle_init++;
+
+  ev_idle_init(&idle->idle_watcher, uv__idle);
+  idle->idle_watcher.data = idle;
+
+  idle->idle_cb = NULL;
+
+  return 0;
+}
+Function: 
+fn idle_ref() {
+        let loop = uv::loop_new();
+        let h = uv::idle_new();
+        uv::idle_init(loop, ptr::addr_of(h));
+        uv::idle_start(ptr::addr_of(h), ptr::null());
+        uv::unref(loop);
+        uv::run(loop);
+        uv::loop_delete(loop);
+    }
+Unixcoder Score: -0.0002291916316607967
+--------------------------------------------------
+C_Code: 
+int uv_idle_init(uv_loop_t* loop, uv_idle_t* idle) {
+  uv__handle_init(loop, (uv_handle_t*)idle, UV_IDLE);
+  loop->counters.idle_init++;
+
+  ev_idle_init(&idle->idle_watcher, uv__idle);
+  idle->idle_watcher.data = idle;
+
+  idle->idle_cb = NULL;
+
+  return 0;
+}
+Function: 
+pub unsafe fn idle_init(loop_handle: *uv_loop_t, handle: *uv_idle_t) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+
+    rust_uv_idle_init(loop_handle, handle)
+}
+Unixcoder Score: -0.0009290665038861334
+--------------------------------------------------
+C_Code: 
+int uv_idle_init(uv_loop_t* loop, uv_idle_t* idle) {
+  uv__handle_init(loop, (uv_handle_t*)idle, UV_IDLE);
+  loop->counters.idle_init++;
+
+  ev_idle_init(&idle->idle_watcher, uv__idle);
+  idle->idle_watcher.data = idle;
+
+  idle->idle_cb = NULL;
+
+  return 0;
+}
+Function: 
+fn idle_init(loop: *loop_t, idle: *idle_t) -> ctypes::c_int {
+    uv::rust_uv_idle_init(loop, idle)
+}
+Unixcoder Score: -0.0014635701663792133
+--------------------------------------------------
+C_Code: 
+int uv_idle_init(uv_loop_t* loop, uv_idle_t* idle) {
+  uv__handle_init(loop, (uv_handle_t*)idle, UV_IDLE);
+  loop->counters.idle_init++;
+
+  ev_idle_init(&idle->idle_watcher, uv__idle);
+  idle->idle_watcher.data = idle;
+
+  idle->idle_cb = NULL;
+
+  return 0;
+}
+Function: 
+pub unsafe fn idle_init(loop_handle: *uv_loop_t,
+                        handle: *uv_idle_t) -> libc::c_int {
+    rustrt::rust_uv_idle_init(loop_handle, handle)
+}
+Unixcoder Score: -0.0022977108601480722
+--------------------------------------------------

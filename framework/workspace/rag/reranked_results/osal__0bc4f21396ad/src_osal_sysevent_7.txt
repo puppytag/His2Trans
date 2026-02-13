@@ -1,0 +1,260 @@
+C_Code: 
+int HiSysEventRemoveWatcher(HiSysEventRustWatcherC* watcher)
+{
+    if (watcher == nullptr || watcher->status != STATUS_NORMAL) {
+        return ERR_LISTENER_NOT_EXIST;
+    }
+    auto watcherKey = std::make_pair(watcher->onEventRustCb, watcher->onServiceDiedRustCb);
+    auto watcherIter = g_baseWatchers.find(watcherKey);
+    if (watcherIter == g_baseWatchers.end()) {
+        return ERR_LISTENER_NOT_EXIST;
+    }
+    auto ret = HiSysEventBaseManager::RemoveListener(watcherIter->second);
+    if (ret != IPC_CALL_SUCCEED) {
+        return ret;
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_baseWatchersMutex);
+        g_baseWatchers.erase(watcherIter->first);
+    }
+    return ret;
+}
+Function: 
+pub fn remove_watcher(watcher: &Watcher) -> i32 {
+    sys_event_manager::remove_watcher(watcher)
+}
+Unixcoder Score: 0.041922520846128464
+--------------------------------------------------
+C_Code: 
+int HiSysEventRemoveWatcher(HiSysEventRustWatcherC* watcher)
+{
+    if (watcher == nullptr || watcher->status != STATUS_NORMAL) {
+        return ERR_LISTENER_NOT_EXIST;
+    }
+    auto watcherKey = std::make_pair(watcher->onEventRustCb, watcher->onServiceDiedRustCb);
+    auto watcherIter = g_baseWatchers.find(watcherKey);
+    if (watcherIter == g_baseWatchers.end()) {
+        return ERR_LISTENER_NOT_EXIST;
+    }
+    auto ret = HiSysEventBaseManager::RemoveListener(watcherIter->second);
+    if (ret != IPC_CALL_SUCCEED) {
+        return ret;
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_baseWatchersMutex);
+        g_baseWatchers.erase(watcherIter->first);
+    }
+    return ret;
+}
+Function: 
+pub fn remove_watcher(watcher: &Watcher) -> i32 {
+    sys_event_manager::remove_watcher(watcher)
+}
+Unixcoder Score: 0.0388139970600605
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    SubscribeType type;
+    uint32_t taskId;
+    Progress progress;
+    Action action;
+    Version version;
+    Mode mode;
+    std::vector<TaskState> taskStates;
+}
+Function: 
+pub(crate) struct NotifyData {
+    pub(crate) bundle: String,
+    pub(crate) progress: Progress,
+    pub(crate) action: Action,
+    pub(crate) version: Version,
+    pub(crate) each_file_status: Vec<EachFileStatus>,
+    pub(crate) task_id: u32,
+    pub(crate) uid: u64,
+}
+Unixcoder Score: 0.033486075699329376
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    SubscribeType type;
+    uint32_t taskId;
+    Progress progress;
+    Action action;
+    Version version;
+    Mode mode;
+    std::vector<TaskState> taskStates;
+}
+Function: 
+pub(crate) struct NotifyData {
+    pub(crate) bundle: String,
+    pub(crate) progress: Progress,
+    pub(crate) action: Action,
+    pub(crate) version: Version,
+    pub(crate) each_file_status: Vec<EachFileStatus>,
+    pub(crate) task_id: u32,
+    pub(crate) uid: u64,
+}
+Unixcoder Score: 0.025908075273036957
+--------------------------------------------------
+C_Code: 
+void ResponseMessageReceiver::BeginReceive()
+{
+    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    if (!runner) {
+        SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_10, "GetMainEventRunner failed");
+    }
+    serviceHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    {
+        std::lock_guard<std::mutex> lock(sockFdMutex_);
+        auto err = serviceHandler_->AddFileDescriptorListener(
+            sockFd_, OHOS::AppExecFwk::FILE_DESCRIPTOR_INPUT_EVENT, shared_from_this(), "subscribe");
+        if (err != ERR_OK) {
+            REQUEST_HILOGE("handler addlisterner err: %{public}d", err);
+            SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_11, "handler addlisterner err");
+        }
+    }
+}
+Function: 
+pub(crate) fn send_event(&self, event: ClientEvent) -> bool {
+        if self.tx.send(event).is_err() {
+            #[cfg(feature = "oh")]
+            unsafe {
+                if let Some(e) = PANIC_INFO.as_ref() {
+                    error!("Sends ClientManager event failed {}", e);
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::UDS_FAULT_02,
+                        &format!("Sends ClientManager event failed {}", e)
+                    );
+                } else {
+                    info!("ClientManager is unloading");
+                }
+            }
+            return false;
+        }
+        true
+    }
+Unixcoder Score: 0.0035598287358880043
+--------------------------------------------------
+C_Code: 
+struct uv_loop_s {
+  UV_LOOP_PRIVATE_FIELDS
+  /* list used for ares task handles */
+  uv_ares_task_t* uv_ares_handles_;
+  /* Various thing for libeio. */
+  uv_async_t uv_eio_want_poll_notifier;
+  uv_async_t uv_eio_done_poll_notifier;
+  uv_idle_t uv_eio_poller;
+  /* Diagnostic counters */
+  uv_counters_t counters;
+  /* The last error */
+  uv_err_t last_err;
+  /* User data - use this for whatever. */
+  void* data;
+}
+Function: 
+pub struct Loop {
+    handle: *uvll::uv_loop_t
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BeginReceive__idx723_rank1.c", "source_rust_file": "API_Mapping__BeginReceive__idx723_rank1.rs", "c_api": "SysEventLog::SendSysEventLog", "rust_api": "sys_event!", "mapping_type": "function", "description": "System event logging", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: BeginReceive, Rust: subscribe). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C deals with event handling and file descriptor listeners, Rust handles subscription logic with channels and error handling. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C is a method definition, Rust is a function definition; however, both contain logic and are not usage calls. [Full BLOCKERS] -> No full blockers detected. [Partial/Full Classification] -> No full structural match due to domain mismatch and different control flow. [API Mappings] -> Extract API mappings based on similar logical operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BeginReceive__idx723_rank1.c", "source_rust_file": "API_Mapping__BeginReceive__idx723_rank1.rs", "c_api": "std::lock_guard<std::mutex>", "rust_api": "match rx.get()", "mapping_type": "pattern", "description": "Synchronization and result retrieval pattern", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: BeginReceive, Rust: subscribe). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C deals with event handling and file descriptor listeners, Rust handles subscription logic with channels and error handling. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C is a method definition, Rust is a function definition; however, both contain logic and are not usage calls. [Full BLOCKERS] -> No full blockers detected. [Partial/Full Classification] -> No full structural match due to domain mismatch and different control flow. [API Mappings] -> Extract API mappings based on similar logical operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BeginReceive__idx723_rank1.c", "source_rust_file": "API_Mapping__BeginReceive__idx723_rank1.rs", "c_api": "std::make_shared<EventHandler>", "rust_api": "channel::<ErrorCode>()", "mapping_type": "function", "description": "Creation of communication channel for event handling", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: BeginReceive, Rust: subscribe). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C deals with event handling and file descriptor listeners, Rust handles subscription logic with channels and error handling. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C is a method definition, Rust is a function definition; however, both contain logic and are not usage calls. [Full BLOCKERS] -> No full blockers detected. [Partial/Full Classification] -> No full structural match due to domain mismatch and different control flow. [API Mappings] -> Extract API mappings based on similar logical operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BeginReceive__idx723_rank1.c", "source_rust_file": "API_Mapping__BeginReceive__idx723_rank1.rs", "c_api": "serviceHandler_->AddFileDescriptorListener", "rust_api": "self.send_event", "mapping_type": "function", "description": "Event registration for file descriptor input", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: BeginReceive, Rust: subscribe). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C deals with event handling and file descriptor listeners, Rust handles subscription logic with channels and error handling. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C is a method definition, Rust is a function definition; however, both contain logic and are not usage calls. [Full BLOCKERS] -> No full blockers detected. [Partial/Full Classification] -> No full structural match due to domain mismatch and different control flow. [API Mappings] -> Extract API mappings based on similar logical operations."}]
+Unixcoder Score: 0.0011956985108554363
+--------------------------------------------------
+C_Code: 
+static void uv_eio_done_poll(void) {
+  /*
+   * Signal the main thread that we should stop calling eio_poll().
+   * from the idle watcher.
+   */
+  uv_async_send(&main_loop->uv_eio_done_poll_notifier);
+}
+Function: 
+pub fn send(&mut self) {
+        unsafe {
+            let handle = self.native_handle();
+            uvll::async_send(handle);
+        }
+    }
+Unixcoder Score: 0.000250894867349416
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    napi_env env;
+    napi_ref ref;
+    uint32_t paramNumber;
+    std::mutex mutex;
+    std::vector<int64_t> params;
+    ~NotifyData()
+    {
+        UvQueue::DeleteRef(env, ref);
+    }
+Function: 
+pub struct RequestAbility {
+    pub server_state: ServerRunState,
+    pub reg_remote_obj: Mutex<HashMap<String, RemoteObj>>,
+    unregistered_notify: Mutex<HashMap<String, u32>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Off__idx511_rank5.c", "source_rust_file": "API_Mapping__Off__idx511_rank5.rs", "c_api": "jsParam.task->notifyDataListenerMap_[jsParam.subscribeType]->RemoveListener(jsParam.callback)", "rust_api": "client_manager.send_notify_data(SubscribeType::Pause, notify_data)", "mapping_type": "function", "description": "Remove event listener and send notification", "reasoning": "[Task Analysis] C code is a N-API callback for removing event listeners, Rust code is a function for sending pause notifications. [Similarity] Names don't refer to the same concept (Off vs pause), and domains are different (event handling vs notification sending). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to listener removal and notification sending."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Off__idx511_rank5.c", "source_rust_file": "API_Mapping__Off__idx511_rank5.rs", "c_api": "jsParam.task->responseListener_->RemoveListener(jsParam.callback)", "rust_api": "client_manager.send_notify_data(SubscribeType::Pause, notify_data)", "mapping_type": "function", "description": "Remove event listener and send notification", "reasoning": "[Task Analysis] C code is a N-API callback for removing event listeners, Rust code is a function for sending pause notifications. [Similarity] Names don't refer to the same concept (Off vs pause), and domains are different (event handling vs notification sending). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to listener removal and notification sending."}]
+Unixcoder Score: 3.526202272041701e-05
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    napi_env env;
+    napi_ref ref;
+    uint32_t paramNumber;
+    std::mutex mutex;
+    std::vector<int64_t> params;
+    ~NotifyData()
+    {
+        UvQueue::DeleteRef(env, ref);
+    }
+Function: 
+pub struct Progress {
+    pub common_data: CommonProgress,
+    pub sizes: Vec<i64>,
+    pub processed: Vec<usize>,
+    pub extras: HashMap<String, String>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnCallBack__idx848_rank1.c", "source_rust_file": "API_Mapping__OnCallBack__idx848_rank1.rs", "c_api": "data.ReadInt64()", "rust_api": "run_count: i64", "mapping_type": "pattern", "description": "Reading integer value from input", "reasoning": "[Task Analysis] C code handles a callback from a message parcel, extracting a run count and notifying a manager. Rust code sends an IPC request with the run count. [Similarity] Names don't match but the semantic domain is related (notification/communication), though the implementation differs (callback vs IPC send). [Knowledge Extraction] No full structural match due to domain mismatch (message handling vs IPC communication). However, both involve logging and data transmission, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnCallBack__idx848_rank1.c", "source_rust_file": "API_Mapping__OnCallBack__idx848_rank1.rs", "c_api": "REQUEST_HILOGD(\"Receive callback\")", "rust_api": "info!(\"run_count:{}\", run_count)", "mapping_type": "function", "description": "Logging of received data", "reasoning": "[Task Analysis] C code handles a callback from a message parcel, extracting a run count and notifying a manager. Rust code sends an IPC request with the run count. [Similarity] Names don't match but the semantic domain is related (notification/communication), though the implementation differs (callback vs IPC send). [Knowledge Extraction] No full structural match due to domain mismatch (message handling vs IPC communication). However, both involve logging and data transmission, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnCallBack__idx848_rank1.c", "source_rust_file": "API_Mapping__OnCallBack__idx848_rank1.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->SetCount(runCount)", "rust_api": "parcel.write(&(run_count))?", "mapping_type": "function", "description": "Setting a count value for transmission", "reasoning": "[Task Analysis] C code handles a callback from a message parcel, extracting a run count and notifying a manager. Rust code sends an IPC request with the run count. [Similarity] Names don't match but the semantic domain is related (notification/communication), though the implementation differs (callback vs IPC send). [Knowledge Extraction] No full structural match due to domain mismatch (message handling vs IPC communication). However, both involve logging and data transmission, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnCallBack__idx848_rank1.c", "source_rust_file": "API_Mapping__OnCallBack__idx848_rank1.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->NotifyAllObservers()", "rust_api": "self.obj.send_request(interface::NOTIFY_RUN_COUNT, &mut parcel)?", "mapping_type": "function", "description": "Notifying observers via IPC", "reasoning": "[Task Analysis] C code handles a callback from a message parcel, extracting a run count and notifying a manager. Rust code sends an IPC request with the run count. [Similarity] Names don't match but the semantic domain is related (notification/communication), though the implementation differs (callback vs IPC send). [Knowledge Extraction] No full structural match due to domain mismatch (message handling vs IPC communication). However, both involve logging and data transmission, so API mappings are extracted."}]
+Unixcoder Score: -0.0009592614369466901
+--------------------------------------------------
+C_Code: 
+void DownloadServiceAbility::NotifyHandler(const std::string &type, uint32_t taskId, int64_t argv1, int64_t argv2,
+    bool isNotify)
+{
+    if (!isNotify) {
+        DOWNLOAD_HILOGE("isNotify false");
+        return;
+    }
+    std::string combineType = type + "-" + std::to_string(taskId);
+    DOWNLOAD_HILOGD(
+        "combineType=%{public}s argv1=%{public}" PRId64 "argv2=%{public}" PRId64, combineType.c_str(), argv1, argv2);
+    {
+        std::lock_guard<std::mutex> lck(DownloadServiceAbility::GetInstance()->listenerMapMutex_);
+        auto iter = DownloadServiceAbility::GetInstance()->registeredListeners_.find(combineType);
+        if (iter != DownloadServiceAbility::GetInstance()->registeredListeners_.end()) {
+            DOWNLOAD_HILOGD(
+                "DownloadServiceAbility::NotifyHandler type=%{public}s object message.", combineType.c_str());
+            std::vector<int64_t> params;
+            params.push_back(argv1);
+            params.push_back(argv2);
+            iter->second->CallBack(params);
+            return;
+        }
+    }
+    DownloadServiceAbility::GetInstance()->AddUnregisteredNotify(taskId, type);
+}
+Function: 
+pub fn on(&self, task_id: u32, on_type: String, obj: RemoteObj) -> ErrorCode {
+        let key = on_type.clone() + &String::from("-") + &task_id.to_string();
+        debug!(LOG_LABEL, "on key {}", @public(key));
+        RequestAbility::get_ability_instance().do_unregistered_notify(task_id, on_type);
+        self.reg_remote_obj.lock().unwrap().insert(key, obj);
+        ErrorCode::ErrOk
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetLost__idx498_rank5.c", "source_rust_file": "API_Mapping__NetLost__idx498_rank5.rs", "c_api": "notifyTaskManagerOffline_(*task_manager_)", "rust_api": "task_manager.inner.send_event(TaskManagerEvent::network())", "mapping_type": "function", "description": "Notify task manager of network offline event", "reasoning": "[Task Analysis] C function handles network offline notification, Rust function registers network change with retry logic and FFI call. [Similarity] Names refer to different concepts ('NetLost' vs 'register_network_change'), domains differ (notification vs registration with retry), and code lengths are very different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. No partial match due to structural differences. API mappings found: FFI registration call, error handling patterns, and network state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetLost__idx498_rank5.c", "source_rust_file": "API_Mapping__NetLost__idx498_rank5.rs", "c_api": "error!(\"RegisterNetworkChange failed!\")", "rust_api": "error!(\"RegisterNetworkChange failed!\")", "mapping_type": "function", "description": "Log error when registration fails", "reasoning": "[Task Analysis] C function handles network offline notification, Rust function registers network change with retry logic and FFI call. [Similarity] Names refer to different concepts ('NetLost' vs 'register_network_change'), domains differ (notification vs registration with retry), and code lengths are very different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. No partial match due to structural differences. API mappings found: FFI registration call, error handling patterns, and network state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetLost__idx498_rank5.c", "source_rust_file": "API_Mapping__NetLost__idx498_rank5.rs", "c_api": "networkNotifier_->notify_offline()", "rust_api": "network_manager.network.state() != Offline", "mapping_type": "function", "description": "Check network state and trigger offline notification", "reasoning": "[Task Analysis] C function handles network offline notification, Rust function registers network change with retry logic and FFI call. [Similarity] Names refer to different concepts ('NetLost' vs 'register_network_change'), domains differ (notification vs registration with retry), and code lengths are very different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. No partial match due to structural differences. API mappings found: FFI registration call, error handling patterns, and network state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetLost__idx498_rank5.c", "source_rust_file": "API_Mapping__NetLost__idx498_rank5.rs", "c_api": "sys_event!(ExecFault, DfxCode::NET_CONN_CLIENT_FAULT_02, \"RegisterNetworkChange failed!\")", "rust_api": "sys_event!(ExecFault, DfxCode::NET_CONN_CLIENT_FAULT_02, \"RegisterNetworkChange failed!\")", "mapping_type": "function", "description": "System event logging for fault condition", "reasoning": "[Task Analysis] C function handles network offline notification, Rust function registers network change with retry logic and FFI call. [Similarity] Names refer to different concepts ('NetLost' vs 'register_network_change'), domains differ (notification vs registration with retry), and code lengths are very different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. No partial match due to structural differences. API mappings found: FFI registration call, error handling patterns, and network state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetLost__idx498_rank5.c", "source_rust_file": "API_Mapping__NetLost__idx498_rank5.rs", "c_api": "ffi::RegisterNetworkChange", "rust_api": "ffi::RegisterNetworkChange", "mapping_type": "function", "description": "FFI call to register network change handler", "reasoning": "[Task Analysis] C function handles network offline notification, Rust function registers network change with retry logic and FFI call. [Similarity] Names refer to different concepts ('NetLost' vs 'register_network_change'), domains differ (notification vs registration with retry), and code lengths are very different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. No partial match due to structural differences. API mappings found: FFI registration call, error handling patterns, and network state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetLost__idx498_rank5.c", "source_rust_file": "API_Mapping__NetLost__idx498_rank5.rs", "c_api": "return 0", "rust_api": "return", "mapping_type": "pattern", "description": "Return early from function", "reasoning": "[Task Analysis] C function handles network offline notification, Rust function registers network change with retry logic and FFI call. [Similarity] Names refer to different concepts ('NetLost' vs 'register_network_change'), domains differ (notification vs registration with retry), and code lengths are very different (>3x). [Knowledge Extraction] No full match due to domain mismatch and length difference. No partial match due to structural differences. API mappings found: FFI registration call, error handling patterns, and network state checks."}]
+Unixcoder Score: -0.004640540108084679
+--------------------------------------------------

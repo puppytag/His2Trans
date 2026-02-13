@@ -1,0 +1,488 @@
+C_Code: 
+bool CloudInfo::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(user), user);
+    GetValue(node, GET_NAME(id), id);
+    GetValue(node, GET_NAME(totalSpace), totalSpace);
+    GetValue(node, GET_NAME(remainSpace), remainSpace);
+    GetValue(node, GET_NAME(enableCloud), enableCloud);
+    GetValue(node, GET_NAME(apps), apps);
+    if (!GetValue(node, GET_NAME(maxNumber), maxNumber) || maxNumber == 0) {
+        maxNumber = DEFAULT_BATCH_NUMBER;
+    }
+    if (!GetValue(node, GET_NAME(maxSize), maxSize) || maxSize == 0) {
+        maxSize = DEFAULT_BATCH_SIZE;
+    }
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::ServiceInfo) -> Self {
+        CloudInfo {
+            user: value.user,
+            id: value.account_id.clone(),
+            total_space: value.total_space,
+            remain_space: value.remain_space,
+            enable_cloud: value.enable_cloud,
+            apps: Default::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx10537_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx10537_rank1.rs", "c_api": "delete head.node;", "rust_api": "None", "mapping_type": "function", "description": "Deletion of dummy node in a lock-free queue", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ constructs (structs, new/delete, assert), while Rust code defines a queue with atomic operations and unsafe code. [Similarity] Names do not match (e.g., 'pointer_t' vs 'Node', 'lock_free_queue' vs 'queue'), and domains differ (C++ memory management vs Rust atomic operations). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, both implement queue-like behavior with pointer-based linking and atomic operations. API mappings found for core queue operations like node creation and pointer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx10537_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx10537_rank1.rs", "c_api": "node_t *node = new node_t();", "rust_api": "let n1 = Node::new();", "mapping_type": "function", "description": "Node creation in a lock-free queue", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ constructs (structs, new/delete, assert), while Rust code defines a queue with atomic operations and unsafe code. [Similarity] Names do not match (e.g., 'pointer_t' vs 'Node', 'lock_free_queue' vs 'queue'), and domains differ (C++ memory management vs Rust atomic operations). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, both implement queue-like behavior with pointer-based linking and atomic operations. API mappings found for core queue operations like node creation and pointer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx10537_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx10537_rank1.rs", "c_api": "sync::compare_and_swap", "rust_api": "AtomicPtr::store", "mapping_type": "method", "description": "Atomic compare-and-swap operation for pointer updates", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ constructs (structs, new/delete, assert), while Rust code defines a queue with atomic operations and unsafe code. [Similarity] Names do not match (e.g., 'pointer_t' vs 'Node', 'lock_free_queue' vs 'queue'), and domains differ (C++ memory management vs Rust atomic operations). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, both implement queue-like behavior with pointer-based linking and atomic operations. API mappings found for core queue operations like node creation and pointer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx10537_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx10537_rank1.rs", "c_api": "head.node = node; tail.node = node;", "rust_api": "let n2 = Node::new(); unsafe { (*n1).next.store(n2, Relaxed) }", "mapping_type": "function", "description": "Initialization of head and tail pointers in a lock-free queue", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ constructs (structs, new/delete, assert), while Rust code defines a queue with atomic operations and unsafe code. [Similarity] Names do not match (e.g., 'pointer_t' vs 'Node', 'lock_free_queue' vs 'queue'), and domains differ (C++ memory management vs Rust atomic operations). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, both implement queue-like behavior with pointer-based linking and atomic operations. API mappings found for core queue operations like node creation and pointer management."}]
+Unixcoder Score: -0.020849252119660378
+--------------------------------------------------
+C_Code: 
+struct pointer_t {
+        node_t *node;
+        uint32_t count;
+        pointer_t() : node(NULL), count(0) {
+        }
+        pointer_t(node_t *node, uint32_t count) {
+            this->node = node;
+            this->count = count;
+        }
+        bool equals(pointer_t &other) {
+            return node == other.node && count == other.count;
+        }
+    };
+
+    struct node_t {
+        T value;
+        pointer_t next;
+
+        node_t() {
+            next.node = NULL;
+            next.count = 0;
+        }
+
+        node_t(pointer_t next, T value) {
+            this->next = next;
+            this->value = value;
+        }
+    };
+
+    // Always points to the first node in the list.
+    pointer_t head;
+
+    // Always points to a node in the list, (not necessarily the last).
+    pointer_t tail;
+
+    // Compare and swap counted pointers, we can only do this if pointr_t is
+    // 8 bytes or less since that the maximum size CAS can handle.
+    bool compare_and_swap(pointer_t *address,
+        pointer_t *oldValue,
+        pointer_t newValue) {
+
+        // FIXME (#2701) this is requiring us to pass -fno-strict-aliasing
+        // to GCC (possibly there are other, similar problems)
+        if (sync::compare_and_swap(
+                (uint64_t*) address,
+                *(uint64_t*) oldValue,
+                *(uint64_t*) &newValue)) {
+            return true;
+        }
+        return false;
+    }
+
+public:
+    lock_free_queue() {
+        // We can only handle 64bit CAS for counted pointers, so this will
+        // not work with 64bit pointers.
+        assert (sizeof(pointer_t) == sizeof(uint64_t));
+
+        // Allocate a dummy node to be used as the first node in the list.
+        node_t *node = new node_t();
+
+        // Head and tail both start out pointing to the dummy node.
+        head.node = node;
+        tail.node = node;
+    }
+Function: 
+struct AtomicLink(AtomicPtr<Node>);
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx89520_rank3.h", "source_rust_file": "API_Mapping__lock_free_queue__idx89520_rank3.rs", "c_api": "sync::compare_and_swap", "rust_api": "AtomicI32::load", "mapping_type": "function", "description": "Atomic compare and swap operation in C++ vs atomic load in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ constructs like structs, constructors, and memory management (new/delete), while Rust code shows a spin-loop based acquire function for atomic operations. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs atomic spin-loop). [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs atomic operations). However, there are API mappings related to atomic operations and synchronization patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx89520_rank3.h", "source_rust_file": "API_Mapping__lock_free_queue__idx89520_rank3.rs", "c_api": "std::hint::spin_loop()", "rust_api": "std::hint::spin_loop()", "mapping_type": "function", "description": "Spin loop hint in both C++ and Rust for busy waiting", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ constructs like structs, constructors, and memory management (new/delete), while Rust code shows a spin-loop based acquire function for atomic operations. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs atomic spin-loop). [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs atomic operations). However, there are API mappings related to atomic operations and synchronization patterns."}]
+Unixcoder Score: -0.0327804759144783
+--------------------------------------------------
+C_Code: 
+struct pointer_t {
+        node_t *node;
+        uint32_t count;
+        pointer_t() : node(NULL), count(0) {
+        }
+        pointer_t(node_t *node, uint32_t count) {
+            this->node = node;
+            this->count = count;
+        }
+        bool equals(pointer_t &other) {
+            return node == other.node && count == other.count;
+        }
+    };
+
+    struct node_t {
+        T value;
+        pointer_t next;
+
+        node_t() {
+            next.node = NULL;
+            next.count = 0;
+        }
+
+        node_t(pointer_t next, T value) {
+            this->next = next;
+            this->value = value;
+        }
+    };
+
+    // Always points to the first node in the list.
+    pointer_t head;
+
+    // Always points to a node in the list, (not necessarily the last).
+    pointer_t tail;
+
+    // Compare and swap counted pointers, we can only do this if pointr_t is
+    // 8 bytes or less since that the maximum size CAS can handle.
+    bool compare_and_swap(pointer_t *address,
+        pointer_t *oldValue,
+        pointer_t newValue) {
+
+        // FIXME (#2701) this is requiring us to pass -fno-strict-aliasing
+        // to GCC (possibly there are other, similar problems)
+        if (sync::compare_and_swap(
+                (uint64_t*) address,
+                *(uint64_t*) oldValue,
+                *(uint64_t*) &newValue)) {
+            return true;
+        }
+        return false;
+    }
+
+public:
+    lock_free_queue() {
+        // We can only handle 64bit CAS for counted pointers, so this will
+        // not work with 64bit pointers.
+        assert (sizeof(pointer_t) == sizeof(uint64_t));
+
+        // Allocate a dummy node to be used as the first node in the list.
+        node_t *node = new node_t();
+
+        // Head and tail both start out pointing to the dummy node.
+        head.node = node;
+        tail.node = node;
+    }
+Function: 
+pub struct SyncSender<T> {
+    inner: mpmc::Sender<T>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx113800_rank5.h", "source_rust_file": "API_Mapping__lock_free_queue__idx113800_rank5.rs", "c_api": "delete head.node", "rust_api": "Box::leak(node)", "mapping_type": "function", "description": "Memory deallocation and pointer conversion", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code implements a push_back method using Box and Unique. [Similarity] Names and domains do not match (C uses pointer_t, node_t, compare_and_swap; Rust uses Node, Box, Unique). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs high-level allocation). However, both involve linked list node creation and insertion logic. API mappings found for node creation and insertion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx113800_rank5.h", "source_rust_file": "API_Mapping__lock_free_queue__idx113800_rank5.rs", "c_api": "head.node = node", "rust_api": "self.push_back_node(node_ptr)", "mapping_type": "function", "description": "Updating head pointer to new node", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code implements a push_back method using Box and Unique. [Similarity] Names and domains do not match (C uses pointer_t, node_t, compare_and_swap; Rust uses Node, Box, Unique). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs high-level allocation). However, both involve linked list node creation and insertion logic. API mappings found for node creation and insertion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx113800_rank5.h", "source_rust_file": "API_Mapping__lock_free_queue__idx113800_rank5.rs", "c_api": "new node_t()", "rust_api": "Box::new_in(Node::new(elt), &self.alloc)", "mapping_type": "function", "description": "Node creation with allocation", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code implements a push_back method using Box and Unique. [Similarity] Names and domains do not match (C uses pointer_t, node_t, compare_and_swap; Rust uses Node, Box, Unique). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs high-level allocation). However, both involve linked list node creation and insertion logic. API mappings found for node creation and insertion patterns."}]
+Unixcoder Score: -0.036029551178216934
+--------------------------------------------------
+C_Code: 
+bool CloudInfo::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(id)], id);
+    SetValue(node[GET_NAME(totalSpace)], totalSpace);
+    SetValue(node[GET_NAME(remainSpace)], remainSpace);
+    SetValue(node[GET_NAME(enableCloud)], enableCloud);
+    SetValue(node[GET_NAME(apps)], apps);
+    SetValue(node[GET_NAME(maxNumber)], maxNumber);
+    SetValue(node[GET_NAME(maxSize)], maxSize);
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::ServiceInfo) -> Self {
+        CloudInfo {
+            user: value.user,
+            id: value.account_id.clone(),
+            total_space: value.total_space,
+            remain_space: value.remain_space,
+            enable_cloud: value.enable_cloud,
+            apps: Default::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx23228_rank1.h", "source_rust_file": "Partial__pointer_t__idx23228_rank1.rs", "c_api": "sync::compare_and_swap", "rust_api": "atomics::AtomicUint", "mapping_type": "function", "description": "Atomic compare-and-swap operation for thread-safe updates of queue head/tail pointers.", "reasoning": "[Filter 1] Names do not refer to the same concept (C uses `pointer_t`, `node_t`, `compare_and_swap`, `lock_free_queue`; Rust uses `Queue`, `AtomicUint`, `Node`, `DummyNode`) -> [Filter 2] C code is not empty/trivial, Rust code has logic -> [Filter 3] No FFI call detected -> [Filter 4] Domain mismatch: C uses low-level memory management with pointers and atomic operations, Rust uses a high-level queue abstraction with atomic types -> [Filter 5] Both structs have fields -> [Filter 6] Definition vs usage asymmetry not present since both are implementations -> [Task Analysis] C implements a lock-free queue with manual pointer management and atomic compare-and-swap, Rust implements a lock-free queue with atomic types and raw pointers -> [Similarity] No full structural similarity due to domain mismatch and different abstraction levels -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared logic patterns and data flow"}, {"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx23228_rank1.h", "source_rust_file": "Partial__pointer_t__idx23228_rank1.rs", "c_fragment": "lock_free_queue() {\n        // We can only handle 64bit CAS for counted pointers, so this will\n        // not work with 64bit pointers.\n        assert (sizeof(pointer_t) == sizeof(uint64_t));\n\n        // Allocate a dummy node to be used as the first node in the list.\n        node_t *node = new node_t();\n\n        // Head and tail both start out pointing to the dummy node.\n        head.node = node;\n        tail.node = node;\n    }", "rust_fragment": "pub struct Queue<T> {\n    head: atomics::AtomicUint,\n    tail: *mut Node<T>,\n    stub: DummyNode,\n}", "description": "Both initialize a dummy node for the queue structure, with head and tail pointing to it.", "reasoning": "[Filter 1] Names do not refer to the same concept (C uses `pointer_t`, `node_t`, `compare_and_swap`, `lock_free_queue`; Rust uses `Queue`, `AtomicUint`, `Node`, `DummyNode`) -> [Filter 2] C code is not empty/trivial, Rust code has logic -> [Filter 3] No FFI call detected -> [Filter 4] Domain mismatch: C uses low-level memory management with pointers and atomic operations, Rust uses a high-level queue abstraction with atomic types -> [Filter 5] Both structs have fields -> [Filter 6] Definition vs usage asymmetry not present since both are implementations -> [Task Analysis] C implements a lock-free queue with manual pointer management and atomic compare-and-swap, Rust implements a lock-free queue with atomic types and raw pointers -> [Similarity] No full structural similarity due to domain mismatch and different abstraction levels -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared logic patterns and data flow"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx23228_rank1.h", "source_rust_file": "Partial__pointer_t__idx23228_rank1.rs", "c_api": "new node_t()", "rust_api": "DummyNode", "mapping_type": "function", "description": "Allocation of a dummy node to initialize the queue structure.", "reasoning": "[Filter 1] Names do not refer to the same concept (C uses `pointer_t`, `node_t`, `compare_and_swap`, `lock_free_queue`; Rust uses `Queue`, `AtomicUint`, `Node`, `DummyNode`) -> [Filter 2] C code is not empty/trivial, Rust code has logic -> [Filter 3] No FFI call detected -> [Filter 4] Domain mismatch: C uses low-level memory management with pointers and atomic operations, Rust uses a high-level queue abstraction with atomic types -> [Filter 5] Both structs have fields -> [Filter 6] Definition vs usage asymmetry not present since both are implementations -> [Task Analysis] C implements a lock-free queue with manual pointer management and atomic compare-and-swap, Rust implements a lock-free queue with atomic types and raw pointers -> [Similarity] No full structural similarity due to domain mismatch and different abstraction levels -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared logic patterns and data flow"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx23228_rank1.h", "source_rust_file": "Partial__pointer_t__idx23228_rank1.rs", "c_api": "head.node = node;\n        tail.node = node;", "rust_api": "head: atomics::AtomicUint,\n    tail: *mut Node<T>,", "mapping_type": "field_access", "description": "Initialization of head and tail pointers to the dummy node.", "reasoning": "[Filter 1] Names do not refer to the same concept (C uses `pointer_t`, `node_t`, `compare_and_swap`, `lock_free_queue`; Rust uses `Queue`, `AtomicUint`, `Node`, `DummyNode`) -> [Filter 2] C code is not empty/trivial, Rust code has logic -> [Filter 3] No FFI call detected -> [Filter 4] Domain mismatch: C uses low-level memory management with pointers and atomic operations, Rust uses a high-level queue abstraction with atomic types -> [Filter 5] Both structs have fields -> [Filter 6] Definition vs usage asymmetry not present since both are implementations -> [Task Analysis] C implements a lock-free queue with manual pointer management and atomic compare-and-swap, Rust implements a lock-free queue with atomic types and raw pointers -> [Similarity] No full structural similarity due to domain mismatch and different abstraction levels -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared logic patterns and data flow"}, {"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx23228_rank1.h", "source_rust_file": "Partial__pointer_t__idx23228_rank1.rs", "c_fragment": "pointer_t head;\n\n    // Always points to a node in the list, (not necessarily the last).\n    pointer_t tail;\n\n    // Compare and swap counted pointers, we can only do this if pointr_t is\n    // 8 bytes or less since that the maximum size CAS can handle.\n    bool compare_and_swap(pointer_t *address,\n        pointer_t *oldValue,\n        pointer_t newValue) {\n\n        // FIXME (#2701) this is requiring us to pass -fno-strict-aliasing\n        // to GCC (possibly there are other, similar problems)\n        if (sync::compare_and_swap(\n                (uint64_t*) address,\n                *(uint64_t*) oldValue,\n                *(uint64_t*) &newValue)) {\n            return true;\n        }\n        return false;\n    }", "rust_fragment": "pub struct Queue<T> {\n    head: atomics::AtomicUint,\n    tail: *mut Node<T>,\n    stub: DummyNode,\n}", "description": "Both represent a lock-free queue structure with atomic head/tail pointers and a dummy node for initialization.", "reasoning": "[Filter 1] Names do not refer to the same concept (C uses `pointer_t`, `node_t`, `compare_and_swap`, `lock_free_queue`; Rust uses `Queue`, `AtomicUint`, `Node`, `DummyNode`) -> [Filter 2] C code is not empty/trivial, Rust code has logic -> [Filter 3] No FFI call detected -> [Filter 4] Domain mismatch: C uses low-level memory management with pointers and atomic operations, Rust uses a high-level queue abstraction with atomic types -> [Filter 5] Both structs have fields -> [Filter 6] Definition vs usage asymmetry not present since both are implementations -> [Task Analysis] C implements a lock-free queue with manual pointer management and atomic compare-and-swap, Rust implements a lock-free queue with atomic types and raw pointers -> [Similarity] No full structural similarity due to domain mismatch and different abstraction levels -> [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared logic patterns and data flow"}]
+Unixcoder Score: -0.03684113919734955
+--------------------------------------------------
+C_Code: 
+bool CloudInfo::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(id)], id);
+    SetValue(node[GET_NAME(totalSpace)], totalSpace);
+    SetValue(node[GET_NAME(remainSpace)], remainSpace);
+    SetValue(node[GET_NAME(enableCloud)], enableCloud);
+    SetValue(node[GET_NAME(apps)], apps);
+    SetValue(node[GET_NAME(maxNumber)], maxNumber);
+    SetValue(node[GET_NAME(maxSize)], maxSize);
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::ServiceInfo) -> Self {
+        CloudInfo {
+            user: value.user,
+            id: value.account_id.clone(),
+            total_space: value.total_space,
+            remain_space: value.remain_space,
+            enable_cloud: value.enable_cloud,
+            apps: Default::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8708_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8708_rank2.rs", "c_api": "node_t *node = new node_t();", "rust_api": "next: Option<Box<List<T>>>,", "mapping_type": "pattern", "description": "Node allocation and linking in a list", "reasoning": "[Task Analysis] The C code defines a lock-free queue using counted pointers and atomic compare-and-swap operations, while the Rust code defines a simple singly-linked list with Option<Box<>> for next node. [Similarity] The domain is mismatched: C uses low-level memory management and atomic operations for concurrency, while Rust uses high-level ownership semantics. [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, there are API mappings related to list construction and node linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8708_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8708_rank2.rs", "c_api": "head.node = node; tail.node = node;", "rust_api": "value: T,", "mapping_type": "pattern", "description": "Initialization of list head/tail with dummy node", "reasoning": "[Task Analysis] The C code defines a lock-free queue using counted pointers and atomic compare-and-swap operations, while the Rust code defines a simple singly-linked list with Option<Box<>> for next node. [Similarity] The domain is mismatched: C uses low-level memory management and atomic operations for concurrency, while Rust uses high-level ownership semantics. [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, there are API mappings related to list construction and node linking."}]
+Unixcoder Score: -0.03736294060945511
+--------------------------------------------------
+C_Code: 
+bool CloudInfo::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(id)], id);
+    SetValue(node[GET_NAME(totalSpace)], totalSpace);
+    SetValue(node[GET_NAME(remainSpace)], remainSpace);
+    SetValue(node[GET_NAME(enableCloud)], enableCloud);
+    SetValue(node[GET_NAME(apps)], apps);
+    SetValue(node[GET_NAME(maxNumber)], maxNumber);
+    SetValue(node[GET_NAME(maxSize)], maxSize);
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::ServiceInfo) -> Self {
+        CloudInfo {
+            user: value.user,
+            id: value.account_id.clone(),
+            total_space: value.total_space,
+            remain_space: value.remain_space,
+            enable_cloud: value.enable_cloud,
+            apps: Default::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx15770_rank2.h", "source_rust_file": "Partial__pointer_t__idx15770_rank2.rs", "c_api": "head.node = node", "rust_api": "head: AtomicPtr<Node<T>>", "mapping_type": "field_access", "description": "Assignment of head pointer in C to atomic pointer in Rust.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C uses `pointer_t` and `node_t` while Rust uses `State<T>` with `head` and `tail` fields. However, the domain is related to lock-free data structures. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both sides deal with concurrent data structures (lock-free queues), so domain is consistent. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are definitions. [Task Analysis] -> C defines a lock-free queue with `pointer_t` and `node_t` structs, Rust defines a `State<T>` struct with atomic and raw pointers. [Similarity] -> The Rust struct mirrors the C struct's intent with `head` and `tail` pointers, but uses different types (`AtomicPtr` vs raw pointer). [Knowledge Extraction] -> Extract structural fragment and API mappings based on shared logic and intent."}, {"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx15770_rank2.h", "source_rust_file": "Partial__pointer_t__idx15770_rank2.rs", "c_fragment": "struct pointer_t {\n        node_t *node;\n        uint32_t count;\n        pointer_t() : node(NULL), count(0) {\n        }\n        pointer_t(node_t *node, uint32_t count) {\n            this->node = node;\n            this->count = count;\n        }\n        bool equals(pointer_t &other) {\n            return node == other.node && count == other.count;\n        }\n    };", "rust_fragment": "struct State<T> {\n    stub: Node<T>,\n    head: AtomicPtr<Node<T>>,\n    tail: *mut Node<T>,\n}", "description": "Both define structures for managing a linked list with head and tail pointers, though Rust uses atomic and raw pointers for concurrency.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C uses `pointer_t` and `node_t` while Rust uses `State<T>` with `head` and `tail` fields. However, the domain is related to lock-free data structures. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both sides deal with concurrent data structures (lock-free queues), so domain is consistent. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are definitions. [Task Analysis] -> C defines a lock-free queue with `pointer_t` and `node_t` structs, Rust defines a `State<T>` struct with atomic and raw pointers. [Similarity] -> The Rust struct mirrors the C struct's intent with `head` and `tail` pointers, but uses different types (`AtomicPtr` vs raw pointer). [Knowledge Extraction] -> Extract structural fragment and API mappings based on shared logic and intent."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx15770_rank2.h", "source_rust_file": "Partial__pointer_t__idx15770_rank2.rs", "c_api": "node_t *node = new node_t();", "rust_api": "stub: Node<T>", "mapping_type": "type", "description": "Creation of dummy node in C corresponds to initialization of stub node in Rust.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C uses `pointer_t` and `node_t` while Rust uses `State<T>` with `head` and `tail` fields. However, the domain is related to lock-free data structures. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both sides deal with concurrent data structures (lock-free queues), so domain is consistent. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are definitions. [Task Analysis] -> C defines a lock-free queue with `pointer_t` and `node_t` structs, Rust defines a `State<T>` struct with atomic and raw pointers. [Similarity] -> The Rust struct mirrors the C struct's intent with `head` and `tail` pointers, but uses different types (`AtomicPtr` vs raw pointer). [Knowledge Extraction] -> Extract structural fragment and API mappings based on shared logic and intent."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx15770_rank2.h", "source_rust_file": "Partial__pointer_t__idx15770_rank2.rs", "c_api": "tail.node = node", "rust_api": "tail: *mut Node<T>", "mapping_type": "field_access", "description": "Assignment of tail pointer in C to raw pointer in Rust.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C uses `pointer_t` and `node_t` while Rust uses `State<T>` with `head` and `tail` fields. However, the domain is related to lock-free data structures. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both sides deal with concurrent data structures (lock-free queues), so domain is consistent. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable as both are definitions. [Task Analysis] -> C defines a lock-free queue with `pointer_t` and `node_t` structs, Rust defines a `State<T>` struct with atomic and raw pointers. [Similarity] -> The Rust struct mirrors the C struct's intent with `head` and `tail` pointers, but uses different types (`AtomicPtr` vs raw pointer). [Knowledge Extraction] -> Extract structural fragment and API mappings based on shared logic and intent."}]
+Unixcoder Score: -0.03771880269050598
+--------------------------------------------------
+C_Code: 
+bool CloudInfo::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(user), user);
+    GetValue(node, GET_NAME(id), id);
+    GetValue(node, GET_NAME(totalSpace), totalSpace);
+    GetValue(node, GET_NAME(remainSpace), remainSpace);
+    GetValue(node, GET_NAME(enableCloud), enableCloud);
+    GetValue(node, GET_NAME(apps), apps);
+    if (!GetValue(node, GET_NAME(maxNumber), maxNumber) || maxNumber == 0) {
+        maxNumber = DEFAULT_BATCH_NUMBER;
+    }
+    if (!GetValue(node, GET_NAME(maxSize), maxSize) || maxSize == 0) {
+        maxSize = DEFAULT_BATCH_SIZE;
+    }
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::ServiceInfo) -> Self {
+        CloudInfo {
+            user: value.user,
+            id: value.account_id.clone(),
+            total_space: value.total_space,
+            remain_space: value.remain_space,
+            enable_cloud: value.enable_cloud,
+            apps: Default::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__lock_free_queue__idx113812_rank3.h", "source_rust_file": "Partial__lock_free_queue__idx113812_rank3.rs", "c_api": "pointer_t *address", "rust_api": "self.head", "mapping_type": "field_access", "description": "Accessing a pointer field in C and a mutable reference in Rust for traversal.", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code implements an iterator-like method for a linked list with optional node traversal. [Similarity] Names and domains do not align: C uses pointer_t, node_t, compare_and_swap, and new/delete; Rust uses next(), head, len, and unsafe pointer dereferencing. [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs iterator logic), but partial fragments and API mappings can be extracted based on shared patterns like pointer traversal and conditional logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__lock_free_queue__idx113812_rank3.h", "source_rust_file": "Partial__lock_free_queue__idx113812_rank3.rs", "c_fragment": "if (sync::compare_and_swap(\n                (uint64_t*) address,\n                *(uint64_t*) oldValue,\n                *(uint64_t*) &newValue)) {\n            return true;\n        }", "rust_fragment": "if self.len == 0 {\n            None\n        } else {\n            self.head.map(|node| unsafe {\n                // Need an unbound lifetime to get 'a\n                let node = &mut *node.as_ptr();\n                self.len -= 1;\n                self.head = node.next;\n                &mut node.element\n            })\n        }", "description": "Both implement conditional logic with early returns or unwrapping based on state checks.", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code implements an iterator-like method for a linked list with optional node traversal. [Similarity] Names and domains do not align: C uses pointer_t, node_t, compare_and_swap, and new/delete; Rust uses next(), head, len, and unsafe pointer dereferencing. [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs iterator logic), but partial fragments and API mappings can be extracted based on shared patterns like pointer traversal and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__lock_free_queue__idx113812_rank3.h", "source_rust_file": "Partial__lock_free_queue__idx113812_rank3.rs", "c_api": "compare_and_swap", "rust_api": "self.len == 0", "mapping_type": "function", "description": "Atomic compare-and-swap in C and conditional check in Rust for state validation.", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code implements an iterator-like method for a linked list with optional node traversal. [Similarity] Names and domains do not align: C uses pointer_t, node_t, compare_and_swap, and new/delete; Rust uses next(), head, len, and unsafe pointer dereferencing. [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs iterator logic), but partial fragments and API mappings can be extracted based on shared patterns like pointer traversal and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__lock_free_queue__idx113812_rank3.h", "source_rust_file": "Partial__lock_free_queue__idx113812_rank3.rs", "c_api": "head.node = node;\n        tail.node = node;", "rust_api": "self.head = node.next;", "mapping_type": "pattern", "description": "Updating head/tail pointers in C vs updating head reference in Rust.", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code implements an iterator-like method for a linked list with optional node traversal. [Similarity] Names and domains do not align: C uses pointer_t, node_t, compare_and_swap, and new/delete; Rust uses next(), head, len, and unsafe pointer dereferencing. [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs iterator logic), but partial fragments and API mappings can be extracted based on shared patterns like pointer traversal and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__lock_free_queue__idx113812_rank3.h", "source_rust_file": "Partial__lock_free_queue__idx113812_rank3.rs", "c_api": "node_t *node = new node_t();", "rust_api": "self.head.map(|node| unsafe { ... })", "mapping_type": "pattern", "description": "Allocation and initialization of a node in C vs optional unwrapping and unsafe access in Rust.", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code implements an iterator-like method for a linked list with optional node traversal. [Similarity] Names and domains do not align: C uses pointer_t, node_t, compare_and_swap, and new/delete; Rust uses next(), head, len, and unsafe pointer dereferencing. [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs iterator logic), but partial fragments and API mappings can be extracted based on shared patterns like pointer traversal and conditional logic."}]
+Unixcoder Score: -0.03852320462465286
+--------------------------------------------------
+C_Code: 
+struct pointer_t {
+        node_t *node;
+        uint32_t count;
+        pointer_t() : node(NULL), count(0) {
+        }
+        pointer_t(node_t *node, uint32_t count) {
+            this->node = node;
+            this->count = count;
+        }
+        bool equals(pointer_t &other) {
+            return node == other.node && count == other.count;
+        }
+    };
+
+    struct node_t {
+        T value;
+        pointer_t next;
+
+        node_t() {
+            next.node = NULL;
+            next.count = 0;
+        }
+
+        node_t(pointer_t next, T value) {
+            this->next = next;
+            this->value = value;
+        }
+    };
+
+    // Always points to the first node in the list.
+    pointer_t head;
+
+    // Always points to a node in the list, (not necessarily the last).
+    pointer_t tail;
+
+    // Compare and swap counted pointers, we can only do this if pointr_t is
+    // 8 bytes or less since that the maximum size CAS can handle.
+    bool compare_and_swap(pointer_t *address,
+        pointer_t *oldValue,
+        pointer_t newValue) {
+
+        // FIXME (#2701) this is requiring us to pass -fno-strict-aliasing
+        // to GCC (possibly there are other, similar problems)
+        if (sync::compare_and_swap(
+                (uint64_t*) address,
+                *(uint64_t*) oldValue,
+                *(uint64_t*) &newValue)) {
+            return true;
+        }
+        return false;
+    }
+
+public:
+    lock_free_queue() {
+        // We can only handle 64bit CAS for counted pointers, so this will
+        // not work with 64bit pointers.
+        assert (sizeof(pointer_t) == sizeof(uint64_t));
+
+        // Allocate a dummy node to be used as the first node in the list.
+        node_t *node = new node_t();
+
+        // Head and tail both start out pointing to the dummy node.
+        head.node = node;
+        tail.node = node;
+    }
+Function: 
+struct Element<T> {
+    data: T,
+    next: Option<Box<Element<T>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx125955_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx125955_rank2.rs", "c_api": "list.pop().unwrap().set(1)", "rust_api": "list.pop().unwrap().set", "mapping_type": "method", "description": "Pop operation followed by value update", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code shows a test function using UnsafeList and UnsafeListEntry with push/pop operations. [Similarity] No direct structural similarity due to different domains: C implements low-level concurrent data structures, Rust tests high-level unsafe list operations. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs. testing), but API mappings can be extracted for similar operations like list manipulation and atomic CAS."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx125955_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx125955_rank2.rs", "c_api": "node_t *node = new node_t();", "rust_api": "UnsafeListEntry::new", "mapping_type": "function", "description": "Heap allocation of a new node", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code shows a test function using UnsafeList and UnsafeListEntry with push/pop operations. [Similarity] No direct structural similarity due to different domains: C implements low-level concurrent data structures, Rust tests high-level unsafe list operations. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs. testing), but API mappings can be extracted for similar operations like list manipulation and atomic CAS."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx125955_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx125955_rank2.rs", "c_api": "list.push(&mut node)", "rust_api": "list.push", "mapping_type": "method", "description": "Push operation to add an element to the list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code shows a test function using UnsafeList and UnsafeListEntry with push/pop operations. [Similarity] No direct structural similarity due to different domains: C implements low-level concurrent data structures, Rust tests high-level unsafe list operations. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs. testing), but API mappings can be extracted for similar operations like list manipulation and atomic CAS."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx125955_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx125955_rank2.rs", "c_api": "sync::compare_and_swap", "rust_api": "atomic compare-and-swap", "mapping_type": "function", "description": "Atomic compare-and-swap operation for thread-safe pointer updates", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code shows a test function using UnsafeList and UnsafeListEntry with push/pop operations. [Similarity] No direct structural similarity due to different domains: C implements low-level concurrent data structures, Rust tests high-level unsafe list operations. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs. testing), but API mappings can be extracted for similar operations like list manipulation and atomic CAS."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx125955_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx125955_rank2.rs", "c_api": "new node_t()", "rust_api": "UnsafeListEntry::new", "mapping_type": "function", "description": "Creation of a new node/list entry", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code shows a test function using UnsafeList and UnsafeListEntry with push/pop operations. [Similarity] No direct structural similarity due to different domains: C implements low-level concurrent data structures, Rust tests high-level unsafe list operations. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs. testing), but API mappings can be extracted for similar operations like list manipulation and atomic CAS."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx125955_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx125955_rank2.rs", "c_api": "head.node = node; tail.node = node;", "rust_api": "UnsafeList::new", "mapping_type": "function", "description": "Initialization of a new list with dummy node", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and atomic operations; Rust code shows a test function using UnsafeList and UnsafeListEntry with push/pop operations. [Similarity] No direct structural similarity due to different domains: C implements low-level concurrent data structures, Rust tests high-level unsafe list operations. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs. testing), but API mappings can be extracted for similar operations like list manipulation and atomic CAS."}]
+Unixcoder Score: -0.04114409163594246
+--------------------------------------------------
+C_Code: 
+bool CloudInfo::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(id)], id);
+    SetValue(node[GET_NAME(totalSpace)], totalSpace);
+    SetValue(node[GET_NAME(remainSpace)], remainSpace);
+    SetValue(node[GET_NAME(enableCloud)], enableCloud);
+    SetValue(node[GET_NAME(apps)], apps);
+    SetValue(node[GET_NAME(maxNumber)], maxNumber);
+    SetValue(node[GET_NAME(maxSize)], maxSize);
+    return true;
+}
+Function: 
+pub fn get_service_info(&mut self) -> SyncResult<CloudInfo> {
+        let mut cloud_info = self.get_cloud_info()?;
+        cloud_info.user = self.user_id;
+        let app_infos = self.connect.get_app_brief_info(self.user_id)?;
+        for app in &app_infos.0 {
+            let cloud_app_info = AppInfo::from(app.1);
+            cloud_info
+                .apps
+                .insert(cloud_app_info.bundle_name.clone(), cloud_app_info);
+        }
+        Ok(cloud_info)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx117675_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx117675_rank1.rs", "c_api": "sync::compare_and_swap((uint64_t*) address, *(uint64_t*) oldValue, *(uint64_t*) &newValue)", "rust_api": "self.compare_exchange(current, new, order, strongest_failure_ordering(order))", "mapping_type": "function", "description": "Atomic compare-and-swap operation for memory synchronization", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code implements a compare_and_swap function using atomic operations. [Similarity] Names and domains do not match (C: lock-free queue, Rust: atomic compare_and_swap). [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both involve atomic operations and memory synchronization patterns. Extract API mapping for atomic compare-and-swap behavior."}]
+Unixcoder Score: -0.04136218503117561
+--------------------------------------------------
+C_Code: 
+struct pointer_t {
+        node_t *node;
+        uint32_t count;
+        pointer_t() : node(NULL), count(0) {
+        }
+        pointer_t(node_t *node, uint32_t count) {
+            this->node = node;
+            this->count = count;
+        }
+        bool equals(pointer_t &other) {
+            return node == other.node && count == other.count;
+        }
+    };
+
+    struct node_t {
+        T value;
+        pointer_t next;
+
+        node_t() {
+            next.node = NULL;
+            next.count = 0;
+        }
+
+        node_t(pointer_t next, T value) {
+            this->next = next;
+            this->value = value;
+        }
+    };
+
+    // Always points to the first node in the list.
+    pointer_t head;
+
+    // Always points to a node in the list, (not necessarily the last).
+    pointer_t tail;
+
+    // Compare and swap counted pointers, we can only do this if pointr_t is
+    // 8 bytes or less since that the maximum size CAS can handle.
+    bool compare_and_swap(pointer_t *address,
+        pointer_t *oldValue,
+        pointer_t newValue) {
+
+        // FIXME (#2701) this is requiring us to pass -fno-strict-aliasing
+        // to GCC (possibly there are other, similar problems)
+        if (sync::compare_and_swap(
+                (uint64_t*) address,
+                *(uint64_t*) oldValue,
+                *(uint64_t*) &newValue)) {
+            return true;
+        }
+        return false;
+    }
+
+public:
+    lock_free_queue() {
+        // We can only handle 64bit CAS for counted pointers, so this will
+        // not work with 64bit pointers.
+        assert (sizeof(pointer_t) == sizeof(uint64_t));
+
+        // Allocate a dummy node to be used as the first node in the list.
+        node_t *node = new node_t();
+
+        // Head and tail both start out pointing to the dummy node.
+        head.node = node;
+        tail.node = node;
+    }
+
+    virtual ~lock_free_queue() {
+        // Delete dummy node.
+        delete head.node;
+    }
+Function: 
+fn next(&mut self) -> Option<&'a mut T> {
+        if self.len == 0 {
+            None
+        } else {
+            self.head.map(|node| unsafe {
+                // Need an unbound lifetime to get 'a
+                let node = &mut *node.as_ptr();
+                self.len -= 1;
+                self.head = node.next;
+                &mut node.element
+            })
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx144303_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx144303_rank1.rs", "c_api": "pointer_t *address", "rust_api": "*mut Node<T>", "mapping_type": "type", "description": "Pointer type for atomic operations", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code shows a single method for loading the next node pointer. [Similarity] No structural similarity at the function level due to domain mismatch (low-level memory management vs high-level pointer access). [Knowledge Extraction] No full or partial match due to semantic domain mismatch (C: memory management, Rust: atomic pointer loading). However, both involve pointer manipulation and atomic operations, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx144303_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx144303_rank1.rs", "c_api": "node_t *node = new node_t()", "rust_api": "cast::transmute::<uint, *mut Node<T>>", "mapping_type": "function", "description": "Node allocation and pointer casting", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code shows a single method for loading the next node pointer. [Similarity] No structural similarity at the function level due to domain mismatch (low-level memory management vs high-level pointer access). [Knowledge Extraction] No full or partial match due to semantic domain mismatch (C: memory management, Rust: atomic pointer loading). However, both involve pointer manipulation and atomic operations, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx144303_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx144303_rank1.rs", "c_api": "sync::compare_and_swap", "rust_api": "self.next.load", "mapping_type": "function", "description": "Atomic compare-and-swap operation for counted pointers", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code shows a single method for loading the next node pointer. [Similarity] No structural similarity at the function level due to domain mismatch (low-level memory management vs high-level pointer access). [Knowledge Extraction] No full or partial match due to semantic domain mismatch (C: memory management, Rust: atomic pointer loading). However, both involve pointer manipulation and atomic operations, so API mappings are extracted."}]
+Unixcoder Score: -0.045812737196683884
+--------------------------------------------------

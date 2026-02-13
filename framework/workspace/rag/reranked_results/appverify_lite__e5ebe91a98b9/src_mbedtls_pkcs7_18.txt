@@ -1,0 +1,898 @@
+C_Code: 
+CProgress Convert2CProgress(const Progress &in)
+{
+    CProgress out = {0};
+    out.state = static_cast<uint32_t>(in.state);
+    out.index = in.index;
+    out.processed = in.processed;
+
+    if (in.sizes.size() > 0) {
+        out.sizeArr = static_cast<int64_t *>(malloc(sizeof(int64_t) * in.sizes.size()));
+        if (out.sizeArr == nullptr) {
+            return out;
+        }
+        for (std::vector<long>::size_type i = 0; i < in.sizes.size(); ++i) {
+            out.sizeArr[i] = in.sizes[i];
+        }
+        out.sizeArrLen = static_cast<int64_t>(in.sizes.size());
+    }
+
+    if (in.extras.size() <= 0) {
+        return out;
+    }
+
+    out.extras.headers = static_cast<CHashStrPair *>(malloc(sizeof(CHashStrPair) * in.extras.size()));
+    if (out.extras.headers == nullptr) {
+        return out;
+    }
+
+    int index = 0;
+    for (auto iter = in.extras.begin(); iter != in.extras.end(); ++iter) {
+        CHashStrPair *elem = &out.extras.headers[index++];
+        elem->key = MallocCString(iter->first);
+        elem->value = MallocCString(iter->second);
+    }
+    out.extras.size = static_cast<int64_t>(in.extras.size());
+    return out;
+}
+Function: 
+pub(crate) fn build_info_set(&self) -> InfoSet {
+        InfoSet {
+            form_items: self.form_items.iter().map(|x| x.to_c_struct()).collect(),
+            file_specs: self.file_specs.iter().map(|x| x.to_c_struct()).collect(),
+            sizes: format!("{:?}", self.progress.sizes),
+            processed: format!("{:?}", self.progress.processed),
+            extras: hashmap_to_string(&self.extras),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__is_headerline__idx22493_rank3.c", "source_rust_file": "Partial__is_headerline__idx22493_rank3.rs", "c_api": "for (i = 1; i < size && data[i] == '='; i++);", "rust_api": "parse_heading(...).unwrap()", "mapping_type": "pattern", "description": "Scanning repeated characters for header marker", "reasoning": "[Task Analysis] C function checks for markdown header syntax (level 1 or 2) by scanning bytes; Rust function tests a markdown heading parser. [Similarity] Names don't match (`is_headerline` vs `test_parse_heading`), but both involve parsing/identifying markdown headers. [Knowledge Extraction] Found partial structural match in logic flow (header detection), and API mapping for header parsing logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__is_headerline__idx22493_rank3.c", "source_rust_file": "Partial__is_headerline__idx22493_rank3.rs", "c_api": "data[i] == '='", "rust_api": "parse_heading(...).unwrap()", "mapping_type": "function", "description": "Detecting markdown level 1 header", "reasoning": "[Task Analysis] C function checks for markdown header syntax (level 1 or 2) by scanning bytes; Rust function tests a markdown heading parser. [Similarity] Names don't match (`is_headerline` vs `test_parse_heading`), but both involve parsing/identifying markdown headers. [Knowledge Extraction] Found partial structural match in logic flow (header detection), and API mapping for header parsing logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__is_headerline__idx22493_rank3.c", "source_rust_file": "Partial__is_headerline__idx22493_rank3.rs", "c_fragment": "if (data[i] == '-') {\n\t\tfor (i = 1; i < size && data[i] == '-'; i++);\n\t\twhile (i < size && data[i] == ' ') i++;\n\t\treturn (i >= size || data[i] == '\\n') ? 2 : 0; }", "rust_fragment": "let buf2 = \"### Top `level` _woo_\\nrest\";\n    let (t, r) = parse_heading(buf2.as_bytes()).unwrap();\n    assert_eq!(\n        t,\n        MdTree::Heading(\n            3,\n            vec![\n                MdTree::PlainText(\"Top \"),\n                MdTree::CodeInline(\"level\"),\n                MdTree::PlainText(\" \"),\n                MdTree::Emphasis(\"woo\"),\n            ]\n            .into()\n        )\n    );\n    assert_eq!(r, b\"\\nrest\");", "description": "C scans for level 2 markdown header pattern ('-') and returns level; Rust tests parsing of level 3 header.", "reasoning": "[Task Analysis] C function checks for markdown header syntax (level 1 or 2) by scanning bytes; Rust function tests a markdown heading parser. [Similarity] Names don't match (`is_headerline` vs `test_parse_heading`), but both involve parsing/identifying markdown headers. [Knowledge Extraction] Found partial structural match in logic flow (header detection), and API mapping for header parsing logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__is_headerline__idx22493_rank3.c", "source_rust_file": "Partial__is_headerline__idx22493_rank3.rs", "c_fragment": "if (data[i] == '=') {\n\t\tfor (i = 1; i < size && data[i] == '='; i++);\n\t\twhile (i < size && data[i] == ' ') i++;\n\t\treturn (i >= size || data[i] == '\\n') ? 1 : 0; }", "rust_fragment": "let buf1 = \"# Top level\\nrest\";\n    let (t, r) = parse_heading(buf1.as_bytes()).unwrap();\n    assert_eq!(t, MdTree::Heading(1, vec![MdTree::PlainText(\"Top level\")].into()));\n    assert_eq!(r, b\"\\nrest\");", "description": "C scans for level 1 markdown header pattern ('=') and returns level; Rust tests parsing of level 1 header.", "reasoning": "[Task Analysis] C function checks for markdown header syntax (level 1 or 2) by scanning bytes; Rust function tests a markdown heading parser. [Similarity] Names don't match (`is_headerline` vs `test_parse_heading`), but both involve parsing/identifying markdown headers. [Knowledge Extraction] Found partial structural match in logic flow (header detection), and API mapping for header parsing logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__is_headerline__idx22493_rank3.c", "source_rust_file": "Partial__is_headerline__idx22493_rank3.rs", "c_api": "data[i] == '-'", "rust_api": "parse_heading(...).unwrap()", "mapping_type": "function", "description": "Detecting markdown level 2 header", "reasoning": "[Task Analysis] C function checks for markdown header syntax (level 1 or 2) by scanning bytes; Rust function tests a markdown heading parser. [Similarity] Names don't match (`is_headerline` vs `test_parse_heading`), but both involve parsing/identifying markdown headers. [Knowledge Extraction] Found partial structural match in logic flow (header detection), and API mapping for header parsing logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__is_headerline__idx22493_rank3.c", "source_rust_file": "Partial__is_headerline__idx22493_rank3.rs", "c_api": "while (i < size && data[i] == ' ') i++;", "rust_api": "parse_heading(...).unwrap()", "mapping_type": "pattern", "description": "Skipping whitespace after header marker", "reasoning": "[Task Analysis] C function checks for markdown header syntax (level 1 or 2) by scanning bytes; Rust function tests a markdown heading parser. [Similarity] Names don't match (`is_headerline` vs `test_parse_heading`), but both involve parsing/identifying markdown headers. [Knowledge Extraction] Found partial structural match in logic flow (header detection), and API mapping for header parsing logic."}]
+Unixcoder Score: 0.072198286652565
+--------------------------------------------------
+C_Code: 
+static void doSegmentDemo(void) {
+	{  // Illustration "silver"
+		const char *silver0 = "THE SQUARE ROOT OF 2 IS 1.";
+		const char *silver1 = "41421356237309504880168872420969807856967187537694807317667973799";
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			char *concat = calloc(strlen(silver0) + strlen(silver1) + 1, sizeof(char));
+			if (concat == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			strcat(concat, silver0);
+			strcat(concat, silver1);
+			ok = qrcodegen_encodeText(concat, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+			free(concat);
+		}
+		{
+			uint8_t *segBuf0 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_ALPHANUMERIC, strlen(silver0)) * sizeof(uint8_t));
+			uint8_t *segBuf1 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_NUMERIC, strlen(silver1)) * sizeof(uint8_t));
+			if (segBuf0 == NULL || segBuf1 == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment segs[] = {
+				qrcodegen_makeAlphanumeric(silver0, segBuf0),
+				qrcodegen_makeNumeric(silver1, segBuf1),
+			};
+			ok = qrcodegen_encodeSegments(segs, sizeof(segs) / sizeof(segs[0]), qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf0);
+			free(segBuf1);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+	
+	{  // Illustration "golden"
+		const char *golden0 = "Golden ratio \xCF\x86 = 1.";
+		const char *golden1 = "6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374";
+		const char *golden2 = "......";
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			char *concat = calloc(strlen(golden0) + strlen(golden1) + strlen(golden2) + 1, sizeof(char));
+			if (concat == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			strcat(concat, golden0);
+			strcat(concat, golden1);
+			strcat(concat, golden2);
+			ok = qrcodegen_encodeText(concat, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+			free(concat);
+		}
+		{
+			uint8_t *bytes = malloc(strlen(golden0) * sizeof(uint8_t));
+			if (bytes == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			for (size_t i = 0, len = strlen(golden0); i < len; i++)
+				bytes[i] = (uint8_t)golden0[i];
+			uint8_t *segBuf0 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_BYTE, strlen(golden0)) * sizeof(uint8_t));
+			uint8_t *segBuf1 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_NUMERIC, strlen(golden1)) * sizeof(uint8_t));
+			uint8_t *segBuf2 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_ALPHANUMERIC, strlen(golden2)) * sizeof(uint8_t));
+			if (segBuf0 == NULL || segBuf1 == NULL || segBuf2 == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment segs[] = {
+				qrcodegen_makeBytes(bytes, strlen(golden0), segBuf0),
+				qrcodegen_makeNumeric(golden1, segBuf1),
+				qrcodegen_makeAlphanumeric(golden2, segBuf2),
+			};
+			free(bytes);
+			ok = qrcodegen_encodeSegments(segs, sizeof(segs) / sizeof(segs[0]), qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf0);
+			free(segBuf1);
+			free(segBuf2);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+	
+	{  // Illustration "Madoka": kanji, kana, Cyrillic, full-width Latin, Greek characters
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			const char *madoka =  // Encoded in UTF-8
+				"\xE3\x80\x8C\xE9\xAD\x94\xE6\xB3\x95\xE5"
+				"\xB0\x91\xE5\xA5\xB3\xE3\x81\xBE\xE3\x81"
+				"\xA9\xE3\x81\x8B\xE2\x98\x86\xE3\x83\x9E"
+				"\xE3\x82\xAE\xE3\x82\xAB\xE3\x80\x8D\xE3"
+				"\x81\xA3\xE3\x81\xA6\xE3\x80\x81\xE3\x80"
+				"\x80\xD0\x98\xD0\x90\xD0\x98\xE3\x80\x80"
+				"\xEF\xBD\x84\xEF\xBD\x85\xEF\xBD\x93\xEF"
+				"\xBD\x95\xE3\x80\x80\xCE\xBA\xCE\xB1\xEF"
+				"\xBC\x9F";
+			ok = qrcodegen_encodeText(madoka, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+		}
+		{
+			const int kanjiChars[] = {  // Kanji mode encoding (13 bits per character)
+				0x0035, 0x1002, 0x0FC0, 0x0AED, 0x0AD7,
+				0x015C, 0x0147, 0x0129, 0x0059, 0x01BD,
+				0x018D, 0x018A, 0x0036, 0x0141, 0x0144,
+				0x0001, 0x0000, 0x0249, 0x0240, 0x0249,
+				0x0000, 0x0104, 0x0105, 0x0113, 0x0115,
+				0x0000, 0x0208, 0x01FF, 0x0008,
+			};
+			size_t len = sizeof(kanjiChars) / sizeof(kanjiChars[0]);
+			uint8_t *segBuf = calloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_KANJI, len), sizeof(uint8_t));
+			if (segBuf == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment seg;
+			seg.mode = qrcodegen_Mode_KANJI;
+			seg.numChars = (int)len;
+			seg.bitLength = 0;
+			for (size_t i = 0; i < len; i++) {
+				for (int j = 12; j >= 0; j--, seg.bitLength++)
+					segBuf[seg.bitLength >> 3] |= ((kanjiChars[i] >> j) & 1) << (7 - (seg.bitLength & 7));
+			}
+			seg.data = segBuf;
+			ok = qrcodegen_encodeSegments(&seg, 1, qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+}
+Function: 
+fn do_variety_demo() {
+	{  // Numeric mode encoding (3.33 bits per digit)
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text("314159265358979323846264338327950288419716939937510",
+			&mut tempbuffer, &mut outbuffer, QrCodeEcc::Medium, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+	}
+	
+	{  // Alphanumeric mode encoding (5.5 bits per character)
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text("DOLLAR-AMOUNT:$39.87 PERCENTAGE:100.00% OPERATIONS:+-*/",
+			&mut tempbuffer, &mut outbuffer, QrCodeEcc::High, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+	}
+	
+	{  // Unicode text as UTF-8
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text("こんにちwa、世界！ αβγδ",
+			&mut tempbuffer, &mut outbuffer, QrCodeEcc::Quartile, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+	}
+	
+	{  // Moderately large QR Code using longer text (from Lewis Carroll's Alice in Wonderland)
+		let text = concat!(
+			"Alice was beginning to get very tired of sitting by her sister on the bank, ",
+			"and of having nothing to do: once or twice she had peeped into the book her sister was reading, ",
+			"but it had no pictures or conversations in it, 'and what is the use of a book,' thought Alice ",
+			"'without pictures or conversations?' So she was considering in her own mind (as well as she could, ",
+			"for the hot day made her feel very sleepy and stupid), whether the pleasure of making a ",
+			"daisy-chain would be worth the trouble of getting up and picking the daisies, when suddenly ",
+			"a White Rabbit with pink eyes ran close by her.");
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text(text, &mut tempbuffer, &mut outbuffer,
+			QrCodeEcc::High, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+	}
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__swap__idx112005_rank3.c", "source_rust_file": "API_Mapping__swap__idx112005_rank3.rs", "c_api": "a++, b++", "rust_api": "v.swap(x, y)", "mapping_type": "pattern", "description": "Element swapping in container", "reasoning": "[Task Analysis] C function swaps bytes in memory; Rust function generates a descending vector and performs random swaps. [Similarity] No structural similarity at the function level due to different domains (memory manipulation vs vector generation). [Knowledge Extraction] No full match, no partial match, but there is a pattern of swapping elements in a container that can be mapped."}]
+Unixcoder Score: 0.05096710845828056
+--------------------------------------------------
+C_Code: 
+static size_t
+zone_good_size(malloc_zone_t *zone, size_t size)
+{
+
+	if (size == 0)
+		size = 1;
+	return (s2u(size));
+}
+Function: 
+pub extern fn __rust_usable_size(size: usize, align: usize) -> usize {
+    let flags = align_to_flags(align);
+    unsafe { je_nallocx(size as size_t, flags) as usize }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__doSegmentDemo__idx144413_rank4.c", "source_rust_file": "Partial__doSegmentDemo__idx144413_rank4.rs", "c_fragment": "char *concat = calloc(strlen(silver0) + strlen(silver1) + 1, sizeof(char));\nif (concat == NULL) {\n    perror(\"calloc\");\n    exit(EXIT_FAILURE);\n}\nstrcat(concat, silver0);\nstrcat(concat, silver1);\nok = qrcodegen_encodeText(concat, tempBuffer, qrcode, qrcodegen_Ecc_LOW,\n    qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);\nif (ok)\n    printQr(qrcode);\nfree(concat);", "rust_fragment": "let qr = QrCode::encode_text(\"314159265358979323846264338327950288419716939937510\", QrCodeEcc::Medium).unwrap();\nprint_qr(&qr);", "description": "Both perform text-based QR code generation, though C version manually concatenates strings and allocates memory, while Rust uses a high-level library.", "reasoning": "[FFI Check] -> doSegmentDemo and do_variety_demo are both C and Rust functions with substantial logic, not FFI wrappers. -> [Task Analysis] -> doSegmentDemo handles QR code generation using manual memory management (calloc, malloc, free) and multiple encoding strategies (text concatenation, segmented encoding). do_variety_demo uses a high-level QR code library (QrCode) with no manual memory management. -> [Similarity] -> The overall structure and domain are different: C version manually allocates and manages memory, while Rust version uses a library. No full structural match. -> [Knowledge Extraction] -> Extract partial fragments and API mappings based on similar operations like text encoding and QR generation, but not full match due to domain mismatch and different memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__doSegmentDemo__idx144413_rank4.c", "source_rust_file": "Partial__doSegmentDemo__idx144413_rank4.rs", "c_api": "qrcodegen_encodeSegments", "rust_api": "QrCode::encode_text", "mapping_type": "function", "description": "Segmented QR code generation", "reasoning": "[FFI Check] -> doSegmentDemo and do_variety_demo are both C and Rust functions with substantial logic, not FFI wrappers. -> [Task Analysis] -> doSegmentDemo handles QR code generation using manual memory management (calloc, malloc, free) and multiple encoding strategies (text concatenation, segmented encoding). do_variety_demo uses a high-level QR code library (QrCode) with no manual memory management. -> [Similarity] -> The overall structure and domain are different: C version manually allocates and manages memory, while Rust version uses a library. No full structural match. -> [Knowledge Extraction] -> Extract partial fragments and API mappings based on similar operations like text encoding and QR generation, but not full match due to domain mismatch and different memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__doSegmentDemo__idx144413_rank4.c", "source_rust_file": "Partial__doSegmentDemo__idx144413_rank4.rs", "c_api": "free", "rust_api": "drop", "mapping_type": "pattern", "description": "Memory deallocation", "reasoning": "[FFI Check] -> doSegmentDemo and do_variety_demo are both C and Rust functions with substantial logic, not FFI wrappers. -> [Task Analysis] -> doSegmentDemo handles QR code generation using manual memory management (calloc, malloc, free) and multiple encoding strategies (text concatenation, segmented encoding). do_variety_demo uses a high-level QR code library (QrCode) with no manual memory management. -> [Similarity] -> The overall structure and domain are different: C version manually allocates and manages memory, while Rust version uses a library. No full structural match. -> [Knowledge Extraction] -> Extract partial fragments and API mappings based on similar operations like text encoding and QR generation, but not full match due to domain mismatch and different memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__doSegmentDemo__idx144413_rank4.c", "source_rust_file": "Partial__doSegmentDemo__idx144413_rank4.rs", "c_api": "qrcodegen_encodeText", "rust_api": "QrCode::encode_text", "mapping_type": "function", "description": "Text-based QR code generation", "reasoning": "[FFI Check] -> doSegmentDemo and do_variety_demo are both C and Rust functions with substantial logic, not FFI wrappers. -> [Task Analysis] -> doSegmentDemo handles QR code generation using manual memory management (calloc, malloc, free) and multiple encoding strategies (text concatenation, segmented encoding). do_variety_demo uses a high-level QR code library (QrCode) with no manual memory management. -> [Similarity] -> The overall structure and domain are different: C version manually allocates and manages memory, while Rust version uses a library. No full structural match. -> [Knowledge Extraction] -> Extract partial fragments and API mappings based on similar operations like text encoding and QR generation, but not full match due to domain mismatch and different memory management patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__doSegmentDemo__idx144413_rank4.c", "source_rust_file": "Partial__doSegmentDemo__idx144413_rank4.rs", "c_fragment": "uint8_t *segBuf0 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_ALPHANUMERIC, strlen(silver0)) * sizeof(uint8_t));\nuint8_t *segBuf1 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_NUMERIC, strlen(silver1)) * sizeof(uint8_t));\nif (segBuf0 == NULL || segBuf1 == NULL) {\n    perror(\"malloc\");\n    exit(EXIT_FAILURE);\n}\nstruct qrcodegen_Segment segs[] = {\n    qrcodegen_makeAlphanumeric(silver0, segBuf0),\n    qrcodegen_makeNumeric(silver1, segBuf1),\n};\nok = qrcodegen_encodeSegments(segs, sizeof(segs) / sizeof(segs[0]), qrcodegen_Ecc_LOW, tempBuffer, qrcode);\nfree(segBuf0);\nfree(segBuf1);\nif (ok)\n    printQr(qrcode);", "rust_fragment": "let qr = QrCode::encode_text(\"DOLLAR-AMOUNT:$39.87 PERCENTAGE:100.00% OPERATIONS:+-*/\", QrCodeEcc::High).unwrap();\nprint_qr(&qr);", "description": "Both perform segmented QR code generation with different modes (alphanumeric/numeric vs alphanumeric), though C version manually handles memory and segments, while Rust uses a high-level API.", "reasoning": "[FFI Check] -> doSegmentDemo and do_variety_demo are both C and Rust functions with substantial logic, not FFI wrappers. -> [Task Analysis] -> doSegmentDemo handles QR code generation using manual memory management (calloc, malloc, free) and multiple encoding strategies (text concatenation, segmented encoding). do_variety_demo uses a high-level QR code library (QrCode) with no manual memory management. -> [Similarity] -> The overall structure and domain are different: C version manually allocates and manages memory, while Rust version uses a library. No full structural match. -> [Knowledge Extraction] -> Extract partial fragments and API mappings based on similar operations like text encoding and QR generation, but not full match due to domain mismatch and different memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__doSegmentDemo__idx144413_rank4.c", "source_rust_file": "Partial__doSegmentDemo__idx144413_rank4.rs", "c_api": "malloc", "rust_api": "Vec::new", "mapping_type": "pattern", "description": "Heap allocation for buffer", "reasoning": "[FFI Check] -> doSegmentDemo and do_variety_demo are both C and Rust functions with substantial logic, not FFI wrappers. -> [Task Analysis] -> doSegmentDemo handles QR code generation using manual memory management (calloc, malloc, free) and multiple encoding strategies (text concatenation, segmented encoding). do_variety_demo uses a high-level QR code library (QrCode) with no manual memory management. -> [Similarity] -> The overall structure and domain are different: C version manually allocates and manages memory, while Rust version uses a library. No full structural match. -> [Knowledge Extraction] -> Extract partial fragments and API mappings based on similar operations like text encoding and QR generation, but not full match due to domain mismatch and different memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__doSegmentDemo__idx144413_rank4.c", "source_rust_file": "Partial__doSegmentDemo__idx144413_rank4.rs", "c_api": "calloc", "rust_api": "Box::new", "mapping_type": "pattern", "description": "Heap allocation with initialization", "reasoning": "[FFI Check] -> doSegmentDemo and do_variety_demo are both C and Rust functions with substantial logic, not FFI wrappers. -> [Task Analysis] -> doSegmentDemo handles QR code generation using manual memory management (calloc, malloc, free) and multiple encoding strategies (text concatenation, segmented encoding). do_variety_demo uses a high-level QR code library (QrCode) with no manual memory management. -> [Similarity] -> The overall structure and domain are different: C version manually allocates and manages memory, while Rust version uses a library. No full structural match. -> [Knowledge Extraction] -> Extract partial fragments and API mappings based on similar operations like text encoding and QR generation, but not full match due to domain mismatch and different memory management patterns."}]
+Unixcoder Score: 0.044048186391592026
+--------------------------------------------------
+C_Code: 
+static void
+zone_free_definite_size(malloc_zone_t *zone, void *ptr, size_t size)
+{
+
+	if (ivsalloc(ptr, config_prof) != 0) {
+		assert(ivsalloc(ptr, config_prof) == size);
+		je_free(ptr);
+		return;
+	}
+
+	free(ptr);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        unsafe { libc::free(ptr as *mut libc::c_void) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx142864_rank5.h", "source_rust_file": "API_Mapping__set__idx142864_rank5.rs", "c_api": "size_align", "rust_api": "align_size", "mapping_type": "function", "description": "Alignment size calculation", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C has a struct definition while Rust has a function. [Filter 2: Empty/Trivial Code] -> Rust function has logic, C struct is not empty. [Filter 3: FFI Wrapper] -> No FFI detected. [Filter 4: Semantic Domain Mismatch] -> C defines a data structure for size and alignment, Rust performs alignment verification logic. These are fundamentally different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable. -> [Classification] -> No full or partial match due to domain mismatch. However, there are API-like patterns in the Rust code that could be mapped to C-style alignment logic. -> [Knowledge Extraction] -> Extract API mappings based on alignment logic and memory operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx142864_rank5.h", "source_rust_file": "API_Mapping__set__idx142864_rank5.rs", "c_api": "is_set", "rust_api": "assert_eq!", "mapping_type": "function", "description": "Check if alignment is valid", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C has a struct definition while Rust has a function. [Filter 2: Empty/Trivial Code] -> Rust function has logic, C struct is not empty. [Filter 3: FFI Wrapper] -> No FFI detected. [Filter 4: Semantic Domain Mismatch] -> C defines a data structure for size and alignment, Rust performs alignment verification logic. These are fundamentally different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable. -> [Classification] -> No full or partial match due to domain mismatch. However, there are API-like patterns in the Rust code that could be mapped to C-style alignment logic. -> [Knowledge Extraction] -> Extract API mappings based on alignment logic and memory operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx142864_rank5.h", "source_rust_file": "API_Mapping__set__idx142864_rank5.rs", "c_api": "set", "rust_api": "align_size", "mapping_type": "function", "description": "Set size and alignment values", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept; C has a struct definition while Rust has a function. [Filter 2: Empty/Trivial Code] -> Rust function has logic, C struct is not empty. [Filter 3: FFI Wrapper] -> No FFI detected. [Filter 4: Semantic Domain Mismatch] -> C defines a data structure for size and alignment, Rust performs alignment verification logic. These are fundamentally different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Not applicable. -> [Classification] -> No full or partial match due to domain mismatch. However, there are API-like patterns in the Rust code that could be mapped to C-style alignment logic. -> [Knowledge Extraction] -> Extract API mappings based on alignment logic and memory operations."}]
+Unixcoder Score: 0.03485727682709694
+--------------------------------------------------
+C_Code: 
+int rust_get_path_array(void * p, size_t * sz)
+{
+  char *path, *str;
+  char **buf;
+  int i, num;
+  size_t len;
+
+  if ((p == NULL) && (sz == NULL))
+    return -1;
+
+  /* get the length of the PATH value */
+  if (rust_get_path(NULL, &len) == -1)
+    return -1;
+
+  if (len == 0)
+    return -1;
+
+  /* allocate the buffer */
+  if ((path = calloc(len, sizeof(char))) == NULL)
+    return -1;
+
+  /* get the PATH value */
+  if (rust_get_path(path, &len) == -1)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* count the number of parts in the PATH */
+  num = 1;
+  for(str = path; *str != '\0'; str++)
+  {
+    if (*str == ':')
+      num++;
+  }
+
+  /* calculate the size of the buffer for the 2D array */
+  len = (num * sizeof(char*) + 1) + strlen(path) + 1;
+
+  if (p == NULL)
+  {
+    free(path);
+    *sz = len;
+    return 0;
+  }
+
+  /* make sure we have enough buffer space */
+  if (*sz < len)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* zero out the buffer */
+  buf = (char**)p;
+  memset(buf, 0, *sz);
+
+  /* copy the data into the right place */
+  str = p + ((num+1) * sizeof(char*));
+  memcpy(str, path, strlen(path));
+
+  /* parse the path into it's parts */
+  for (i = 0; i < num && (buf[i] = strsep(&str, ":")) != NULL; i++) {;}
+  buf[num] = NULL;
+
+  free(path);
+  return 0;
+}
+Function: 
+fn to_c_str(&self) -> CString {
+        do self.as_imm_buf |self_buf, self_len| {
+            unsafe {
+                let buf = libc::malloc(self_len as u64 + 1) as *mut u8;
+                if buf.is_null() {
+                    fail!("failed to allocate memory!");
+                }
+
+                ptr::copy_memory(buf, self_buf, self_len);
+                *ptr::mut_offset(buf, self_len as int) = 0;
+                CString { buf: buf as *libc::c_char }
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "calloc(len, sizeof(char))", "rust_api": "Vec::new()", "mapping_type": "function", "description": "Memory allocation for string buffer", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "strlen(path)", "rust_api": "path.as_vec().len()", "mapping_type": "function", "description": "String length calculation", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "free(path)", "rust_api": "drop()", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "memcpy(str, path, strlen(path))", "rust_api": "path.clone()", "mapping_type": "function", "description": "String copy operation", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "strsep(&str, \":\")", "rust_api": "split(':')", "mapping_type": "function", "description": "String splitting by delimiter", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}]
+Unixcoder Score: 0.03376657888293266
+--------------------------------------------------
+C_Code: 
+static bool accumulate_realloc(upb_json_parser *p, size_t need) {
+  void *mem;
+  size_t old_size = p->accumulate_buf_size;
+  size_t new_size = UPB_MAX(old_size, 128);
+  while (new_size < need) {
+    new_size = saturating_multiply(new_size, 2);
+  }
+
+  mem = upb_arena_realloc(p->arena, p->accumulate_buf, old_size, new_size);
+  if (!mem) {
+    upb_status_seterrmsg(p->status, "Out of memory allocating buffer.");
+    return false;
+  }
+
+  p->accumulate_buf = mem;
+  p->accumulate_buf_size = new_size;
+  return true;
+}
+Function: 
+pub unsafe fn resize(&self, ptr: *mut u8, old: Layout, new: Layout) -> &mut [MaybeUninit<u8>] {
+        debug_assert!(new.align() <= UPB_MALLOC_ALIGN);
+        // SAFETY:
+        // - `self.raw` is a valid UPB arena
+        // - `ptr` was allocated by a previous call to `alloc` or `realloc` as promised
+        //   by the caller.
+        let ptr = unsafe { upb_Arena_Realloc(self.raw, ptr, old.size(), new.size()) };
+        if ptr.is_null() {
+            alloc::handle_alloc_error(new);
+        }
+
+        // SAFETY:
+        // - `upb_Arena_Realloc` promises that if the return pointer is non-null, it is
+        //   dereferencable for the new `size` in bytes until the arena is destroyed.
+        // - `[MaybeUninit<u8>]` has no alignment requirement, and `ptr` is aligned to a
+        //   `UPB_MALLOC_ALIGN` boundary.
+        unsafe { slice::from_raw_parts_mut(ptr.cast(), new.size()) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx136776_rank5.h", "source_rust_file": "API_Mapping__set__idx136776_rank5.rs", "c_api": "size_align", "rust_api": "layout.size.bytes()", "mapping_type": "field_access", "description": "Accessing size field from layout information", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods; Rust code implements a complex function for computing size and alignment of dynamically sized types. [Similarity] Names do not refer to the same concept (C: size_align struct, Rust: size_and_align_of_dst function), and domains are different (C: memory layout metadata, Rust: LLVM IR codegen). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to field access and memory layout operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx136776_rank5.h", "source_rust_file": "API_Mapping__set__idx136776_rank5.rs", "c_api": "set", "rust_api": "bx.const_usize(layout.align.abi.bytes())", "mapping_type": "function", "description": "Setting alignment value using constant alignment from layout", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods; Rust code implements a complex function for computing size and alignment of dynamically sized types. [Similarity] Names do not refer to the same concept (C: size_align struct, Rust: size_and_align_of_dst function), and domains are different (C: memory layout metadata, Rust: LLVM IR codegen). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to field access and memory layout operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx136776_rank5.h", "source_rust_file": "API_Mapping__set__idx136776_rank5.rs", "c_api": "set", "rust_api": "bx.const_usize(layout.size.bytes())", "mapping_type": "function", "description": "Setting size value using constant size from layout", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods; Rust code implements a complex function for computing size and alignment of dynamically sized types. [Similarity] Names do not refer to the same concept (C: size_align struct, Rust: size_and_align_of_dst function), and domains are different (C: memory layout metadata, Rust: LLVM IR codegen). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to field access and memory layout operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx136776_rank5.h", "source_rust_file": "API_Mapping__set__idx136776_rank5.rs", "c_api": "size_align", "rust_api": "layout.align.abi.bytes()", "mapping_type": "field_access", "description": "Accessing alignment field from layout information", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods; Rust code implements a complex function for computing size and alignment of dynamically sized types. [Similarity] Names do not refer to the same concept (C: size_align struct, Rust: size_and_align_of_dst function), and domains are different (C: memory layout metadata, Rust: LLVM IR codegen). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to field access and memory layout operations."}]
+Unixcoder Score: 0.028342509642243385
+--------------------------------------------------
+C_Code: 
+static void doSegmentDemo(void) {
+	{  // Illustration "silver"
+		const char *silver0 = "THE SQUARE ROOT OF 2 IS 1.";
+		const char *silver1 = "41421356237309504880168872420969807856967187537694807317667973799";
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			char *concat = calloc(strlen(silver0) + strlen(silver1) + 1, sizeof(char));
+			if (concat == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			strcat(concat, silver0);
+			strcat(concat, silver1);
+			ok = qrcodegen_encodeText(concat, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+			free(concat);
+		}
+		{
+			uint8_t *segBuf0 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_ALPHANUMERIC, strlen(silver0)) * sizeof(uint8_t));
+			uint8_t *segBuf1 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_NUMERIC, strlen(silver1)) * sizeof(uint8_t));
+			if (segBuf0 == NULL || segBuf1 == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment segs[] = {
+				qrcodegen_makeAlphanumeric(silver0, segBuf0),
+				qrcodegen_makeNumeric(silver1, segBuf1),
+			};
+			ok = qrcodegen_encodeSegments(segs, sizeof(segs) / sizeof(segs[0]), qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf0);
+			free(segBuf1);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+	
+	{  // Illustration "golden"
+		const char *golden0 = "Golden ratio \xCF\x86 = 1.";
+		const char *golden1 = "6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374";
+		const char *golden2 = "......";
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			char *concat = calloc(strlen(golden0) + strlen(golden1) + strlen(golden2) + 1, sizeof(char));
+			if (concat == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			strcat(concat, golden0);
+			strcat(concat, golden1);
+			strcat(concat, golden2);
+			ok = qrcodegen_encodeText(concat, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+			free(concat);
+		}
+		{
+			uint8_t *bytes = malloc(strlen(golden0) * sizeof(uint8_t));
+			if (bytes == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			for (size_t i = 0, len = strlen(golden0); i < len; i++)
+				bytes[i] = (uint8_t)golden0[i];
+			uint8_t *segBuf0 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_BYTE, strlen(golden0)) * sizeof(uint8_t));
+			uint8_t *segBuf1 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_NUMERIC, strlen(golden1)) * sizeof(uint8_t));
+			uint8_t *segBuf2 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_ALPHANUMERIC, strlen(golden2)) * sizeof(uint8_t));
+			if (segBuf0 == NULL || segBuf1 == NULL || segBuf2 == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment segs[] = {
+				qrcodegen_makeBytes(bytes, strlen(golden0), segBuf0),
+				qrcodegen_makeNumeric(golden1, segBuf1),
+				qrcodegen_makeAlphanumeric(golden2, segBuf2),
+			};
+			free(bytes);
+			ok = qrcodegen_encodeSegments(segs, sizeof(segs) / sizeof(segs[0]), qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf0);
+			free(segBuf1);
+			free(segBuf2);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+	
+	{  // Illustration "Madoka": kanji, kana, Cyrillic, full-width Latin, Greek characters
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			const char *madoka =  // Encoded in UTF-8
+				"\xE3\x80\x8C\xE9\xAD\x94\xE6\xB3\x95\xE5"
+				"\xB0\x91\xE5\xA5\xB3\xE3\x81\xBE\xE3\x81"
+				"\xA9\xE3\x81\x8B\xE2\x98\x86\xE3\x83\x9E"
+				"\xE3\x82\xAE\xE3\x82\xAB\xE3\x80\x8D\xE3"
+				"\x81\xA3\xE3\x81\xA6\xE3\x80\x81\xE3\x80"
+				"\x80\xD0\x98\xD0\x90\xD0\x98\xE3\x80\x80"
+				"\xEF\xBD\x84\xEF\xBD\x85\xEF\xBD\x93\xEF"
+				"\xBD\x95\xE3\x80\x80\xCE\xBA\xCE\xB1\xEF"
+				"\xBC\x9F";
+			ok = qrcodegen_encodeText(madoka, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+		}
+		{
+			const int kanjiChars[] = {  // Kanji mode encoding (13 bits per character)
+				0x0035, 0x1002, 0x0FC0, 0x0AED, 0x0AD7,
+				0x015C, 0x0147, 0x0129, 0x0059, 0x01BD,
+				0x018D, 0x018A, 0x0036, 0x0141, 0x0144,
+				0x0001, 0x0000, 0x0249, 0x0240, 0x0249,
+				0x0000, 0x0104, 0x0105, 0x0113, 0x0115,
+				0x0000, 0x0208, 0x01FF, 0x0008,
+			};
+			size_t len = sizeof(kanjiChars) / sizeof(kanjiChars[0]);
+			uint8_t *segBuf = calloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_KANJI, len), sizeof(uint8_t));
+			if (segBuf == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment seg;
+			seg.mode = qrcodegen_Mode_KANJI;
+			seg.numChars = (int)len;
+			seg.bitLength = 0;
+			for (size_t i = 0; i < len; i++) {
+				for (int j = 12; j >= 0; j--, seg.bitLength++)
+					segBuf[seg.bitLength >> 3] |= ((kanjiChars[i] >> j) & 1) << (7 - (seg.bitLength & 7));
+			}
+			seg.data = segBuf;
+			ok = qrcodegen_encodeSegments(&seg, 1, qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+}
+Function: 
+fn do_variety_demo() {
+	// Numeric mode encoding (3.33 bits per digit)
+	let qr = QrCode::encode_text("314159265358979323846264338327950288419716939937510", QrCodeEcc::Medium).unwrap();
+	print_qr(&qr);
+	
+	// Alphanumeric mode encoding (5.5 bits per character)
+	let qr = QrCode::encode_text("DOLLAR-AMOUNT:$39.87 PERCENTAGE:100.00% OPERATIONS:+-*/", QrCodeEcc::High).unwrap();
+	print_qr(&qr);
+	
+	// Unicode text as UTF-8
+	let qr = QrCode::encode_text("こんにちwa、世界！ αβγδ", QrCodeEcc::Quartile).unwrap();
+	print_qr(&qr);
+	
+	// Moderately large QR Code using longer text (from Lewis Carroll's Alice in Wonderland)
+	let qr = QrCode::encode_text(concat!(
+		"Alice was beginning to get very tired of sitting by her sister on the bank, ",
+		"and of having nothing to do: once or twice she had peeped into the book her sister was reading, ",
+		"but it had no pictures or conversations in it, 'and what is the use of a book,' thought Alice ",
+		"'without pictures or conversations?' So she was considering in her own mind (as well as she could, ",
+		"for the hot day made her feel very sleepy and stupid), whether the pleasure of making a ",
+		"daisy-chain would be worth the trouble of getting up and picking the daisies, when suddenly ",
+		"a White Rabbit with pink eyes ran close by her."), QrCodeEcc::High).unwrap();
+	print_qr(&qr);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__swap__idx89400_rank1.c", "source_rust_file": "Partial__swap__idx89400_rank1.rs", "c_fragment": "for (i = 0; i < size; i++, a++, b++)\n    {\n      char t;\n\n      t = *a;\n      *a = *b;\n      *b = t;\n    }", "rust_fragment": "for r in refs.iter_mut() {\n        std::mem::swap(dummy, r);\n    }\n    for r in refs {\n        std::mem::swap(dummy, r);\n    }", "description": "Both perform swapping operations, though C swaps bytes in memory and Rust swaps references in a vector.", "reasoning": "[Task Analysis] C function swaps bytes in memory; Rust function swaps references in a vector. [Similarity] Names don't match, but both involve swapping logic. [Knowledge Extraction] No full structural match due to different domains (memory manipulation vs reference manipulation). No API mappings due to semantic mismatch. Partial match found in the swapping concept, but not enough to qualify as full or API mapping."}]
+Unixcoder Score: 0.01910092495381832
+--------------------------------------------------
+C_Code: 
+Metadata GetMetadata() const;
+  static Metadata GetMetadataImpl(const internal::ClassDataFull& data);
+
+  // For CODE_SIZE types
+  static bool IsInitializedImpl(const MessageLite&);
+
+  size_t ComputeUnknownFieldsSize(
+      size_t total_size, const internal::CachedSize* cached_size) const;
+  size_t MaybeComputeUnknownFieldsSize(
+      size_t total_size, const internal::CachedSize* cached_size) const;
+
+  // Reflection based version for reflection based types.
+  static absl::string_view GetTypeNameImpl(const internal::ClassData* data);
+  static void MergeImpl(MessageLite& to, const MessageLite& from);
+  void ClearImpl();
+  static size_t ByteSizeLongImpl(const MessageLite& msg);
+  static uint8_t* _InternalSerializeImpl(const MessageLite& msg,
+                                         uint8_t* target,
+                                         io::EpsCopyOutputStream* stream);
+
+  static const internal::TcParseTableBase* GetTcParseTableImpl(
+      const MessageLite& msg);
+
+  static size_t SpaceUsedLongImpl(const MessageLite& msg_lite);
+
+  static const internal::DescriptorMethods kDescriptorMethods;
+
+};
+
+namespace internal {
+// Creates and returns an allocation for a split message.
+void* CreateSplitMessageGeneric(Arena* arena, const void* default_split,
+                                size_t size, const void* message,
+                                const void* default_message);
+
+// Forward-declare interfaces used to implement RepeatedFieldRef.
+// These are protobuf internals that users shouldn't care about.
+class RepeatedFieldAccessor;
+}
+Function: 
+pub fn new(raw: RawRepeatedField, arena: &'msg Arena) -> Self {
+        InnerRepeatedMut { raw, arena }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx8296_rank4.h", "source_rust_file": "API_Mapping__set__idx8296_rank4.rs", "c_api": "size_align", "rust_api": "round_up", "mapping_type": "function", "description": "Alignment-based size rounding operation", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods; Rust code implements a function for rounding up size with alignment. [Similarity] Names do not refer to the same concept (struct vs function), and domains differ (data structure vs algorithmic computation). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API-like patterns in the logic of alignment computation that could be mapped."}]
+Unixcoder Score: 0.013812334276735783
+--------------------------------------------------
+C_Code: 
+static bool accumulate_realloc(upb_json_parser *p, size_t need) {
+  void *mem;
+  size_t old_size = p->accumulate_buf_size;
+  size_t new_size = UPB_MAX(old_size, 128);
+  while (new_size < need) {
+    new_size = saturating_multiply(new_size, 2);
+  }
+
+  mem = upb_arena_realloc(p->arena, p->accumulate_buf, old_size, new_size);
+  if (!mem) {
+    upb_status_seterrmsg(p->status, "Out of memory allocating buffer.");
+    return false;
+  }
+
+  p->accumulate_buf = mem;
+  p->accumulate_buf_size = new_size;
+  return true;
+}
+Function: 
+pub unsafe fn resize(&self, ptr: *mut u8, old: Layout, new: Layout) -> &mut [MaybeUninit<u8>] {
+        debug_assert!(new.align() <= UPB_MALLOC_ALIGN);
+        // SAFETY:
+        // - `self.raw` is a valid UPB arena
+        // - `ptr` was allocated by a previous call to `alloc` or `realloc` as promised
+        //   by the caller.
+        let ptr = unsafe { upb_Arena_Realloc(self.raw, ptr, old.size(), new.size()) };
+        if ptr.is_null() {
+            alloc::handle_alloc_error(new);
+        }
+
+        // SAFETY:
+        // - `upb_Arena_Realloc` promises that if the return pointer is non-null, it is
+        //   dereferencable for the new `size` in bytes until the arena is destroyed.
+        // - `[MaybeUninit<u8>]` has no alignment requirement, and `ptr` is aligned to a
+        //   `UPB_MALLOC_ALIGN` boundary.
+        unsafe { slice::from_raw_parts_mut(ptr.cast(), new.size()) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx21542_rank1.h", "source_rust_file": "API_Mapping__set__idx21542_rank1.rs", "c_api": "alignment", "rust_api": "align", "mapping_type": "field_access", "description": "Access to alignment field in size/alignment context", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods, Rust code is a complex pointer validation function. [Similarity] No structural similarity at function level due to domain mismatch (memory layout vs pointer validation). [Knowledge Extraction] No full/partial match due to semantic domain mismatch (C: size/alignment struct, Rust: pointer dereference validation). However, both involve size/alignment concepts which can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx21542_rank1.h", "source_rust_file": "API_Mapping__set__idx21542_rank1.rs", "c_api": "size", "rust_api": "size", "mapping_type": "field_access", "description": "Access to size field in size/alignment context", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods, Rust code is a complex pointer validation function. [Similarity] No structural similarity at function level due to domain mismatch (memory layout vs pointer validation). [Knowledge Extraction] No full/partial match due to semantic domain mismatch (C: size/alignment struct, Rust: pointer dereference validation). However, both involve size/alignment concepts which can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx21542_rank1.h", "source_rust_file": "API_Mapping__set__idx21542_rank1.rs", "c_api": "set", "rust_api": "unwrap_or_else", "mapping_type": "function", "description": "Fallback handling for size/alignment when primary method fails", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods, Rust code is a complex pointer validation function. [Similarity] No structural similarity at function level due to domain mismatch (memory layout vs pointer validation). [Knowledge Extraction] No full/partial match due to semantic domain mismatch (C: size/alignment struct, Rust: pointer dereference validation). However, both involve size/alignment concepts which can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__set__idx21542_rank1.h", "source_rust_file": "API_Mapping__set__idx21542_rank1.rs", "c_api": "size_align", "rust_api": "size_and_align", "mapping_type": "type", "description": "Structural type for size and alignment information", "reasoning": "[Task Analysis] C code defines a struct with constructor and methods, Rust code is a complex pointer validation function. [Similarity] No structural similarity at function level due to domain mismatch (memory layout vs pointer validation). [Knowledge Extraction] No full/partial match due to semantic domain mismatch (C: size/alignment struct, Rust: pointer dereference validation). However, both involve size/alignment concepts which can be mapped."}]
+Unixcoder Score: 0.013666236773133278
+--------------------------------------------------
+C_Code: 
+static void doSegmentDemo(void) {
+	{  // Illustration "silver"
+		const char *silver0 = "THE SQUARE ROOT OF 2 IS 1.";
+		const char *silver1 = "41421356237309504880168872420969807856967187537694807317667973799";
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			char *concat = calloc(strlen(silver0) + strlen(silver1) + 1, sizeof(char));
+			if (concat == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			strcat(concat, silver0);
+			strcat(concat, silver1);
+			ok = qrcodegen_encodeText(concat, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+			free(concat);
+		}
+		{
+			uint8_t *segBuf0 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_ALPHANUMERIC, strlen(silver0)) * sizeof(uint8_t));
+			uint8_t *segBuf1 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_NUMERIC, strlen(silver1)) * sizeof(uint8_t));
+			if (segBuf0 == NULL || segBuf1 == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment segs[] = {
+				qrcodegen_makeAlphanumeric(silver0, segBuf0),
+				qrcodegen_makeNumeric(silver1, segBuf1),
+			};
+			ok = qrcodegen_encodeSegments(segs, sizeof(segs) / sizeof(segs[0]), qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf0);
+			free(segBuf1);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+	
+	{  // Illustration "golden"
+		const char *golden0 = "Golden ratio \xCF\x86 = 1.";
+		const char *golden1 = "6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374";
+		const char *golden2 = "......";
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			char *concat = calloc(strlen(golden0) + strlen(golden1) + strlen(golden2) + 1, sizeof(char));
+			if (concat == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			strcat(concat, golden0);
+			strcat(concat, golden1);
+			strcat(concat, golden2);
+			ok = qrcodegen_encodeText(concat, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+			free(concat);
+		}
+		{
+			uint8_t *bytes = malloc(strlen(golden0) * sizeof(uint8_t));
+			if (bytes == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			for (size_t i = 0, len = strlen(golden0); i < len; i++)
+				bytes[i] = (uint8_t)golden0[i];
+			uint8_t *segBuf0 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_BYTE, strlen(golden0)) * sizeof(uint8_t));
+			uint8_t *segBuf1 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_NUMERIC, strlen(golden1)) * sizeof(uint8_t));
+			uint8_t *segBuf2 = malloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_ALPHANUMERIC, strlen(golden2)) * sizeof(uint8_t));
+			if (segBuf0 == NULL || segBuf1 == NULL || segBuf2 == NULL) {
+				perror("malloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment segs[] = {
+				qrcodegen_makeBytes(bytes, strlen(golden0), segBuf0),
+				qrcodegen_makeNumeric(golden1, segBuf1),
+				qrcodegen_makeAlphanumeric(golden2, segBuf2),
+			};
+			free(bytes);
+			ok = qrcodegen_encodeSegments(segs, sizeof(segs) / sizeof(segs[0]), qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf0);
+			free(segBuf1);
+			free(segBuf2);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+	
+	{  // Illustration "Madoka": kanji, kana, Cyrillic, full-width Latin, Greek characters
+		uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+		uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+		bool ok;
+		{
+			const char *madoka =  // Encoded in UTF-8
+				"\xE3\x80\x8C\xE9\xAD\x94\xE6\xB3\x95\xE5"
+				"\xB0\x91\xE5\xA5\xB3\xE3\x81\xBE\xE3\x81"
+				"\xA9\xE3\x81\x8B\xE2\x98\x86\xE3\x83\x9E"
+				"\xE3\x82\xAE\xE3\x82\xAB\xE3\x80\x8D\xE3"
+				"\x81\xA3\xE3\x81\xA6\xE3\x80\x81\xE3\x80"
+				"\x80\xD0\x98\xD0\x90\xD0\x98\xE3\x80\x80"
+				"\xEF\xBD\x84\xEF\xBD\x85\xEF\xBD\x93\xEF"
+				"\xBD\x95\xE3\x80\x80\xCE\xBA\xCE\xB1\xEF"
+				"\xBC\x9F";
+			ok = qrcodegen_encodeText(madoka, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+				qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+			if (ok)
+				printQr(qrcode);
+		}
+		{
+			const int kanjiChars[] = {  // Kanji mode encoding (13 bits per character)
+				0x0035, 0x1002, 0x0FC0, 0x0AED, 0x0AD7,
+				0x015C, 0x0147, 0x0129, 0x0059, 0x01BD,
+				0x018D, 0x018A, 0x0036, 0x0141, 0x0144,
+				0x0001, 0x0000, 0x0249, 0x0240, 0x0249,
+				0x0000, 0x0104, 0x0105, 0x0113, 0x0115,
+				0x0000, 0x0208, 0x01FF, 0x0008,
+			};
+			size_t len = sizeof(kanjiChars) / sizeof(kanjiChars[0]);
+			uint8_t *segBuf = calloc(qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_KANJI, len), sizeof(uint8_t));
+			if (segBuf == NULL) {
+				perror("calloc");
+				exit(EXIT_FAILURE);
+			}
+			struct qrcodegen_Segment seg;
+			seg.mode = qrcodegen_Mode_KANJI;
+			seg.numChars = (int)len;
+			seg.bitLength = 0;
+			for (size_t i = 0; i < len; i++) {
+				for (int j = 12; j >= 0; j--, seg.bitLength++)
+					segBuf[seg.bitLength >> 3] |= ((kanjiChars[i] >> j) & 1) << (7 - (seg.bitLength & 7));
+			}
+			seg.data = segBuf;
+			ok = qrcodegen_encodeSegments(&seg, 1, qrcodegen_Ecc_LOW, tempBuffer, qrcode);
+			free(segBuf);
+			if (ok)
+				printQr(qrcode);
+		}
+	}
+}
+Function: 
+fn do_segment_demo() {
+	{  // Illustration "silver"
+		let silver0 = "THE SQUARE ROOT OF 2 IS 1.";
+		let silver1 = "41421356237309504880168872420969807856967187537694807317667973799";
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text(&[silver0, silver1].concat(), &mut tempbuffer, &mut outbuffer,
+			QrCodeEcc::Low, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+		
+		let (tempbuf0, tempbuf1) = tempbuffer.split_at_mut(QrSegment::calc_buffer_size(QrSegmentMode::Alphanumeric, silver0.len()).unwrap());
+		let segs = [
+			QrSegment::make_alphanumeric(silver0, tempbuf0),
+			QrSegment::make_numeric(silver1, tempbuf1),
+		];
+		let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(
+			&segs, &mut outbuffer, QrCodeEcc::Low, Version::MIN, Version::MAX, true).unwrap();
+		std::mem::drop(segs);  // Implied, because segs has references to tempbuffer, but tempbuffer will be reused in encode_codewords()
+		let qr = QrCode::encode_codewords(&mut outbuffer, datacodewordslen, &mut tempbuffer, ecl, version, None);
+		print_qr(&qr);
+	}
+	
+	{  // Illustration "golden"
+		let golden0 = "Golden ratio φ = 1.";
+		let golden1 = "6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374";
+		let golden2 = "......";
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text(&[golden0, golden1, golden2].concat(), &mut tempbuffer, &mut outbuffer,
+			QrCodeEcc::Low, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+		
+		let (tempbuf1, tempbuf2) = tempbuffer.split_at_mut(QrSegment::calc_buffer_size(QrSegmentMode::Numeric, golden1.len()).unwrap());
+		let segs = [
+			QrSegment::make_bytes(golden0.as_bytes()),
+			QrSegment::make_numeric(golden1, tempbuf1),
+			QrSegment::make_alphanumeric(golden2, tempbuf2),
+		];
+		let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(
+			&segs, &mut outbuffer, QrCodeEcc::Low, Version::MIN, Version::MAX, true).unwrap();
+		let qr = QrCode::encode_codewords(&mut outbuffer, datacodewordslen, &mut tempbuffer, ecl, version, None);
+		print_qr(&qr);
+	}
+	
+	{  // Illustration "Madoka": kanji, kana, Cyrillic, full-width Latin, Greek characters
+		let madoka = "「魔法少女まどか☆マギカ」って、　ИАИ　ｄｅｓｕ　κα？";
+		let mut outbuffer  = vec![0u8; Version::MAX.buffer_len()];
+		let mut tempbuffer = vec![0u8; Version::MAX.buffer_len()];
+		let qr = QrCode::encode_text(madoka, &mut outbuffer, &mut tempbuffer,
+			QrCodeEcc::Low, Version::MIN, Version::MAX, None, true).unwrap();
+		print_qr(&qr);
+		
+		let kanjichars: Vec<u32> = vec![  // Kanji mode encoding (13 bits per character)
+			0x0035, 0x1002, 0x0FC0, 0x0AED, 0x0AD7,
+			0x015C, 0x0147, 0x0129, 0x0059, 0x01BD,
+			0x018D, 0x018A, 0x0036, 0x0141, 0x0144,
+			0x0001, 0x0000, 0x0249, 0x0240, 0x0249,
+			0x0000, 0x0104, 0x0105, 0x0113, 0x0115,
+			0x0000, 0x0208, 0x01FF, 0x0008,
+		];
+		let mut bb = qrcodegen::BitBuffer::new(&mut tempbuffer);
+		for &c in &kanjichars {
+			bb.append_bits(c, 13);
+		}
+		let segs = [
+			{
+				let bitlen = bb.len();
+				QrSegment::new(qrcodegen::QrSegmentMode::Kanji, kanjichars.len(), &tempbuffer, bitlen)
+			},
+		];
+		let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(
+			&segs, &mut outbuffer, QrCodeEcc::Low, Version::MIN, Version::MAX, true).unwrap();
+		let qr = QrCode::encode_codewords(&mut outbuffer, datacodewordslen, &mut tempbuffer, ecl, version, None);
+		print_qr(&qr);
+	}
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__swap__idx89417_rank1.c", "source_rust_file": "Partial__swap__idx89417_rank1.rs", "c_fragment": "for (i = 0; i < size; i++, a++, b++)\n    {\n      char t;\n\n      t = *a;\n      *a = *b;\n      *b = t;\n    }", "rust_fragment": "v.swap(2, 2);", "description": "Both perform element swapping, though C uses a loop with pointer arithmetic and Rust uses a vector method.", "reasoning": "[Task Analysis] C function swaps memory bytes using a loop; Rust function swaps vector elements using a built-in method. [Similarity] Names do not refer to the same concept (swap vs swap), but both perform element swapping. [Knowledge Extraction] Structural fragments found: C loop-based swap logic matches Rust vector swap method in intent. API mappings identified: C pointer arithmetic with loop-based swap ↔ Rust vector swap method."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__swap__idx89417_rank1.c", "source_rust_file": "Partial__swap__idx89417_rank1.rs", "c_api": "for (i = 0; i < size; i++, a++, b++)\n    {\n      char t;\n\n      t = *a;\n      *a = *b;\n      *b = t;\n    }", "rust_api": "v.swap(2, 2);", "mapping_type": "pattern", "description": "Loop-based element swapping using pointer arithmetic in C vs vector swap method in Rust", "reasoning": "[Task Analysis] C function swaps memory bytes using a loop; Rust function swaps vector elements using a built-in method. [Similarity] Names do not refer to the same concept (swap vs swap), but both perform element swapping. [Knowledge Extraction] Structural fragments found: C loop-based swap logic matches Rust vector swap method in intent. API mappings identified: C pointer arithmetic with loop-based swap ↔ Rust vector swap method."}]
+Unixcoder Score: 0.013192343525588512
+--------------------------------------------------

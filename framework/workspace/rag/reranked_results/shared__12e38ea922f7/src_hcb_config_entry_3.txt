@@ -1,0 +1,182 @@
+C_Code: 
+bool Table::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(sharedTableName), sharedTableName);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(fields), fields);
+    GetValue(node, GET_NAME(tableName), name);
+    GetValue(node, GET_NAME(deviceSyncFields), deviceSyncFields);
+    GetValue(node, GET_NAME(cloudSyncFields), cloudSyncFields);
+    return true;
+}
+Function: 
+pub fn new(name: String, alias: String, fields: Vec<Field>) -> Table {
+        Table {
+            name,
+            alias,
+            fields,
+        }
+    }
+Unixcoder Score: -0.01790029928088188
+--------------------------------------------------
+C_Code: 
+bool Table::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(sharedTableName), sharedTableName);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(fields), fields);
+    GetValue(node, GET_NAME(tableName), name);
+    GetValue(node, GET_NAME(deviceSyncFields), deviceSyncFields);
+    GetValue(node, GET_NAME(cloudSyncFields), cloudSyncFields);
+    return true;
+}
+Function: 
+fn try_from(value: &Table) -> Result<Self, Self::Error> {
+        let mut fields = vec![];
+        for fd in &value.fields {
+            let ipc_fd = ipc_conn::Field::try_from(fd)?;
+            fields.push(ipc_fd);
+        }
+        Ok(ipc_conn::OrderTable {
+            alias: value.alias.clone(),
+            table_name: value.name.clone(),
+            fields: ipc_conn::Fields(fields),
+        })
+    }
+Unixcoder Score: -0.025552459061145782
+--------------------------------------------------
+C_Code: 
+inline std::unique_ptr<RdbStoreConfig> NewConfig(rust::str path)
+{
+    return std::make_unique<RdbStoreConfig>(std::string(path));
+}
+Function: 
+fn ut_open_config_new_001() {
+        let config = OpenConfig::new("test_path");
+        assert_eq!(config.version, 1);
+        assert!(matches!(config.callback.as_ref(), _ as &DefaultCallback));
+    }
+Unixcoder Score: -0.025571631267666817
+--------------------------------------------------
+C_Code: 
+inline std::unique_ptr<RdbStoreConfig> NewConfig(rust::str path)
+{
+    return std::make_unique<RdbStoreConfig>(std::string(path));
+}
+Function: 
+fn get_rdb() -> RdbStore<'static> {
+    let _ = fs::create_dir_all("/data/test");
+
+    let mut config = OpenConfig::new("/data/test/request_database_test.db");
+    config.encrypt_status(false);
+    config.security_level(SecurityLevel::S1);
+    config.bundle_name("test");
+
+    RdbStore::open(config).unwrap()
+}
+Unixcoder Score: -0.026576584205031395
+--------------------------------------------------
+C_Code: 
+bool Table::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(sharedTableName), sharedTableName);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(fields), fields);
+    GetValue(node, GET_NAME(tableName), name);
+    GetValue(node, GET_NAME(deviceSyncFields), deviceSyncFields);
+    GetValue(node, GET_NAME(cloudSyncFields), cloudSyncFields);
+    return true;
+}
+Function: 
+pub fn new(name: String, alias: String, fields: Vec<Field>) -> Table {
+        Table {
+            name,
+            alias,
+            fields,
+        }
+    }
+Unixcoder Score: -0.03226836025714874
+--------------------------------------------------
+C_Code: 
+inline std::unique_ptr<RdbStoreConfig> NewConfig(rust::str path)
+{
+    return std::make_unique<RdbStoreConfig>(std::string(path));
+}
+Function: 
+fn ut_open_config_security_level_001() {
+        let mut config = OpenConfig::new("test_path");
+        config.security_level(SecurityLevel::S1);
+        // We can't directly access the inner value, so we test the builder pattern works
+        assert!(true);
+    }
+Unixcoder Score: -0.03250892460346222
+--------------------------------------------------
+C_Code: 
+inline std::unique_ptr<RdbStoreConfig> NewConfig(rust::str path)
+{
+    return std::make_unique<RdbStoreConfig>(std::string(path));
+}
+Function: 
+pub fn new_test_config(path: &str) -> UniquePtr<ffi::RdbStoreConfig> {
+        ffi::NewConfig(path)
+    }
+Unixcoder Score: -0.03262067958712578
+--------------------------------------------------
+C_Code: 
+inline std::unique_ptr<RdbStoreConfig> NewConfig(rust::str path)
+{
+    return std::make_unique<RdbStoreConfig>(std::string(path));
+}
+Function: 
+pub fn new_test_config(path: &str) -> UniquePtr<ffi::RdbStoreConfig> {
+        ffi::NewConfig(path)
+    }
+Unixcoder Score: -0.033037059009075165
+--------------------------------------------------
+C_Code: 
+bool Database::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(tables), tables);
+    GetValue(node, GET_NAME(dbName), name);
+    GetValue(node, GET_NAME(autoSyncType), autoSyncType);
+    GetValue(node, GET_NAME(user), user);
+    GetValue(node, GET_NAME(deviceId), deviceId);
+    GetValue(node, GET_NAME(version), version);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    return true;
+}
+Function: 
+pub fn new(name: String, alias: String, tables: HashMap<String, Table>) -> Database {
+        Database {
+            name,
+            alias,
+            tables,
+        }
+    }
+Unixcoder Score: -0.03370090574026108
+--------------------------------------------------
+C_Code: 
+inline std::unique_ptr<RdbStoreConfig> NewConfig(rust::str path)
+{
+    return std::make_unique<RdbStoreConfig>(std::string(path));
+}
+Function: 
+fn ut_open_rdb_store_success_001() {
+        let mut config = OpenConfig::new("test_success.db");
+        config.version(1);
+        config.callback(Box::new(MockTestCallback::new()));
+
+        // In a real test environment with mocked FFI, this would return Ok
+        // For this example, we'll assume the FFI returns success
+        match open_rdb_store(config) {
+            Ok(_) => assert!(true),
+            Err(e) => panic!("Expected success, got error: {}", e),
+        }
+    }
+Unixcoder Score: -0.03416339308023453
+--------------------------------------------------

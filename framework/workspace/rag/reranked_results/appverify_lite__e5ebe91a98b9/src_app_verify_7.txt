@@ -1,0 +1,411 @@
+C_Code: 
+struct BrotliHasherParams {
+  int type;
+  int bucket_bits;
+  int block_bits;
+  int hash_len;
+  int num_last_distances_to_check;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ckh_pointer_hash__idx116435_rank1.c", "source_rust_file": "Partial__ckh_pointer_hash__idx116435_rank1.rs", "c_api": "hash(&u.i, sizeof(u.i), 0xd983396eU, r_hash)", "rust_api": "hash_with(SipHasher::new(), x)", "mapping_type": "function", "description": "Hash computation with a specific hasher", "reasoning": "[Task Analysis] C function `ckh_pointer_hash` computes a hash of a pointer value, while Rust function `hash` computes a hash of any hashable type using SipHash. [Similarity] Both perform hashing operations, but the C version specifically handles pointer values and uses a fixed seed, whereas Rust uses a generic hasher. [Knowledge Extraction] There is no full structural match due to different domains (pointer-specific vs generic), but there is a partial match in the hashing logic and an API mapping between the hash functions."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ckh_pointer_hash__idx116435_rank1.c", "source_rust_file": "Partial__ckh_pointer_hash__idx116435_rank1.rs", "c_fragment": "hash(&u.i, sizeof(u.i), 0xd983396eU, r_hash);", "rust_fragment": "hash_with(SipHasher::new(), x)", "description": "Both perform a hash operation on data with a specific hasher implementation.", "reasoning": "[Task Analysis] C function `ckh_pointer_hash` computes a hash of a pointer value, while Rust function `hash` computes a hash of any hashable type using SipHash. [Similarity] Both perform hashing operations, but the C version specifically handles pointer values and uses a fixed seed, whereas Rust uses a generic hasher. [Knowledge Extraction] There is no full structural match due to different domains (pointer-specific vs generic), but there is a partial match in the hashing logic and an API mapping between the hash functions."}]
+Unixcoder Score: 0.05831373482942581
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE uint32_t
+hash_x86_32(const void *key, int len, uint32_t seed)
+{
+	const uint8_t *data = (const uint8_t *) key;
+	const int nblocks = len / 4;
+
+	uint32_t h1 = seed;
+
+	const uint32_t c1 = 0xcc9e2d51;
+	const uint32_t c2 = 0x1b873593;
+
+	/* body */
+	{
+		const uint32_t *blocks = (const uint32_t *) (data + nblocks*4);
+		int i;
+
+		for (i = -nblocks; i; i++) {
+			uint32_t k1 = hash_get_block_32(blocks, i);
+
+			k1 *= c1;
+			k1 = hash_rotl_32(k1, 15);
+			k1 *= c2;
+
+			h1 ^= k1;
+			h1 = hash_rotl_32(h1, 13);
+			h1 = h1*5 + 0xe6546b64;
+		}
+	}
+
+	/* tail */
+	{
+		const uint8_t *tail = (const uint8_t *) (data + nblocks*4);
+
+		uint32_t k1 = 0;
+
+		switch (len & 3) {
+		case 3: k1 ^= tail[2] << 16;
+		case 2: k1 ^= tail[1] << 8;
+		case 1: k1 ^= tail[0]; k1 *= c1; k1 = hash_rotl_32(k1, 15);
+			k1 *= c2; h1 ^= k1;
+		}
+	}
+
+	/* finalization */
+	h1 ^= len;
+
+	h1 = hash_fmix_32(h1);
+
+	return h1;
+}
+Function: 
+fn hash_bytes<H: Hasher>(mut s: H, x: &[u8]) -> u64 {
+    Hasher::write(&mut s, x);
+    s.finish()
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ConvertBuckets__idx5020_rank2.c", "source_rust_file": "Partial__ConvertBuckets__idx5020_rank2.rs", "c_api": "OhCloudExtVectorGet(values, i, &value, reinterpret_cast<unsigned int *>(&valueLen))", "rust_api": "hash_map.get(key)", "mapping_type": "function", "description": "Retrieval of element from container by index/key", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of hash map values, extracting and converting them into a collection. Rust function `OhCloudExtHashMapGet` retrieves a value from a hash map given a key. [Similarity] Names do not refer to the same concept; C function is about vector processing, Rust function is about hash map retrieval. [Knowledge Extraction] No full structural match. Partial match in loop structure and error handling patterns. API mappings found between C vector access and Rust hash map access operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ConvertBuckets__idx5020_rank2.c", "source_rust_file": "Partial__ConvertBuckets__idx5020_rank2.rs", "c_fragment": "for (size_t i = 0; i < len; i++) {\n        void *value = nullptr;\n        size_t valueLen = 0;\n        status = OhCloudExtVectorGet(values, i, &value, reinterpret_cast<unsigned int *>(&valueLen));\n        if (status != ERRNO_SUCCESS || value == nullptr) {\n            return buckets;\n        }", "rust_fragment": "if hash_map.is_null() || key.is_null() || value.is_null() || value_len.is_null() {\n        return ERRNO_NULLPTR;\n    }\n    let hash_map = match OhCloudExtHashMap::get_inner_ref(hash_map, SafetyCheckId::HashMap) {\n        None => return ERRNO_WRONG_TYPE,\n        Some(v) => v,\n    };", "description": "Both contain loops with error checking and early returns on failure conditions.", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of hash map values, extracting and converting them into a collection. Rust function `OhCloudExtHashMapGet` retrieves a value from a hash map given a key. [Similarity] Names do not refer to the same concept; C function is about vector processing, Rust function is about hash map retrieval. [Knowledge Extraction] No full structural match. Partial match in loop structure and error handling patterns. API mappings found between C vector access and Rust hash map access operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ConvertBuckets__idx5020_rank2.c", "source_rust_file": "Partial__ConvertBuckets__idx5020_rank2.rs", "c_api": "OhCloudExtHashMapFree(val)", "rust_api": "drop()", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of hash map values, extracting and converting them into a collection. Rust function `OhCloudExtHashMapGet` retrieves a value from a hash map given a key. [Similarity] Names do not refer to the same concept; C function is about vector processing, Rust function is about hash map retrieval. [Knowledge Extraction] No full structural match. Partial match in loop structure and error handling patterns. API mappings found between C vector access and Rust hash map access operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ConvertBuckets__idx5020_rank2.c", "source_rust_file": "Partial__ConvertBuckets__idx5020_rank2.rs", "c_api": "OhCloudExtVectorGetLength(values, reinterpret_cast<unsigned int *>(&len))", "rust_api": "hash_map.len()", "mapping_type": "function", "description": "Get length/size of container", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of hash map values, extracting and converting them into a collection. Rust function `OhCloudExtHashMapGet` retrieves a value from a hash map given a key. [Similarity] Names do not refer to the same concept; C function is about vector processing, Rust function is about hash map retrieval. [Knowledge Extraction] No full structural match. Partial match in loop structure and error handling patterns. API mappings found between C vector access and Rust hash map access operations."}]
+Unixcoder Score: 0.01841331273317337
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn url_hash(url: &str) -> String {
+    let mut hasher = DefaultHasher::new();
+    url.hash(&mut hasher);
+    hasher.finish().to_string()
+}
+Unixcoder Score: 0.010447954759001732
+--------------------------------------------------
+C_Code: 
+void
+hash_x64_128(const void *key, const int len, const uint32_t seed,
+  uint64_t r_out[2])
+{
+	const uint8_t *data = (const uint8_t *) key;
+	const int nblocks = len / 16;
+
+	uint64_t h1 = seed;
+	uint64_t h2 = seed;
+
+	const uint64_t c1 = QU(0x87c37b91114253d5LLU);
+	const uint64_t c2 = QU(0x4cf5ad432745937fLLU);
+
+	/* body */
+	{
+		const uint64_t *blocks = (const uint64_t *) (data);
+		int i;
+
+		for (i = 0; i < nblocks; i++) {
+			uint64_t k1 = hash_get_block_64(blocks, i*2 + 0);
+			uint64_t k2 = hash_get_block_64(blocks, i*2 + 1);
+
+			k1 *= c1; k1 = hash_rotl_64(k1, 31); k1 *= c2; h1 ^= k1;
+
+			h1 = hash_rotl_64(h1, 27); h1 += h2;
+			h1 = h1*5 + 0x52dce729;
+
+			k2 *= c2; k2 = hash_rotl_64(k2, 33); k2 *= c1; h2 ^= k2;
+
+			h2 = hash_rotl_64(h2, 31); h2 += h1;
+			h2 = h2*5 + 0x38495ab5;
+		}
+	}
+
+	/* tail */
+	{
+		const uint8_t *tail = (const uint8_t*)(data + nblocks*16);
+		uint64_t k1 = 0;
+		uint64_t k2 = 0;
+
+		switch (len & 15) {
+		case 15: k2 ^= ((uint64_t)(tail[14])) << 48;
+		case 14: k2 ^= ((uint64_t)(tail[13])) << 40;
+		case 13: k2 ^= ((uint64_t)(tail[12])) << 32;
+		case 12: k2 ^= ((uint64_t)(tail[11])) << 24;
+		case 11: k2 ^= ((uint64_t)(tail[10])) << 16;
+		case 10: k2 ^= ((uint64_t)(tail[ 9])) << 8;
+		case  9: k2 ^= ((uint64_t)(tail[ 8])) << 0;
+			k2 *= c2; k2 = hash_rotl_64(k2, 33); k2 *= c1; h2 ^= k2;
+
+		case  8: k1 ^= ((uint64_t)(tail[ 7])) << 56;
+		case  7: k1 ^= ((uint64_t)(tail[ 6])) << 48;
+		case  6: k1 ^= ((uint64_t)(tail[ 5])) << 40;
+		case  5: k1 ^= ((uint64_t)(tail[ 4])) << 32;
+		case  4: k1 ^= ((uint64_t)(tail[ 3])) << 24;
+		case  3: k1 ^= ((uint64_t)(tail[ 2])) << 16;
+		case  2: k1 ^= ((uint64_t)(tail[ 1])) << 8;
+		case  1: k1 ^= ((uint64_t)(tail[ 0])) << 0;
+			k1 *= c1; k1 = hash_rotl_64(k1, 31); k1 *= c2; h1 ^= k1;
+		}
+	}
+
+	/* finalization */
+	h1 ^= len; h2 ^= len;
+
+	h1 += h2;
+	h2 += h1;
+
+	h1 = hash_fmix_64(h1);
+	h2 = hash_fmix_64(h2);
+
+	h1 += h2;
+	h2 += h1;
+
+	r_out[0] = h1;
+	r_out[1] = h2;
+}
+Function: 
+pub fn main() {
+    let mut s1 = SipHasher::new();
+    Empty.hash(&mut s1);
+    let mut s2 = SipHasher::new();
+    Empty.hash(&mut s2);
+    assert_eq!(s1.finish(), s2.finish());
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_pointer_hash__idx21180_rank4.c", "source_rust_file": "API_Mapping__ckh_pointer_hash__idx21180_rank4.rs", "c_api": "hash(&u.i, sizeof(u.i), 0xd983396eU, r_hash)", "rust_api": "block_count.hash(state)", "mapping_type": "function", "description": "Hashing operation", "reasoning": "[Task Analysis] C function computes a hash of a pointer value using a custom hash function; Rust function performs a complex hash of a buffer with length-based branching logic. [Similarity] Names do not refer to the same concept (ckh_pointer_hash vs hash), and domains are different (pointer hashing vs buffer hashing). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve hashing operations, so API mappings can be extracted for the hashing pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_pointer_hash__idx21180_rank4.c", "source_rust_file": "API_Mapping__ckh_pointer_hash__idx21180_rank4.rs", "c_api": "hash(&u.i, sizeof(u.i), 0xd983396eU, r_hash)", "rust_api": "self.blocks.hash(state)", "mapping_type": "function", "description": "Hashing operation", "reasoning": "[Task Analysis] C function computes a hash of a pointer value using a custom hash function; Rust function performs a complex hash of a buffer with length-based branching logic. [Similarity] Names do not refer to the same concept (ckh_pointer_hash vs hash), and domains are different (pointer hashing vs buffer hashing). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve hashing operations, so API mappings can be extracted for the hashing pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_pointer_hash__idx21180_rank4.c", "source_rust_file": "API_Mapping__ckh_pointer_hash__idx21180_rank4.rs", "c_api": "hash(&u.i, sizeof(u.i), 0xd983396eU, r_hash)", "rust_api": "self.blocks[block_count - MAX_BLOCKS_TO_HASH..].hash(state)", "mapping_type": "function", "description": "Hashing operation", "reasoning": "[Task Analysis] C function computes a hash of a pointer value using a custom hash function; Rust function performs a complex hash of a buffer with length-based branching logic. [Similarity] Names do not refer to the same concept (ckh_pointer_hash vs hash), and domains are different (pointer hashing vs buffer hashing). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve hashing operations, so API mappings can be extracted for the hashing pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_pointer_hash__idx21180_rank4.c", "source_rust_file": "API_Mapping__ckh_pointer_hash__idx21180_rank4.rs", "c_api": "hash(&u.i, sizeof(u.i), 0xd983396eU, r_hash)", "rust_api": "self.blocks[..MAX_BLOCKS_TO_HASH].hash(state)", "mapping_type": "function", "description": "Hashing operation", "reasoning": "[Task Analysis] C function computes a hash of a pointer value using a custom hash function; Rust function performs a complex hash of a buffer with length-based branching logic. [Similarity] Names do not refer to the same concept (ckh_pointer_hash vs hash), and domains are different (pointer hashing vs buffer hashing). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve hashing operations, so API mappings can be extracted for the hashing pattern."}]
+Unixcoder Score: -0.006648434326052666
+--------------------------------------------------
+C_Code: 
+struct UT_hash_handle {
+   struct UT_hash_table *tbl;
+   void *prev;                       /* prev element in app order      */
+   void *next;                       /* next element in app order      */
+   struct UT_hash_handle *hh_prev;   /* previous hh in bucket order    */
+   struct UT_hash_handle *hh_next;   /* next hh in bucket order        */
+   void *key;                        /* ptr to enclosing struct's key  */
+   unsigned keylen;                  /* enclosing struct's key len     */
+   unsigned hashv;                   /* result of hash-fcn(key)        */
+}
+Function: 
+struct Table {
+    count: i32,
+    items: [Option<~Entry>, ..TABLE_SIZE]
+}
+Unixcoder Score: -0.008742861449718475
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE uint32_t
+hash_x86_32(const void *key, int len, uint32_t seed)
+{
+	const uint8_t *data = (const uint8_t *) key;
+	const int nblocks = len / 4;
+
+	uint32_t h1 = seed;
+
+	const uint32_t c1 = 0xcc9e2d51;
+	const uint32_t c2 = 0x1b873593;
+
+	/* body */
+	{
+		const uint32_t *blocks = (const uint32_t *) (data + nblocks*4);
+		int i;
+
+		for (i = -nblocks; i; i++) {
+			uint32_t k1 = hash_get_block_32(blocks, i);
+
+			k1 *= c1;
+			k1 = hash_rotl_32(k1, 15);
+			k1 *= c2;
+
+			h1 ^= k1;
+			h1 = hash_rotl_32(h1, 13);
+			h1 = h1*5 + 0xe6546b64;
+		}
+	}
+
+	/* tail */
+	{
+		const uint8_t *tail = (const uint8_t *) (data + nblocks*4);
+
+		uint32_t k1 = 0;
+
+		switch (len & 3) {
+		case 3: k1 ^= tail[2] << 16;
+		case 2: k1 ^= tail[1] << 8;
+		case 1: k1 ^= tail[0]; k1 *= c1; k1 = hash_rotl_32(k1, 15);
+			k1 *= c2; h1 ^= k1;
+		}
+	}
+
+	/* finalization */
+	h1 ^= len;
+
+	h1 = hash_fmix_32(h1);
+
+	return h1;
+}
+Function: 
+fn hash_with<H: Hasher, T: Hash>(mut st: H, x: &T) -> u64 {
+    x.hash(&mut st);
+    st.finish()
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBuckets__idx5010_rank4.c", "source_rust_file": "API_Mapping__ConvertBuckets__idx5010_rank4.rs", "c_api": "vec.push(value)", "rust_api": "vec.push(val)", "mapping_type": "method", "description": "Pushing a value into a vector container", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of values and converts them into buckets, while Rust function `OhCloudExtVectorPush` pushes values of various types into a vector. [Similarity] Names do not refer to the same concept (`ConvertBuckets` vs `OhCloudExtVectorPush`), and domains are different: C handles data conversion from a vector to buckets, while Rust handles pushing values into a vector. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, there are API mappings related to pushing values into containers and handling different data types in vectors."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBuckets__idx5010_rank4.c", "source_rust_file": "API_Mapping__ConvertBuckets__idx5010_rank4.rs", "c_api": "ConvertBucket(pValues.get())", "rust_api": "vec.push(vb)", "mapping_type": "function", "description": "Converting and pushing a bucket value", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of values and converts them into buckets, while Rust function `OhCloudExtVectorPush` pushes values of various types into a vector. [Similarity] Names do not refer to the same concept (`ConvertBuckets` vs `OhCloudExtVectorPush`), and domains are different: C handles data conversion from a vector to buckets, while Rust handles pushing values into a vector. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, there are API mappings related to pushing values into containers and handling different data types in vectors."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBuckets__idx5010_rank4.c", "source_rust_file": "API_Mapping__ConvertBuckets__idx5010_rank4.rs", "c_api": "OhCloudExtHashMapFree", "rust_api": "OhCloudExtHashMap::get_inner", "mapping_type": "function", "description": "Freeing a hash map resource", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of values and converts them into buckets, while Rust function `OhCloudExtVectorPush` pushes values of various types into a vector. [Similarity] Names do not refer to the same concept (`ConvertBuckets` vs `OhCloudExtVectorPush`), and domains are different: C handles data conversion from a vector to buckets, while Rust handles pushing values into a vector. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, there are API mappings related to pushing values into containers and handling different data types in vectors."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBuckets__idx5010_rank4.c", "source_rust_file": "API_Mapping__ConvertBuckets__idx5010_rank4.rs", "c_api": "OhCloudExtVectorGet", "rust_api": "OhCloudExtVector::get_inner_mut", "mapping_type": "function", "description": "Retrieving a mutable reference to a vector element", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of values and converts them into buckets, while Rust function `OhCloudExtVectorPush` pushes values of various types into a vector. [Similarity] Names do not refer to the same concept (`ConvertBuckets` vs `OhCloudExtVectorPush`), and domains are different: C handles data conversion from a vector to buckets, while Rust handles pushing values into a vector. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, there are API mappings related to pushing values into containers and handling different data types in vectors."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBuckets__idx5010_rank4.c", "source_rust_file": "API_Mapping__ConvertBuckets__idx5010_rank4.rs", "c_api": "OhCloudExtVectorGetLength", "rust_api": "OhCloudExtVector::get_inner_mut", "mapping_type": "function", "description": "Retrieving the length of a vector", "reasoning": "[Task Analysis] C function `ConvertBuckets` processes a vector of values and converts them into buckets, while Rust function `OhCloudExtVectorPush` pushes values of various types into a vector. [Similarity] Names do not refer to the same concept (`ConvertBuckets` vs `OhCloudExtVectorPush`), and domains are different: C handles data conversion from a vector to buckets, while Rust handles pushing values into a vector. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, there are API mappings related to pushing values into containers and handling different data types in vectors."}]
+Unixcoder Score: -0.018860746175050735
+--------------------------------------------------
+C_Code: 
+TEST(Cpp, JsonNull) {
+  upb::DefPool defpool;
+  upb::MessageDefPtr md(upb_test_TestMessage_getmsgdef(defpool.ptr()));
+  upb::FieldDefPtr i32_f = md.FindFieldByName("i32");
+  upb::FieldDefPtr str_f = md.FindFieldByName("str");
+  ASSERT_TRUE(i32_f);
+  ASSERT_TRUE(str_f);
+  EXPECT_EQ(5, i32_f.default_value().int32_val);
+  EXPECT_EQ(0, strcmp(str_f.default_value().str_val.data, "abc"));
+  EXPECT_EQ(3, str_f.default_value().str_val.size);
+}
+Function: 
+fn array_ffi_test() {
+        // SAFETY: FFI unit test uses C API under expected patterns.
+        unsafe {
+            let arena = Arena::new();
+            let raw_arena = arena.raw();
+            let array = upb_Array_New(raw_arena, CType::Float);
+
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 7.0 }, raw_arena));
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 42.0 }, raw_arena));
+            assert_eq!(upb_Array_Size(array), 2);
+            assert!(matches!(upb_Array_Get(array, 1), upb_MessageValue { float_val: 42.0 }));
+
+            assert!(upb_Array_Resize(array, 3, raw_arena));
+            assert_eq!(upb_Array_Size(array), 3);
+            assert!(matches!(upb_Array_Get(array, 2), upb_MessageValue { float_val: 0.0 }));
+        }
+    }
+Unixcoder Score: -0.02960486151278019
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE size_t
+ckh_isearch(ckh_t *ckh, const void *key)
+{
+	size_t hashes[2], bucket, cell;
+
+	assert(ckh != NULL);
+
+	ckh->hash(key, hashes);
+
+	/* Search primary bucket. */
+	bucket = hashes[0] & ((ZU(1) << ckh->lg_curbuckets) - 1);
+	cell = ckh_bucket_search(ckh, bucket, key);
+	if (cell != SIZE_T_MAX)
+		return (cell);
+
+	/* Search secondary bucket. */
+	bucket = hashes[1] & ((ZU(1) << ckh->lg_curbuckets) - 1);
+	cell = ckh_bucket_search(ckh, bucket, key);
+	return (cell);
+}
+Function: 
+fn contains_key(&K key) -> bool {
+      alt (find_common[K, V](hasher, bkts, nbkts, key)) {
+        case (util.some[V](_)) { ret true; }
+        case (_) { ret false; }
+      }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_isearch__idx78765_rank1.c", "source_rust_file": "API_Mapping__ckh_isearch__idx78765_rank1.rs", "c_api": "return (cell)", "rust_api": "ret val", "mapping_type": "pattern", "description": "Return found value from hash table", "reasoning": "[Task Analysis] C function `ckh_isearch` performs a hash table lookup with primary and secondary bucket search; Rust function `get` retrieves a value from a hash table using a key. [Similarity] Both perform hash-based key lookup in hash tables, but with different control flow and error handling patterns. [Knowledge Extraction] The core operation is hash table lookup, but the structural similarity is limited due to different control flow and error handling. No full match due to domain mismatch (C uses explicit bucket search, Rust uses a higher-level find function). API mappings identified for hash table operations and key lookup patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_isearch__idx78765_rank1.c", "source_rust_file": "API_Mapping__ckh_isearch__idx78765_rank1.rs", "c_api": "ckh_bucket_search(ckh, bucket, key)", "rust_api": "find_common[K, V](hasher, bkts, nbkts, key)", "mapping_type": "function", "description": "Hash table bucket search for key", "reasoning": "[Task Analysis] C function `ckh_isearch` performs a hash table lookup with primary and secondary bucket search; Rust function `get` retrieves a value from a hash table using a key. [Similarity] Both perform hash-based key lookup in hash tables, but with different control flow and error handling patterns. [Knowledge Extraction] The core operation is hash table lookup, but the structural similarity is limited due to different control flow and error handling. No full match due to domain mismatch (C uses explicit bucket search, Rust uses a higher-level find function). API mappings identified for hash table operations and key lookup patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_isearch__idx78765_rank1.c", "source_rust_file": "API_Mapping__ckh_isearch__idx78765_rank1.rs", "c_api": "ckh->hash(key, hashes)", "rust_api": "hasher", "mapping_type": "function", "description": "Hash function application to key", "reasoning": "[Task Analysis] C function `ckh_isearch` performs a hash table lookup with primary and secondary bucket search; Rust function `get` retrieves a value from a hash table using a key. [Similarity] Both perform hash-based key lookup in hash tables, but with different control flow and error handling patterns. [Knowledge Extraction] The core operation is hash table lookup, but the structural similarity is limited due to different control flow and error handling. No full match due to domain mismatch (C uses explicit bucket search, Rust uses a higher-level find function). API mappings identified for hash table operations and key lookup patterns."}]
+Unixcoder Score: -0.030060993507504463
+--------------------------------------------------
+C_Code: 
+static constexpr HashSlotFn get_hash_slot_fn() {
+    return nullptr;
+  }
+Function: 
+fn from(src: &vello_encoding::WorkgroupCounts) -> Self {
+        Self {
+            use_large_path_scan: src.use_large_path_scan,
+            path_reduce: (&src.path_reduce).into(),
+            path_reduce2: (&src.path_reduce2).into(),
+            path_scan1: (&src.path_scan1).into(),
+            path_scan: (&src.path_scan).into(),
+            bbox_clear: (&src.bbox_clear).into(),
+            flatten: (&src.flatten).into(),
+            draw_reduce: (&src.draw_reduce).into(),
+            draw_leaf: (&src.draw_leaf).into(),
+            clip_reduce: (&src.clip_reduce).into(),
+            clip_leaf: (&src.clip_leaf).into(),
+            binning: (&src.binning).into(),
+            tile_alloc: (&src.tile_alloc).into(),
+            path_count_setup: (&src.path_count_setup).into(),
+            backdrop: (&src.backdrop).into(),
+            coarse: (&src.coarse).into(),
+            path_tiling_setup: (&src.path_tiling_setup).into(),
+            fine: (&src.fine).into(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_string_hash__idx68058_rank1.c", "source_rust_file": "API_Mapping__ckh_string_hash__idx68058_rank1.rs", "c_api": "strlen((const char *)key)", "rust_api": "key.as_bytes().to_vec()", "mapping_type": "function", "description": "String length and conversion to byte vector", "reasoning": "[Task Analysis] C function `ckh_string_hash` computes a hash of a string using a helper function, while Rust function `map_task` performs a map operation with intermediate state management and communication. [Similarity] No structural similarity at the function level due to different domains (hashing vs map-reduce). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to hash computation and data structure usage."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_string_hash__idx68058_rank1.c", "source_rust_file": "API_Mapping__ckh_string_hash__idx68058_rank1.rs", "c_api": "hash", "rust_api": "emit", "mapping_type": "function", "description": "Hash computation and data emission", "reasoning": "[Task Analysis] C function `ckh_string_hash` computes a hash of a string using a helper function, while Rust function `map_task` performs a map operation with intermediate state management and communication. [Similarity] No structural similarity at the function level due to different domains (hashing vs map-reduce). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to hash computation and data structure usage."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_string_hash__idx68058_rank1.c", "source_rust_file": "API_Mapping__ckh_string_hash__idx68058_rank1.rs", "c_api": "r_hash", "rust_api": "HashMap::new()", "mapping_type": "type", "description": "Hash table initialization", "reasoning": "[Task Analysis] C function `ckh_string_hash` computes a hash of a string using a helper function, while Rust function `map_task` performs a map operation with intermediate state management and communication. [Similarity] No structural similarity at the function level due to different domains (hashing vs map-reduce). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to hash computation and data structure usage."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ckh_string_hash__idx68058_rank1.c", "source_rust_file": "API_Mapping__ckh_string_hash__idx68058_rank1.rs", "c_api": "hash(key, strlen((const char *)key), 0x94122f33U, r_hash)", "rust_api": "map(input, Box::new(|a,b| emit(&mut intermediates, ctrl.clone(), a, b)))", "mapping_type": "function", "description": "Hash computation and data processing function", "reasoning": "[Task Analysis] C function `ckh_string_hash` computes a hash of a string using a helper function, while Rust function `map_task` performs a map operation with intermediate state management and communication. [Similarity] No structural similarity at the function level due to different domains (hashing vs map-reduce). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to hash computation and data structure usage."}]
+Unixcoder Score: -0.0428411103785038
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+hash(const void *key, size_t len, const uint32_t seed, size_t r_hash[2])
+{
+#if (LG_SIZEOF_PTR == 3)
+	hash_x64_128(key, len, seed, (uint64_t *)r_hash);
+#else
+	uint64_t hashes[2];
+	hash_x86_128(key, len, seed, hashes);
+	r_hash[0] = (size_t)hashes[0];
+	r_hash[1] = (size_t)hashes[1];
+#endif
+}
+Function: 
+pub fn main() {
+    let mut s1 = SipHasher::new();
+    Empty.hash(&mut s1);
+    let mut s2 = SipHasher::new();
+    Empty.hash(&mut s2);
+    assert_eq!(s1.finish(), s2.finish());
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__hash__idx44488_rank1.h", "source_rust_file": "API_Mapping__hash__idx44488_rank1.rs", "c_api": "hash", "rust_api": "hash", "mapping_type": "function", "description": "Hash computation using different algorithms (SipHash in Rust, custom hash in C)", "reasoning": "[Task Analysis] C function computes a hash using either 64-bit or 32-bit logic based on pointer size; Rust function performs hashing with SipHasher and compares results. [Similarity] No structural similarity at the function level due to different domains (hash computation vs assertion). [Knowledge Extraction] No full or partial match due to domain mismatch (low-level hash algorithm vs high-level assertion). However, both involve hashing operations which can be mapped as API correspondence."}]
+Unixcoder Score: -0.04474560543894768
+--------------------------------------------------

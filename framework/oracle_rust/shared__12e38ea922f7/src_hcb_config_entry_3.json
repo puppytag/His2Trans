@@ -1,0 +1,27 @@
+{
+  "project": "shared__12e38ea922f7",
+  "func_key": "src_hcb_config_entry_3",
+  "function_name": "HdfGetHcsRootNode",
+  "source_c_file": "src/hcb_config_entry.c",
+  "c_code": "const struct DeviceResourceNode * HdfGetHcsRootNode()\n{\n    char productName[PRODUCT_NAME_MAX] = { 0 };\n    char configPath[PATH_MAX] = { 0 };\n\n    int ret = GetProductName(productName, PRODUCT_NAME_MAX);\n    if (ret != HDF_SUCCESS) {\n        return NULL;\n    }\n\n    if (!GetConfigFilePath(productName, configPath, PATH_MAX)) {\n        HDF_LOGE(\"failed to get config file path\");\n        return NULL;\n    }\n\n    SetHcsBlobPath(configPath);\n    const struct DeviceResourceNode *mgrRoot = HcsGetRootNode();\n    return mgrRoot;\n}",
+  "rust_signature": "pub extern \"C\" fn HdfGetHcsRootNode() -> *const DeviceResourceNode",
+  "rust_code": "pub extern \"C\" fn HdfGetHcsRootNode() -> *const DeviceResourceNode {\n    // PRODUCT_NAME_MAX is 128 in the original C.\n    let mut productName: [::core::ffi::c_char; 128] = [0; 128];\n    // PATH_MAX varies; use a conservative buffer.\n    let mut configPath: [::core::ffi::c_char; 4096] = [0; 4096];\n\n    let ret = GetProductName(productName.as_mut_ptr(), 128);\n    if ret != HDF_SUCCESS {\n        return ::core::ptr::null();\n    }\n\n    if !GetConfigFilePath(\n        productName.as_ptr(),\n        configPath.as_mut_ptr(),\n        4096 as crate::types::size_t,\n    ) {\n        return ::core::ptr::null();\n    }\n\n    unsafe {\n        SetHcsBlobPath(configPath.as_ptr());\n        HcsGetRootNode()\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "return foo(...);",
+      "rust_fragment": "return foo(...);",
+      "description": "Direct call/return pattern is preserved in Rust",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

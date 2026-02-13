@@ -1,0 +1,420 @@
+C_Code: 
+void TestOnEventWrapperCb(OnRustCb callback, HiSysEventRecordC record)
+{
+    // do nothing
+}
+Function: 
+fn test_hisysevent_query_001() {
+    // write two events at first.
+    let mut ret = hisysevent::write(
+        "HIVIEWDFX",
+        "PLUGIN_LOAD",
+        EventType::Behavior,
+        &[hisysevent::build_str_param!("STRING_SINGLE", "test_hisysevent_query_001")]
+    );
+    assert!(ret == SUCCEED);
+    ret = hisysevent::write(
+        "HIVIEWDFX",
+        "PLUGIN_UNLOAD",
+        EventType::Behavior,
+        &[hisysevent::build_str_param!("STRING_SINGLE", "test_hisysevent_query_001")]
+    );
+    assert!(ret == SUCCEED);
+    // query event.
+    let query_arg = QueryArg {
+        begin_time: -1,
+        end_time: -1,
+        max_events: 2,
+    };
+    let query_rules = [
+        QueryRule {
+            domain: "HIVIEWDFX",
+            event_list: vec![
+                "PLUGIN_LOAD",
+                "PLUGIN_UNLOAD",
+            ],
+            condition: "{\"version\":\"V1\",\"condition\":{\"and\":[{\"param\":\"
+                NAME\",\"op\":\"=\",\"value\":\"SysEventService\"}]}}",
+        },
+        QueryRule {
+            domain: "HIVIEWDFX",
+            event_list: vec![
+                "PLUGIN_LOAD",
+            ],
+            condition: "",
+        }
+    ];
+    // step1: construct a querier.
+    let querier = Querier::new(|records: &[HiSysEventRecord]| {
+        for item in records {
+            assert!(item.get_domain() == "HIVIEWDFX");
+        }
+    }, |reason: i32, total: i32| {
+        assert!(reason == SUCCEED);
+        assert!(total == QUERY_CNT);
+    }).expect("Construct a querier by Querier::new");
+    // step2: query.
+    ret = hisysevent::query(&query_arg, &query_rules, &querier);
+    assert!(ret == SUCCEED);
+    // step3: recycle allocated memories of this Querier.
+    querier.try_to_recycle();
+    ret = hisysevent::query(&query_arg, &query_rules, &querier);
+    assert!(ret == LISTENER_NOT_EXIST);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx141111_rank2.h", "source_rust_file": "API_Mapping__record_stack_limit__idx141111_rank2.rs", "c_api": "record_sp_limit(stk->data + LIMIT_OFFSET + RED_ZONE_SIZE)", "rust_api": "Some(stackaddr - page_size..stackaddr)", "mapping_type": "function", "description": "Stack limit recording / guard page setup", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function records stack limit using assert and a helper call; Rust function installs a stack guard on Linux using page size and stack start. -> [Similarity] -> No structural similarity at the block level; different domains (stack assertion vs stack guard installation). -> [Knowledge Extraction] -> No full match, no partial match, but both involve stack-related logic and memory management patterns. Extract API mappings based on shared semantic intent (stack limit handling)."}]
+Unixcoder Score: 0.03889601677656174
+--------------------------------------------------
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetRegistrar {
+    observer: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+    unregistration: Mutex<Option<UniquePtr<NetUnregistration>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__record_stack_limit__idx130161_rank5.h", "source_rust_file": "Partial__record_stack_limit__idx130161_rank5.rs", "c_fragment": "assert(stk);\n    assert((uintptr_t)stk->end - RED_ZONE_SIZE\n      - (uintptr_t)stk->data >= LIMIT_OFFSET\n           && \"Stack size must be greater than LIMIT_OFFSET\");\n    record_sp_limit(stk->data + LIMIT_OFFSET + RED_ZONE_SIZE);", "rust_fragment": "let my_stack_top = addr as uint;\n            let my_stack_bottom = my_stack_top - stack_size + 1024;\n            unsafe {\n                stack::record_os_managed_stack_bounds(my_stack_bottom, my_stack_top);\n            }", "description": "Both code blocks handle stack limit recording and bounds setup, though in different contexts (C uses assert and a helper function, Rust calculates and records stack bounds directly).", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function records stack limit using assert and a helper function; Rust function spawns a thread with stack bounds setup and error handling. -> [Similarity] -> No full structural similarity due to different domains (stack management vs thread spawning), but partial matching in error handling and stack-related logic. -> [Knowledge Extraction] -> Extract partial structural fragments and API mappings related to stack limit recording and thread creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__record_stack_limit__idx130161_rank5.h", "source_rust_file": "Partial__record_stack_limit__idx130161_rank5.rs", "c_api": "assert", "rust_api": "unsafe { ... }", "mapping_type": "pattern", "description": "Both use assertions or unsafe blocks to enforce preconditions or handle low-level operations.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function records stack limit using assert and a helper function; Rust function spawns a thread with stack bounds setup and error handling. -> [Similarity] -> No full structural similarity due to different domains (stack management vs thread spawning), but partial matching in error handling and stack-related logic. -> [Knowledge Extraction] -> Extract partial structural fragments and API mappings related to stack limit recording and thread creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__record_stack_limit__idx130161_rank5.h", "source_rust_file": "Partial__record_stack_limit__idx130161_rank5.rs", "c_api": "record_sp_limit", "rust_api": "stack::record_os_managed_stack_bounds", "mapping_type": "function", "description": "Both functions record stack limit information.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function records stack limit using assert and a helper function; Rust function spawns a thread with stack bounds setup and error handling. -> [Similarity] -> No full structural similarity due to different domains (stack management vs thread spawning), but partial matching in error handling and stack-related logic. -> [Knowledge Extraction] -> Extract partial structural fragments and API mappings related to stack limit recording and thread creation."}]
+Unixcoder Score: 0.00013221327390056103
+--------------------------------------------------
+C_Code: 
+void
+rust_task::reset_stack_limit() {
+    uintptr_t sp = get_sp();
+    bool reseted = false;
+    while (!sp_in_stk_seg(sp, stk)) {
+        reseted = true;
+        prev_stack();
+        assert(stk != NULL && "Failed to find the current stack");
+    }
+
+    // Each call to prev_stack will record the stack limit. If we *didn't*
+    // call prev_stack then we still need to record it now to catch a corner case:
+    // the throw to initiate unwinding starts on the C stack while sp limit is 0.
+    // If we don't set the limit here then the rust code run subsequently will
+    // will veer into the red zone. Lame!
+    if (!reseted) {
+        record_stack_limit();
+    }
+}
+Function: 
+fn core_spawn<T: Send>(self, f: proc():Send -> T, after: proc(Result<T>):Send)
+                           -> (imp::rust_thread, Thread)
+    {
+        let Cfg { name, stack_size, stdout, stderr } = self;
+
+        let stack_size = stack_size.unwrap_or(rt::min_stack());
+        let my_thread = Thread::new(name);
+        let their_thread = my_thread.clone();
+
+        // Spawning a new OS thread guarantees that __morestack will never get
+        // triggered, but we must manually set up the actual stack bounds once
+        // this function starts executing. This raises the lower limit by a bit
+        // because by the time that this function is executing we've already
+        // consumed at least a little bit of stack (we don't know the exact byte
+        // address at which our stack started).
+        let main = proc() {
+            let something_around_the_top_of_the_stack = 1;
+            let addr = &something_around_the_top_of_the_stack as *const int;
+            let my_stack_top = addr as uint;
+            let my_stack_bottom = my_stack_top - stack_size + 1024;
+            unsafe {
+                stack::record_os_managed_stack_bounds(my_stack_bottom, my_stack_top);
+            }
+            thread_info::set(
+                (my_stack_bottom, my_stack_top),
+                thread::current_guard_page(),
+                their_thread
+            );
+
+            // There are two primary reasons that general try/catch is
+            // unsafe. The first is that we do not support nested try/catch. The
+            // fact that this is happening in a newly-spawned thread
+            // suffices. The second is that unwinding while unwinding is not
+            // defined.  We take care of that by having an 'unwinding' flag in
+            // the thread itself. For these reasons, this unsafety should be ok.
+            unsafe {
+                let mut output = None;
+                let mut f_opt = Some( // option dance
+                    if stdout.is_some() || stderr.is_some() {
+                        proc() {
+                            let _ = stdout.map(stdio::set_stdout);
+                            let _ = stderr.map(stdio::set_stderr);
+                            f()
+                        }
+                    } else {
+                        f
+                    });
+                let try_result = unwind::try(|| output = Some((f_opt.take().unwrap())()));
+                match (output, try_result) {
+                    (Some(data), Ok(_)) => after(Ok(data)),
+                    (None, Err(cause)) => after(Err(cause)),
+                    _ => unreachable!()
+                }
+            }
+        };
+        (unsafe { imp::create(stack, box main) }, my_thread)
+    }
+Unixcoder Score: -0.005608212202787399
+--------------------------------------------------
+C_Code: 
+DBStatus UnRegisterObserver() override
+    {
+        return DBStatus::OK;
+    }
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudSyncUnsubscribe(
+    server: *mut OhCloudExtCloudSync,
+    relations: *const OhCloudExtHashMap,
+    err: *mut *const OhCloudExtVector,
+) -> c_int {
+    if server.is_null() || relations.is_null() || err.is_null() {
+        return ERRNO_NULLPTR;
+    }
+
+    let cloud_server = match OhCloudExtCloudSync::get_inner_mut(server, SafetyCheckId::CloudSync) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let relations = match OhCloudExtHashMap::get_inner_ref(relations, SafetyCheckId::HashMap) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+    let relations = match relations {
+        HashMapCffi::VecString(res) => res,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match cloud_server.unsubscribe(relations) {
+        Ok(()) => ERRNO_SUCCESS,
+        Err(e) => {
+            let errno = map_single_sync_err(&e);
+            if errno == ERRNO_IPC_ERRORS {
+                if let SyncError::IPCErrors(vec) = e {
+                    let ret = VectorCffi::I32(vec.iter().map(map_ipc_err).collect());
+                    *err = OhCloudExtVector::new(ret, SafetyCheckId::Vector).into_ptr();
+                }
+            }
+            errno
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__reset_stack_limit__idx130161_rank4.c", "source_rust_file": "Partial__reset_stack_limit__idx130161_rank4.rs", "c_api": "record_stack_limit", "rust_api": "stack::record_os_managed_stack_bounds", "mapping_type": "function", "description": "Stack limit recording operation", "reasoning": "[Task Analysis] C function 'reset_stack_limit' manages stack limits by traversing stack segments and recording limits, while Rust function 'core_spawn' sets up thread stack bounds and manages thread spawning. [Similarity] No full structural similarity due to different domains (stack management vs thread spawning) and different code lengths. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for stack limit recording and stack traversal operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__reset_stack_limit__idx130161_rank4.c", "source_rust_file": "Partial__reset_stack_limit__idx130161_rank4.rs", "c_api": "prev_stack", "rust_api": "stack::record_os_managed_stack_bounds", "mapping_type": "function", "description": "Stack traversal operation for setting stack bounds", "reasoning": "[Task Analysis] C function 'reset_stack_limit' manages stack limits by traversing stack segments and recording limits, while Rust function 'core_spawn' sets up thread stack bounds and manages thread spawning. [Similarity] No full structural similarity due to different domains (stack management vs thread spawning) and different code lengths. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for stack limit recording and stack traversal operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__reset_stack_limit__idx130161_rank4.c", "source_rust_file": "Partial__reset_stack_limit__idx130161_rank4.rs", "c_fragment": "while (!sp_in_stk_seg(sp, stk)) {\n        reseted = true;\n        prev_stack();\n        assert(stk != NULL && \"Failed to find the current stack\");\n    }", "rust_fragment": "let main = proc() {\n            let something_around_the_top_of_the_stack = 1;\n            let addr = &something_around_the_top_of_the_stack as *const int;\n            let my_stack_top = addr as uint;\n            let my_stack_bottom = my_stack_top - stack_size + 1024;\n            unsafe {\n                stack::record_os_managed_stack_bounds(my_stack_bottom, my_stack_top);\n            }", "description": "Both contain logic for managing stack boundaries and recording stack information", "reasoning": "[Task Analysis] C function 'reset_stack_limit' manages stack limits by traversing stack segments and recording limits, while Rust function 'core_spawn' sets up thread stack bounds and manages thread spawning. [Similarity] No full structural similarity due to different domains (stack management vs thread spawning) and different code lengths. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for stack limit recording and stack traversal operations."}]
+Unixcoder Score: -0.0076475306414067745
+--------------------------------------------------
+C_Code: 
+void FwkIRunningTaskObserver::UpdateRunningTaskCount()
+{
+    pInnerOb_->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+}
+Function: 
+fn change_run_count(&mut self, new_count: usize) {
+        if self.count == new_count {
+            return;
+        }
+        self.count = new_count;
+        self.remotes
+            .retain(|_, remote| remote.notify_run_count(self.count as i64).is_ok());
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__record_stack_limit__idx129994_rank4.h", "source_rust_file": "Partial__record_stack_limit__idx129994_rank4.rs", "c_fragment": "assert(stk);\n    assert((uintptr_t)stk->end - RED_ZONE_SIZE\n      - (uintptr_t)stk->data >= LIMIT_OFFSET\n           && \"Stack size must be greater than LIMIT_OFFSET\");\n    record_sp_limit(stk->data + LIMIT_OFFSET + RED_ZONE_SIZE);", "rust_fragment": "if enlist_many(child, &child_arc, &mut ancestors) {\n                let group = @TCB(child, move child_arc, move ancestors,\n                                 is_main, move notifier);\n                unsafe {\n                    local_set(child, taskgroup_key!(), group);\n                }\n\n                // Run the child's body.\n                f();\n\n                // TLS cleanup code will exit the taskgroup.\n            }", "description": "Both contain assertion-like checks and conditional execution logic for proceeding with operations.", "reasoning": "[Task Analysis] C function is a stack limit recording utility; Rust function is a task group wrapper creation with nested enlistment logic. [Similarity] No full structural match due to different domains (stack management vs task group management) and vastly different code lengths. [Knowledge Extraction] Found partial matching control flow in nested function logic and some similar error handling patterns, but no API mappings due to domain mismatch and structural asymmetry."}]
+Unixcoder Score: -0.009148846380412579
+--------------------------------------------------
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetObserverWrapper {
+    inner: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__record_stack_limit__idx18452_rank5.h", "source_rust_file": "Partial__record_stack_limit__idx18452_rank5.rs", "c_fragment": "assert(stk);\n    assert((uintptr_t)stk->end - RED_ZONE_SIZE\n      - (uintptr_t)stk->data >= LIMIT_OFFSET\n           && \"Stack size must be greater than LIMIT_OFFSET\");", "rust_fragment": "assert!(!tcx.is_thread_local_static(def_id));", "description": "Both use assertion for validation, though different conditions.", "reasoning": "[Task Analysis] C function records stack limit using assert and a call to record_sp_limit; Rust function collects miri allocations with matching logic of traversing allocations and calling recursive collection. [Similarity] No full structural similarity due to different domains (stack management vs allocation collection) and different control flow patterns. [Knowledge Extraction] Found partial matching logic in the recursive traversal pattern and error handling via assert, but no API mappings due to domain mismatch and lack of equivalent operations."}]
+Unixcoder Score: -0.011001374572515488
+--------------------------------------------------
+C_Code: 
+void
+rust_task::reset_stack_limit() {
+    uintptr_t sp = get_sp();
+    bool reseted = false;
+    while (!sp_in_stk_seg(sp, stk)) {
+        reseted = true;
+        prev_stack();
+        assert(stk != NULL && "Failed to find the current stack");
+    }
+
+    // Each call to prev_stack will record the stack limit. If we *didn't*
+    // call prev_stack then we still need to record it now to catch a corner case:
+    // the throw to initiate unwinding starts on the C stack while sp limit is 0.
+    // If we don't set the limit here then the rust code run subsequently will
+    // will veer into the red zone. Lame!
+    if (!reseted) {
+        record_stack_limit();
+    }
+}
+Function: 
+pub fn spawn(opts: TaskOpts, f: proc()) {
+    // must happen before the spawn, no need to synchronize with a lock.
+    unsafe { THREAD_CNT.fetch_add(1, SeqCst); }
+
+    let TaskOpts {
+        watched: _watched,
+        notify_chan, name, stack_size
+    } = opts;
+
+    let mut task = new();
+    task.name = name;
+    match notify_chan {
+        Some(chan) => {
+            let on_exit = proc(task_result) { chan.send(task_result) };
+            task.death.on_exit = Some(on_exit);
+        }
+        None => {}
+    }
+
+    let stack = stack_size.unwrap_or(env::min_stack());
+    let task = task;
+
+    // Spawning a new OS thread guarantees that __morestack will never get
+    // triggered, but we must manually set up the actual stack bounds once this
+    // function starts executing. This raises the lower limit by a bit because
+    // by the time that this function is executing we've already consumed at
+    // least a little bit of stack (we don't know the exact byte address at
+    // which our stack started).
+    Thread::spawn_stack(stack, proc() {
+        let something_around_the_top_of_the_stack = 1;
+        let addr = &something_around_the_top_of_the_stack as *int;
+        unsafe {
+            let my_stack = addr as uint;
+            stack::record_stack_bounds(my_stack - stack + 1024, my_stack);
+        }
+
+        run(task, f);
+        signal_done();
+    })
+}
+Unixcoder Score: -0.012767599895596504
+--------------------------------------------------
+C_Code: 
+void FwkIRunningTaskObserver::UpdateRunningTaskCount()
+{
+    pInnerOb_->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+}
+Function: 
+pub(crate) fn task_unload() {
+    let instance = RequestTaskCount::get_instance();
+    let mut task_count = instance.lock().unwrap();
+    if task_count.load_state {
+        let completed = task_count.completed_task_count;
+        let failed = task_count.failed_task_count;
+        sys_event!(
+            ExecError,
+            DfxCode::TASK_STATISTICS,
+            &format!("Task Completed {}, failed {}", completed, failed)
+        );
+        task_count.completed_task_count = 0;
+        task_count.failed_task_count = 0;
+        task_count.load_state = false;
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx131203_rank5.h", "source_rust_file": "API_Mapping__record_stack_limit__idx131203_rank5.rs", "c_api": "record_sp_limit(stk->data + LIMIT_OFFSET + RED_ZONE_SIZE)", "rust_api": "check_integrity(&**y)", "mapping_type": "function", "description": "Recursive integrity check", "reasoning": "[Task Analysis] C function records stack limit using assert and a call to record_sp_limit; Rust function checks trie integrity with assert, iteration, and recursive calls. [Similarity] No structural similarity at the function level due to different domains (stack management vs trie traversal). [Knowledge Extraction] No full match, no partial match, but both have assert statements and loops, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx131203_rank5.h", "source_rust_file": "API_Mapping__record_stack_limit__idx131203_rank5.rs", "c_api": "assert(stk)", "rust_api": "assert trie.count != 0", "mapping_type": "function", "description": "Validation check", "reasoning": "[Task Analysis] C function records stack limit using assert and a call to record_sp_limit; Rust function checks trie integrity with assert, iteration, and recursive calls. [Similarity] No structural similarity at the function level due to different domains (stack management vs trie traversal). [Knowledge Extraction] No full match, no partial match, but both have assert statements and loops, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx131203_rank5.h", "source_rust_file": "API_Mapping__record_stack_limit__idx131203_rank5.rs", "c_api": "for (int i = 0; i < size; i++)", "rust_api": "for trie.children.each |x|", "mapping_type": "pattern", "description": "Iteration over container", "reasoning": "[Task Analysis] C function records stack limit using assert and a call to record_sp_limit; Rust function checks trie integrity with assert, iteration, and recursive calls. [Similarity] No structural similarity at the function level due to different domains (stack management vs trie traversal). [Knowledge Extraction] No full match, no partial match, but both have assert statements and loops, so API mappings are extracted."}]
+Unixcoder Score: -0.01302055362612009
+--------------------------------------------------
+C_Code: 
+void
+rust_task::reset_stack_limit() {
+    uintptr_t sp = get_sp();
+    bool reseted = false;
+    while (!sp_in_stk_seg(sp, stk)) {
+        reseted = true;
+        prev_stack();
+        assert(stk != NULL && "Failed to find the current stack");
+    }
+
+    // Each call to prev_stack will record the stack limit. If we *didn't*
+    // call prev_stack then we still need to record it now to catch a corner case:
+    // the throw to initiate unwinding starts on the C stack while sp limit is 0.
+    // If we don't set the limit here then the rust code run subsequently will
+    // will veer into the red zone. Lame!
+    if (!reseted) {
+        record_stack_limit();
+    }
+}
+Function: 
+pub unsafe fn record_sp_limit(limit: uint) {
+    return target_record_sp_limit(limit);
+
+    // x86-64
+    #[cfg(target_arch = "x86_64", target_os = "macos")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movq $$0x60+90*8, %rsi
+              movq $0, %gs:(%rsi)" :: "r"(limit) : "rsi" : "volatile")
+    }
+    #[cfg(target_arch = "x86_64", target_os = "linux")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movq $0, %fs:112" :: "r"(limit) :: "volatile")
+    }
+    #[cfg(target_arch = "x86_64", target_os = "win32")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        // see: http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+        // store this inside of the "arbitrary data slot", but double the size
+        // because this is 64 bit instead of 32 bit
+        asm!("movq $0, %gs:0x28" :: "r"(limit) :: "volatile")
+    }
+    #[cfg(target_arch = "x86_64", target_os = "freebsd")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movq $0, %fs:24" :: "r"(limit) :: "volatile")
+    }
+
+    // x86
+    #[cfg(target_arch = "x86", target_os = "macos")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movl $$0x48+90*4, %eax
+              movl $0, %gs:(%eax)" :: "r"(limit) : "eax" : "volatile")
+    }
+    #[cfg(target_arch = "x86", target_os = "linux")]
+    #[cfg(target_arch = "x86", target_os = "freebsd")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movl $0, %gs:48" :: "r"(limit) :: "volatile")
+    }
+    #[cfg(target_arch = "x86", target_os = "win32")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        // see: http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+        // store this inside of the "arbitrary data slot"
+        asm!("movl $0, %fs:0x14" :: "r"(limit) :: "volatile")
+    }
+
+    // mips, arm - Some brave soul can port these to inline asm, but it's over
+    //             my head personally
+    #[cfg(target_arch = "mips")]
+    #[cfg(target_arch = "arm")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        return record_sp_limit(limit as *c_void);
+        extern {
+            fn record_sp_limit(limit: *c_void);
+        }
+    }
+}
+Unixcoder Score: -0.015971951186656952
+--------------------------------------------------
+C_Code: 
+int32_t NetUnregistration::unregister() const
+{
+    return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);
+}
+Function: 
+pub fn unregister(&self) -> Result<(), NetUnregisterError> {
+        let mut handle = self.unregistration.lock().unwrap();
+        if let Some(inner) = handle.take() {
+            let ret = inner.unregister();
+            if ret != 0 {
+                *handle = Some(inner);
+                return Err(NetUnregisterError::UnregisterFailed(ret));
+            }
+            Ok(())
+        } else {
+            Err(NetUnregisterError::NotRegistered)
+        }
+    }
+Unixcoder Score: -0.016105549409985542
+--------------------------------------------------

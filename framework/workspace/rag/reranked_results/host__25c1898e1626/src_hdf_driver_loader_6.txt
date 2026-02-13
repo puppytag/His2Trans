@@ -1,0 +1,332 @@
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.01964353397488594
+--------------------------------------------------
+C_Code: 
+sptr<DownloadServiceAbility> DownloadServiceAbility::GetInstance()
+{
+    if (instance_ == nullptr) {
+        std::lock_guard<std::mutex> autoLock(instanceLock_);
+        if (instance_ == nullptr) {
+            instance_ = new DownloadServiceAbility(DOWNLOAD_SERVICE_ID, true);
+        }
+    }
+    return instance_;
+}
+Function: 
+pub fn get_ability_instance() -> &'static mut RequestAbility {
+        static mut REQUESTABILITY: Option<RequestAbility> = None;
+        static ONCE: Once = Once::new();
+        unsafe {
+            ONCE.call_once(|| {
+                REQUESTABILITY = Some(RequestAbility::new(
+                    ServerRunState::NoStart,
+                    Mutex::new(HashMap::new()),
+                ));
+            });
+            REQUESTABILITY.as_mut().unwrap()
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__DownloadFailTest__idx957_rank3.c", "source_rust_file": "Partial__DownloadFailTest__idx957_rank3.rs", "c_api": "handle->IsFinish()", "rust_api": "handle.is_finish()", "mapping_type": "method", "description": "Checking if a preload operation has completed.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('DownloadFailTest' vs 'ut_preload_fetch'), but both represent test logic for preload functionality. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve preload/fetch logic with state management and callbacks, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are test implementations, not calls. [Full Classification] -> Code lengths differ significantly (C: ~20 lines, Rust: ~10 lines), and C is a test function while Rust is also a test function, but with different structure and logic flow. [Partial Classification] -> There are matching structural elements like loop conditions and assertions. [API Mappings] -> Multiple API correspondences found between C and Rust operations involving preload, fetch, and state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DownloadFailTest__idx957_rank3.c", "source_rust_file": "Partial__DownloadFailTest__idx957_rank3.rs", "c_api": "std::make_unique<PreloadCallback>(callback)", "rust_api": "Box::new(TestCallbackS { ... })", "mapping_type": "function", "description": "Creating a heap-allocated callback object.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('DownloadFailTest' vs 'ut_preload_fetch'), but both represent test logic for preload functionality. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve preload/fetch logic with state management and callbacks, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are test implementations, not calls. [Full Classification] -> Code lengths differ significantly (C: ~20 lines, Rust: ~10 lines), and C is a test function while Rust is also a test function, but with different structure and logic flow. [Partial Classification] -> There are matching structural elements like loop conditions and assertions. [API Mappings] -> Multiple API correspondences found between C and Rust operations involving preload, fetch, and state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DownloadFailTest__idx957_rank3.c", "source_rust_file": "Partial__DownloadFailTest__idx957_rank3.rs", "c_api": "std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_INTERVAL))", "rust_api": "thread::sleep(Duration::from_millis(500))", "mapping_type": "function", "description": "Pausing execution for a specified duration.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('DownloadFailTest' vs 'ut_preload_fetch'), but both represent test logic for preload functionality. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve preload/fetch logic with state management and callbacks, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are test implementations, not calls. [Full Classification] -> Code lengths differ significantly (C: ~20 lines, Rust: ~10 lines), and C is a test function while Rust is also a test function, but with different structure and logic flow. [Partial Classification] -> There are matching structural elements like loop conditions and assertions. [API Mappings] -> Multiple API correspondences found between C and Rust operations involving preload, fetch, and state checks."}, {"knowledge_type": "Partial", "source_c_file": "Partial__DownloadFailTest__idx957_rank3.c", "source_rust_file": "Partial__DownloadFailTest__idx957_rank3.rs", "c_fragment": "while (!handle->IsFinish()) {\n        std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_INTERVAL));\n    }", "rust_fragment": "while !handle.is_finish() {\n        thread::sleep(Duration::from_millis(500));\n    }", "description": "Loop that waits until a handle is finished, with thread sleep in between.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('DownloadFailTest' vs 'ut_preload_fetch'), but both represent test logic for preload functionality. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve preload/fetch logic with state management and callbacks, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are test implementations, not calls. [Full Classification] -> Code lengths differ significantly (C: ~20 lines, Rust: ~10 lines), and C is a test function while Rust is also a test function, but with different structure and logic flow. [Partial Classification] -> There are matching structural elements like loop conditions and assertions. [API Mappings] -> Multiple API correspondences found between C and Rust operations involving preload, fetch, and state checks."}, {"knowledge_type": "Partial", "source_c_file": "Partial__DownloadFailTest__idx957_rank3.c", "source_rust_file": "Partial__DownloadFailTest__idx957_rank3.rs", "c_fragment": "EXPECT_TRUE(flagF->load());\n    EXPECT_FALSE(flagS->load());\n    EXPECT_FALSE(flagC->load());", "rust_fragment": "assert_eq!(success_flag.load(Ordering::SeqCst), 1);", "description": "Assertions checking flag states after preload operation.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('DownloadFailTest' vs 'ut_preload_fetch'), but both represent test logic for preload functionality. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve preload/fetch logic with state management and callbacks, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are test implementations, not calls. [Full Classification] -> Code lengths differ significantly (C: ~20 lines, Rust: ~10 lines), and C is a test function while Rust is also a test function, but with different structure and logic flow. [Partial Classification] -> There are matching structural elements like loop conditions and assertions. [API Mappings] -> Multiple API correspondences found between C and Rust operations involving preload, fetch, and state checks."}, {"knowledge_type": "Partial", "source_c_file": "Partial__DownloadFailTest__idx957_rank3.c", "source_rust_file": "Partial__DownloadFailTest__idx957_rank3.rs", "c_fragment": "Preload::GetInstance()->Remove(url);", "rust_fragment": "SERVICE.preload(DownloadRequest::new(TEST_URL), callback, true, DOWNLOADER);", "description": "Preload initialization and removal operations.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('DownloadFailTest' vs 'ut_preload_fetch'), but both represent test logic for preload functionality. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve preload/fetch logic with state management and callbacks, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are test implementations, not calls. [Full Classification] -> Code lengths differ significantly (C: ~20 lines, Rust: ~10 lines), and C is a test function while Rust is also a test function, but with different structure and logic flow. [Partial Classification] -> There are matching structural elements like loop conditions and assertions. [API Mappings] -> Multiple API correspondences found between C and Rust operations involving preload, fetch, and state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DownloadFailTest__idx957_rank3.c", "source_rust_file": "Partial__DownloadFailTest__idx957_rank3.rs", "c_api": "Preload::GetInstance()->Contains(url)", "rust_api": "SERVICE.fetch(TEST_URL)", "mapping_type": "function", "description": "Checking if a resource is available or fetched.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('DownloadFailTest' vs 'ut_preload_fetch'), but both represent test logic for preload functionality. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve preload/fetch logic with state management and callbacks, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are test implementations, not calls. [Full Classification] -> Code lengths differ significantly (C: ~20 lines, Rust: ~10 lines), and C is a test function while Rust is also a test function, but with different structure and logic flow. [Partial Classification] -> There are matching structural elements like loop conditions and assertions. [API Mappings] -> Multiple API correspondences found between C and Rust operations involving preload, fetch, and state checks."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__DownloadFailTest__idx957_rank3.c", "source_rust_file": "Partial__DownloadFailTest__idx957_rank3.rs", "c_api": "Preload::GetInstance()->Remove(url)", "rust_api": "SERVICE.preload(...)", "mapping_type": "function", "description": "Preload initialization and removal operations.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('DownloadFailTest' vs 'ut_preload_fetch'), but both represent test logic for preload functionality. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve preload/fetch logic with state management and callbacks, consistent domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are test implementations, not calls. [Full Classification] -> Code lengths differ significantly (C: ~20 lines, Rust: ~10 lines), and C is a test function while Rust is also a test function, but with different structure and logic flow. [Partial Classification] -> There are matching structural elements like loop conditions and assertions. [API Mappings] -> Multiple API correspondences found between C and Rust operations involving preload, fetch, and state checks."}]
+Unixcoder Score: 0.007569033652544022
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.0008273529820144176
+--------------------------------------------------
+C_Code: 
+class DispatchLoaderDynamic
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Unixcoder Score: -0.003238499630242586
+--------------------------------------------------
+C_Code: 
+struct DirectDriverLoadingListLUNARG
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaMeta__idx5112_rank2.c", "source_rust_file": "API_Mapping__GetSchemaMeta__idx5112_rank2.rs", "c_api": "if (status != SUCCESS) { return { status, schemaMeta }; }", "rust_api": "map_err(|_| Error::WriteMsgParcelFailed)?", "mapping_type": "pattern", "description": "Early return on error condition", "reasoning": "[Task Analysis] C function handles schema metadata retrieval with multiple conditional checks and fallbacks; Rust function performs IPC communication to fetch app schema. [Similarity] Names don't match but both involve retrieving schema data. [Knowledge Extraction] No full structural match due to different domains (metadata management vs IPC communication). However, there are API mappings related to schema retrieval and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaMeta__idx5112_rank2.c", "source_rust_file": "API_Mapping__GetSchemaMeta__idx5112_rank2.rs", "c_api": "if (status != SUCCESS) { return { status, schemaMeta }; }", "rust_api": "map_err(|_| Error::SendRequestFailed)?", "mapping_type": "pattern", "description": "Error propagation on failed operation", "reasoning": "[Task Analysis] C function handles schema metadata retrieval with multiple conditional checks and fallbacks; Rust function performs IPC communication to fetch app schema. [Similarity] Names don't match but both involve retrieving schema data. [Knowledge Extraction] No full structural match due to different domains (metadata management vs IPC communication). However, there are API mappings related to schema retrieval and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaMeta__idx5112_rank2.c", "source_rust_file": "API_Mapping__GetSchemaMeta__idx5112_rank2.rs", "c_api": "return { status, schemaMeta };", "rust_api": "Ok(infos.app_schema.read().unwrap())", "mapping_type": "pattern", "description": "Return value pattern for successful operation", "reasoning": "[Task Analysis] C function handles schema metadata retrieval with multiple conditional checks and fallbacks; Rust function performs IPC communication to fetch app schema. [Similarity] Names don't match but both involve retrieving schema data. [Knowledge Extraction] No full structural match due to different domains (metadata management vs IPC communication). However, there are API mappings related to schema retrieval and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaMeta__idx5112_rank2.c", "source_rust_file": "API_Mapping__GetSchemaMeta__idx5112_rank2.rs", "c_api": "if (status == SUCCESS) { MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true); return { status, schemaMeta }; }", "rust_api": "lock.read(&mut receive)?;", "mapping_type": "pattern", "description": "Successful data read and processing", "reasoning": "[Task Analysis] C function handles schema metadata retrieval with multiple conditional checks and fallbacks; Rust function performs IPC communication to fetch app schema. [Similarity] Names don't match but both involve retrieving schema data. [Knowledge Extraction] No full structural match due to different domains (metadata management vs IPC communication). However, there are API mappings related to schema retrieval and error handling patterns."}]
+Unixcoder Score: -0.012105988338589668
+--------------------------------------------------
+C_Code: 
+struct  TT_DriverRec_
+  {
+    FT_DriverRec  root;
+
+    TT_GlyphZoneRec  zone;     /* glyph loader points zone */
+
+    FT_UInt  interpreter_version;
+
+  }
+Function: 
+pub struct Glyph {
+    /// The Unicode codepoint or glyph ID of the item
+    pub codepoint: u32,
+    /// The index of the cluster in the input text where this came from
+    pub cluster: u32,
+    /// The horizontal advance of the glyph
+    pub x_advance: i32,
+    /// The vertical advance of the glyph
+    pub y_advance: i32,
+    /// The horizontal offset of the glyph
+    pub x_offset: i32,
+    /// The vertical offset of the glyph
+    pub y_offset: i32,
+    /// You can use this for whatever you like
+    pub flags: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "errno", "rust_api": "errno", "mapping_type": "pattern", "description": "Return error code from error handling block", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "Ok(()) => ERRNO_SUCCESS", "rust_api": "Ok(()) => ERRNO_SUCCESS", "mapping_type": "pattern", "description": "Successful operation return code", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "if (server.is_null() || relations.is_null() || err.is_null())", "rust_api": "if server.is_null() || relations.is_null() || err.is_null()", "mapping_type": "pattern", "description": "Null pointer validation check", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "*err = OhCloudExtVector::new(ret, SafetyCheckId::Vector).into_ptr();", "rust_api": "*err = OhCloudExtVector::new(ret, SafetyCheckId::Vector).into_ptr();", "mapping_type": "function", "description": "Set error output pointer with new vector", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "return ERRNO_WRONG_TYPE;", "rust_api": "return ERRNO_WRONG_TYPE;", "mapping_type": "function", "description": "Return error code for wrong type", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "match OhCloudExtCloudSync::get_inner_mut(server, SafetyCheckId::CloudSync)", "rust_api": "match OhCloudExtCloudSync::get_inner_mut(server, SafetyCheckId::CloudSync)", "mapping_type": "function", "description": "Get mutable reference with safety check", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "match cloud_server.unsubscribe(relations)", "rust_api": "match cloud_server.unsubscribe(relations)", "mapping_type": "function", "description": "Subscription operation with error handling", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "let errno = map_single_sync_err(&e);", "rust_api": "let errno = map_single_sync_err(&e);", "mapping_type": "function", "description": "Map sync error to errno", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "return ERRNO_INVALID_INPUT_TYPE;", "rust_api": "return ERRNO_INVALID_INPUT_TYPE;", "mapping_type": "function", "description": "Return error code for invalid input type", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "return ERRNO_NULLPTR;", "rust_api": "return ERRNO_NULLPTR;", "mapping_type": "function", "description": "Return error code for null pointer", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "if errno == ERRNO_IPC_ERRORS", "rust_api": "if errno == ERRNO_IPC_ERRORS", "mapping_type": "pattern", "description": "Conditional check for IPC errors", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "match relations", "rust_api": "match relations", "mapping_type": "pattern", "description": "Pattern matching on enum variant", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "Err(e) => { ... }", "rust_api": "Err(e) => { ... }", "mapping_type": "pattern", "description": "Error handling block", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "match OhCloudExtHashMap::get_inner_ref(relations, SafetyCheckId::HashMap)", "rust_api": "match OhCloudExtHashMap::get_inner_ref(relations, SafetyCheckId::HashMap)", "mapping_type": "function", "description": "Get reference with safety check", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "if let SyncError::IPCErrors(vec) = e", "rust_api": "if let SyncError::IPCErrors(vec) = e", "mapping_type": "pattern", "description": "Pattern matching for specific error type", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.c", "source_rust_file": "API_Mapping__AssetLoaderImpl__idx4996_rank1.rs", "c_api": "let ret = VectorCffi::I32(vec.iter().map(map_ipc_err).collect());", "rust_api": "let ret = VectorCffi::I32(vec.iter().map(map_ipc_err).collect());", "mapping_type": "function", "description": "Transform and collect IPC errors into vector", "reasoning": "[Task Analysis] C code is a constructor for a class, Rust code is an FFI function with complex error handling and type checking. [Similarity] No structural similarity at the function level; C has empty body, Rust has full logic. [Knowledge Extraction] No full match due to different domains (construction vs FFI call), but API mappings can be extracted for error handling patterns and type conversions."}]
+Unixcoder Score: -0.014598517678678036
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bundleName,
+    int32_t instanceId)
+{
+    SchemaMeta schemaMeta;
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(userId);
+    if (status != SUCCESS) {
+        // GetCloudInfo has print the log info. so we don`t need print again.
+        return { status, schemaMeta };
+    }
+    if (!bundleName.empty() && !cloudInfo.Exist(bundleName, instanceId)) {
+        ZLOGD("bundleName:%{public}s instanceId:%{public}d is not exist", bundleName.c_str(), instanceId);
+        return { ERROR, schemaMeta };
+    }
+    std::string schemaKey = cloudInfo.GetSchemaKey(bundleName, instanceId);
+    if (MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true) &&
+        schemaMeta.metaVersion == SchemaMeta::CURRENT_VERSION) {
+        return { SUCCESS, schemaMeta };
+    }
+    UpgradeSchemaMeta(userId, schemaMeta);
+    HapInfo hapInfo{ .user = userId, .instIndex = instanceId, .bundleName = bundleName };
+    std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
+    if (status == SUCCESS) {
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+        return { status, schemaMeta };
+    }
+    if (!Account::GetInstance()->IsVerified(userId)) {
+        ZLOGE("user:%{public}d is locked!", userId);
+        return { ERROR, schemaMeta };
+    }
+    std::tie(status, schemaMeta) = GetAppSchemaFromServer(userId, bundleName);
+    if (status == NOT_SUPPORT) {
+        ZLOGW("app not support, del cloudInfo! userId:%{public}d, bundleName:%{public}s", userId, bundleName.c_str());
+        MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+        return { status, schemaMeta };
+    }
+    if (status != SUCCESS) {
+        return { status, schemaMeta };
+    }
+    MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+    return { SUCCESS, schemaMeta };
+}
+Function: 
+pub(crate) fn get_app_schema(
+        &mut self,
+        user_id: i32,
+        bundle_name: &str,
+    ) -> ConnectResult<RwLockReadGuard<Schema>> {
+        self.infos.entry(user_id).or_default();
+        let infos = self.infos.get_mut(&user_id).unwrap();
+
+        let mut lock = infos.app_schema.write().unwrap();
+
+        let mut msg_parcel = MsgParcel::new();
+
+        msg_parcel
+            .write_string16(bundle_name)
+            .map_err(|_| Error::WriteMsgParcelFailed)?;
+
+        let function_number = GetAppSchema as u32;
+        let remote_obj = self
+            .remote_obj
+            .clone()
+            .ok_or(Error::CreateMsgParcelFailed)?;
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
+            .map_err(|_| Error::SendRequestFailed)?;
+
+        lock.read(&mut receive)?;
+
+        drop(lock);
+
+        Ok(infos.app_schema.read().unwrap())
+    }
+Unixcoder Score: -0.022704340517520905
+--------------------------------------------------
+C_Code: 
+struct TT_DriverRec_
+Function: 
+struct CBufferContents {
+    length: u32,
+    info: *mut CGlyphInfo,
+    position: *mut CGlyphPosition,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "ob->OnRunningTaskCountUpdate(...)", "rust_api": "ylong_runtime::block_on(rx).unwrap()", "mapping_type": "function", "description": "Callback invocation / result retrieval", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "RequestManagerImpl::GetInstance()->SubscribeSA()", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Service subscription / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "RequestManagerImpl::GetInstance()->SubRunCount(listener)", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Subscription request / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob)", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Observer attachment / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}]
+Unixcoder Score: -0.02427484467625618
+--------------------------------------------------
+C_Code: 
+CStringWrapper GetHost()
+{
+    return SysNetProxyManager::GetInstance().GetHost();
+}
+Function: 
+pub(crate) fn host(&self) -> String {
+        unsafe { GetHost() }.to_string()
+    }
+Unixcoder Score: -0.02994878962635994
+--------------------------------------------------
+C_Code: 
+struct TT_LoaderRec_
+Function: 
+pub struct Buffer<T: BufferItem> {
+    _ptr: u32,
+    /// Glyphs in the buffer
+    pub glyphs: Vec<T>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank4.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank4.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory cleanup function for certificate data list", "reasoning": "[Task Analysis] C function FreeCertDataList calls a C++ method, Rust function update_system_cert manages certificate data and calls the same C function via FFI. [Similarity] The C function is a thin wrapper around a C++ method, while the Rust function contains the full logic including FFI call to FreeCertDataList. [Knowledge Extraction] Full structural match in the FFI call pattern, partial match in the certificate processing logic, and API mapping for FreeCertDataList between C and Rust."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank4.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank4.rs", "c_fragment": "void FreeCertDataList(struct CRequestCerts *certs)\n{\n    RequestCertManager::GetInstance().FreeCertDataList(certs);\n}", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "C function FreeCertDataList calls a C++ method, Rust function calls the same C function via FFI.", "reasoning": "[Task Analysis] C function FreeCertDataList calls a C++ method, Rust function update_system_cert manages certificate data and calls the same C function via FFI. [Similarity] The C function is a thin wrapper around a C++ method, while the Rust function contains the full logic including FFI call to FreeCertDataList. [Knowledge Extraction] Full structural match in the FFI call pattern, partial match in the certificate processing logic, and API mapping for FreeCertDataList between C and Rust."}]
+Unixcoder Score: -0.032196324318647385
+--------------------------------------------------

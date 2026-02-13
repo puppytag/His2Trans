@@ -1,0 +1,401 @@
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeEci(long assignVal, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_ECI;
+	result.numChars = 0;
+	result.bitLength = 0;
+	if (assignVal < 0)
+		return result;
+	else if (assignVal < (1 << 7)) {
+		memset(buf, 0, 1 * sizeof(buf[0]));
+		appendBitsToBuffer((unsigned int)assignVal, 8, buf, &result.bitLength);
+	} else if (assignVal < (1 << 14)) {
+		memset(buf, 0, 2 * sizeof(buf[0]));
+		appendBitsToBuffer(2, 2, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)assignVal, 14, buf, &result.bitLength);
+	} else if (assignVal < 1000000L) {
+		memset(buf, 0, 3 * sizeof(buf[0]));
+		appendBitsToBuffer(6, 3, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal >> 10), 11, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal & 0x3FF), 10, buf, &result.bitLength);
+	} else
+		return result;
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_eci(assignval: u32) -> Self {
+		let mut bb = BitBuffer(Vec::with_capacity(24));
+		if assignval < (1 << 7) {
+			bb.append_bits(assignval, 8);
+		} else if assignval < (1 << 14) {
+			bb.append_bits(0b10, 2);
+			bb.append_bits(assignval, 14);
+		} else if assignval < 1_000_000 {
+			bb.append_bits(0b110, 3);
+			bb.append_bits(assignval, 21);
+		} else {
+			panic!("ECI assignment value out of range");
+		}
+		QrSegment::new(QrSegmentMode::Eci, 0, bb.0)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__outputChars__idx121530_rank1.c", "source_rust_file": "API_Mapping__outputChars__idx121530_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.inner.borrow_mut().write(buf)", "mapping_type": "function", "description": "Write data to a file descriptor or stream", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args. Rust function 'write' is a method on a struct that borrows inner writer and writes a byte slice. [Similarity] Both perform write operations to a file-like object, but with different abstraction levels and signatures. [Knowledge Extraction] No full structural match due to different function signatures and abstraction levels. However, both represent a write operation to a data stream, so API mapping is extracted."}]
+Unixcoder Score: 0.11920615285634995
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeEci(long assignVal, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_ECI;
+	result.numChars = 0;
+	result.bitLength = 0;
+	if (assignVal < 0)
+		return result;
+	else if (assignVal < (1 << 7)) {
+		memset(buf, 0, 1 * sizeof(buf[0]));
+		appendBitsToBuffer((unsigned int)assignVal, 8, buf, &result.bitLength);
+	} else if (assignVal < (1 << 14)) {
+		memset(buf, 0, 2 * sizeof(buf[0]));
+		appendBitsToBuffer(2, 2, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)assignVal, 14, buf, &result.bitLength);
+	} else if (assignVal < 1000000L) {
+		memset(buf, 0, 3 * sizeof(buf[0]));
+		appendBitsToBuffer(6, 3, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal >> 10), 11, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal & 0x3FF), 10, buf, &result.bitLength);
+	} else
+		return result;
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_eci(assignval: u32, buf: &'a mut [u8]) -> Self {
+		let mut bb = BitBuffer::new(buf);
+		if assignval < (1 << 7) {
+			bb.append_bits(assignval, 8);
+		} else if assignval < (1 << 14) {
+			bb.append_bits(0b10, 2);
+			bb.append_bits(assignval, 14);
+		} else if assignval < 1_000_000 {
+			bb.append_bits(0b110, 3);
+			bb.append_bits(assignval, 21);
+		} else {
+			panic!("ECI assignment value out of range");
+		}
+		QrSegment::new(QrSegmentMode::Eci, 0, bb.data, bb.length)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__outputChars__idx121455_rank1.c", "source_rust_file": "Full__outputChars__idx121455_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.0.write(buf)", "mapping_type": "function", "description": "System-level write operation to a file descriptor", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that performs a write operation and handles errors. [Similarity] Both perform a write operation to a file descriptor/stream, with similar input (buffer, length) and output (bytes written). [Knowledge Extraction] Full structural match on core write logic; API mapping identified for the write operation itself."}, {"knowledge_type": "Partial", "source_c_file": "Full__outputChars__idx121455_rank1.c", "source_rust_file": "Full__outputChars__idx121455_rank1.rs", "c_fragment": "return write(current->fd, buf, len);", "rust_fragment": "handle_ebadf(self.0.write(buf), buf.len())", "description": "Both functions perform a write operation to a file descriptor with a buffer and return the number of bytes written.", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that performs a write operation and handles errors. [Similarity] Both perform a write operation to a file descriptor/stream, with similar input (buffer, length) and output (bytes written). [Knowledge Extraction] Full structural match on core write logic; API mapping identified for the write operation itself."}, {"knowledge_type": "Full", "source_c_file": "Full__outputChars__idx121455_rank1.c", "source_rust_file": "Full__outputChars__idx121455_rank1.rs", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that performs a write operation and handles errors. [Similarity] Both perform a write operation to a file descriptor/stream, with similar input (buffer, length) and output (bytes written). [Knowledge Extraction] Full structural match on core write logic; API mapping identified for the write operation itself.", "description": "Full structural translation"}]
+Unixcoder Score: 0.09964524954557419
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeBytes(const uint8_t data[], size_t len, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_BYTE;
+	result.bitLength = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (len > 0)
+		memcpy(buf, data, len * sizeof(buf[0]));
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn new(mode: QrSegmentMode, numchars: usize, data: &'a [u8], bitlength: usize) -> Self {
+		assert!(bitlength == 0 || (bitlength - 1) / 8 < data.len());
+		Self { mode, numchars, data, bitlength }
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__outputChars__idx121649_rank1.c", "source_rust_file": "API_Mapping__outputChars__idx121649_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.write(buf)", "mapping_type": "function", "description": "Writing data to a file descriptor/stream", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a type implementing Write trait, taking a byte slice. [Similarity] Both perform low-level write operations to a file descriptor/stream, but differ in abstraction level and API surface. [Knowledge Extraction] No full structural match due to different abstraction levels and function signatures. However, both represent the same core operation: writing data to a stream. Extract API mapping for the write operation pattern."}]
+Unixcoder Score: 0.09050066024065018
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeEci(long assignVal, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_ECI;
+	result.numChars = 0;
+	result.bitLength = 0;
+	if (assignVal < 0)
+		return result;
+	else if (assignVal < (1 << 7)) {
+		memset(buf, 0, 1 * sizeof(buf[0]));
+		appendBitsToBuffer((unsigned int)assignVal, 8, buf, &result.bitLength);
+	} else if (assignVal < (1 << 14)) {
+		memset(buf, 0, 2 * sizeof(buf[0]));
+		appendBitsToBuffer(2, 2, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)assignVal, 14, buf, &result.bitLength);
+	} else if (assignVal < 1000000L) {
+		memset(buf, 0, 3 * sizeof(buf[0]));
+		appendBitsToBuffer(6, 3, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal >> 10), 11, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal & 0x3FF), 10, buf, &result.bitLength);
+	} else
+		return result;
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_eci(assignval: u32) -> Self {
+		let mut bb = BitBuffer(Vec::with_capacity(24));
+		if assignval < (1 << 7) {
+			bb.append_bits(assignval, 8);
+		} else if assignval < (1 << 14) {
+			bb.append_bits(0b10, 2);
+			bb.append_bits(assignval, 14);
+		} else if assignval < 1_000_000 {
+			bb.append_bits(0b110, 3);
+			bb.append_bits(assignval, 21);
+		} else {
+			panic!("ECI assignment value out of range");
+		}
+		QrSegment::new(QrSegmentMode::Eci, 0, bb.0)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__outputChars__idx121448_rank1.c", "source_rust_file": "Partial__outputChars__idx121448_rank1.rs", "c_fragment": "return write(current->fd, buf, len);", "rust_fragment": "handle_ebadf(self.0.write(buf), buf.len())", "description": "Both perform a write operation to a file descriptor with a buffer and length, though Rust uses a method call with error handling.", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that performs a write operation and handles errors. [Similarity] Both perform a write operation to a file descriptor/buffer, but the Rust version is more idiomatic with error handling and encapsulation. [Knowledge Extraction] The core operation is a write to a file descriptor, but the structural similarity is partial due to different abstraction levels and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__outputChars__idx121448_rank1.c", "source_rust_file": "Partial__outputChars__idx121448_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.0.write(buf)", "mapping_type": "function", "description": "System-level write operation to a file descriptor", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that performs a write operation and handles errors. [Similarity] Both perform a write operation to a file descriptor/buffer, but the Rust version is more idiomatic with error handling and encapsulation. [Knowledge Extraction] The core operation is a write to a file descriptor, but the structural similarity is partial due to different abstraction levels and error handling patterns."}]
+Unixcoder Score: 0.07910868525505066
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeBytes(const uint8_t data[], size_t len, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_BYTE;
+	result.bitLength = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (len > 0)
+		memcpy(buf, data, len * sizeof(buf[0]));
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_bytes(data: &'a [u8]) -> Self {
+		QrSegment::new(QrSegmentMode::Byte, data.len(), data, data.len().checked_mul(8).unwrap())
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__outputChars__idx124609_rank1.c", "source_rust_file": "Full__outputChars__idx124609_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "libc::write(self.as_raw_fd(), buf.as_ptr() as *const libc::c_void, cmp::min(buf.len(), READ_LIMIT))", "mapping_type": "function", "description": "System call for writing data to a file descriptor", "reasoning": "[Task Analysis] C function 'outputChars' wraps a 'write' system call, while Rust function 'write' is a method that performs a similar low-level write operation using libc::write. [Similarity] Both perform the same core operation: writing data to a file descriptor. [Knowledge Extraction] Full structural similarity in operation and control flow; API mapping identified for the underlying write system call."}, {"knowledge_type": "Full", "source_c_file": "Full__outputChars__idx124609_rank1.c", "source_rust_file": "Full__outputChars__idx124609_rank1.rs", "reasoning": "[Task Analysis] C function 'outputChars' wraps a 'write' system call, while Rust function 'write' is a method that performs a similar low-level write operation using libc::write. [Similarity] Both perform the same core operation: writing data to a file descriptor. [Knowledge Extraction] Full structural similarity in operation and control flow; API mapping identified for the underlying write system call.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__outputChars__idx124609_rank1.c", "source_rust_file": "Full__outputChars__idx124609_rank1.rs", "c_fragment": "return write(current->fd, buf, len);", "rust_fragment": "let ret = cvt(unsafe { libc::write(self.as_raw_fd(), buf.as_ptr() as *const libc::c_void, cmp::min(buf.len(), READ_LIMIT),) })?; Ok(ret as usize)", "description": "Both functions perform a low-level write operation to a file descriptor using system calls.", "reasoning": "[Task Analysis] C function 'outputChars' wraps a 'write' system call, while Rust function 'write' is a method that performs a similar low-level write operation using libc::write. [Similarity] Both perform the same core operation: writing data to a file descriptor. [Knowledge Extraction] Full structural similarity in operation and control flow; API mapping identified for the underlying write system call."}]
+Unixcoder Score: 0.07377952337265015
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        vec_write(&mut self.pos, &mut self.inner, buf)
+    }
+Unixcoder Score: 0.0732773169875145
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeNumeric(const char *digits, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	size_t len = strlen(digits);
+	result.mode = qrcodegen_Mode_NUMERIC;
+	int bitLen = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (bitLen > 0)
+		memset(buf, 0, ((size_t)bitLen + 7) / 8 * sizeof(buf[0]));
+	result.bitLength = 0;
+
+	unsigned int accumData = 0;
+	int accumCount = 0;
+	for (; *digits != '\0'; digits++) {
+		char c = *digits;
+		accumData = accumData * 10 + (unsigned int)(c - '0');
+		accumCount++;
+		if (accumCount == 3) {
+			appendBitsToBuffer(accumData, 10, buf, &result.bitLength);
+			accumData = 0;
+			accumCount = 0;
+		}
+	}
+	if (accumCount > 0)  // 1 or 2 digits remaining
+		appendBitsToBuffer(accumData, accumCount * 3 + 1, buf, &result.bitLength);
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_numeric(text: &str) -> Self {
+		let mut bb = BitBuffer(Vec::with_capacity(text.len() * 3 + (text.len() + 2) / 3));
+		let mut accumdata: u32 = 0;
+		let mut accumcount: u8 = 0;
+		for b in text.bytes() {
+			assert!((b'0' ..= b'9').contains(&b), "String contains non-numeric characters");
+			accumdata = accumdata * 10 + u32::from(b - b'0');
+			accumcount += 1;
+			if accumcount == 3 {
+				bb.append_bits(accumdata, 10);
+				accumdata = 0;
+				accumcount = 0;
+			}
+		}
+		if accumcount > 0 {  // 1 or 2 digits remaining
+			bb.append_bits(accumdata, accumcount * 3 + 1);
+		}
+		QrSegment::new(QrSegmentMode::Numeric, text.len(), bb.0)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx128952_rank3.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx128952_rank3.rs", "c_api": "calloc(len, sizeof(char))", "rust_api": "GenericPath::from_vec(path.as_bytes())", "mapping_type": "function", "description": "Memory allocation and initialization for string buffer", "reasoning": "[Task Analysis] C function `rust_get_path_array` handles PATH environment variable parsing and buffer management; Rust function `from_str` converts a string to a GenericPath. [Similarity] No structural similarity due to different domains (environment variable parsing vs string-to-path conversion). [Knowledge Extraction] No full match, no partial match, but API mapping identified between C's `calloc`/`free` and Rust's memory handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx128952_rank3.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx128952_rank3.rs", "c_api": "free(path)", "rust_api": "GenericPath::from_vec(path.as_bytes())", "mapping_type": "function", "description": "Memory deallocation after use", "reasoning": "[Task Analysis] C function `rust_get_path_array` handles PATH environment variable parsing and buffer management; Rust function `from_str` converts a string to a GenericPath. [Similarity] No structural similarity due to different domains (environment variable parsing vs string-to-path conversion). [Knowledge Extraction] No full match, no partial match, but API mapping identified between C's `calloc`/`free` and Rust's memory handling patterns."}]
+Unixcoder Score: 0.07203114777803421
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeEci(long assignVal, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_ECI;
+	result.numChars = 0;
+	result.bitLength = 0;
+	if (assignVal < 0)
+		return result;
+	else if (assignVal < (1 << 7)) {
+		memset(buf, 0, 1 * sizeof(buf[0]));
+		appendBitsToBuffer((unsigned int)assignVal, 8, buf, &result.bitLength);
+	} else if (assignVal < (1 << 14)) {
+		memset(buf, 0, 2 * sizeof(buf[0]));
+		appendBitsToBuffer(2, 2, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)assignVal, 14, buf, &result.bitLength);
+	} else if (assignVal < 1000000L) {
+		memset(buf, 0, 3 * sizeof(buf[0]));
+		appendBitsToBuffer(6, 3, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal >> 10), 11, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal & 0x3FF), 10, buf, &result.bitLength);
+	} else
+		return result;
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_eci(assignval: u32, buf: &'a mut [u8]) -> Self {
+		let mut bb = BitBuffer::new(buf);
+		if assignval < (1 << 7) {
+			bb.append_bits(assignval, 8);
+		} else if assignval < (1 << 14) {
+			bb.append_bits(0b10, 2);
+			bb.append_bits(assignval, 14);
+		} else if assignval < 1_000_000 {
+			bb.append_bits(0b110, 3);
+			bb.append_bits(assignval, 21);
+		} else {
+			panic!("ECI assignment value out of range");
+		}
+		QrSegment::new(QrSegmentMode::Eci, 0, bb.data, bb.length)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__outputChars__idx121499_rank1.c", "source_rust_file": "API_Mapping__outputChars__idx121499_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.lock().write(buf)", "mapping_type": "function", "description": "Write data to a file-like resource", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args. Rust function 'write' is a method on a struct that locks and writes to a buffer. [Similarity] Both perform write operations to a file-like resource, but with different abstraction levels (raw syscall vs buffered I/O). [Knowledge Extraction] No full structural match due to abstraction difference and different domains (low-level I/O vs high-level buffered I/O). However, both represent write operations to a resource, so API mapping is extracted."}]
+Unixcoder Score: 0.06747312098741531
+--------------------------------------------------
+C_Code: 
+napi_value NAPI_MessageSequence::JS_writeShort(napi_env env, napi_callback_info info)
+{
+    size_t argc = 1;
+    napi_value argv[ARGV_LENGTH_1] = {0};
+    napi_value thisVar = nullptr;
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
+    if (argc != REQUIRED_ARGS_COUNT_1) {
+        ZLOGE(LOG_LABEL, "requires 1 parameter");
+        return napiErr.ThrowError(env, errorDesc::CHECK_PARAM_ERROR);
+    }
+
+    napi_valuetype valueType = napi_null;
+    napi_typeof(env, argv[ARGV_INDEX_0], &valueType);
+    if (valueType != napi_number) {
+        ZLOGE(LOG_LABEL, "type mismatch for parameter 1");
+        return napiErr.ThrowError(env, errorDesc::CHECK_PARAM_ERROR);
+    }
+
+    int32_t value = 0;
+    napi_get_value_int32(env, argv[ARGV_INDEX_0], &value);
+
+    NAPI_MessageSequence *napiSequence = nullptr;
+    napi_unwrap(env, thisVar, (void **)&napiSequence);
+    if (napiSequence == nullptr) {
+        ZLOGE(LOG_LABEL, "napiSequence is null");
+        return napiErr.ThrowError(env, errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR);
+    }
+    CHECK_WRITE_CAPACITY(env, BYTE_SIZE_32, napiSequence);
+    bool result = napiSequence->nativeParcel_->WriteInt16(static_cast<int16_t>(value));
+    if (!result) {
+        ZLOGE(LOG_LABEL, "write int16 failed");
+        return napiErr.ThrowError(env, errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR);
+    }
+    napi_value napiValue = nullptr;
+    napi_get_undefined(env, &napiValue);
+    return napiValue;
+}
+Function: 
+pub(crate) fn write_process<T>(
+        &mut self,
+        value: T,
+        f: fn(parcel: Pin<&mut MessageParcel>, value: T) -> bool,
+    ) -> IpcResult<()> {
+        match mem::replace(&mut self.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = f(p.pin_mut(), value);
+                self.inner = ParcelMem::Unique(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Borrow(p) => {
+                let w = unsafe { Pin::new_unchecked(&mut *p) };
+                let res = f(w, value);
+                self.inner = ParcelMem::Borrow(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Null => IpcResult::Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__outputChars__idx121506_rank1.c", "source_rust_file": "Partial__outputChars__idx121506_rank1.rs", "c_fragment": "return write(current->fd, buf, len);", "rust_fragment": "self.inner.borrow_mut().write(buf)", "description": "Both perform a write operation to a file-like destination using a buffer.", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that borrows inner writer and writes a byte slice. [Similarity] Both perform write operations to a file-like object, but with different abstraction levels and signatures. [Knowledge Extraction] Names don't match but the core operation is the same (writing data to a destination). The C version uses raw file descriptor, Rust uses a wrapper with borrow semantics. No full structural match due to abstraction differences. Partial match in the write operation logic. API mapping identified between the write operations despite different interfaces."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__outputChars__idx121506_rank1.c", "source_rust_file": "Partial__outputChars__idx121506_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.inner.borrow_mut().write(buf)", "mapping_type": "function", "description": "Write data to a file-like object using a buffer", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that borrows inner writer and writes a byte slice. [Similarity] Both perform write operations to a file-like object, but with different abstraction levels and signatures. [Knowledge Extraction] Names don't match but the core operation is the same (writing data to a destination). The C version uses raw file descriptor, Rust uses a wrapper with borrow semantics. No full structural match due to abstraction differences. Partial match in the write operation logic. API mapping identified between the write operations despite different interfaces."}]
+Unixcoder Score: 0.06605960428714752
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeEci(long assignVal, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_ECI;
+	result.numChars = 0;
+	result.bitLength = 0;
+	if (assignVal < 0)
+		return result;
+	else if (assignVal < (1 << 7)) {
+		memset(buf, 0, 1 * sizeof(buf[0]));
+		appendBitsToBuffer((unsigned int)assignVal, 8, buf, &result.bitLength);
+	} else if (assignVal < (1 << 14)) {
+		memset(buf, 0, 2 * sizeof(buf[0]));
+		appendBitsToBuffer(2, 2, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)assignVal, 14, buf, &result.bitLength);
+	} else if (assignVal < 1000000L) {
+		memset(buf, 0, 3 * sizeof(buf[0]));
+		appendBitsToBuffer(6, 3, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal >> 10), 11, buf, &result.bitLength);
+		appendBitsToBuffer((unsigned int)(assignVal & 0x3FF), 10, buf, &result.bitLength);
+	} else
+		return result;
+	result.data = buf;
+	return result;
+}
+Function: 
+fn calc_bit_length(mode: QrSegmentMode, numchars: usize) -> Option<usize> {
+		// Returns ceil((numer / denom) * numchars)
+		let mul_frac_ceil = |numer: usize, denom: usize|
+			Some(numchars)
+				.and_then(|x| x.checked_mul(numer))
+				.and_then(|x| x.checked_add(denom - 1))
+				.map(|x| x / denom);
+		
+		use QrSegmentMode::*;
+		match mode {
+			Numeric      => mul_frac_ceil(10, 3),
+			Alphanumeric => mul_frac_ceil(11, 2),
+			Byte         => mul_frac_ceil( 8, 1),
+			Kanji        => mul_frac_ceil(13, 1),
+			Eci => {
+				assert_eq!(numchars, 0);
+				Some(3 * 8)
+			},
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__outputChars__idx121420_rank1.c", "source_rust_file": "API_Mapping__outputChars__idx121420_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "slice_write(&mut self.pos, &mut self.inner, buf)", "mapping_type": "function", "description": "Write data to a destination (file descriptor or internal buffer)", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust method 'write' operates on a mutable self with a byte slice, returning a Result. [Similarity] Both perform low-level writing to a destination (fd in C, inner buffer in Rust), but differ in abstraction level and error handling style. [Knowledge Extraction] No full structural match due to different abstraction levels and domains (system I/O vs buffered I/O). However, both represent write operations to a destination, so API mapping is extracted."}]
+Unixcoder Score: 0.0520830862224102
+--------------------------------------------------

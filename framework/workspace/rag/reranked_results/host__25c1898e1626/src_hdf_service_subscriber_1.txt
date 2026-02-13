@@ -1,0 +1,373 @@
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.0089761633425951
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: 0.008656014688313007
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: 0.00673713767901063
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: 0.005393950268626213
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: 0.0034956627059727907
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.0007270073983818293
+--------------------------------------------------
+C_Code: 
+void SubscriberWrapper::OnAccountsChanged(const int &id)
+{
+    REQUEST_HILOGI("Account Change to %{public}d", id);
+    on_accounts_changed_(id, *task_manager_);
+}
+Function: 
+pub(crate) fn registry_account_subscribe(task_manager: TaskManagerTx) {
+    static ONCE: Once = Once::new();
+
+    call_once(&ONCE, || unsafe {
+        TASK_MANAGER_TX = Some(task_manager.clone());
+    });
+
+    info!("registry_account_subscribe");
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED,
+            Box::new(task_manager.clone()),
+            |_, _| {},
+            |_new_id, _old_id, task_manager| update_accounts(task_manager.clone()),
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_switch_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_switch_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::ACTIVATED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_active_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_active_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::REMOVED,
+            Box::new(task_manager.clone()),
+            |id, task_manager| {
+                task_manager.send_event(TaskManagerEvent::Account(AccountEvent::Remove(*id)));
+            },
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_remove_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_remove_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::STOPPED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_stop_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_stop_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    update_accounts(task_manager.clone());
+}
+Unixcoder Score: -0.006797136273235083
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener)
+{
+    if (abilityStateScheduler_ == nullptr) {
+        HILOGE("abilityStateScheduler is nullptr");
+        return ERR_INVALID_VALUE;
+    }
+    return abilityStateScheduler_->SubscribeSystemProcess(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PublishStateChangeEvent__idx739_rank1.c", "source_rust_file": "API_Mapping__PublishStateChangeEvent__idx739_rank1.rs", "c_api": "REQUEST_HILOGE", "rust_api": "error!(\"Sends ClientManager event failed {}\", e)", "mapping_type": "function", "description": "Logging error messages", "reasoning": "[Task Analysis] C function publishes a common event using a series of setters and a publish call; Rust function sends an event via a channel with error handling and logging. [Similarity] Names do not refer to the same concept (PublishStateChangeEvent vs send_event), and domains are different (event publishing vs channel communication). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve sending data and error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PublishStateChangeEvent__idx739_rank1.c", "source_rust_file": "API_Mapping__PublishStateChangeEvent__idx739_rank1.rs", "c_api": "publishInfo.SetSubscriberUid", "rust_api": "self.tx.send(event).is_err()", "mapping_type": "function", "description": "Error handling for sending operation", "reasoning": "[Task Analysis] C function publishes a common event using a series of setters and a publish call; Rust function sends an event via a channel with error handling and logging. [Similarity] Names do not refer to the same concept (PublishStateChangeEvent vs send_event), and domains are different (event publishing vs channel communication). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve sending data and error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PublishStateChangeEvent__idx739_rank1.c", "source_rust_file": "API_Mapping__PublishStateChangeEvent__idx739_rank1.rs", "c_api": "CommonEventManager::PublishCommonEvent", "rust_api": "self.tx.send(event)", "mapping_type": "function", "description": "Sending data to a receiver", "reasoning": "[Task Analysis] C function publishes a common event using a series of setters and a publish call; Rust function sends an event via a channel with error handling and logging. [Similarity] Names do not refer to the same concept (PublishStateChangeEvent vs send_event), and domains are different (event publishing vs channel communication). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve sending data and error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PublishStateChangeEvent__idx739_rank1.c", "source_rust_file": "API_Mapping__PublishStateChangeEvent__idx739_rank1.rs", "c_api": "REQUEST_HILOGD", "rust_api": "info!(\"ClientManager is unloading\")", "mapping_type": "function", "description": "Logging informational messages", "reasoning": "[Task Analysis] C function publishes a common event using a series of setters and a publish call; Rust function sends an event via a channel with error handling and logging. [Similarity] Names do not refer to the same concept (PublishStateChangeEvent vs send_event), and domains are different (event publishing vs channel communication). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve sending data and error handling, so API mappings can be extracted."}]
+Unixcoder Score: -0.011790994554758072
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::SubscribeSystemAbility(int32_t systemAbilityId,
+    const sptr<ISystemAbilityStatusChange>& listener)
+{
+    if (!CheckInputSysAbilityId(systemAbilityId) || listener == nullptr) {
+        HILOGW("SubscribeSystemAbility SAId or listener invalid!");
+        return ERR_INVALID_VALUE;
+    }
+
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    {
+        lock_guard<samgr::mutex> autoLock(listenerMapLock_);
+        auto& listeners = listenerMap_[systemAbilityId];
+        for (const auto& itemListener : listeners) {
+            if (listener->AsObject() == itemListener.listener->AsObject()) {
+                HILOGI("already exist listener object SA:%{public}d", systemAbilityId);
+                return ERR_OK;
+            }
+        }
+        auto& count = subscribeCountMap_[callingPid];
+        if (count >= MAX_SUBSCRIBE_COUNT) {
+            HILOGE("SubscribeSystemAbility pid:%{public}d overflow max subscribe count!", callingPid);
+            return ERR_PERMISSION_DENIED;
+        }
+        ++count;
+        bool ret = false;
+        if (abilityStatusDeath_ != nullptr) {
+            ret = listener->AsObject()->AddDeathRecipient(abilityStatusDeath_);
+            listeners.emplace_back(listener, callingPid);
+        }
+        HILOGI("SubscribeSA:%{public}d,%{public}d_%{public}zu_%{public}d%{public}s",
+            systemAbilityId, callingPid, listeners.size(), count, ret ? "" : ",AddDeath fail");
+    }
+    CheckListenerNotify(systemAbilityId, listener);
+    return ERR_OK;
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.c", "source_rust_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.rs", "c_api": "CommonEventManager::SubscribeCommonEvent", "rust_api": "SubscribeSystemEvent", "mapping_type": "function", "description": "Subscribe to common event manager", "reasoning": "[Task Analysis] C function subscribes to system events using a callback and event handler; Rust function wraps the C call with a callback struct and logs results. [Similarity] Both perform subscription logic with fallback behavior, but C handles event setup and Rust handles callback struct creation and logging. [Knowledge Extraction] Full structural match not present due to different control flow and domain focus (C: event setup, Rust: callback wrapping), but API mappings found for event subscription and callback handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.c", "source_rust_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.rs", "c_api": "SubscribeSystemEvent", "rust_api": "SubscribeSystemEvent", "mapping_type": "function", "description": "System event subscription", "reasoning": "[Task Analysis] C function subscribes to system events using a callback and event handler; Rust function wraps the C call with a callback struct and logs results. [Similarity] Both perform subscription logic with fallback behavior, but C handles event setup and Rust handles callback struct creation and logging. [Knowledge Extraction] Full structural match not present due to different control flow and domain focus (C: event setup, Rust: callback wrapping), but API mappings found for event subscription and callback handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.c", "source_rust_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.rs", "c_api": "matchingSkills.AddEvent", "rust_api": "EventCallBack", "mapping_type": "pattern", "description": "Adding event to subscription list", "reasoning": "[Task Analysis] C function subscribes to system events using a callback and event handler; Rust function wraps the C call with a callback struct and logs results. [Similarity] Both perform subscription logic with fallback behavior, but C handles event setup and Rust handles callback struct creation and logging. [Knowledge Extraction] Full structural match not present due to different control flow and domain focus (C: event setup, Rust: callback wrapping), but API mappings found for event subscription and callback handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.c", "source_rust_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.rs", "c_api": "LOGE", "rust_api": "loge!", "mapping_type": "function", "description": "Log error message", "reasoning": "[Task Analysis] C function subscribes to system events using a callback and event handler; Rust function wraps the C call with a callback struct and logs results. [Similarity] Both perform subscription logic with fallback behavior, but C handles event setup and Rust handles callback struct creation and logging. [Knowledge Extraction] Full structural match not present due to different control flow and domain focus (C: event setup, Rust: callback wrapping), but API mappings found for event subscription and callback handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.c", "source_rust_file": "API_Mapping__SubscribeSystemEvent__idx4498_rank1.rs", "c_api": "LOGI", "rust_api": "logi!", "mapping_type": "function", "description": "Log info message", "reasoning": "[Task Analysis] C function subscribes to system events using a callback and event handler; Rust function wraps the C call with a callback struct and logs results. [Similarity] Both perform subscription logic with fallback behavior, but C handles event setup and Rust handles callback struct creation and logging. [Knowledge Extraction] Full structural match not present due to different control flow and domain focus (C: event setup, Rust: callback wrapping), but API mappings found for event subscription and callback handling."}]
+Unixcoder Score: -0.014065208844840527
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    SubscribeType type;
+    uint32_t taskId;
+    Progress progress;
+    Action action;
+    Version version;
+    Mode mode;
+    std::vector<TaskState> taskStates;
+}
+Function: 
+pub(crate) struct NotifyData {
+    pub(crate) bundle: String,
+    pub(crate) progress: Progress,
+    pub(crate) action: Action,
+    pub(crate) version: Version,
+    pub(crate) each_file_status: Vec<EachFileStatus>,
+    pub(crate) task_id: u32,
+    pub(crate) uid: u64,
+}
+Unixcoder Score: -0.014690963551402092
+--------------------------------------------------

@@ -1,0 +1,298 @@
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+unsafe fn splice_nodes(
+        &mut self,
+        existing_prev: Option<NonNull<Node<T>>>,
+        existing_next: Option<NonNull<Node<T>>>,
+        mut splice_start: NonNull<Node<T>>,
+        mut splice_end: NonNull<Node<T>>,
+        splice_length: usize,
+    ) {
+        // This method takes care not to create multiple mutable references to whole nodes at the same time,
+        // to maintain validity of aliasing pointers into `element`.
+        if let Some(mut existing_prev) = existing_prev {
+            unsafe {
+                existing_prev.as_mut().next = Some(splice_start);
+            }
+        } else {
+            self.head = Some(splice_start);
+        }
+        if let Some(mut existing_next) = existing_next {
+            unsafe {
+                existing_next.as_mut().prev = Some(splice_end);
+            }
+        } else {
+            self.tail = Some(splice_end);
+        }
+        unsafe {
+            splice_start.as_mut().prev = existing_prev;
+            splice_end.as_mut().next = existing_next;
+        }
+
+        self.len += splice_length;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_api": "node->prev = NULL", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Clearing node links after removal in a doubly-linked list.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_api": "node->next = NULL", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Clearing node links after removal in a doubly-linked list.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_api": "node->next->prev = node->prev", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Removing a node from a doubly-linked list by updating adjacent node pointers.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "l.remove(one);\n        l.assert_consistent(); l.remove(two);", "description": "Removal of elements from a doubly-linked list structure.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_api": "node->prev->next = node->next", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Removing a node from a doubly-linked list by updating adjacent node pointers.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: 0.08875986933708191
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+pub fn remove(&mut self, at: usize) -> T {
+        let len = self.len();
+        assert!(at < len, "Cannot remove at an index outside of the list bounds");
+
+        // Below, we iterate towards the node at the given index, either from
+        // the start or the end, depending on which would be faster.
+        let offset_from_end = len - at - 1;
+        if at <= offset_from_end {
+            let mut cursor = self.cursor_front_mut();
+            for _ in 0..at {
+                cursor.move_next();
+            }
+            cursor.remove_current().unwrap()
+        } else {
+            let mut cursor = self.cursor_back_mut();
+            for _ in 0..offset_from_end {
+                cursor.move_prev();
+            }
+            cursor.remove_current().unwrap()
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank1.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "let hd = self.peek_n();\n        hd.map(|nobe| self.unlink(nobe));\n        hd", "description": "Both perform list node removal logic, though C directly manipulates pointers while Rust uses a container abstraction with peek and unlink methods.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to different abstraction levels. API mappings found for list node removal and node unlinking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank1.rs", "c_api": "node->prev->next = node->next", "rust_api": "self.unlink(nobe)", "mapping_type": "method", "description": "Removal of node from doubly-linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to different abstraction levels. API mappings found for list node removal and node unlinking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank1.rs", "c_api": "node->prev = NULL", "rust_api": "self.unlink(nobe)", "mapping_type": "method", "description": "Clearing node's prev pointer after removal", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to different abstraction levels. API mappings found for list node removal and node unlinking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank1.rs", "c_api": "node->next->prev = node->prev", "rust_api": "self.unlink(nobe)", "mapping_type": "method", "description": "Removal of node from doubly-linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to different abstraction levels. API mappings found for list node removal and node unlinking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank1.rs", "c_api": "node->next = NULL", "rust_api": "self.unlink(nobe)", "mapping_type": "method", "description": "Clearing node's next pointer after removal", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to different abstraction levels. API mappings found for list node removal and node unlinking operations."}]
+Unixcoder Score: 0.04382424056529999
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn test_dlist_remove_two_three() {
+        let l = create::<int>();
+        l.assert_consistent(); let _one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let three = l.push_n(3);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); l.remove(two);
+        l.assert_consistent(); l.remove(three);
+        l.assert_consistent(); assert l.len() == 1;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 1;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank3.rs", "c_api": "node->next->prev = node->prev", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Removing a node from a doubly-linked list by updating adjacent node pointers.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level test logic), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank3.rs", "c_api": "node->prev = NULL", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Clearing node links after removal in a doubly-linked list.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level test logic), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank3.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "l.remove(one);\nl.remove(two);", "description": "Removal of elements from a doubly-linked list structure.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level test logic), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank3.rs", "c_api": "node->prev->next = node->next", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Removing a node from a doubly-linked list by updating adjacent node pointers.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level test logic), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank3.rs", "c_api": "node->next = NULL", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Clearing node links after removal in a doubly-linked list.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level test logic), but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: 0.037343580275774
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn remove(nobe: dlist_node<T>) { self.unlink(nobe); }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx113776_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113776_rank1.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "unsafe {\n                existing_prev.as_mut().next = Some(splice_start);\n            }\n        } else {\n            self.head = Some(splice_start);\n        }\n        if let Some(mut existing_next) = existing_next {\n            unsafe {\n                existing_next.as_mut().prev = Some(splice_end);\n            }\n        } else {\n            self.tail = Some(splice_end);\n        }\n        unsafe {\n            splice_start.as_mut().prev = existing_prev;\n            splice_end.as_mut().next = existing_next;\n        }", "description": "Both functions perform insertion of nodes into a doubly-linked list by updating prev/next pointers of surrounding nodes.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function performs a similar operation in a doubly-linked list with unsafe pointer manipulation. [Similarity] Both perform list insertion logic involving prev/next pointers, but differ in structure (C uses raw pointers, Rust uses Option<NonNull<Node>>). [Knowledge Extraction] Found partial structural match in list insertion logic and API mappings for node linking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113776_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113776_rank1.rs", "c_api": "old_node->prev->next = new_node;", "rust_api": "existing_next.as_mut().prev = Some(splice_end);", "mapping_type": "field_access", "description": "Updating next pointer of previous node to point to new node in doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function performs a similar operation in a doubly-linked list with unsafe pointer manipulation. [Similarity] Both perform list insertion logic involving prev/next pointers, but differ in structure (C uses raw pointers, Rust uses Option<NonNull<Node>>). [Knowledge Extraction] Found partial structural match in list insertion logic and API mappings for node linking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113776_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113776_rank1.rs", "c_api": "new_node->prev = old_node->prev;", "rust_api": "splice_start.as_mut().prev = existing_prev;", "mapping_type": "field_access", "description": "Setting prev pointer of a node to another node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function performs a similar operation in a doubly-linked list with unsafe pointer manipulation. [Similarity] Both perform list insertion logic involving prev/next pointers, but differ in structure (C uses raw pointers, Rust uses Option<NonNull<Node>>). [Knowledge Extraction] Found partial structural match in list insertion logic and API mappings for node linking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113776_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113776_rank1.rs", "c_api": "new_node->next = old_node;", "rust_api": "existing_prev.as_mut().next = Some(splice_start);", "mapping_type": "field_access", "description": "Setting next pointer of a node to another node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function performs a similar operation in a doubly-linked list with unsafe pointer manipulation. [Similarity] Both perform list insertion logic involving prev/next pointers, but differ in structure (C uses raw pointers, Rust uses Option<NonNull<Node>>). [Knowledge Extraction] Found partial structural match in list insertion logic and API mappings for node linking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113776_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113776_rank1.rs", "c_api": "old_node->prev = new_node;", "rust_api": "splice_end.as_mut().next = existing_next;", "mapping_type": "field_access", "description": "Updating prev pointer of next node to point to new node in doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function performs a similar operation in a doubly-linked list with unsafe pointer manipulation. [Similarity] Both perform list insertion logic involving prev/next pointers, but differ in structure (C uses raw pointers, Rust uses Option<NonNull<Node>>). [Knowledge Extraction] Found partial structural match in list insertion logic and API mappings for node linking operations."}]
+Unixcoder Score: 0.03724527731537819
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn test_dlist_remove_mid() {
+        let l = create::<int>();
+        l.assert_consistent(); let _one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let _three = l.push_n(3);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); l.remove(two);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 3;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113775_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx113775_rank3.rs", "c_api": "old_node->prev->next = new_node;", "rust_api": "self.head = node.next", "mapping_type": "field_access", "description": "Updating the next pointer of the previous node in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node, while Rust function removes a node from a doubly-linked list. [Similarity] Both involve pointer manipulation and doubly-linked list operations, but the actions are semantically opposite (insert vs unlink). [Knowledge Extraction] No full structural match due to semantic opposition and domain mismatch (insertion vs deletion). However, both involve similar low-level pointer operations and list traversal patterns, so partial fragments and API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113775_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx113775_rank3.rs", "c_api": "old_node->prev = new_node;", "rust_api": "self.tail = node.prev", "mapping_type": "field_access", "description": "Updating the prev pointer of the next node in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node, while Rust function removes a node from a doubly-linked list. [Similarity] Both involve pointer manipulation and doubly-linked list operations, but the actions are semantically opposite (insert vs unlink). [Knowledge Extraction] No full structural match due to semantic opposition and domain mismatch (insertion vs deletion). However, both involve similar low-level pointer operations and list traversal patterns, so partial fragments and API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113775_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx113775_rank3.rs", "c_api": "new_node->prev = old_node->prev;", "rust_api": "(*next.as_ptr()).prev = node.prev", "mapping_type": "field_access", "description": "Assignment of prev pointer in a doubly-linked list node.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node, while Rust function removes a node from a doubly-linked list. [Similarity] Both involve pointer manipulation and doubly-linked list operations, but the actions are semantically opposite (insert vs unlink). [Knowledge Extraction] No full structural match due to semantic opposition and domain mismatch (insertion vs deletion). However, both involve similar low-level pointer operations and list traversal patterns, so partial fragments and API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113775_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx113775_rank3.rs", "c_api": "new_node->next = old_node;", "rust_api": "(*prev.as_ptr()).next = node.next", "mapping_type": "field_access", "description": "Assignment of next pointer in a doubly-linked list node.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node, while Rust function removes a node from a doubly-linked list. [Similarity] Both involve pointer manipulation and doubly-linked list operations, but the actions are semantically opposite (insert vs unlink). [Knowledge Extraction] No full structural match due to semantic opposition and domain mismatch (insertion vs deletion). However, both involve similar low-level pointer operations and list traversal patterns, so partial fragments and API mappings are extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx113775_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx113775_rank3.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "match node.prev {\n            Some(prev) => unsafe { (*prev.as_ptr()).next = node.next },\n            // this node is the head node\n            None => self.head = node.next,\n        };\n\n        match node.next {\n            Some(next) => unsafe { (*next.as_ptr()).prev = node.prev },\n            // this node is the tail node\n            None => self.tail = node.prev,\n        };", "description": "Both code blocks manipulate pointers in a doubly-linked list to update node connections.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node, while Rust function removes a node from a doubly-linked list. [Similarity] Both involve pointer manipulation and doubly-linked list operations, but the actions are semantically opposite (insert vs unlink). [Knowledge Extraction] No full structural match due to semantic opposition and domain mismatch (insertion vs deletion). However, both involve similar low-level pointer operations and list traversal patterns, so partial fragments and API mappings are extracted."}]
+Unixcoder Score: 0.03649364039301872
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn remove(nobe: dlist_node<T>) { self.unlink(nobe); }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134513_rank2.c", "source_rust_file": "Partial__ares__remove_from_list__idx134513_rank2.rs", "c_api": "node->next = NULL", "rust_api": "nobe.next = none", "mapping_type": "field_access", "description": "Clear the next pointer of the removed node", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function unlinks a node from a doubly-linked list with similar logic. [Similarity] Both manipulate prev/next pointers to remove a node, but differ in structure (C uses explicit null checks, Rust uses assertions and direct pointer manipulation). [Knowledge Extraction] Found partial structural match in list manipulation logic and API mappings for node removal and pointer management."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134513_rank2.c", "source_rust_file": "Partial__ares__remove_from_list__idx134513_rank2.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "self.link(nobe.prev, nobe.next);\n        nobe.prev = none; // Release extraneous references.\n        nobe.next = none;\n        nobe.root = none;\n        self.size -= 1;", "description": "Both functions remove a node from a doubly-linked list by updating adjacent node pointers and clearing the removed node's links.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function unlinks a node from a doubly-linked list with similar logic. [Similarity] Both manipulate prev/next pointers to remove a node, but differ in structure (C uses explicit null checks, Rust uses assertions and direct pointer manipulation). [Knowledge Extraction] Found partial structural match in list manipulation logic and API mappings for node removal and pointer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134513_rank2.c", "source_rust_file": "Partial__ares__remove_from_list__idx134513_rank2.rs", "c_api": "node->next->prev = node->prev", "rust_api": "self.link(nobe.prev, nobe.next)", "mapping_type": "function", "description": "Update next node's prev pointer to skip the current node", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function unlinks a node from a doubly-linked list with similar logic. [Similarity] Both manipulate prev/next pointers to remove a node, but differ in structure (C uses explicit null checks, Rust uses assertions and direct pointer manipulation). [Knowledge Extraction] Found partial structural match in list manipulation logic and API mappings for node removal and pointer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134513_rank2.c", "source_rust_file": "Partial__ares__remove_from_list__idx134513_rank2.rs", "c_api": "node->prev = NULL", "rust_api": "nobe.prev = none", "mapping_type": "field_access", "description": "Clear the previous pointer of the removed node", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function unlinks a node from a doubly-linked list with similar logic. [Similarity] Both manipulate prev/next pointers to remove a node, but differ in structure (C uses explicit null checks, Rust uses assertions and direct pointer manipulation). [Knowledge Extraction] Found partial structural match in list manipulation logic and API mappings for node removal and pointer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134513_rank2.c", "source_rust_file": "Partial__ares__remove_from_list__idx134513_rank2.rs", "c_api": "node->prev->next = node->next", "rust_api": "self.link(nobe.prev, nobe.next)", "mapping_type": "function", "description": "Update previous node's next pointer to skip the current node", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function unlinks a node from a doubly-linked list with similar logic. [Similarity] Both manipulate prev/next pointers to remove a node, but differ in structure (C uses explicit null checks, Rust uses assertions and direct pointer manipulation). [Knowledge Extraction] Found partial structural match in list manipulation logic and API mappings for node removal and pointer management."}]
+Unixcoder Score: 0.033963385969400406
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+unsafe fn unlink_node(&mut self, mut node: NonNull<Node<T>>) {
+        let node = unsafe { node.as_mut() }; // this one is ours now, we can create an &mut.
+
+        // Not creating new mutable (unique!) references overlapping `element`.
+        match node.prev {
+            Some(prev) => unsafe { (*prev.as_ptr()).next = node.next },
+            // this node is the head node
+            None => self.head = node.next,
+        };
+
+        match node.next {
+            Some(next) => unsafe { (*next.as_ptr()).prev = node.prev },
+            // this node is the tail node
+            None => self.tail = node.prev,
+        };
+
+        self.len -= 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__insert_in_list__idx113769_rank4.c", "source_rust_file": "API_Mapping__ares__insert_in_list__idx113769_rank4.rs", "c_api": "new_node->prev = old_node->prev", "rust_api": "Node { next: None, prev: None, element }", "mapping_type": "field_access", "description": "Setting the prev field of a node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes. Rust code defines a Node struct with next and prev fields, but does not show insertion logic. [Similarity] Names do not refer to the same concept (ares__insert_in_list vs new), and the Rust code is a constructor, not an insertion function. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs struct initialization). However, there are API mappings between the list node operations and the struct field assignments."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__insert_in_list__idx113769_rank4.c", "source_rust_file": "API_Mapping__ares__insert_in_list__idx113769_rank4.rs", "c_api": "new_node->next = old_node", "rust_api": "Node { next: None, prev: None, element }", "mapping_type": "field_access", "description": "Setting the next field of a node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes. Rust code defines a Node struct with next and prev fields, but does not show insertion logic. [Similarity] Names do not refer to the same concept (ares__insert_in_list vs new), and the Rust code is a constructor, not an insertion function. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs struct initialization). However, there are API mappings between the list node operations and the struct field assignments."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__insert_in_list__idx113769_rank4.c", "source_rust_file": "API_Mapping__ares__insert_in_list__idx113769_rank4.rs", "c_api": "old_node->prev = new_node", "rust_api": "Node { next: None, prev: None, element }", "mapping_type": "field_access", "description": "Updating the prev pointer of the old node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes. Rust code defines a Node struct with next and prev fields, but does not show insertion logic. [Similarity] Names do not refer to the same concept (ares__insert_in_list vs new), and the Rust code is a constructor, not an insertion function. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs struct initialization). However, there are API mappings between the list node operations and the struct field assignments."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__insert_in_list__idx113769_rank4.c", "source_rust_file": "API_Mapping__ares__insert_in_list__idx113769_rank4.rs", "c_api": "old_node->prev->next = new_node", "rust_api": "Node { next: None, prev: None, element }", "mapping_type": "field_access", "description": "Updating the next pointer of the previous node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes. Rust code defines a Node struct with next and prev fields, but does not show insertion logic. [Similarity] Names do not refer to the same concept (ares__insert_in_list vs new), and the Rust code is a constructor, not an insertion function. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs struct initialization). However, there are API mappings between the list node operations and the struct field assignments."}]
+Unixcoder Score: 0.033258091658353806
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+unsafe fn unlink_node(&mut self, mut node: NonNull<Node<T>>) {
+        let node = unsafe { node.as_mut() }; // this one is ours now, we can create an &mut.
+
+        // Not creating new mutable (unique!) references overlapping `element`.
+        match node.prev {
+            Some(prev) => unsafe { (*prev.as_ptr()).next = node.next },
+            // this node is the head node
+            None => self.head = node.next,
+        };
+
+        match node.next {
+            Some(next) => unsafe { (*next.as_ptr()).prev = node.prev },
+            // this node is the tail node
+            None => self.tail = node.prev,
+        };
+
+        self.len -= 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx113836_rank5.c", "source_rust_file": "Partial__ares__remove_from_list__idx113836_rank5.rs", "c_api": "node->prev = NULL", "rust_api": "self.list.splice_nodes(node_prev, self.current, splice_head, splice_tail, splice_len)", "mapping_type": "function", "description": "Node unlinking in C vs splicing operation in Rust", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function splices a linked list before a given node. [Similarity] Both manipulate linked list structures, but the Rust version is more complex and uses a different API design (LinkedList<T> with detach_all_nodes, splice_nodes). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are present for list manipulation operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx113836_rank5.c", "source_rust_file": "Partial__ares__remove_from_list__idx113836_rank5.rs", "c_api": "node->prev->next = node->next", "rust_api": "self.list.splice_nodes(node_prev, self.current, splice_head, splice_tail, splice_len)", "mapping_type": "function", "description": "List node linking operation in C vs splicing operation in Rust", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function splices a linked list before a given node. [Similarity] Both manipulate linked list structures, but the Rust version is more complex and uses a different API design (LinkedList<T> with detach_all_nodes, splice_nodes). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are present for list manipulation operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx113836_rank5.c", "source_rust_file": "Partial__ares__remove_from_list__idx113836_rank5.rs", "c_api": "node->next = NULL", "rust_api": "self.list.splice_nodes(node_prev, self.current, splice_head, splice_tail, splice_len)", "mapping_type": "function", "description": "Node unlinking in C vs splicing operation in Rust", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function splices a linked list before a given node. [Similarity] Both manipulate linked list structures, but the Rust version is more complex and uses a different API design (LinkedList<T> with detach_all_nodes, splice_nodes). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are present for list manipulation operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx113836_rank5.c", "source_rust_file": "Partial__ares__remove_from_list__idx113836_rank5.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "unsafe {\n            let (splice_head, splice_tail, splice_len) = match list.detach_all_nodes() {\n                Some(parts) => parts,\n                _ => return,\n            };", "description": "Both perform conditional list node removal or splicing operations, though with different levels of abstraction and control flow.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function splices a linked list before a given node. [Similarity] Both manipulate linked list structures, but the Rust version is more complex and uses a different API design (LinkedList<T> with detach_all_nodes, splice_nodes). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are present for list manipulation operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx113836_rank5.c", "source_rust_file": "Partial__ares__remove_from_list__idx113836_rank5.rs", "c_api": "node->next->prev = node->prev", "rust_api": "self.list.splice_nodes(node_prev, self.current, splice_head, splice_tail, splice_len)", "mapping_type": "function", "description": "List node linking operation in C vs splicing operation in Rust", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function splices a linked list before a given node. [Similarity] Both manipulate linked list structures, but the Rust version is more complex and uses a different API design (LinkedList<T> with detach_all_nodes, splice_nodes). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are present for list manipulation operations."}]
+Unixcoder Score: 0.03312283381819725
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+pub unsafe fn remove(&mut self, entry: &mut UnsafeListEntry<T>) {
+        rtassert!(!self.is_empty());
+        // BEFORE:
+        //     /----\ next ---> /-----\ next ---> /----\
+        // ... |prev|           |entry|           |next| ...
+        //     \----/ <--- prev \-----/ <--- prev \----/
+        //
+        // AFTER:
+        //     /----\ next ---> /----\
+        // ... |prev|           |next| ...
+        //     \----/ <--- prev \----/
+        let mut prev = entry.prev;
+        let mut next = entry.next;
+        // SAFETY: `prev` and `next` must meet all requirements for a mutable reference.entry
+        unsafe { prev.as_mut() }.next = next;
+        unsafe { next.as_mut() }.prev = prev;
+        entry.next = NonNull::dangling();
+        entry.prev = NonNull::dangling();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx134526_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134526_rank1.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "self.make_mine(nobe);\n        self.insert_left(some(nobe), neighbour);", "description": "Both functions perform insertion of a node into a doubly-linked list structure, adjusting pointers to maintain list integrity.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node before another; Rust function performs similar operation using a dlist_node abstraction. [Similarity] Both perform insertion in a doubly-linked list structure, but with different APIs and naming conventions. [Knowledge Extraction] Found partial structural match in list manipulation logic and API mapping for node insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134526_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134526_rank1.rs", "c_api": "new_node->prev = old_node->prev;", "rust_api": "self.make_mine(nobe);", "mapping_type": "function", "description": "Setting up node's previous pointer to match the target node's previous", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node before another; Rust function performs similar operation using a dlist_node abstraction. [Similarity] Both perform insertion in a doubly-linked list structure, but with different APIs and naming conventions. [Knowledge Extraction] Found partial structural match in list manipulation logic and API mapping for node insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134526_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134526_rank1.rs", "c_api": "old_node->prev->next = new_node;", "rust_api": "self.insert_left(some(nobe), neighbour);", "mapping_type": "function", "description": "Updating the previous node's next pointer to point to the new node", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node before another; Rust function performs similar operation using a dlist_node abstraction. [Similarity] Both perform insertion in a doubly-linked list structure, but with different APIs and naming conventions. [Knowledge Extraction] Found partial structural match in list manipulation logic and API mapping for node insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134526_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134526_rank1.rs", "c_api": "old_node->prev = new_node;", "rust_api": "self.make_mine(nobe);", "mapping_type": "function", "description": "Updating the target node's previous pointer to point to the new node", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node before another; Rust function performs similar operation using a dlist_node abstraction. [Similarity] Both perform insertion in a doubly-linked list structure, but with different APIs and naming conventions. [Knowledge Extraction] Found partial structural match in list manipulation logic and API mapping for node insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134526_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx134526_rank1.rs", "c_api": "new_node->next = old_node;", "rust_api": "self.insert_left(some(nobe), neighbour);", "mapping_type": "function", "description": "Inserting a node into a doubly-linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node before another; Rust function performs similar operation using a dlist_node abstraction. [Similarity] Both perform insertion in a doubly-linked list structure, but with different APIs and naming conventions. [Knowledge Extraction] Found partial structural match in list manipulation logic and API mapping for node insertion operations."}]
+Unixcoder Score: 0.03266897797584534
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+pub fn remove(&mut self, at: usize) -> T {
+        let len = self.len();
+        assert!(at < len, "Cannot remove at an index outside of the list bounds");
+
+        // Below, we iterate towards the node at the given index, either from
+        // the start or the end, depending on which would be faster.
+        let offset_from_end = len - at - 1;
+        if at <= offset_from_end {
+            let mut cursor = self.cursor_front_mut();
+            for _ in 0..at {
+                cursor.move_next();
+            }
+            cursor.remove_current().unwrap()
+        } else {
+            let mut cursor = self.cursor_back_mut();
+            for _ in 0..offset_from_end {
+                cursor.move_prev();
+            }
+            cursor.remove_current().unwrap()
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "new_node->next = old_node", "rust_api": "self.insert_left(nobe, neighbour)", "mapping_type": "method", "description": "Inserting a new node into a doubly-linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "new_node->prev = old_node->prev", "rust_api": "self.insert_left(nobe, neighbour)", "mapping_type": "method", "description": "Setting the previous pointer of a new node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "old_node->prev = new_node", "rust_api": "self.insert_left(nobe, neighbour)", "mapping_type": "method", "description": "Updating the previous pointer of the current node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "let mut nobe = self.new_link(data);\n        self.insert_left(nobe, neighbour);", "description": "Both code blocks perform insertion of a new node into a doubly-linked list structure, with similar logic of updating next/prev pointers.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "struct list_node* old_node", "rust_api": "dlist_node<T>", "mapping_type": "type", "description": "Doubly-linked list node type", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "old_node->prev->next = new_node", "rust_api": "self.insert_left(nobe, neighbour)", "mapping_type": "method", "description": "Updating the next pointer of the previous node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "struct list_node* new_node", "rust_api": "dlist_node<T>", "mapping_type": "type", "description": "Doubly-linked list node type", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}]
+Unixcoder Score: 0.032549045979976654
+--------------------------------------------------

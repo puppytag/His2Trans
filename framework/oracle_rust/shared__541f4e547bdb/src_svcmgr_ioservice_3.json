@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_svcmgr_ioservice_3",
+  "function_name": "UnSetListenClass",
+  "source_c_file": "src/svcmgr_ioservice.c",
+  "c_code": "static int32_t UnSetListenClass(struct SvcMgrIoservice * svcmgrInst, uint16_t devClass)\n{\n    return ProcessListenClass(svcmgrInst, devClass, SVCMGR_UNREGISTER_LISTENER);\n}",
+  "rust_signature": "fn UnSetListenClass(svcmgrInst: *mut crate::types::SvcMgrIoservice, devClass: u16) -> i32",
+  "rust_code": "fn UnSetListenClass(svcmgrInst: *mut SvcMgrIoservice, devClass: u16) -> i32 {\n    ProcessListenClass(svcmgrInst, devClass, SVCMGR_UNREGISTER_LISTENER as i32)\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "return foo(...);",
+      "rust_fragment": "return foo(...);",
+      "description": "Direct call/return pattern is preserved in Rust",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

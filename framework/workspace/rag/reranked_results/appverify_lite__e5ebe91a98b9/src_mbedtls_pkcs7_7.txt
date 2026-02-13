@@ -1,0 +1,130 @@
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct PkgId {
+    /// Remote path: for example, github.com/mozilla/quux-whatever
+    remote_path: RemotePath,
+    /// Local path: for example, /home/quux/github.com/mozilla/quux_whatever
+    /// Note that '-' normalizes to '_' when mapping a remote path
+    /// onto a local path
+    /// Also, this will change when we implement #6407, though we'll still
+    /// need to keep track of separate local and remote paths
+    local_path: LocalPath,
+    /// Short name. This is the local path's filestem, but we store it
+    /// redundantly so as to not call get() everywhere (filestem() returns an
+    /// option)
+    short_name: ~str,
+    version: Version
+}
+Unixcoder Score: 0.0577983595430851
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct Slice {
+    pub inner: [u8]
+}
+Unixcoder Score: 0.0539490170776844
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct MultiplePointers<T: ?Sized>{
+    ptr1: *const T,
+    ptr2: *const T,
+}
+Unixcoder Score: 0.04672912880778313
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct Buf {
+    pub inner: Vec<u8>
+}
+Unixcoder Score: 0.044200241565704346
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct OwnedSlice {
+    /// This is conceptually a `&'self.owner [u8]`.
+    bytes: *const [u8],
+
+    // +---------------------------------------+
+    // | We expect `dead_code` lint here,      |
+    // | because we don't want to accidentally |
+    // | touch the owner — otherwise the owner |
+    // | could invalidate out `bytes` pointer  |
+    // |                                       |
+    // | so be quiet                           |
+    // +----+  +-------------------------------+
+    //       \/
+    //      ⊂(´･◡･⊂ )∘˚˳° (I am the phantom remnant of #97770)
+    #[expect(dead_code)]
+    owner: Lrc<dyn Send + Sync>,
+}
+Unixcoder Score: 0.04416005685925484
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct SliceRepr {
+    ptr: *const u8,
+    len: usize,
+}
+Unixcoder Score: 0.04178285971283913
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct Slice(&'static [i32]);
+Unixcoder Score: 0.04141766205430031
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice { slice: [u8] }
+Unixcoder Score: 0.041204363107681274
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice(&'static [&'static [u8]]);
+Unixcoder Score: 0.03952657803893089
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct ConstBytes<const T: &'static [u8]>;
+Unixcoder Score: 0.03843970224261284
+--------------------------------------------------

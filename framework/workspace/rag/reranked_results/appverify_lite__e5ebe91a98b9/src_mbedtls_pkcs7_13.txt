@@ -1,0 +1,156 @@
+C_Code: 
+static inline bool StringLessThan(const char *a_data, uoffset_t a_size,
+                                  const char *b_data, uoffset_t b_size) {
+  const auto cmp = memcmp(a_data, b_data, (std::min)(a_size, b_size));
+  return cmp == 0 ? a_size < b_size : cmp < 0;
+}
+Function: 
+fn lazy_strcmp(&self, key_addr: usize, key: &str) -> Ordering {
+        // TODO: Can we know this won't OOB and panic?
+        let k = self.buffer[key_addr..].iter().take_while(|&&b| b != b'\0');
+        k.cmp(key.as_bytes().iter())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__read_line_header__idx122869_rank4.c", "source_rust_file": "Partial__read_line_header__idx122869_rank4.rs", "c_api": "read_byte", "rust_api": "read", "mapping_type": "function", "description": "Reading a single byte from a buffer.", "reasoning": "[Filter 1] Names do not refer to the same concept ('read_line_header' vs 'read') -> Partial/None. [Filter 2] Neither code is empty/trivial. [Filter 3] No FFI call detected. [Filter 4] Semantic domains differ: C code is DWARF line number header parsing (low-level binary parsing), Rust code is generic byte buffer reading (high-level data deserialization). [Filter 5] Both are structs with fields, so not empty structs. [Filter 6] Not a definition vs usage mismatch. [Task Analysis] C function parses DWARF line number header, Rust function reads typed data from buffer. [Similarity] No full structural similarity due to domain mismatch. [Knowledge Extraction] Extract partial fragments and API mappings where applicable."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__read_line_header__idx122869_rank4.c", "source_rust_file": "Partial__read_line_header__idx122869_rank4.rs", "c_api": "backtrace_alloc", "rust_api": "backtrace_alloc", "mapping_type": "function", "description": "Memory allocation for dynamic data structures.", "reasoning": "[Filter 1] Names do not refer to the same concept ('read_line_header' vs 'read') -> Partial/None. [Filter 2] Neither code is empty/trivial. [Filter 3] No FFI call detected. [Filter 4] Semantic domains differ: C code is DWARF line number header parsing (low-level binary parsing), Rust code is generic byte buffer reading (high-level data deserialization). [Filter 5] Both are structs with fields, so not empty structs. [Filter 6] Not a definition vs usage mismatch. [Task Analysis] C function parses DWARF line number header, Rust function reads typed data from buffer. [Similarity] No full structural similarity due to domain mismatch. [Knowledge Extraction] Extract partial fragments and API mappings where applicable."}, {"knowledge_type": "Partial", "source_c_file": "Partial__read_line_header__idx122869_rank4.c", "source_rust_file": "Partial__read_line_header__idx122869_rank4.rs", "c_fragment": "if (hdr_buf.reported_underflow)\n    return 0;", "rust_fragment": "if (hdr_buf.reported_underflow)\n    return 0;", "description": "Error handling for buffer underflow in both C and Rust code.", "reasoning": "[Filter 1] Names do not refer to the same concept ('read_line_header' vs 'read') -> Partial/None. [Filter 2] Neither code is empty/trivial. [Filter 3] No FFI call detected. [Filter 4] Semantic domains differ: C code is DWARF line number header parsing (low-level binary parsing), Rust code is generic byte buffer reading (high-level data deserialization). [Filter 5] Both are structs with fields, so not empty structs. [Filter 6] Not a definition vs usage mismatch. [Task Analysis] C function parses DWARF line number header, Rust function reads typed data from buffer. [Similarity] No full structural similarity due to domain mismatch. [Knowledge Extraction] Extract partial fragments and API mappings where applicable."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__read_line_header__idx122869_rank4.c", "source_rust_file": "Partial__read_line_header__idx122869_rank4.rs", "c_api": "advance", "rust_api": "ptr.add", "mapping_type": "function", "description": "Advancing buffer pointer by a number of bytes.", "reasoning": "[Filter 1] Names do not refer to the same concept ('read_line_header' vs 'read') -> Partial/None. [Filter 2] Neither code is empty/trivial. [Filter 3] No FFI call detected. [Filter 4] Semantic domains differ: C code is DWARF line number header parsing (low-level binary parsing), Rust code is generic byte buffer reading (high-level data deserialization). [Filter 5] Both are structs with fields, so not empty structs. [Filter 6] Not a definition vs usage mismatch. [Task Analysis] C function parses DWARF line number header, Rust function reads typed data from buffer. [Similarity] No full structural similarity due to domain mismatch. [Knowledge Extraction] Extract partial fragments and API mappings where applicable."}]
+Unixcoder Score: 0.13660229742527008
+--------------------------------------------------
+C_Code: 
+static signed char
+eio_dent_cmp (const eio_dirent *a, const eio_dirent *b)
+{
+  return a->score - b->score ? a->score - b->score /* works because our signed char is always 0..100 */
+       : a->inode < b->inode ? -1
+       : a->inode > b->inode ?  1
+       :                        0;
+}
+Function: 
+fn cmp(&self, other: &Self) -> cmp::Ordering {
+        compare_components(self.clone(), other.clone())
+    }
+Unixcoder Score: 0.11921712756156921
+--------------------------------------------------
+C_Code: 
+static signed char
+eio_dent_cmp (const eio_dirent *a, const eio_dirent *b)
+{
+  return a->score - b->score ? a->score - b->score /* works because our signed char is always 0..100 */
+       : a->inode < b->inode ? -1
+       : a->inode > b->inode ?  1
+       :                        0;
+}
+Function: 
+fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+Unixcoder Score: 0.09758107364177704
+--------------------------------------------------
+C_Code: 
+static signed char
+eio_dent_cmp (const eio_dirent *a, const eio_dirent *b)
+{
+  return a->score - b->score ? a->score - b->score /* works because our signed char is always 0..100 */
+       : a->inode < b->inode ? -1
+       : a->inode > b->inode ?  1
+       :                        0;
+}
+Function: 
+fn cmp(&self, other: &Self) -> cmp::Ordering {
+        compare_components(self.clone(), other.clone())
+    }
+Unixcoder Score: 0.09358394145965576
+--------------------------------------------------
+C_Code: 
+static signed char
+eio_dent_cmp (const eio_dirent *a, const eio_dirent *b)
+{
+  return a->score - b->score ? a->score - b->score /* works because our signed char is always 0..100 */
+       : a->inode < b->inode ? -1
+       : a->inode > b->inode ?  1
+       :                        0;
+}
+Function: 
+fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+Unixcoder Score: 0.09289955347776413
+--------------------------------------------------
+C_Code: 
+static signed char
+eio_dent_cmp (const eio_dirent *a, const eio_dirent *b)
+{
+  return a->score - b->score ? a->score - b->score /* works because our signed char is always 0..100 */
+       : a->inode < b->inode ? -1
+       : a->inode > b->inode ?  1
+       :                        0;
+}
+Function: 
+fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+Unixcoder Score: 0.09020261466503143
+--------------------------------------------------
+C_Code: 
+static signed char
+eio_dent_cmp (const eio_dirent *a, const eio_dirent *b)
+{
+  return a->score - b->score ? a->score - b->score /* works because our signed char is always 0..100 */
+       : a->inode < b->inode ? -1
+       : a->inode > b->inode ?  1
+       :                        0;
+}
+Function: 
+fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+Unixcoder Score: 0.09012293070554733
+--------------------------------------------------
+C_Code: 
+struct StringOffsetCompare {
+    explicit StringOffsetCompare(const std::vector<uint8_t> &buf)
+        : buf_(&buf) {}
+    bool operator()(const StringOffset &a, const StringOffset &b) const {
+      auto stra = buf_->data() + a.first;
+      auto strb = buf_->data() + b.first;
+      auto cr = memcmp(stra, strb, (std::min)(a.second, b.second) + 1);
+      return cr < 0 || (cr == 0 && a.second < b.second);
+    }
+Function: 
+pub struct Builder {
+    buffer: Vec<u8>,
+    values: Vec<Value>,
+    key_pool: Option<Vec<CachedKey>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "memmove(...)", "mapping_type": "function", "description": "Move memory block within buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "memcpy(...)", "mapping_type": "function", "description": "Copy bytes from source to destination", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "utf8_getchars(buf, ch)", "rust_api": "push_utf8_bytes(buf, ch)", "mapping_type": "function", "description": "Convert character to UTF-8 bytes and append to buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "utf8_strlen(current->prompt, -1)", "rust_api": "utf8_strlen(...)", "mapping_type": "function", "description": "Calculate UTF-8 string length", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}]
+Unixcoder Score: 0.08674823492765427
+--------------------------------------------------
+C_Code: 
+static signed char
+eio_dent_cmp (const eio_dirent *a, const eio_dirent *b)
+{
+  return a->score - b->score ? a->score - b->score /* works because our signed char is always 0..100 */
+       : a->inode < b->inode ? -1
+       : a->inode > b->inode ?  1
+       :                        0;
+}
+Function: 
+fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+Unixcoder Score: 0.08587416261434555
+--------------------------------------------------
+C_Code: 
+static signed char
+eio_dent_cmp (const eio_dirent *a, const eio_dirent *b)
+{
+  return a->score - b->score ? a->score - b->score /* works because our signed char is always 0..100 */
+       : a->inode < b->inode ? -1
+       : a->inode > b->inode ?  1
+       :                        0;
+}
+Function: 
+fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+Unixcoder Score: 0.08541012555360794
+--------------------------------------------------

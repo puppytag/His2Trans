@@ -1,0 +1,231 @@
+C_Code: 
+struct RustStringRawParts {
+  // Owns the memory.
+  const char* data;
+  size_t len;
+
+  RustStringRawParts() = delete;
+  // Copies src.
+  explicit RustStringRawParts(std::string src);
+}
+Function: 
+pub struct RawMessageData {
+        _data: [u8; 0],
+        _marker: std::marker::PhantomData<(*mut u8, ::std::marker::PhantomPinned)>,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__RemoveByAliasNdk__idx4192_rank1.c", "source_rust_file": "Partial__RemoveByAliasNdk__idx4192_rank1.rs", "c_api": "attr[].value.blob.data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias))", "rust_api": "alias.to_vec()", "mapping_type": "pattern", "description": "Pointer casting in C maps to vector conversion in Rust", "reasoning": "[Task Analysis] C function removes an asset by alias using OH_Asset_Remove; Rust function builds a set of asset attributes and adds them via asset_sdk::Manager::build(). [Similarity] Names do not refer to the same concept (RemoveByAliasNdk vs add_all_tags_asset), and domains differ: C is removal operation, Rust is attribute building and insertion. [Knowledge Extraction] No full structural match. Partial match exists in the pattern of attribute handling (both involve setting up attributes), but not in core logic. API mappings found for attribute insertion and asset management operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__RemoveByAliasNdk__idx4192_rank1.c", "source_rust_file": "Partial__RemoveByAliasNdk__idx4192_rank1.rs", "c_fragment": "Asset_Attr attr[] = {\n        {\n            .tag = ASSET_TAG_ALIAS,\n            .value.blob = {\n                .size = static_cast<uint32_t>(strlen(alias)),\n                .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias))\n            }\n        }\n    };", "rust_fragment": "let mut attrs = AssetMap::new();\n    attrs.insert_attr(Tag::Alias, alias.to_vec());", "description": "Both set up an attribute with a tag and value, specifically for alias.", "reasoning": "[Task Analysis] C function removes an asset by alias using OH_Asset_Remove; Rust function builds a set of asset attributes and adds them via asset_sdk::Manager::build(). [Similarity] Names do not refer to the same concept (RemoveByAliasNdk vs add_all_tags_asset), and domains differ: C is removal operation, Rust is attribute building and insertion. [Knowledge Extraction] No full structural match. Partial match exists in the pattern of attribute handling (both involve setting up attributes), but not in core logic. API mappings found for attribute insertion and asset management operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RemoveByAliasNdk__idx4192_rank1.c", "source_rust_file": "Partial__RemoveByAliasNdk__idx4192_rank1.rs", "c_api": "attr[].tag = ASSET_TAG_ALIAS", "rust_api": "attrs.insert_attr(Tag::Alias, alias.to_vec())", "mapping_type": "field_access", "description": "Setting tag field in C maps to inserting an alias attribute in Rust", "reasoning": "[Task Analysis] C function removes an asset by alias using OH_Asset_Remove; Rust function builds a set of asset attributes and adds them via asset_sdk::Manager::build(). [Similarity] Names do not refer to the same concept (RemoveByAliasNdk vs add_all_tags_asset), and domains differ: C is removal operation, Rust is attribute building and insertion. [Knowledge Extraction] No full structural match. Partial match exists in the pattern of attribute handling (both involve setting up attributes), but not in core logic. API mappings found for attribute insertion and asset management operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RemoveByAliasNdk__idx4192_rank1.c", "source_rust_file": "Partial__RemoveByAliasNdk__idx4192_rank1.rs", "c_api": "attr[].value.blob.size = static_cast<uint32_t>(strlen(alias))", "rust_api": "alias.to_vec()", "mapping_type": "pattern", "description": "String length calculation in C maps to conversion to vector in Rust", "reasoning": "[Task Analysis] C function removes an asset by alias using OH_Asset_Remove; Rust function builds a set of asset attributes and adds them via asset_sdk::Manager::build(). [Similarity] Names do not refer to the same concept (RemoveByAliasNdk vs add_all_tags_asset), and domains differ: C is removal operation, Rust is attribute building and insertion. [Knowledge Extraction] No full structural match. Partial match exists in the pattern of attribute handling (both involve setting up attributes), but not in core logic. API mappings found for attribute insertion and asset management operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RemoveByAliasNdk__idx4192_rank1.c", "source_rust_file": "Partial__RemoveByAliasNdk__idx4192_rank1.rs", "c_api": "OH_Asset_Remove", "rust_api": "asset_sdk::Manager::build().unwrap().add(&attrs)", "mapping_type": "function", "description": "Asset removal in C maps to asset addition in Rust (both are asset management operations)", "reasoning": "[Task Analysis] C function removes an asset by alias using OH_Asset_Remove; Rust function builds a set of asset attributes and adds them via asset_sdk::Manager::build(). [Similarity] Names do not refer to the same concept (RemoveByAliasNdk vs add_all_tags_asset), and domains differ: C is removal operation, Rust is attribute building and insertion. [Knowledge Extraction] No full structural match. Partial match exists in the pattern of attribute handling (both involve setting up attributes), but not in core logic. API mappings found for attribute insertion and asset management operations."}]
+Unixcoder Score: 0.011116334237158298
+--------------------------------------------------
+C_Code: 
+struct RustStringRawParts {
+  // Owns the memory.
+  const char* data;
+  size_t len;
+
+  RustStringRawParts() = delete;
+  // Copies src.
+  explicit RustStringRawParts(std::string src);
+}
+Function: 
+pub struct StringView {
+    /// Pointer to the first byte.
+    /// Borrows the memory.
+    pub ptr: *const u8,
+
+    /// Length of the `[u8]` pointed to by `ptr`.
+    pub len: usize,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RemoveByAliasNdk__idx4219_rank3.c", "source_rust_file": "API_Mapping__RemoveByAliasNdk__idx4219_rank3.rs", "c_api": "OH_Asset_Remove", "rust_api": "remove_by_alias", "mapping_type": "function", "description": "Remove asset by alias", "reasoning": "[Task Analysis] C function removes asset by alias using OH_Asset_Remove; Rust function adds tags, queries by alias, and removes by alias. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but both involve asset/tag removal by alias. API mappings found for remove operation and attribute access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RemoveByAliasNdk__idx4219_rank3.c", "source_rust_file": "API_Mapping__RemoveByAliasNdk__idx4219_rank3.rs", "c_api": ".tag = ASSET_TAG_ALIAS", "rust_api": "get_bytes_attr(&Tag::Alias)", "mapping_type": "field_access", "description": "Access alias attribute from asset", "reasoning": "[Task Analysis] C function removes asset by alias using OH_Asset_Remove; Rust function adds tags, queries by alias, and removes by alias. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but both involve asset/tag removal by alias. API mappings found for remove operation and attribute access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RemoveByAliasNdk__idx4219_rank3.c", "source_rust_file": "API_Mapping__RemoveByAliasNdk__idx4219_rank3.rs", "c_api": ".value.blob.size", "rust_api": "res[0].len()", "mapping_type": "pattern", "description": "Check size/length of attribute data", "reasoning": "[Task Analysis] C function removes asset by alias using OH_Asset_Remove; Rust function adds tags, queries by alias, and removes by alias. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but both involve asset/tag removal by alias. API mappings found for remove operation and attribute access patterns."}]
+Unixcoder Score: 0.0017537788953632116
+--------------------------------------------------
+C_Code: 
+struct RustStringRawParts {
+  // Owns the memory.
+  const char* data;
+  size_t len;
+
+  RustStringRawParts() = delete;
+  // Copies src.
+  explicit RustStringRawParts(std::string src);
+}
+Function: 
+pub struct Utf8Chunk<'a> {
+    valid: &'a str,
+    invalid: &'a [u8],
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RemoveByAliasNdk__idx4244_rank1.c", "source_rust_file": "API_Mapping__RemoveByAliasNdk__idx4244_rank1.rs", "c_api": "OH_Asset_Remove", "rust_api": "remove_by_alias", "mapping_type": "function", "description": "Remove asset by alias", "reasoning": "[Task Analysis] C function removes asset by alias; Rust function queries assets and removes by alias. [Similarity] Names don't match but domain is related (asset management). [Knowledge Extraction] No full structural match due to different logic scopes and domains (removal vs querying + removal). However, there's a clear API mapping for 'remove by alias' operation. [API Mapping Identified] C: OH_Asset_Remove -> Rust: remove_by_alias"}]
+Unixcoder Score: -0.007582288701087236
+--------------------------------------------------
+C_Code: 
+int32_t RemoveByAliasSdk(const char *alias)
+{
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS,
+          .value.blob = { .size = static_cast<uint32_t>(strlen(alias)),
+              .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
+    };
+    return AssetRemove(attr, ARRAY_SIZE(attr));
+}
+Function: 
+pub(crate) fn query_all_by_alias(alias: &[u8]) -> Result<Vec<AssetMap>> {
+    asset_sdk::Manager::build()?.query(&AssetMap::from([
+        (Tag::Alias, Value::Bytes(alias.to_vec())),
+        (Tag::ReturnType, Value::Number(ReturnType::All as u32)),
+    ]))
+}
+Unixcoder Score: -0.008915310725569725
+--------------------------------------------------
+C_Code: 
+void DBinderAddCommAuthFuzzTest(FuzzedDataProvider &provider)
+{
+    sptr<IPCObjectStub> ipcObjectStub = CreateIPCObjectStub(provider);
+    if (ipcObjectStub == nullptr) {
+        return;
+    }
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = provider.ConsumeIntegral<uint32_t>();
+    ipcObjectStub->DBinderAddCommAuth(code, data, reply, option);
+}
+Function: 
+pub fn on_remote_request(
+        &mut self,
+        code: u32,
+        data: Pin<&mut MessageParcel>,
+        reply: Pin<&mut MessageParcel>,
+    ) -> i32 {
+        unsafe {
+            let mut data = MsgParcel::from_ptr(data.get_unchecked_mut() as *mut MessageParcel);
+            let mut reply = MsgParcel::from_ptr(reply.get_unchecked_mut() as *mut MessageParcel);
+            self.inner.on_remote_request(code, &mut data, &mut reply)
+        }
+    }
+Unixcoder Score: -0.012749320827424526
+--------------------------------------------------
+C_Code: 
+struct RustStringRawParts {
+  // Owns the memory.
+  const char* data;
+  size_t len;
+
+  RustStringRawParts() = delete;
+  // Copies src.
+  explicit RustStringRawParts(std::string src);
+}
+Function: 
+pub struct RustStringRawParts {
+    data: *const u8,
+    len: usize,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__RemoveByAliasNdk__idx4247_rank2.c", "source_rust_file": "Partial__RemoveByAliasNdk__idx4247_rank2.rs", "c_api": "OH_Asset_Remove", "rust_api": "remove_by_alias", "mapping_type": "function", "description": "Asset removal by identifier", "reasoning": "[Task Analysis] C function removes asset by alias; Rust function performs asset query and removal with similar logic. [Similarity] Names don't match but operations are semantically related (asset removal). [Knowledge Extraction] Found API mapping for asset removal operation, partial structural match in removal logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__RemoveByAliasNdk__idx4247_rank2.c", "source_rust_file": "Partial__RemoveByAliasNdk__idx4247_rank2.rs", "c_fragment": "return OH_Asset_Remove(attr, ARRAY_SIZE(attr));", "rust_fragment": "remove_by_alias(function_name).unwrap();\n    remove_by_alias(alias).unwrap();", "description": "Both perform asset removal operations using provided identifiers.", "reasoning": "[Task Analysis] C function removes asset by alias; Rust function performs asset query and removal with similar logic. [Similarity] Names don't match but operations are semantically related (asset removal). [Knowledge Extraction] Found API mapping for asset removal operation, partial structural match in removal logic."}]
+Unixcoder Score: -0.012891549617052078
+--------------------------------------------------
+C_Code: 
+int32_t RemoveByAliasSdk(const char *alias)
+{
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS,
+          .value.blob = { .size = static_cast<uint32_t>(strlen(alias)),
+              .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
+    };
+    return AssetRemove(attr, ARRAY_SIZE(attr));
+}
+Function: 
+fn remove_condition_exist_and_query() {
+    let function_name = function!().as_bytes();
+    let critical_label = "remove_condition_exist_and_query".as_bytes();
+    let mut condition = AssetMap::from([
+        (Tag::Alias, Value::Bytes(function_name.to_owned())),
+        (Tag::Secret, Value::Bytes(function_name.to_owned())),
+        (Tag::DataLabelCritical2, Value::Bytes(critical_label.to_owned())),
+    ]);
+    condition.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
+    asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
+    condition.remove(&Tag::Alias);
+    condition.remove(&Tag::Secret);
+    asset_sdk::Manager::build().unwrap().remove(&condition).unwrap();
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&condition).unwrap_err());
+}
+Unixcoder Score: -0.013679536059498787
+--------------------------------------------------
+C_Code: 
+struct RustStringRawParts {
+  // Owns the memory.
+  const char* data;
+  size_t len;
+
+  RustStringRawParts() = delete;
+  // Copies src.
+  explicit RustStringRawParts(std::string src);
+}
+Function: 
+pub struct RawMessageData {
+        _data: [u8; 0],
+        _marker: std::marker::PhantomData<(*mut u8, ::std::marker::PhantomPinned)>,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustAddCallSiteAttributes__idx17771_rank3.c", "source_rust_file": "API_Mapping__LLVMRustAddCallSiteAttributes__idx17771_rank3.rs", "c_api": "AddAttributes(Call, Index, Attrs, AttrsLen)", "rust_api": "attributes::apply_to_llfn(llfn, idx, &attrs)", "mapping_type": "function", "description": "Apply attributes to an LLVM function", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] [FFI Check] The Rust code does not contain any FFI calls; the C code is a wrapper around LLVM APIs, but the body is a simple wrapper. [Task Analysis] The C function wraps a call to `AddAttributes` while the Rust function applies attributes to an LLVM function. The core operation is attribute application, but the structural logic and control flow differ significantly. [Similarity] Names do not refer to the same concept (LLVMRustAddCallSiteAttributes vs apply_attrs_to_llfn), and the domains are not semantically aligned (C is a low-level LLVM wrapper, Rust is a higher-level attribute application). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve attribute application to LLVM constructs, so API mapping is extracted."}]
+Unixcoder Score: -0.020984530448913574
+--------------------------------------------------
+C_Code: 
+struct RustStringRawParts {
+  // Owns the memory.
+  const char* data;
+  size_t len;
+
+  RustStringRawParts() = delete;
+  // Copies src.
+  explicit RustStringRawParts(std::string src);
+}
+Function: 
+pub struct SerializedData {
+    /// Owns the memory.
+    data: NonNull<u8>,
+    len: usize,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustAddCallSiteAttributes__idx17772_rank1.c", "source_rust_file": "Partial__LLVMRustAddCallSiteAttributes__idx17772_rank1.rs", "c_api": "AddAttributes(Call, Index, Attrs, AttrsLen)", "rust_api": "attributes::apply_to_callsite(callsite, idx, &attrs)", "mapping_type": "function", "description": "Apply attributes to a call site in LLVM IR", "reasoning": "[FFI Check] -> LLVMRustAddCallSiteAttributes and apply_attrs_to_callsite are not FFI wrappers; they contain logic. -> [Task Analysis] -> C function modifies call site attributes via a wrapper around a CallBase object, while Rust function retrieves attributes and applies them to a callsite. The core task is attribute application to call sites. -> [Similarity] -> Names do not match (LLVMRust vs apply_attrs), but the semantic domain is the same (manipulating LLVM call site attributes). However, the structural logic is not fully aligned due to different control flow and abstraction levels. -> [Knowledge Extraction] -> No full structural match, but there is a partial mapping in the concept of applying attributes to a callsite. API mapping identified between the attribute application logic in both languages."}, {"knowledge_type": "Partial", "source_c_file": "Partial__LLVMRustAddCallSiteAttributes__idx17772_rank1.c", "source_rust_file": "Partial__LLVMRustAddCallSiteAttributes__idx17772_rank1.rs", "c_fragment": "AddAttributes(Call, Index, Attrs, AttrsLen)", "rust_fragment": "attributes::apply_to_callsite(callsite, idx, &attrs)", "description": "Both apply attributes to a call site, though with different interfaces and abstractions.", "reasoning": "[FFI Check] -> LLVMRustAddCallSiteAttributes and apply_attrs_to_callsite are not FFI wrappers; they contain logic. -> [Task Analysis] -> C function modifies call site attributes via a wrapper around a CallBase object, while Rust function retrieves attributes and applies them to a callsite. The core task is attribute application to call sites. -> [Similarity] -> Names do not match (LLVMRust vs apply_attrs), but the semantic domain is the same (manipulating LLVM call site attributes). However, the structural logic is not fully aligned due to different control flow and abstraction levels. -> [Knowledge Extraction] -> No full structural match, but there is a partial mapping in the concept of applying attributes to a callsite. API mapping identified between the attribute application logic in both languages."}]
+Unixcoder Score: -0.025607595220208168
+--------------------------------------------------
+C_Code: 
+int32_t RemoveByAliasSdk(const char *alias)
+{
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS,
+          .value.blob = { .size = static_cast<uint32_t>(strlen(alias)),
+              .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
+    };
+    return AssetRemove(attr, ARRAY_SIZE(attr));
+}
+Function: 
+fn query_with_return_limit() {
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+    let alias = "default_return_limit".as_bytes();
+    add_default_asset(alias, alias).unwrap();
+
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::ReturnLimit, 1);
+    let mut assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    assert_eq!(1, assets.len() as u32);
+
+    query.insert_attr(Tag::ReturnLimit, 0);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+
+    query.remove(&Tag::ReturnLimit);
+    assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    let expect_query_len = 2;
+    assert_eq!(expect_query_len, assets.len() as u32);
+    remove_by_alias(function_name).unwrap();
+    remove_by_alias(alias).unwrap();
+}
+Unixcoder Score: -0.026792144402861595
+--------------------------------------------------

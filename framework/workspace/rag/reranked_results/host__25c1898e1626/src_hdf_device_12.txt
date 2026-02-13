@@ -1,0 +1,325 @@
+C_Code: 
+struct PhysicalDeviceShaderObjectPropertiesEXT
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Unixcoder Score: 0.03715590760111809
+--------------------------------------------------
+C_Code: 
+DeviceCreateInfo( VkDeviceCreateInfo const & rhs ) VULKAN_HPP_NOEXCEPT : DeviceCreateInfo( *reinterpret_cast<DeviceCreateInfo const *>( &rhs ) ) {}
+Function: 
+fn from(src: &vello_encoding::BufferSizes) -> Self {
+        Self {
+            path_reduced: src.path_reduced.size_in_bytes(),
+            path_reduced2: src.path_reduced2.size_in_bytes(),
+            path_reduced_scan: src.path_reduced_scan.size_in_bytes(),
+            path_monoids: src.path_monoids.size_in_bytes(),
+            path_bboxes: src.path_bboxes.size_in_bytes(),
+            draw_reduced: src.draw_reduced.size_in_bytes(),
+            draw_monoids: src.draw_monoids.size_in_bytes(),
+            info: src.info.size_in_bytes(),
+            clip_inps: src.clip_inps.size_in_bytes(),
+            clip_els: src.clip_els.size_in_bytes(),
+            clip_bics: src.clip_bics.size_in_bytes(),
+            clip_bboxes: src.clip_bboxes.size_in_bytes(),
+            draw_bboxes: src.draw_bboxes.size_in_bytes(),
+            bump_alloc: src.bump_alloc.size_in_bytes(),
+            indirect_count: src.indirect_count.size_in_bytes(),
+            bin_headers: src.bin_headers.size_in_bytes(),
+            paths: src.paths.size_in_bytes(),
+            lines: src.lines.size_in_bytes(),
+            bin_data: src.bin_data.size_in_bytes(),
+            tiles: src.tiles.size_in_bytes(),
+            seg_counts: src.seg_counts.size_in_bytes(),
+            segments: src.segments.size_in_bytes(),
+            ptcl: src.ptcl.size_in_bytes(),
+        }
+    }
+Unixcoder Score: 0.025990158319473267
+--------------------------------------------------
+C_Code: 
+bool RpcCallbackImp::LoadSystemAbilityFromRemote(const std::string& srcNetworkId, int32_t systemAbilityId)
+{
+    HILOGI("LoadSystemAbilityFromRemote! deviceId : %{public}s, said : %{public}d",
+        AnonymizeDeviceId(srcNetworkId).c_str(), systemAbilityId);
+    sptr<LoadCallbackImp> loadCallback = new LoadCallbackImp(srcNetworkId);
+    return SystemAbilityManager::GetInstance()->LoadSystemAbilityFromRpc(srcNetworkId,
+        systemAbilityId, loadCallback);
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        info!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: -0.0029118708334863186
+--------------------------------------------------
+C_Code: 
+int NAPIRemoteObject::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    ZLOGD(LOG_LABEL, "enter OnRemoteRequest");
+    if (code == DUMP_TRANSACTION) {
+        ZLOGE(LOG_LABEL, "DUMP_TRANSACTION data size:%{public}zu", data.GetReadableBytes());
+    }
+    std::shared_ptr<struct ThreadLockInfo> lockInfo = std::make_shared<struct ThreadLockInfo>();
+    CallbackParam *param = new (std::nothrow) CallbackParam {
+        .env = env_,
+        .thisVarRef = thisVarRef_,
+        .code = code,
+        .data = &data,
+        .reply = &reply,
+        .option = &option,
+        .lockInfo = lockInfo.get(),
+        .result = 0
+    };
+    if (param == nullptr) {
+        ZLOGE(LOG_LABEL, "new CallbackParam failed");
+        return ERR_ALLOC_MEMORY;
+    }
+
+    NAPI_RemoteObject_getCallingInfo(param->callingInfo);
+    ZLOGD(LOG_LABEL, "callingPid:%{public}u callingUid:%{public}u "
+        "callingDeviceID:%{public}s localDeviceId:%{public}s localCalling:%{public}d",
+        param->callingInfo.callingPid, param->callingInfo.callingUid,
+        IPCProcessSkeleton::ConvertToSecureString(param->callingInfo.callingDeviceID).c_str(),
+        IPCProcessSkeleton::ConvertToSecureString(param->callingInfo.localDeviceID).c_str(),
+        param->callingInfo.isLocalCalling);
+    int ret = OnJsRemoteRequest(param);
+    if (ret != 0) {
+        uint64_t curTime = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count());
+        ZLOGE(LOG_LABEL, "OnJsRemoteRequest failed, ret:%{public}d time:%{public}" PRIu64, ret, curTime);
+    }
+    delete param;
+    return ret;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.006659253966063261
+--------------------------------------------------
+C_Code: 
+std::string DBinderDatabusInvoker::GetCallerDeviceID() const
+{
+    return callerDeviceID_;
+}
+Function: 
+pub fn calling_device_id() -> String {
+        GetCallingDeviceID()
+    }
+Unixcoder Score: -0.01183292269706726
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.014526634477078915
+--------------------------------------------------
+C_Code: 
+struct VkDescriptorBufferInfo {
+    VkBuffer        buffer;
+    VkDeviceSize    offset;
+    VkDeviceSize    range;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: -0.017698297277092934
+--------------------------------------------------
+C_Code: 
+DeviceDeviceMemoryReportCreateInfoEXT( VkDeviceDeviceMemoryReportCreateInfoEXT const & rhs ) VULKAN_HPP_NOEXCEPT
+      : DeviceDeviceMemoryReportCreateInfoEXT( *reinterpret_cast<DeviceDeviceMemoryReportCreateInfoEXT const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::BufferSizes) -> Self {
+        Self {
+            path_reduced: src.path_reduced.size_in_bytes(),
+            path_reduced2: src.path_reduced2.size_in_bytes(),
+            path_reduced_scan: src.path_reduced_scan.size_in_bytes(),
+            path_monoids: src.path_monoids.size_in_bytes(),
+            path_bboxes: src.path_bboxes.size_in_bytes(),
+            draw_reduced: src.draw_reduced.size_in_bytes(),
+            draw_monoids: src.draw_monoids.size_in_bytes(),
+            info: src.info.size_in_bytes(),
+            clip_inps: src.clip_inps.size_in_bytes(),
+            clip_els: src.clip_els.size_in_bytes(),
+            clip_bics: src.clip_bics.size_in_bytes(),
+            clip_bboxes: src.clip_bboxes.size_in_bytes(),
+            draw_bboxes: src.draw_bboxes.size_in_bytes(),
+            bump_alloc: src.bump_alloc.size_in_bytes(),
+            indirect_count: src.indirect_count.size_in_bytes(),
+            bin_headers: src.bin_headers.size_in_bytes(),
+            paths: src.paths.size_in_bytes(),
+            lines: src.lines.size_in_bytes(),
+            bin_data: src.bin_data.size_in_bytes(),
+            tiles: src.tiles.size_in_bytes(),
+            seg_counts: src.seg_counts.size_in_bytes(),
+            segments: src.segments.size_in_bytes(),
+            ptcl: src.ptcl.size_in_bytes(),
+        }
+    }
+Unixcoder Score: -0.019871940836310387
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::GetSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    return CheckSystemAbility(systemAbilityId, deviceId);
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__GetLocalDeviceID__idx4655_rank1.c", "source_rust_file": "Full__GetLocalDeviceID__idx4655_rank1.rs", "reasoning": "[Task Analysis] C function calls a static method from a library namespace, Rust function calls the same logical operation via a pub function. [Similarity] Names don't match but the semantic operation is identical: retrieving a local device ID. [Knowledge Extraction] Full match on logic and structure; both functions return a string/device ID. API mapping identified for the core function call pattern.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__GetLocalDeviceID__idx4655_rank1.c", "source_rust_file": "Full__GetLocalDeviceID__idx4655_rank1.rs", "c_fragment": "rust::string GetLocalDeviceID()\n{\n    return OHOS::IPCSkeleton::GetLocalDeviceID();\n}", "rust_fragment": "pub fn local_device_id() -> String {\n        GetLocalDeviceID()\n    }", "description": "Both functions retrieve and return a local device ID using a similar logical flow.", "reasoning": "[Task Analysis] C function calls a static method from a library namespace, Rust function calls the same logical operation via a pub function. [Similarity] Names don't match but the semantic operation is identical: retrieving a local device ID. [Knowledge Extraction] Full match on logic and structure; both functions return a string/device ID. API mapping identified for the core function call pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__GetLocalDeviceID__idx4655_rank1.c", "source_rust_file": "Full__GetLocalDeviceID__idx4655_rank1.rs", "c_api": "OHOS::IPCSkeleton::GetLocalDeviceID()", "rust_api": "GetLocalDeviceID()", "mapping_type": "function", "description": "Retrieval of local device ID from IPC skeleton", "reasoning": "[Task Analysis] C function calls a static method from a library namespace, Rust function calls the same logical operation via a pub function. [Similarity] Names don't match but the semantic operation is identical: retrieving a local device ID. [Knowledge Extraction] Full match on logic and structure; both functions return a string/device ID. API mapping identified for the core function call pattern."}]
+Unixcoder Score: -0.022205831483006477
+--------------------------------------------------
+C_Code: 
+uint32_t DBinderService::OnRemoteInvokerDataBusMessage(IPCObjectProxy *proxy,
+    std::shared_ptr<struct DHandleEntryTxRx> replyMessage,
+    std::string &remoteDeviceId, int pid, int uid, uint32_t tokenId)
+{
+    if (CheckDeviceIdIllegal(remoteDeviceId)) {
+        DfxReportFailEvent(DbinderErrorCode::RPC_DRIVER, RADAR_ERR_INVALID_DATA, __FUNCTION__);
+        return DEVICEID_INVALID;
+    }
+    std::string sessionName = GetDatabusNameByProxy(proxy);
+    if (CheckSessionNameIsEmpty(sessionName)) {
+        DfxReportFailEvent(DbinderErrorCode::RPC_DRIVER, RADAR_GET_BUS_NAME_FAIL, __FUNCTION__);
+        return SESSION_NAME_NOT_FOUND;
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteUint16(IRemoteObject::DATABUS_TYPE) || !data.WriteString(GetLocalDeviceID()) ||
+        !data.WriteUint32(pid) || !data.WriteUint32(uid) || !data.WriteString(remoteDeviceId) ||
+        !data.WriteString(sessionName) || !data.WriteUint32(tokenId)) {
+        DBINDER_LOGE(LOG_LABEL, "write to parcel fail, handle:%{public}d", proxy->GetHandle());
+        DfxReportFailHandleEvent(DbinderErrorCode::RPC_DRIVER, proxy->GetHandle(),
+            RADAR_WRITE_PARCEL_FAIL, __FUNCTION__);
+        return WRITE_PARCEL_FAILED;
+    }
+    if (CheckInvokeListenThreadIllegal(proxy, data, reply)) {
+        DfxReportFailHandleEvent(DbinderErrorCode::RPC_DRIVER, proxy->GetHandle(),
+            RADAR_INVOKE_STUB_THREAD_FAIL, __FUNCTION__);
+        return INVOKE_STUB_THREAD_FAILED;
+    }
+
+    uint64_t stubIndex = reply.ReadUint64();
+    std::string serverSessionName = reply.ReadString();
+    std::string deviceId = reply.ReadString();
+    uint32_t selfTokenId = reply.ReadUint32();
+    if (CheckStubIndexAndSessionNameIllegal(stubIndex, serverSessionName, deviceId, proxy)) {
+        DfxReportFailHandleEvent(DbinderErrorCode::RPC_DRIVER, proxy->GetHandle(),
+            RADAR_SESSION_NAME_INVALID, __FUNCTION__);
+        return SESSION_NAME_INVALID;
+    }
+    if (!SetReplyMessage(replyMessage, stubIndex, serverSessionName, selfTokenId, proxy)) {
+        DfxReportFailHandleEvent(DbinderErrorCode::RPC_DRIVER, proxy->GetHandle(), RADAR_ERR_MEMCPY_DATA, __FUNCTION__);
+        return SESSION_NAME_INVALID;
+    }
+    return 0;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.023181317374110222
+--------------------------------------------------

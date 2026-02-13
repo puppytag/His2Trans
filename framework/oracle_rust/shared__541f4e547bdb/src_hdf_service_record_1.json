@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_service_record_1",
+  "function_name": "DevSvcRecordNewInstance",
+  "source_c_file": "src/hdf_service_record.c",
+  "c_code": "struct DevSvcRecord * DevSvcRecordNewInstance()\n{\n    return (struct DevSvcRecord *)OsalMemCalloc(sizeof(struct DevSvcRecord));\n}",
+  "rust_signature": "pub extern \"C\" fn DevSvcRecordNewInstance() -> *mut crate::types::DevSvcRecord",
+  "rust_code": "pub extern \\\"C\\\" fn DevSvcRecordNewInstance() -> *mut DevSvcRecord {\n    unsafe { OsalMemCalloc(core::mem::size_of::<DevSvcRecord>() as size_t) as *mut DevSvcRecord }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemCalloc",
+      "rust_api": "OsalMemCalloc",
+      "description": "Allocate zeroed memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "return foo(...);",
+      "rust_fragment": "return foo(...);",
+      "description": "Direct call/return pattern is preserved in Rust",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

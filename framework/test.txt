@@ -1,0 +1,332 @@
+dlp_fuse_fd
+dlp_link_manager
+fuse_daemon
+dependency_from_other_project
+dlp_link_file
+dlp_file
+dlp_fuse_utils
+dlp_fuse_helper
+dlp_fuse_fd
+dlp_link_manager
+fuse_daemon
+dependency_from_other_project
+dlp_link_file
+dlp_file
+dlp_fuse_utils
+dlp_fuse_helper
+dlp_fuse_fd
+./translate_result_skeleton/dlp_fuse/src/dlp_fuse_fd.rs already exists, skip
+dlp_link_manager
+./translate_result_skeleton/dlp_fuse/src/dlp_link_manager.rs already exists, skip
+fuse_daemon
+./translate_result_skeleton/dlp_fuse/src/fuse_daemon.rs already exists, skip
+dependency_from_other_project
+./translate_result_skeleton/dlp_fuse/src/dependency_from_other_project.rs already exists, skip
+dlp_link_file
+./translate_result_skeleton/dlp_fuse/src/dlp_link_file.rs already exists, skip
+dlp_file
+./translate_result_skeleton/dlp_fuse/src/dlp_file.rs already exists, skip
+dlp_fuse_utils
+./translate_result_skeleton/dlp_fuse/src/dlp_fuse_utils.rs already exists, skip
+dlp_fuse_helper
+./translate_result_skeleton/dlp_fuse/src/dlp_fuse_helper.rs already exists, skip
+./translate_result_skeleton/dlp_fuse/src/main.rs already exists, skip
+start 1 time
+3   3
+start to get dlp_fuse_fd_2.txt
+start to get dlp_fuse_fd_3.txt
+start to get dlp_fuse_fd_1.txt
+['void SetDlpFuseFd(int fd)\n{\n    pthread_mutex_lock(&g_mutex);\n    if (g_dlpFuseFd != -1) {\n        DLP_LOG_DEBUG("close fuseFd: %d first\\n", g_dlpFuseFd);\n        close(g_dlpFuseFd);\n    }\n    g_dlpFuseFd = fd;\n    DLP_LOG_DEBUG("fuseFd: %d\\n", g_dlpFuseFd);\n    pthread_mutex_unlock(&g_mutex);\n}', 'void CloseDlpFuseFd(void)\n{\n    pthread_mutex_lock(&g_mutex);\n    if (g_dlpFuseFd == -1) {\n        DLP_LOG_DEBUG("fuseFd: %d\\n", g_dlpFuseFd);\n        pthread_mutex_unlock(&g_mutex);\n        return;\n    }\n    close(g_dlpFuseFd);\n    g_dlpFuseFd = -1;\n    pthread_mutex_unlock(&g_mutex);\n}', 'int GetDlpFuseFd(void)\n{\n    pthread_mutex_lock(&g_mutex);\n    if (g_dlpFuseFd == -1) {\n        DLP_LOG_ERROR("Fuse fd not set!");\n    }\n    DLP_LOG_DEBUG("fuseFd: %d\\n", g_dlpFuseFd);\n    pthread_mutex_unlock(&g_mutex);\n    return g_dlpFuseFd;\n}']
+['pub fn get_dlp_fuse_fd() -> i32', 'pub fn set_dlp_fuse_fd(fd: i32)', 'pub fn close_dlp_fuse_fd()']
+4.498681156950466
+success
+4.498681156950466
+success
+4.498681156950466
+success
+12   10
+start to get dlp_link_manager_10.txt
+start to get dlp_link_manager_9.txt
+start to get dlp_link_manager_11.txt
+start to get dlp_link_manager_6.txt
+start to get dlp_link_manager_4.txt
+start to get dlp_link_manager_1.txt
+start to get dlp_link_manager_5.txt
+start to get dlp_link_manager_8.txt
+start to get dlp_link_manager_2.txt
+start to get dlp_link_manager_7.txt
+start to get dlp_link_manager_3.txt
+['void DlpLinkManager::DumpDlpLinkFile(std::vector<DlpLinkFileInfo>& linkList)\n{\n    Utils::UniqueReadGuard<Utils::RWLock> infoGuard(dlpLinkMapLock_);\n    for (auto iter = dlpLinkFileNameMap_.begin(); iter != dlpLinkFileNameMap_.end(); iter++) {\n        DlpLinkFile* filePtr = iter->second;\n        if (filePtr == nullptr) {\n            continue;\n        }\n        DlpLinkFileInfo info;\n        info.dlpLinkName = filePtr->GetLinkName();\n        info.fileStat = filePtr->GetLinkStat();\n        linkList.emplace_back(info);\n    }\n}', 'DlpLinkFile* DlpLinkManager::LookUpDlpLinkFile(const std::string& dlpLinkName)\n{\n    Utils::UniqueReadGuard<Utils::RWLock> infoGuard(dlpLinkMapLock_);\n    for (auto iter = dlpLinkFileNameMap_.begin(); iter != dlpLinkFileNameMap_.end(); ++iter) {\n        if (dlpLinkName == iter->first) {\n            DlpLinkFile* node = iter->second;\n            if (node == nullptr) {\n                DLP_LOG_ERROR(LABEL, "Look up link file fail, file %{public}s found but file ptr is null",\n                    dlpLinkName.c_str());\n                return nullptr;\n            }\n            node->IncreaseRef();\n            return node;\n        }\n    }\n    DLP_LOG_ERROR(LABEL, "Look up link file fail, file %{public}s not exist", dlpLinkName.c_str());\n    return nullptr;\n}', 'DlpLinkManager* DlpLinkManager::GetInstance()\n{\n    static DlpLinkManager* instance = nullptr;\n    if (instance == nullptr) {\n        std::lock_guard<std::mutex> lock(g_instanceMutex);\n        if (instance == nullptr) {\n            instance = new DlpLinkManager();\n        }\n    }\n    return instance;\n}', 'int32_t DlpLinkManager::RestartDlpLinkFile(const std::shared_ptr<DlpFile>& filePtr)\n{\n    if (filePtr == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Restart link file fail, dlp file is null");\n        return DLP_FUSE_ERROR_DLP_FILE_NULL;\n    }\n\n    Utils::UniqueWriteGuard<Utils::RWLock> infoGuard(dlpLinkMapLock_);\n    for (auto iter = dlpLinkFileNameMap_.begin(); iter != dlpLinkFileNameMap_.end(); iter++) {\n        DlpLinkFile* node = iter->second;\n        if (node == nullptr) {\n            DLP_LOG_ERROR(LABEL, "Restart link file fail, file ptr is null");\n            return DLP_FUSE_ERROR_DLP_FILE_NULL;\n        }\n        if (filePtr == node->GetDlpFilePtr()) {\n            node->restartLink();\n            filePtr->SetLinkStatus();\n            DLP_LOG_INFO(LABEL, "Restart link file success, file name %{public}s", node->GetLinkName().c_str());\n            return DLP_OK;\n        }\n    }\n    DLP_LOG_ERROR(LABEL, "Restart link file fail, link file not exist");\n    return DLP_FUSE_ERROR_LINKFILE_NOT_EXIST;\n}', 'int32_t DlpLinkManager::AddDlpLinkFile(const std::shared_ptr<DlpFile>& filePtr, const std::string& dlpLinkName)\n{\n    if (filePtr == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Add link file fail, dlp file is null");\n        return DLP_FUSE_ERROR_DLP_FILE_NULL;\n    }\n    if (!IsLinkNameValid(dlpLinkName)) {\n        DLP_LOG_ERROR(LABEL, "Add link file fail, link file name %{public}s invalid", dlpLinkName.c_str());\n        return DLP_FUSE_ERROR_VALUE_INVALID;\n    }\n\n    Utils::UniqueWriteGuard<Utils::RWLock> infoGuard(dlpLinkMapLock_);\n    if (dlpLinkFileNameMap_.size() >= MAX_DLP_LINK_SIZE) {\n        DLP_LOG_ERROR(LABEL, "Add link file fail, too many links");\n        return DLP_FUSE_ERROR_TOO_MANY_LINK_FILE;\n    }\n\n    auto iter = dlpLinkFileNameMap_.find(dlpLinkName);\n    if (iter != dlpLinkFileNameMap_.end()) {\n        DLP_LOG_ERROR(LABEL, "Add link file fail, link file %{public}s exist", dlpLinkName.c_str());\n        return DLP_FUSE_ERROR_LINKFILE_EXIST;\n    }\n\n    for (auto it = dlpLinkFileNameMap_.begin(); it != dlpLinkFileNameMap_.end(); it++) {\n        DlpLinkFile* linkFileNode = it->second;\n        if ((linkFileNode != nullptr) && (filePtr == linkFileNode->GetDlpFilePtr())) {\n            DLP_LOG_ERROR(LABEL, "Add link file fail, this dlp file already has link file");\n            return DLP_FUSE_ERROR_LINKFILE_EXIST;\n        }\n    }\n\n    DlpLinkFile *node = new (std::nothrow) DlpLinkFile(dlpLinkName, filePtr);\n    if (node == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Add link file fail, alloc link file %{public}s fail", dlpLinkName.c_str());\n        return DLP_FUSE_ERROR_MEMORY_OPERATE_FAIL;\n    }\n\n    DLP_LOG_INFO(LABEL, "Add link file succ, file name %{public}s", dlpLinkName.c_str());\n    dlpLinkFileNameMap_[dlpLinkName] = node;\n    filePtr->SetLinkStatus();\n    return DLP_OK;\n}', 'DlpLinkManager::DlpLinkManager()\n{}', 'int32_t DlpLinkManager::StopDlpLinkFile(const std::shared_ptr<DlpFile>& filePtr)\n{\n    if (filePtr == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Stop link file fail, dlp file is null");\n        return DLP_FUSE_ERROR_DLP_FILE_NULL;\n    }\n\n    Utils::UniqueWriteGuard<Utils::RWLock> infoGuard(dlpLinkMapLock_);\n    for (auto iter = dlpLinkFileNameMap_.begin(); iter != dlpLinkFileNameMap_.end(); iter++) {\n        DlpLinkFile* node = iter->second;\n        if (node == nullptr) {\n            DLP_LOG_ERROR(LABEL, "Stop link file fail, file ptr is null");\n            return DLP_FUSE_ERROR_DLP_FILE_NULL;\n        }\n        if (filePtr == node->GetDlpFilePtr()) {\n            node->stopLink();\n            filePtr->RemoveLinkStatus();\n            DLP_LOG_INFO(LABEL, "Stop link file success, file name %{public}s", node->GetLinkName().c_str());\n            return DLP_OK;\n        }\n    }\n    DLP_LOG_ERROR(LABEL, "Stop link file fail, link file not exist");\n    return DLP_FUSE_ERROR_LINKFILE_NOT_EXIST;\n}', 'int32_t DlpLinkManager::DeleteDlpLinkFile(const std::shared_ptr<DlpFile>& filePtr)\n{\n    if (filePtr == nullptr) {\n        return DLP_FUSE_ERROR_DLP_FILE_NULL;\n    }\n\n    Utils::UniqueWriteGuard<Utils::RWLock> infoGuard(dlpLinkMapLock_);\n    for (auto iter = dlpLinkFileNameMap_.begin(); iter != dlpLinkFileNameMap_.end(); iter++) {\n        DlpLinkFile* tmp = iter->second;\n        if (tmp != nullptr && filePtr == tmp->GetDlpFilePtr()) {\n            filePtr->RemoveLinkStatus();\n            dlpLinkFileNameMap_.erase(iter);\n            if (tmp->SubAndCheckZeroRef(1)) {\n                DLP_LOG_INFO(LABEL, "Delete link file %{private}s ok", tmp->GetLinkName().c_str());\n                delete tmp;\n            } else {\n                DLP_LOG_INFO(LABEL, "Link file %{private}s is still referenced by kernel, only remove it from map",\n                    tmp->GetLinkName().c_str());\n            }\n            return DLP_OK;\n        }\n    }\n    DLP_LOG_ERROR(LABEL, "Delete link file fail, it does not exist.");\n    return DLP_FUSE_ERROR_LINKFILE_NOT_EXIST;\n}', 'DlpLinkManager::~DlpLinkManager()\n{\n    Utils::UniqueWriteGuard<Utils::RWLock> infoGuard(dlpLinkMapLock_);\n    for (auto iter = dlpLinkFileNameMap_.begin(); iter != dlpLinkFileNameMap_.end();) {\n        DlpLinkFile* tmp = iter->second;\n        if (tmp != nullptr) {\n            iter = dlpLinkFileNameMap_.erase(iter);\n            delete tmp;\n        } else {\n            iter++;\n        }\n    }\n    CloseDlpFuseFd();\n}', 'int32_t DlpLinkManager::ReplaceDlpLinkFile(const std::shared_ptr<DlpFile>& filePtr, const std::string& dlpLinkName)\n{\n    if (filePtr == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Replace link file fail, dlp file is null");\n        return DLP_FUSE_ERROR_DLP_FILE_NULL;\n    }\n    if (!IsLinkNameValid(dlpLinkName)) {\n        DLP_LOG_ERROR(LABEL, "Replace link file fail, link file name %{public}s invalid", dlpLinkName.c_str());\n        return DLP_FUSE_ERROR_VALUE_INVALID;\n    }\n\n    Utils::UniqueWriteGuard<Utils::RWLock> infoGuard(dlpLinkMapLock_);\n    for (auto iter = dlpLinkFileNameMap_.begin(); iter != dlpLinkFileNameMap_.end(); iter++) {\n        if (dlpLinkName == iter->first) {\n            DlpLinkFile *node = iter->second;\n            if (node == nullptr) {\n                DLP_LOG_ERROR(\n                    LABEL, "Replace link file fail, file %{public}s found but file ptr is null", dlpLinkName.c_str());\n                return DLP_FUSE_ERROR_DLP_FILE_NULL;\n            }\n            node->setDlpFilePtr(filePtr);\n            DLP_LOG_INFO(LABEL, "Replace link file success, file name %{public}s", dlpLinkName.c_str());\n            return DLP_OK;\n        }\n    }\n    DLP_LOG_ERROR(LABEL, "Replace link file fail, file %{public}s not exist", dlpLinkName.c_str());\n    return DLP_FUSE_ERROR_LINKFILE_NOT_EXIST;\n}', 'static bool IsLinkNameValid(const std::string& linkName)\n{\n    size_t size = linkName.size();\n    return !(size == 0 || size > MAX_FILE_NAME_LEN);\n}']
+['pub fn is_link_name_valid(link_name: &str) -> bool', 'pub fn get_instance() -> *mut DlpLinkManager', 'pub fn add_dlp_link_file(&self, file_ptr: std::sync::Arc<DlpFile>, dlp_link_name: &str) -> i32', 'pub fn stop_dlp_link_file(&self, file_ptr: std::sync::Arc<DlpFile>) -> i32', 'pub fn restart_dlp_link_file(&self, file_ptr: std::sync::Arc<DlpFile>) -> i32', 'pub fn replace_dlp_link_file(&self, file_ptr: std::sync::Arc<DlpFile>, dlp_link_name: &str) -> i32', 'pub fn delete_dlp_link_file(&self, file_ptr: std::sync::Arc<DlpFile>) -> i32', 'pub fn look_up_dlp_link_file(&self, dlp_link_name: &str) -> *mut DlpLinkFile', 'pub fn dump_dlp_link_file(&self, link_list: &mut Vec<DlpLinkFileInfo>)', 'fn new() -> Self']
+10.14003400893591
+success
+11.249084340642751
+success
+6.876437546482441
+success
+6.876437546482441
+success
+6.876437546482441
+success
+6.876437546482441
+success
+6.876437546482441
+success
+6.522451768570299
+success
+6.876437546482441
+success
+0.0
+error
+dlp_link_manager_10.txt: fn new() -> Self
+['new']
+pub fn dump_dlp_link_file(&self, link_list: &mut Vec<DlpLinkFileInfo>)
+37   28
+start to get fuse_daemon_11.txt
+start to get fuse_daemon_6.txt
+start to get fuse_daemon_16.txt
+start to get fuse_daemon_8.txt
+start to get fuse_daemon_17.txt
+start to get fuse_daemon_7.txt
+start to get fuse_daemon_23.txt
+start to get fuse_daemon_3.txt
+start to get fuse_daemon_12.txt
+start to get fuse_daemon_10.txt
+start to get fuse_daemon_5.txt
+start to get fuse_daemon_26.txt
+start to get fuse_daemon_18.txt
+start to get fuse_daemon_9.txt
+start to get fuse_daemon_19.txt
+start to get fuse_daemon_20.txt
+start to get fuse_daemon_22.txt
+start to get fuse_daemon_4.txt
+start to get fuse_daemon_2.txt
+start to get fuse_daemon_13.txt
+start to get fuse_daemon_28.txt
+start to get fuse_daemon_14.txt
+start to get fuse_daemon_25.txt
+start to get fuse_daemon_27.txt
+start to get fuse_daemon_24.txt
+start to get fuse_daemon_15.txt
+start to get fuse_daemon_21.txt
+start to get fuse_daemon_1.txt
+['static DlpLinkFile* GetValidFileNode(fuse_req_t req, fuse_ino_t ino)\n{\n    if (ino == ROOT_INODE) {\n        fuse_reply_err(req, ENOENT);\n        return nullptr;\n    }\n    DlpLinkFile* dlp = GetFileNode(ino);\n    if (dlp == nullptr) {\n        fuse_reply_err(req, EBADF);\n        return nullptr;\n    }\n    return dlp;\n}', 'static DlpLinkFile* GetFileNode(fuse_ino_t ino)\n{\n    return reinterpret_cast<DlpLinkFile*>(static_cast<uintptr_t>(ino));\n}', 'static int AddRootDirentry(DirAddParams& params)\n{\n    struct stat* rootStat = FuseDaemon::GetRootFileStat();\n    params.entryName = CUR_DIR;\n    params.entryStat = rootStat;\n\n    if (AddDirentry(params) != DLP_OK) {\n        fuse_reply_err(params.req, EINVAL);\n        return DLP_FUSE_ERROR_VALUE_INVALID;\n    }\n\n    params.entryName = UPPER_DIR;\n    if (AddDirentry(params) != DLP_OK) {\n        fuse_reply_err(params.req, EINVAL);\n        return DLP_FUSE_ERROR_VALUE_INVALID;\n    }\n    return DLP_OK;\n}', 'static void FuseDaemonLookup(fuse_req_t req, fuse_ino_t parent, const char* name)\n{\n    if (name == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Look up link file fail, name is null");\n        fuse_reply_err(req, ENOENT);\n        return;\n    }\n    DLP_LOG_DEBUG(LABEL, "Look up link file, name=%{private}s", name);\n\n    if (parent != ROOT_INODE) {\n        DLP_LOG_ERROR(LABEL, "Look up link file fail, parent is not root inode");\n        fuse_reply_err(req, ENOENT);\n        return;\n    }\n\n    struct fuse_entry_param fep;\n    (void)memset_s(&fep, sizeof(struct fuse_entry_param), 0, sizeof(struct fuse_entry_param));\n    if (!strcmp(name, ".") || !strcmp(name, "..")) {\n        fep.ino = ROOT_INODE;\n        fep.attr = *(FuseDaemon::GetRootFileStat());\n        fuse_reply_entry(req, &fep);\n        return;\n    }\n\n    DlpLinkManager* manager = DlpFuseHelper::GetDlpLinkManagerInstance();\n    if (!manager) {\n        DLP_LOG_ERROR(LABEL, "Get instance failed.");\n        fuse_reply_err(req, ENOENT);\n        return;\n    }\n\n    std::string nameStr = name;\n    DlpLinkFile* node = manager->LookUpDlpLinkFile(nameStr);\n    if (node == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Look up link file fail, file %{public}s can not found", name);\n        fuse_reply_err(req, ENOENT);\n    } else {\n        DLP_LOG_DEBUG(LABEL, "Look up link file succ, file %{public}s found", name);\n        fep.ino = GetFileInode(node);\n        fep.attr = node->GetLinkStat();\n        fuse_reply_entry(req, &fep);\n    }\n}', 'static int AddLinkFilesDirentry(DirAddParams& params)\n{\n    std::vector<DlpLinkFileInfo> linkList;\n    DlpLinkManager* manager = DlpFuseHelper::GetDlpLinkManagerInstance();\n    if (!manager) {\n        fuse_reply_err(params.req, EINVAL);\n        return DLP_FUSE_ERROR_VALUE_INVALID;\n    }\n    manager->DumpDlpLinkFile(linkList);\n    int listSize = static_cast<int>(linkList.size());\n    for (int i = 0; i < listSize; i++) {\n        params.entryName = linkList[i].dlpLinkName;\n        params.entryStat = &linkList[i].fileStat;\n        if (AddDirentry(params) != DLP_OK) {\n            fuse_reply_err(params.req, EINVAL);\n            return DLP_FUSE_ERROR_VALUE_INVALID;\n        }\n    }\n    return DLP_OK;\n}', 'fuse_ino_t GetFileInode(DlpLinkFile* node)\n{\n    return static_cast<fuse_ino_t>(reinterpret_cast<uintptr_t>(node));\n}', 'void FuseDaemon::InitRootFileStat(void)\n{\n    (void)memset_s(&rootFileStat_, sizeof(rootFileStat_), 0, sizeof(rootFileStat_));\n    rootFileStat_.st_ino = ROOT_INODE;\n    rootFileStat_.st_mode = S_IFDIR | ROOT_INODE_ACCESS;\n    rootFileStat_.st_nlink = 1;\n    rootFileStat_.st_uid = getuid();\n    rootFileStat_.st_gid = getgid();\n    DlpFuseUtils::UpdateCurrTimeStat(&rootFileStat_.st_atim);\n    DlpFuseUtils::UpdateCurrTimeStat(&rootFileStat_.st_mtim);\n    DlpFuseUtils::UpdateCurrTimeStat(&rootFileStat_.st_ctim);\n}', 'void fuse_reply_attr(fuse_req_t req, struct stat* fileStat, int a){\n\n}', 'static void FuseDaemonRead(fuse_req_t req, fuse_ino_t ino, size_t size, off_t offset, struct fuse_file_info* fi)\n{\n    (void)fi;\n    if (req == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Fuse_req_t is nullptr");\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n    if (offset < 0 || offset > DLP_MAX_CONTENT_SIZE) {\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n    if (size > DLP_FUSE_MAX_BUFFLEN) {\n        DLP_LOG_ERROR(LABEL, "Read link file fail, read size %{public}zu too large", size);\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n    DlpLinkFile* dlp = GetValidFileNode(req, ino);\n    if (dlp == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Read link file fail, wrong ino");\n        return;\n    }\n\n    char* buf = reinterpret_cast<char*>(malloc(size));\n    if (buf == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Read link file fail, malloc %{public}zu buff fail", size);\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n    (void)memset_s(buf, size, 0, size);\n    int32_t res = dlp->Read(static_cast<uint32_t>(offset), buf, static_cast<uint32_t>(size), req->ctx.uid);\n    if (res < 0) {\n        fuse_reply_err(req, EIO);\n    } else {\n        fuse_reply_buf(req, buf, static_cast<size_t>(res));\n    }\n    DLP_LOG_DEBUG(LABEL, "Read file name %{private}s offset %{public}u size %{public}u res %{public}d",\n        dlp->GetLinkName().c_str(), static_cast<uint32_t>(offset), static_cast<uint32_t>(size), res);\n    free(buf);\n}', 'static void FuseDaemonOpen(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info* fi)\n{\n    if (ino == ROOT_INODE) {\n        DLP_LOG_ERROR(LABEL, "Open link file fail, can not open root dir");\n        fuse_reply_err(req, ENOENT);\n        return;\n    }\n\n    DlpLinkFile* dlp = GetFileNode(ino);\n    if (dlp == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Open link file fail, wrong ino");\n        fuse_reply_err(req, ENOENT);\n        return;\n    }\n    if ((fi != nullptr) && (static_cast<uint32_t>(fi->flags) & O_TRUNC) != 0) {\n        int32_t ret = dlp->Truncate(0);\n        if (ret != DLP_OK) {\n            DLP_LOG_ERROR(LABEL, "Open link file with truncate fail, ret=%{public}d", ret);\n            fuse_reply_err(req, EINVAL);\n            return;\n        }\n        DLP_LOG_INFO(LABEL, "Open link file with truncate succ");\n    }\n\n    fuse_reply_open(req, fi);\n    dlp->UpdateAtimeStat();\n}', 'void fuse_reply_buf(fuse_req_t req, void* buff, int a){\n    \n}', 'int FuseDaemon::WaitDaemonEnable(void)\n{\n    DLP_LOG_INFO(LABEL, "Wait fuse fs daemon enable");\n    std::unique_lock<std::mutex> lck(daemonEnableMtx_);\n    if (daemonStatus_ == DAEMON_UNDEF) {\n        daemonEnableCv_.wait_for(lck, std::chrono::seconds(1));\n    }\n\n    if (daemonStatus_ == DAEMON_ENABLE) {\n        DLP_LOG_INFO(LABEL, "Wait fuse fs daemon enable succ");\n        init_ = true;\n        return DLP_OK;\n    }\n\n    DLP_LOG_INFO(LABEL, "Wait fuse fs daemon enable fail, time out");\n    return DLP_FUSE_ERROR_OPERATE_FAIL;\n}', 'static void FuseDaemonReadDir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off, struct fuse_file_info *fi)\n{\n    (void)fi;\n    if (off < 0 || off > DLP_MAX_CONTENT_SIZE) {\n        fuse_reply_err(req, ENOTDIR);\n        return;\n    }\n\n    if (ino != ROOT_INODE) {\n        fuse_reply_err(req, ENOTDIR);\n        return;\n    }\n    if (size > MAX_READ_DIR_BUF_SIZE) {\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n\n    char* readBuf = reinterpret_cast<char*>(malloc(size));\n    if (readBuf == nullptr) {\n        fuse_reply_err(req, EFAULT);\n        return;\n    }\n    (void)memset_s(readBuf, size, 0, size);\n\n    struct DirAddParams params;\n    params.req = req;\n    params.directBuf = readBuf;\n    params.bufLen = size;\n    params.nextOff = 0;\n\n    if (AddRootDirentry(params) != DLP_OK) {\n        free(readBuf);\n        return;\n    }\n\n    if (AddLinkFilesDirentry(params) != DLP_OK) {\n        free(readBuf);\n        return;\n    }\n\n    if (params.curOff <= off) {\n        fuse_reply_buf(req, nullptr, 0);\n    } else {\n        fuse_reply_buf(req, readBuf + off, params.nextOff - off);\n    }\n    free(readBuf);\n}', 'static void FuseDaemonGetattr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info* fi)\n{\n    (void)fi;\n\n    if (ino == ROOT_INODE) {\n        struct stat* fileStat = FuseDaemon::GetRootFileStat();\n        fuse_reply_attr(req, fileStat, DEFAULT_ATTR_TIMEOUT);\n        return;\n    }\n\n    DlpLinkFile* dlp = GetFileNode(ino);\n    if (dlp == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Get link file attr fail, wrong ino");\n        fuse_reply_err(req, ENOENT);\n        return;\n    }\n\n    struct stat fileStat = dlp->GetLinkStat();\n    fuse_reply_attr(req, &fileStat, DEFAULT_ATTR_TIMEOUT);\n}', 'bool FuseDaemonUpdateTime(fuse_req_t req, int toSet, DlpLinkFile* dlpLink)\n{\n    DLP_LOG_DEBUG(LABEL, "Set link file update time, type %{public}d", toSet);\n    bool isUpdateTime = false;\n    struct stat fileStat = dlpLink->GetFileStat();\n    if ((static_cast<uint32_t>(toSet) & FUSE_SET_ATTR_MTIME) != 0) {\n        DlpFuseUtils::UpdateCurrTimeStat(&fileStat.st_mtim);\n        isUpdateTime = true;\n    }\n    if ((static_cast<uint32_t>(toSet) & FUSE_SET_ATTR_CTIME) != 0) {\n        DlpFuseUtils::UpdateCurrTimeStat(&fileStat.st_ctim);\n        isUpdateTime = true;\n    }\n    if ((static_cast<uint32_t>(toSet) & FUSE_SET_ATTR_ATIME) != 0) {\n        DlpFuseUtils::UpdateCurrTimeStat(&fileStat.st_atim);\n        isUpdateTime = true;\n    }\n    if (isUpdateTime && (static_cast<uint32_t>(toSet) & FUSE_SET_ATTR_SIZE) == 0) {\n        fuse_reply_attr(req, &fileStat, DEFAULT_ATTR_TIMEOUT);\n        return false;\n    }\n    return true;\n}', 'void FuseDaemonSetAttr(fuse_req_t req, fuse_ino_t ino, struct stat *attr, int toSet, struct fuse_file_info *fi)\n{\n    (void)fi;\n    if (attr == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Set link file attr fail, attr invalid");\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n\n    if (ino == ROOT_INODE) {\n        DLP_LOG_ERROR(LABEL, "Set link file attr fail, cannot set attr on root inode");\n        fuse_reply_err(req, EACCES);\n        return;\n    }\n\n    DlpLinkFile* dlpLink = GetFileNode(ino);\n    if (dlpLink == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Set link file attr fail, wrong ino");\n        fuse_reply_err(req, ENOENT);\n        return;\n    }\n\n    if (!FuseDaemonUpdateTime(req, toSet, dlpLink)) {\n        return;\n    }\n\n    if ((static_cast<uint32_t>(toSet) & FUSE_SET_ATTR_SIZE) == 0) {\n        DLP_LOG_ERROR(LABEL, "Set link file attr fail, type %{public}d not support", toSet);\n        fuse_reply_err(req, EACCES);\n        return;\n    }\n\n    if (attr->st_size < 0 || attr->st_size > DLP_MAX_CONTENT_SIZE) {\n        DLP_LOG_ERROR(LABEL, "Set link file attr fail, file size too large");\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n    int32_t ret = dlpLink->Truncate(static_cast<uint32_t>(attr->st_size));\n    if (ret != DLP_OK) {\n        DLP_LOG_ERROR(LABEL, "Set link file attr fail, errno is %{public}d", ret);\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n\n    DLP_LOG_INFO(LABEL, "Set link file attr succ");\n    struct stat fileStat = dlpLink->GetLinkStat();\n    fuse_reply_attr(req, &fileStat, DEFAULT_ATTR_TIMEOUT);\n}', 'struct stat* FuseDaemon::GetRootFileStat()\n{\n    return &FuseDaemon::rootFileStat_;\n}', 'void fuse_reply_write(fuse_req_t req, size_t a){\n\n}', 'void fuse_reply_entry(fuse_req_t req, struct fuse_entry_param fep){\n\n}', 'static void FuseDaemonWrite(\n    fuse_req_t req, fuse_ino_t ino, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)\n{\n    (void)fi;\n    if (off < 0 || off > DLP_MAX_CONTENT_SIZE) {\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n    if (size > DLP_FUSE_MAX_BUFFLEN) {\n        DLP_LOG_ERROR(LABEL, "Write link file fail, write size %{public}zu too large", size);\n        fuse_reply_err(req, EINVAL);\n        return;\n    }\n    DlpLinkFile* dlp = GetValidFileNode(req, ino);\n    if (dlp == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Write link file fail, wrong ino");\n        return;\n    }\n    int32_t res = dlp->Write(static_cast<uint32_t>(off),\n        const_cast<void *>(static_cast<const void *>(buf)), static_cast<uint32_t>(size));\n    if (res < 0) {\n        fuse_reply_err(req, EIO);\n    } else {\n        fuse_reply_write(req, static_cast<size_t>(res));\n    }\n    DLP_LOG_DEBUG(LABEL, "Write file name %{private}s offset %{public}u size %{public}u res %{public}d",\n        dlp->GetLinkName().c_str(), static_cast<uint32_t>(off), static_cast<uint32_t>(size), res);\n}', 'int FuseDaemon::InitFuseFs()\n{\n    if (init_) {\n        DLP_LOG_INFO(LABEL, "Fuse fs has init already!");\n        return DLP_OK;\n    }\n\n    std::lock_guard<std::mutex> lock(initMutex_);\n    if (init_) {\n        DLP_LOG_INFO(LABEL, "Double check fuse fs has init already!");\n        return DLP_OK;\n    }\n\n    int fuseDevFd = GetDlpFuseFd();\n    if (fuseDevFd < 0) {\n        DLP_LOG_ERROR(LABEL, "Init fuse fs fail: dev fd is error");\n        return DLP_PARSE_ERROR_FD_ERROR;\n    }\n    daemonStatus_ = DAEMON_UNDEF;\n\n    std::thread daemonThread([fuseDevFd] { FuseFsDaemonThread(fuseDevFd); });\n    pthread_setname_np(daemonThread.native_handle(), THREAD_OS_DLP_FUSE);\n    daemonThread.detach();\n    return WaitDaemonEnable();\n}', 'static void FuseDaemonForget(fuse_req_t req, fuse_ino_t ino, uint64_t nlookup)\n{\n    if (ino == ROOT_INODE) {\n        DLP_LOG_WARN(LABEL, "Forget root dir is forbidden");\n        fuse_reply_err(req, ENOENT);\n        return;\n    }\n\n    DlpLinkFile* dlp = GetFileNode(ino);\n    if (dlp == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Forgot link file fail, wrong ino");\n        fuse_reply_err(req, EBADF);\n        return;\n    }\n    DLP_LOG_DEBUG(LABEL, "Forget link file name %{private}s nlookup %{public}u",\n        dlp->GetLinkName().c_str(), static_cast<uint32_t>(nlookup));\n    if (dlp->SubAndCheckZeroRef(nlookup)) {\n        DLP_LOG_INFO(LABEL, "Link file reference is less than 0, delete link file ok");\n        delete dlp;\n    }\n}', 'void FuseDaemon::NotifyDaemonDisable(void)\n{\n    std::unique_lock<std::mutex> lck(daemonEnableMtx_);\n    daemonStatus_ = DAEMON_DISABLE;\n    daemonEnableCv_.notify_all();\n}', 'void FuseDaemon::FuseFsDaemonThread(int fuseFd)\n{\n    struct stat fileStat;\n    if (fstat(fuseFd, &fileStat) < 0) {\n        DLP_LOG_ERROR(LABEL, "Fuse fs daemon exit, %{public}d is wrong fd, errno %{public}d", fuseFd, errno);\n        NotifyDaemonDisable();\n        return;\n    }\n\n    char mountPoint[MAX_FILE_NAME_LEN] = {0};\n    int ret = snprintf_s(mountPoint, sizeof(mountPoint), MAX_FILE_NAME_LEN, "/dev/fd/%d", fuseFd);\n    if (ret <= 0) {\n        DLP_LOG_ERROR(LABEL, "Fuse fs daemon exit, snprintf_s fail");\n        NotifyDaemonDisable();\n        return;\n    }\n\n    struct fuse_args args = FUSE_ARGS_INIT(0, nullptr);\n    fuse_opt_add_arg(&args, mountPoint);\n\n    struct fuse_session* se = fuse_session_new(&args, &fuseDaemonOper_, sizeof(fuseDaemonOper_), nullptr);\n    if (se == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Fuse fs daemon exit, create fuse session fail");\n        NotifyDaemonDisable();\n        fuse_opt_free_args(&args);\n        return;\n    }\n\n    if (fuse_session_mount(se, mountPoint) != 0) {\n        DLP_LOG_ERROR(LABEL, "Fuse fs daemon exit, mount fuse session fail");\n        NotifyDaemonDisable();\n        fuse_session_destroy(se);\n        fuse_opt_free_args(&args);\n        return;\n    }\n\n    InitRootFileStat();\n    NotifyDaemonEnable();\n\n    if (fuse_session_loop(se) != 0) {\n        DLP_LOG_ERROR(LABEL, "Fuse fs daemon exit, fuse session loop end");\n    }\n\n    fuse_session_destroy(se);\n    fuse_opt_free_args(&args);\n}', 'void FuseDaemon::NotifyDaemonEnable(void)\n{\n    std::unique_lock<std::mutex> lck(daemonEnableMtx_);\n    daemonStatus_ = DAEMON_ENABLE;\n    daemonEnableCv_.notify_all();\n}', 'static int AddDirentry(DirAddParams& param)\n{\n    size_t shouldSize = fuse_add_direntry(param.req, nullptr, 0, param.entryName.c_str(), nullptr, 0);\n    if (shouldSize > param.bufLen) {\n        return DLP_FUSE_ERROR_VALUE_INVALID;\n    }\n    param.curOff = param.nextOff;\n    size_t addSize = fuse_add_direntry(param.req, param.directBuf, param.bufLen,\n        param.entryName.c_str(), param.entryStat, param.curOff);\n    param.directBuf += addSize;\n    param.bufLen -= addSize;\n    param.nextOff += static_cast<int>(addSize);\n    return DLP_OK;\n}', 'static void FuseDaemonInit(void *userdata, struct fuse_conn_info *conn)\n{\n    (void)userdata;\n    if (conn == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Fuse init, fuse conn info is null");\n        return;\n    }\n    conn->want |= FUSE_CAP_WRITEBACK_CACHE;\n}', 'void fuse_reply_err(fuse_req_t req, int a){\n\n}']
+['pub fn fuse_reply_err(req: fuse_req_t, a: i32)', 'pub fn fuse_reply_entry(req: fuse_req_t, fep: fuse_entry_param)', 'pub fn fuse_reply_attr(req: fuse_req_t, file_stat: *mut stat, a: i32)', 'pub fn fuse_reply_write(req: fuse_req_t, a: usize)', 'pub fn fuse_reply_buf(req: fuse_req_t, buff: *mut c_void, a: i32)', 'pub fn get_file_node(ino: fuse_ino_t) -> *mut DlpLinkFile', 'pub fn get_file_inode(node: *mut DlpLinkFile) -> fuse_ino_t', 'pub fn fuse_daemon_lookup(req: fuse_req_t, parent: fuse_ino_t, name: *const i8)', 'pub fn fuse_daemon_getattr(req: fuse_req_t, ino: fuse_ino_t, fi: *mut fuse_file_info)', 'pub fn fuse_daemon_open(req: fuse_req_t, ino: fuse_ino_t, fi: *mut fuse_file_info)', 'pub fn get_valid_file_node(req: fuse_req_t, ino: fuse_ino_t) -> *mut DlpLinkFile', 'pub fn fuse_daemon_read(req: fuse_req_t, ino: fuse_ino_t, size: usize, offset: i64, fi: *mut fuse_file_info)', 'pub fn fuse_daemon_write(req: fuse_req_t, ino: fuse_ino_t, buf: *const i8, size: usize, off: i64, fi: *mut fuse_file_info)', 'pub fn fuse_daemon_forget(req: fuse_req_t, ino: fuse_ino_t, nlookup: u64)', 'pub fn add_direntry(param: &mut DirAddParams) -> i32', 'pub fn add_root_direntry(params: &mut DirAddParams) -> i32', 'pub fn add_link_files_direntry(params: &mut DirAddParams) -> i32', 'pub fn fuse_daemon_read_dir(req: fuse_req_t, ino: fuse_ino_t, size: usize, off: i64, fi: *mut fuse_file_info)', 'pub fn fuse_daemon_update_time(req: fuse_req_t, to_set: i32, dlp_link: *mut DlpLinkFile) -> bool', 'pub fn fuse_daemon_set_attr(req: fuse_req_t, ino: fuse_ino_t, attr: *mut stat, to_set: i32, fi: *mut fuse_file_info)', 'pub fn fuse_daemon_init(userdata: *mut c_void, conn: *mut fuse_conn_info)', 'pub fn init_fuse_fs() -> i32', 'pub fn get_root_file_stat() -> *mut stat', 'pub fn wait_daemon_enable() -> i32', 'pub fn notify_daemon_enable()', 'pub fn notify_daemon_disable()', 'pub fn init_root_file_stat()', 'pub fn fuse_fs_daemon_thread(fuse_fd: i32)']
+11.521393288058617
+success
+11.521393288058617
+success
+10.11024504397044
+success
+10.11024504397044
+success
+11.521393288058617
+success
+13.05596456700017
+success
+14.467112811088347
+success
+9.425235829175861
+success
+9.425235829175861
+success
+9.425235829175861
+success
+18.640509458571714
+success
+8.014087585087687
+success
+8.014087585087687
+success
+9.425235829175861
+success
+10.024415647685794
+success
+13.85614290374921
+success
+21.483489310827505
+success
+13.920417107128287
+success
+15.241502500042191
+success
+13.920417107128287
+success
+7.188618779337597
+success
+11.150212748131482
+success
+16.546638650552705
+success
+13.782103596293766
+success
+12.370955352205591
+success
+13.782103596293767
+success
+17.094938628361497
+success
+13.920417107128287
+success
+16   15
+start to get dlp_link_file_9.txt
+start to get dlp_link_file_16.txt
+start to get dlp_link_file_4.txt
+start to get dlp_link_file_5.txt
+start to get dlp_link_file_11.txt
+start to get dlp_link_file_3.txt
+start to get dlp_link_file_6.txt
+start to get dlp_link_file_1.txt
+start to get dlp_link_file_2.txt
+start to get dlp_link_file_10.txt
+start to get dlp_link_file_12.txt
+start to get dlp_link_file_7.txt
+start to get dlp_link_file_15.txt
+start to get dlp_link_file_13.txt
+start to get dlp_link_file_14.txt
+start to get dlp_link_file_8.txt
+['bool DlpLinkFile::SubAndCheckZeroRef(int ref)\n{\n    if (ref <= 0) {\n        DLP_LOG_WARN(LABEL, "Need sub reference %{public}d is error", ref);\n        return false;\n    }\n    std::lock_guard<std::mutex> lock(refLock_);\n    if (refcount_ < ref) {\n        DLP_LOG_WARN(LABEL, "Need sub reference %{public}d is larger than refcount %{public}d",\n            ref, static_cast<int>(refcount_));\n        return true;\n    }\n    refcount_ -= ref;\n    return (refcount_ <= 0);\n}', 'int32_t DlpLinkFile::Read(uint32_t offset, void* buf, uint32_t size, uint32_t uid)\n{\n    if (stopLinkFlag_) {\n        DLP_LOG_INFO(LABEL, "linkFile is stopping link");\n        return DLP_LINK_FILE_NOT_ALLOW_OPERATE;\n    }\n\n    if (dlpFile_ == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Read link file fail, dlp file is null");\n        return DLP_FUSE_ERROR_DLP_FILE_NULL;\n    }\n    UpdateAtimeStat();\n    int32_t res = dlpFile_->DlpFileRead(offset, buf, size, hasRead_, uid);\n    if (res < 0) {\n        DLP_LOG_ERROR(LABEL, "Read link file failed, res %{public}d.", res);\n    }\n    return res;\n}', 'void stopLink()\n    {\n        stopLinkFlag_ = true;\n    }', 'void restartLink()\n    {\n        stopLinkFlag_ = false;\n    }', 'struct stat DlpLinkFile::GetLinkStat()\n{\n    if (dlpFile_ == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Get link file stat fail, dlpFile is null");\n        return fileStat_;\n    }\n\n    uint32_t res = dlpFile_->GetFsContentSize();\n    if (res != INVALID_FILE_SIZE) {\n        fileStat_.st_size = res;\n    }\n    return fileStat_;\n}', 'std::string& GetLinkName()\n    {\n        return dlpLinkName_;\n    }', 'struct stat GetFileStat()\n    {\n        return fileStat_;\n    }', 'std::shared_ptr<DlpFile> GetDlpFilePtr()\n    {\n        return dlpFile_;\n    }', 'void setDlpFilePtr(const std::shared_ptr<DlpFile>& dlpFile)\n    {\n        dlpFile_ = dlpFile;\n    }', 'void DlpLinkFile::IncreaseRef()\n{\n    std::lock_guard<std::mutex> lock(refLock_);\n    if (refcount_ <= 0) {\n        DLP_LOG_WARN(LABEL, "refcount <= 0, can not increase");\n        return;\n    }\n    refcount_++;\n}', 'int32_t DlpLinkFile::Truncate(uint32_t modifySize)\n{\n    if (stopLinkFlag_) {\n        DLP_LOG_INFO(LABEL, "linkFile is stopping link");\n        return DLP_LINK_FILE_NOT_ALLOW_OPERATE;\n    }\n\n    if (modifySize >= DLP_MAX_CONTENT_SIZE) {\n        DLP_LOG_ERROR(LABEL, "Truncate link file fail, modify size %{public}u is invalid", modifySize);\n        return DLP_FUSE_ERROR_VALUE_INVALID;\n    }\n\n    if (dlpFile_ == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Truncate link file fail, dlp file is null");\n        return DLP_FUSE_ERROR_DLP_FILE_NULL;\n    }\n    int32_t res = dlpFile_->Truncate(modifySize);\n    if (res < 0) {\n        DLP_LOG_ERROR(LABEL, "Truncate %{public}u in link file fail, res=%{public}d", modifySize, res);\n    } else {\n        DLP_LOG_INFO(LABEL, "Truncate %{public}u in link file succ", modifySize);\n    }\n    UpdateMtimeStat();\n    return res;\n}', 'DlpLinkFile::DlpLinkFile(const std::string& dlpLinkName, const std::shared_ptr<DlpFile>& dlpFile)\n    : dlpLinkName_(dlpLinkName), dlpFile_(dlpFile), refcount_(1), stopLinkFlag_(false), hasRead_(false)\n{\n    (void)memset_s(&fileStat_, sizeof(fileStat_), 0, sizeof(fileStat_));\n    fileStat_.st_ino = static_cast<fuse_ino_t>(reinterpret_cast<uintptr_t>(this));\n    if (dlpFile != nullptr) {\n        uint32_t fileMode = (dlpFile->GetAuthPerm() == READ_ONLY) ? DEFAULT_INODE_RO_ACCESS : DEFAULT_INODE_RW_ACCESS;\n        fileStat_.st_mode = S_IFREG | fileMode;\n    } else {\n        fileStat_.st_mode = 0;\n    }\n    fileStat_.st_nlink = 1;\n    fileStat_.st_uid = getuid();\n    fileStat_.st_gid = getgid();\n\n    DlpFuseUtils::UpdateCurrTimeStat(&fileStat_.st_atim);\n    DlpFuseUtils::UpdateCurrTimeStat(&fileStat_.st_mtim);\n    DlpFuseUtils::UpdateCurrTimeStat(&fileStat_.st_ctim);\n}', 'int32_t DlpLinkFile::Write(uint32_t offset, void* buf, uint32_t size)\n{\n    if (stopLinkFlag_) {\n        DLP_LOG_INFO(LABEL, "linkFile is stopping link");\n        return DLP_LINK_FILE_NOT_ALLOW_OPERATE;\n    }\n\n    if (dlpFile_ == nullptr) {\n        DLP_LOG_ERROR(LABEL, "Write link file fail, dlp file is null");\n        return DLP_FUSE_ERROR_DLP_FILE_NULL;\n    }\n    int32_t res = dlpFile_->DlpFileWrite(offset, buf, size);\n    if (res < 0) {\n        DLP_LOG_ERROR(LABEL, "Write link file fail, err=%{public}d.", res);\n    }\n    UpdateMtimeStat();\n    return res;\n}', 'void DlpLinkFile::UpdateAtimeStat()\n{\n    DlpFuseUtils::UpdateCurrTimeStat(&fileStat_.st_atim);\n}', 'void DlpLinkFile::UpdateMtimeStat()\n{\n    DlpFuseUtils::UpdateCurrTimeStat(&fileStat_.st_mtim);\n}', 'DlpLinkFile::~DlpLinkFile()\n{\n}']
+['pub fn new(dlp_link_name: String, dlp_file: Arc<DlpFile>) -> Self', 'pub fn sub_and_check_zero_ref(&self, ref_: i32) -> bool', 'pub fn increase_ref(&self)', 'pub fn get_link_stat(&self) -> Metadata', 'pub fn update_atime_stat(&self)', 'pub fn update_mtime_stat(&self)', 'pub fn write(&self, offset: u32, buf: *mut libc::c_void, size: u32) -> i32', 'pub fn read(&self, offset: u32, buf: *mut libc::c_void, size: u32, uid: u32) -> i32', 'pub fn get_dlp_file_ptr(&self) -> Arc<DlpFile>', 'pub fn set_dlp_file_ptr(&mut self, dlp_file: Arc<DlpFile>)', 'pub fn get_link_name(&self) -> &String', 'pub fn truncate(&self, modify_size: u32) -> i32', 'pub fn stop_link(&mut self)', 'pub fn restart_link(&mut self)', 'pub fn get_file_stat(&self) -> Metadata']
+0.0
+success
+17.977434606468314
+error
+dlp_link_file_9.txt: pub fn sub_and_check_zero_ref(&self, ref_: i32) -> bool
+['sub', 'check', 'zero', 'ref']
+pub fn new(dlp_link_name: String, dlp_file: Arc<DlpFile>) -> Self
+10.438421823544232
+success
+7.545651327582291
+success
+12.31028884873543
+success
+12.31028884873543
+success
+6.714327513996238
+success
+6.714327513996238
+success
+11.184986301928861
+success
+9.224302392783807
+success
+10.203775377803002
+success
+6.714327513996238
+success
+2.468103018428382
+success
+2.468103018428382
+error
+dlp_link_file_4.txt: pub fn restart_link(&mut self)
+['restart', 'link']
+pub fn stop_link(&mut self)
+7.895240367673452
+success
+21   20
+start to get dlp_file_4.txt
+start to get dlp_file_3.txt
+start to get dlp_file_2.txt
+start to get dlp_file_1.txt
+['DLPFileAccess GetAuthPerm()\n    {\n        return authPerm_;\n    }', 'void RemoveLinkStatus()\n    {\n        isFuseLink_ = false;\n    }', 'void SetLinkStatus()\n    {\n        isFuseLink_ = true;\n    }', 'void GetContactAccount(std::string& contactAccount) const\n    {\n        contactAccount = contactAccount_;\n    }']
+['pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self', 'pub fn parse_dlp_header(&self) -> i32', 'pub fn set_offline_access(&mut self, flag: bool)', 'pub fn get_offline_access(&self) -> bool', 'pub fn gen_file(&self, in_plain_file_fd: i32) -> i32', 'pub fn remove_dlp_permission(&self, out_plain_file_fd: i32) -> i32', 'pub fn dlp_file_read(&self, offset: u32, buf: *mut std::ffi::c_void, size: u32, has_read: &mut bool, uid: i32) -> i32', 'pub fn dlp_file_write(&self, offset: u32, buf: *mut std::ffi::c_void, size: u32) -> i32', 'pub fn get_fs_content_size(&self) -> u32', 'pub fn update_dlp_file_permission(&self) -> bool', 'pub fn check_dlp_file(&self) -> i32', 'pub fn need_adapter(&self) -> bool', 'pub fn clean_tmp_file(&self) -> bool', 'pub fn hmac_check(&self) -> i32', 'pub fn set_contact_account(&mut self, contact_account: &str) -> i32', 'pub fn get_contact_account(&self, contact_account: &mut String)', 'pub fn set_link_status(&mut self)', 'pub fn remove_link_status(&mut self)', 'pub fn get_auth_perm(&self) -> &DLPFileAccess', 'pub fn truncate(&self, size: u32) -> i32']
+0.0
+success
+0.0
+error
+dlp_file_4.txt: pub fn parse_dlp_header(&self) -> i32
+['parse', 'dlp', 'header']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+3.2188758248682006
+success
+1.8325814637483102
+error
+dlp_file_4.txt: pub fn get_offline_access(&self) -> bool
+['get', 'offline', 'access']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+0.0
+error
+dlp_file_4.txt: pub fn gen_file(&self, in_plain_file_fd: i32) -> i32
+['gen', 'file']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+3.2188758248682006
+success
+0.0
+error
+dlp_file_4.txt: pub fn dlp_file_read(&self, offset: u32, buf: *mut std::ffi::c_void, size: u32, has_read: &mut bool, uid: i32) -> i32
+['dlp', 'file', 'read']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+0.0
+error
+dlp_file_4.txt: pub fn dlp_file_write(&self, offset: u32, buf: *mut std::ffi::c_void, size: u32) -> i32
+['dlp', 'file', 'write']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+1.8325814637483102
+error
+dlp_file_4.txt: pub fn get_fs_content_size(&self) -> u32
+['get', 'fs', 'content', 'size']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+0.0
+error
+dlp_file_4.txt: pub fn update_dlp_file_permission(&self) -> bool
+['update', 'dlp', 'file', 'permission']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+0.0
+error
+dlp_file_4.txt: pub fn check_dlp_file(&self) -> i32
+['check', 'dlp', 'file']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+0.0
+error
+dlp_file_4.txt: pub fn need_adapter(&self) -> bool
+['need', 'adapter']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+0.0
+error
+dlp_file_4.txt: pub fn clean_tmp_file(&self) -> bool
+['clean', 'tmp', 'file']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+0.0
+error
+dlp_file_4.txt: pub fn hmac_check(&self) -> i32
+['hmac', 'check']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+8.047189562170502
+success
+8.270333113484712
+error
+dlp_file_1.txt: pub fn get_contact_account(&self, contact_account: &mut String)
+['get', 'contact', 'account']
+pub fn set_contact_account(&mut self, contact_account: &str) -> i32
+6.884038752364821
+error
+dlp_file_2.txt: pub fn set_link_status(&mut self)
+['set', 'link', 'status']
+pub fn set_offline_access(&mut self, flag: bool)
+6.884038752364821
+error
+dlp_file_3.txt: pub fn remove_link_status(&mut self)
+['remove', 'link', 'status']
+pub fn remove_dlp_permission(&self, out_plain_file_fd: i32) -> i32
+8.270333113484712
+error
+dlp_file_4.txt: pub fn get_auth_perm(&self) -> &DLPFileAccess
+['get', 'auth', 'perm']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+0.0
+error
+dlp_file_4.txt: pub fn truncate(&self, size: u32) -> i32
+['truncate']
+pub fn new(dlp_fd: i32, work_dir: &str, index: i64, is_zip: bool) -> Self
+1   1
+start to get dlp_fuse_utils_1.txt
+['void DlpFuseUtils::UpdateCurrTimeStat(struct timespec* ts)\n{\n    clock_gettime(CLOCK_REALTIME, ts);\n}']
+['pub fn UpdateCurrTimeStat(ts: *mut timespec)']
+5.545177444479562
+success
+1   1
+start to get dlp_fuse_helper_1.txt
+['DlpLinkManager* DlpFuseHelper::GetDlpLinkManagerInstance()\n{\n    int res = FuseDaemon::InitFuseFs();\n    if (res != DLP_OK) {\n        return nullptr;\n    }\n    return DlpLinkManager::GetInstance();\n}']
+['pub fn get_dlp_link_manager_instance() -> *mut DlpLinkManager']
+6.931471805599453
+success

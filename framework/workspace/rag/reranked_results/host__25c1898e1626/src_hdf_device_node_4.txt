@@ -1,0 +1,379 @@
+C_Code: 
+bool DataShareConfig::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(dataShareExtNames), dataShareExtNames);
+    GetValue(node, GET_NAME(updateLaunchNames), updateLaunchNames);
+    return true;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let app_id = parcel.read_string16()?;
+        let bundle_name = parcel.read_string16()?;
+        let cloud_switch = parcel.read::<i32>()? != 0;
+        let instance_id = parcel.read::<i32>()?;
+
+        let result = Self {
+            app_id,
+            bundle_name,
+            cloud_switch,
+            instance_id,
+        };
+        Ok(result)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__rng_gen_seed__idx140250_rank1.c", "source_rust_file": "Partial__rng_gen_seed__idx140250_rank1.rs", "c_fragment": "size_t amount = 0;\n    do {\n        ssize_t ret = read(fd, dest+amount, size-amount);\n        if (ret < 0) {\n            fprintf(stderr, \"error reading /dev/urandom: %s\", strerror(errno));\n            abort();\n        }\n        else if (ret == 0) {\n            fprintf(stderr, \"somehow hit eof reading from /dev/urandom\");\n            abort();\n        }\n        amount += (size_t)ret;\n    } while (amount < size);", "rust_fragment": "let mut chunks = bytes.array_chunks_mut();\n    for chunk in &mut chunks {\n        *chunk = rdrand64().to_ne_bytes();\n    }\n\n    let mut chunks = chunks.into_remainder().array_chunks_mut();\n    for chunk in &mut chunks {\n        *chunk = rdrand32().to_ne_bytes();\n    }\n\n    let mut chunks = chunks.into_remainder().array_chunks_mut();\n    for chunk in &mut chunks {\n        *chunk = rdrand16().to_ne_bytes();\n    }\n\n    if let [byte] = chunks.into_remainder() {\n        *byte = rdrand16() as u8;\n    }", "description": "Both functions fill a byte buffer with random data, though using different mechanisms: C reads from OS entropy source, Rust uses hardware random instructions.", "reasoning": "[Task Analysis] C function generates random bytes using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses rdrand intrinsics. [Similarity] Names don't match but both perform the same core task: filling a byte buffer with random data. [Knowledge Extraction] Full structural match is blocked by domain mismatch (low-level OS calls vs hardware intrinsics), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rng_gen_seed__idx140250_rank1.c", "source_rust_file": "Partial__rng_gen_seed__idx140250_rank1.rs", "c_api": "read(fd, dest+amount, size-amount)", "rust_api": "rdrand64().to_ne_bytes()", "mapping_type": "function", "description": "Reading random bytes from OS entropy source vs using hardware random instruction", "reasoning": "[Task Analysis] C function generates random bytes using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses rdrand intrinsics. [Similarity] Names don't match but both perform the same core task: filling a byte buffer with random data. [Knowledge Extraction] Full structural match is blocked by domain mismatch (low-level OS calls vs hardware intrinsics), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rng_gen_seed__idx140250_rank1.c", "source_rust_file": "Partial__rng_gen_seed__idx140250_rank1.rs", "c_api": "fill_bytes(bytes: &mut [u8])", "rust_api": "rdrand64().to_ne_bytes()", "mapping_type": "function", "description": "Function that fills a mutable byte slice with random data", "reasoning": "[Task Analysis] C function generates random bytes using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses rdrand intrinsics. [Similarity] Names don't match but both perform the same core task: filling a byte buffer with random data. [Knowledge Extraction] Full structural match is blocked by domain mismatch (low-level OS calls vs hardware intrinsics), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rng_gen_seed__idx140250_rank1.c", "source_rust_file": "Partial__rng_gen_seed__idx140250_rank1.rs", "c_api": "CryptGenRandom(hProv, size, (BYTE*) dest)", "rust_api": "rdrand64().to_ne_bytes()", "mapping_type": "function", "description": "Cryptographic random generation vs hardware random instruction", "reasoning": "[Task Analysis] C function generates random bytes using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses rdrand intrinsics. [Similarity] Names don't match but both perform the same core task: filling a byte buffer with random data. [Knowledge Extraction] Full structural match is blocked by domain mismatch (low-level OS calls vs hardware intrinsics), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: 0.045871201902627945
+--------------------------------------------------
+C_Code: 
+static DWORD WINAPI getaddrinfo_thread_proc(void* parameter) {
+  uv_getaddrinfo_t* handle = (uv_getaddrinfo_t*)parameter;
+  int ret;
+
+  assert(handle != NULL);
+
+  if (handle != NULL) {
+    /* call OS function on this thread */
+    ret = GetAddrInfoW(handle->node, handle->service, handle->hints, &handle->res);
+    handle->retcode = ret;
+
+    /* post getaddrinfo completed */
+    if (!PostQueuedCompletionStatus(uv_iocp_,
+                                  0,
+                                  0,
+                                  &handle->getadddrinfo_req.overlapped)) {
+      uv_fatal_error(GetLastError(), "PostQueuedCompletionStatus");
+    }
+  }
+
+  return 0;
+}
+Function: 
+pub unsafe fn getaddrinfo(
+        node: *const c_char,
+        service: *const c_char,
+        hints: *const ADDRINFOA,
+        res: *mut *mut ADDRINFOA,
+    ) -> c_int {
+        unsafe { c::getaddrinfo(node.cast::<u8>(), service.cast::<u8>(), hints, res) }
+    }
+Unixcoder Score: 0.038884833455085754
+--------------------------------------------------
+C_Code: 
+bool DataShareConfig::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(dataShareExtNames)], dataShareExtNames);
+    SetValue(node[GET_NAME(updateLaunchNames)], updateLaunchNames);
+    return true;
+}
+Function: 
+fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
+        parcel.write_string16(&self.asset_name)?;
+        parcel.write_string16(&self.uri)?;
+        parcel.write_string16(&self.sub_path)?;
+        parcel.write_string16(&self.create_time)?;
+        parcel.write_string16(&self.modify_time)?;
+        parcel.write_string16(&self.size)?;
+        parcel.write(&self.status)?;
+        parcel.write_string16(&self.asset_id)?;
+        parcel.write_string16(&self.hash)?;
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx130354_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx130354_rank1.rs", "c_api": "read(fd, dest+amount, size-amount)", "rust_api": "self.inner.read(buf)", "mapping_type": "function", "description": "Reading data from a source into a buffer", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function reads from a buffered reader. [Similarity] No structural similarity at the function level due to different domains (crypto seed generation vs generic I/O). [Knowledge Extraction] No full match, no partial match, but there is a pattern of reading data from a source into a buffer which maps to an API for reading bytes from a source in Rust."}]
+Unixcoder Score: 0.027702786028385162
+--------------------------------------------------
+C_Code: 
+static DWORD WINAPI getaddrinfo_thread_proc(void* parameter) {
+  uv_getaddrinfo_t* handle = (uv_getaddrinfo_t*)parameter;
+  int ret;
+
+  assert(handle != NULL);
+
+  if (handle != NULL) {
+    /* call OS function on this thread */
+    ret = GetAddrInfoW(handle->node, handle->service, handle->hints, &handle->res);
+    handle->retcode = ret;
+
+    /* post getaddrinfo completed */
+    if (!PostQueuedCompletionStatus(uv_iocp_,
+                                  0,
+                                  0,
+                                  &handle->getadddrinfo_req.overlapped)) {
+      uv_fatal_error(GetLastError(), "PostQueuedCompletionStatus");
+    }
+  }
+
+  return 0;
+}
+Function: 
+pub unsafe fn getaddrinfo(loop_: *uv_loop_t, req: *uv_getaddrinfo_t,
+               getaddrinfo_cb: uv_getaddrinfo_cb,
+               node: *c_char, service: *c_char,
+               hints: *addrinfo) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+    return rust_uv_getaddrinfo(loop_, req, getaddrinfo_cb, node, service, hints);
+}
+Unixcoder Score: 0.010148757137358189
+--------------------------------------------------
+C_Code: 
+static int32_t IpcSetMaxWorkThread(int32_t maxThreadNum)
+{
+    if (g_connector == NULL) {
+        RPC_LOG_ERROR("ipc driver not init");
+        return ERR_FAILED;
+    }
+    int32_t ret = ioctl(g_connector->fd, BINDER_SET_MAX_THREADS, &maxThreadNum);
+    return ret;
+}
+Function: 
+pub fn set_max_work_thread_num(max_thread_num: i32) -> bool {
+        SetMaxWorkThreadNum(max_thread_num)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx132086_rank2.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx132086_rank2.rs", "c_api": "allocate_with_flags", "rust_api": "allocate", "mapping_type": "function", "description": "Memory allocation with flags", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function allocates memory. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there is a potential API mapping for memory allocation patterns."}]
+Unixcoder Score: 0.0069176750257611275
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceDriverProperties
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx79501_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx79501_rank1.rs", "c_api": "read(fd, dest+amount, size-amount)", "rust_api": "self.reader.read(v)", "mapping_type": "function", "description": "Reading data from a source into a buffer", "reasoning": "[Task Analysis] C function generates random seed using OS-specific APIs (Windows CryptoAPI or /dev/urandom), Rust function fills bytes using a reader. [Similarity] Both involve reading random data into a buffer, but the control flow and error handling differ significantly. [Knowledge Extraction] No full structural match due to different domains (OS-level randomness vs generic byte filling). However, both perform data reading into a buffer, which allows for API mapping extraction."}]
+Unixcoder Score: -0.0007465883390977979
+--------------------------------------------------
+C_Code: 
+bool Database::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(tables), tables);
+    GetValue(node, GET_NAME(dbName), name);
+    GetValue(node, GET_NAME(autoSyncType), autoSyncType);
+    GetValue(node, GET_NAME(user), user);
+    GetValue(node, GET_NAME(deviceId), deviceId);
+    GetValue(node, GET_NAME(version), version);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    return true;
+}
+Function: 
+fn try_from(value: &Database) -> Result<Self, SyncError> {
+        let mut tables = vec![];
+        for table in value.tables.values() {
+            tables.push(table.try_into()?);
+        }
+
+        Ok(ipc_conn::Database {
+            name: value.name.clone(),
+            alias: value.alias.to_string(),
+            tables: ipc_conn::SchemaOrderTables(tables),
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemOpenLocked__idx5508_rank3.c", "source_rust_file": "API_Mapping__AshmemOpenLocked__idx5508_rank3.rs", "c_api": "TEMP_FAILURE_RETRY(open(\"/dev/ashmem\", O_RDWR | O_CLOEXEC))", "rust_api": "self.c_ashmem.GetAshmemFd()", "mapping_type": "function", "description": "Opening ashmem device and returning file descriptor", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept ('AshmemOpenLocked' vs 'get_ashmem_fd'). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function performs file I/O and system calls (open, fstat, close), while Rust function delegates to a method call. These are different domains (low-level system operations vs high-level abstraction). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C is a function definition, Rust is a method call; however, since this is a direct delegation, it's not a usage-asymmetry but rather a structural mismatch. [Task Analysis] -> C function opens ashmem device, checks file status, and returns file descriptor. Rust function delegates to a getter method. [Similarity] -> No full or partial structural match due to domain mismatch and different abstraction levels. [Knowledge Extraction] -> No full match, no partial match, but there is an API mapping between the C function's behavior and the Rust method's behavior."}]
+Unixcoder Score: -0.0014305446529760957
+--------------------------------------------------
+C_Code: 
+bool Database::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(tables), tables);
+    GetValue(node, GET_NAME(dbName), name);
+    GetValue(node, GET_NAME(autoSyncType), autoSyncType);
+    GetValue(node, GET_NAME(user), user);
+    GetValue(node, GET_NAME(deviceId), deviceId);
+    GetValue(node, GET_NAME(version), version);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    return true;
+}
+Function: 
+fn try_from(value: &Database) -> Result<Self, SyncError> {
+        let mut tables = vec![];
+        for table in value.tables.values() {
+            tables.push(table.try_into()?);
+        }
+
+        Ok(ipc_conn::Database {
+            name: value.name.clone(),
+            alias: value.alias.to_string(),
+            tables: ipc_conn::SchemaOrderTables(tables),
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx140263_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx140263_rank1.rs", "c_api": "CryptGenRandom(hProv, size, (BYTE*) dest)", "rust_api": "dev.read_exact(bytes)", "mapping_type": "function", "description": "Reading random bytes from a cryptographic source", "reasoning": "[FFI Check] -> [Task Analysis] The C code generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses File I/O and device reading. [Similarity] The overall task is the same: generating cryptographically secure random bytes. However, the implementation details differ significantly in structure and control flow. [Knowledge Extraction] There are no full structural matches due to different control flow and domain-specific logic. However, there are API mappings for the core operation of reading random data from a device/file."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx140263_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx140263_rank1.rs", "c_api": "File::open(\"/dev/urandom\")", "rust_api": "open(\"/dev/urandom\")", "mapping_type": "function", "description": "Opening a device file for reading random data", "reasoning": "[FFI Check] -> [Task Analysis] The C code generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses File I/O and device reading. [Similarity] The overall task is the same: generating cryptographically secure random bytes. However, the implementation details differ significantly in structure and control flow. [Knowledge Extraction] There are no full structural matches due to different control flow and domain-specific logic. However, there are API mappings for the core operation of reading random data from a device/file."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx140263_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx140263_rank1.rs", "c_api": "read(fd, dest+amount, size-amount)", "rust_api": "dev.read_exact(bytes)", "mapping_type": "function", "description": "Reading random bytes from a device file", "reasoning": "[FFI Check] -> [Task Analysis] The C code generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses File I/O and device reading. [Similarity] The overall task is the same: generating cryptographically secure random bytes. However, the implementation details differ significantly in structure and control flow. [Knowledge Extraction] There are no full structural matches due to different control flow and domain-specific logic. However, there are API mappings for the core operation of reading random data from a device/file."}]
+Unixcoder Score: -0.00840980838984251
+--------------------------------------------------
+C_Code: 
+bool Database::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(tables), tables);
+    GetValue(node, GET_NAME(dbName), name);
+    GetValue(node, GET_NAME(autoSyncType), autoSyncType);
+    GetValue(node, GET_NAME(user), user);
+    GetValue(node, GET_NAME(deviceId), deviceId);
+    GetValue(node, GET_NAME(version), version);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    return true;
+}
+Function: 
+pub fn new(name: String, alias: String, tables: HashMap<String, Table>) -> Database {
+        Database {
+            name,
+            alias,
+            tables,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__getaddrinfo_thread_proc__idx143287_rank2.c", "source_rust_file": "API_Mapping__getaddrinfo_thread_proc__idx143287_rank2.rs", "c_api": "GetAddrInfoW", "rust_api": "c::getaddrinfo", "mapping_type": "function", "description": "DNS resolution system call", "reasoning": "[Task Analysis] C code is a Windows thread procedure for DNS resolution using GetAddrInfoW, while Rust code is a safe wrapper around the C function getaddrinfo. [Similarity] Names do not match exactly but refer to the same concept (DNS resolution). However, the C code is a thread proc with complex logic involving Windows API calls, while Rust code is a simple FFI wrapper. [Knowledge Extraction] The thread proc in C and the FFI function in Rust both perform DNS resolution, but they are not structurally similar enough to be Full. However, there are API mappings between the underlying system calls (GetAddrInfoW vs getaddrinfo)."}]
+Unixcoder Score: -0.013963177800178528
+--------------------------------------------------
+C_Code: 
+static DWORD WINAPI getaddrinfo_thread_proc(void* parameter) {
+  uv_getaddrinfo_t* handle = (uv_getaddrinfo_t*) parameter;
+  uv_loop_t* loop = handle->loop;
+  int ret;
+
+  assert(handle != NULL);
+
+  if (handle != NULL) {
+    /* call OS function on this thread */
+    ret = GetAddrInfoW(handle->node,
+                       handle->service,
+                       handle->hints,
+                       &handle->res);
+    handle->retcode = ret;
+
+    /* post getaddrinfo completed */
+    POST_COMPLETION_FOR_REQ(loop, &handle->getadddrinfo_req);
+  }
+
+  return 0;
+}
+Function: 
+pub fn getaddrinfo(&mut self, loop_: &Loop, node: Option<&str>,
+                       service: Option<&str>, hints: Option<ai::Hint>,
+                       cb: GetAddrInfoCallback) {
+
+        assert!(node.is_some() || service.is_some());
+
+        let (c_node, c_node_ptr) = match node {
+            Some(n) => {
+                let c_node = n.to_c_str();
+                let c_node_ptr = c_node.with_ref(|r| r);
+                (Some(c_node), c_node_ptr)
+            }
+            None => (None, null())
+        };
+
+        let (c_service, c_service_ptr) = match service {
+            Some(s) => {
+                let c_service = s.to_c_str();
+                let c_service_ptr = c_service.with_ref(|r| r);
+                (Some(c_service), c_service_ptr)
+            }
+            None => (None, null())
+        };
+
+        let cb = Cell::new(cb);
+        let wrapper_cb: GetAddrInfoCallback = |req, addrinfo, err| {
+            // Capture some heap values that need to stay alive for the
+            // getaddrinfo call
+            let _ = &c_node;
+            let _ = &c_service;
+
+            let cb = cb.take();
+            cb(req, addrinfo, err)
+        };
+
+        let hint = hints.map(|hint| {
+            let mut flags = 0;
+            do each_ai_flag |cval, aival| {
+                if hint.flags & (aival as uint) != 0 {
+                    flags |= cval as i32;
+                }
+            }
+            /* XXX: do we really want to support these?
+            let socktype = match hint.socktype {
+                Some(ai::Stream) => uvll::rust_SOCK_STREAM(),
+                Some(ai::Datagram) => uvll::rust_SOCK_DGRAM(),
+                Some(ai::Raw) => uvll::rust_SOCK_RAW(),
+                None => 0,
+            };
+            let protocol = match hint.protocol {
+                Some(ai::UDP) => uvll::rust_IPPROTO_UDP(),
+                Some(ai::TCP) => uvll::rust_IPPROTO_TCP(),
+                _ => 0,
+            };
+            */
+            let socktype = 0;
+            let protocol = 0;
+
+            uvll::addrinfo {
+                ai_flags: flags,
+                ai_family: hint.family as c_int,
+                ai_socktype: socktype,
+                ai_protocol: protocol,
+                ai_addrlen: 0,
+                ai_canonname: null(),
+                ai_addr: null(),
+                ai_next: null(),
+            }
+        });
+        let hint_ptr = hint.as_ref().map_default(null(), |x| x as *uvll::addrinfo);
+
+        self.get_req_data().getaddrinfo_cb = Some(wrapper_cb);
+
+        unsafe {
+            assert!(0 == uvll::getaddrinfo(loop_.native_handle(),
+                                           self.native_handle(),
+                                           getaddrinfo_cb,
+                                           c_node_ptr,
+                                           c_service_ptr,
+                                           hint_ptr));
+        }
+
+        extern "C" fn getaddrinfo_cb(req: *uvll::uv_getaddrinfo_t,
+                                     status: c_int,
+                                     res: *uvll::addrinfo) {
+            let mut req: GetAddrInfoRequest = NativeHandle::from_native_handle(req);
+            let err = status_to_maybe_uv_error(status);
+            let addrinfo = net::UvAddrInfo(res);
+            let data = req.get_req_data();
+            (*data.getaddrinfo_cb.get_ref())(req, &addrinfo, err);
+            unsafe {
+                uvll::freeaddrinfo(res);
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx112099_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx112099_rank1.rs", "c_api": "dest+amount", "rust_api": "buf.iter_mut()", "mapping_type": "pattern", "description": "Accessing mutable buffer elements for writing data", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function fills a buffer with pseudo-random numbers using a simple LCG-like algorithm and sorts the result. [Similarity] Names refer to different concepts ('rng_gen_seed' vs 'random_sorted_fill'), and domains are different (OS-level entropy vs algorithmic generation). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to data filling and manipulation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx112099_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx112099_rank1.rs", "c_api": "read(fd, dest+amount, size-amount)", "rust_api": "buf.sort()", "mapping_type": "function", "description": "Finalizing data by sorting the buffer", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function fills a buffer with pseudo-random numbers using a simple LCG-like algorithm and sorts the result. [Similarity] Names refer to different concepts ('rng_gen_seed' vs 'random_sorted_fill'), and domains are different (OS-level entropy vs algorithmic generation). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to data filling and manipulation."}]
+Unixcoder Score: -0.01695081777870655
+--------------------------------------------------

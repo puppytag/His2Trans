@@ -1,0 +1,704 @@
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.12593089044094086
+--------------------------------------------------
+C_Code: 
+static int
+toc_link(struct buf *ob, const struct buf *link, const struct buf *title, const struct buf *content, void *opaque)
+{
+	if (content && content->size)
+		bufput(ob, content->data, content->size);
+	return 1;
+}
+Function: 
+pub(crate) fn rewrite_links(db: &RootDatabase, markdown: &str, definition: Definition) -> String {
+    let mut cb = broken_link_clone_cb;
+    let doc = Parser::new_with_broken_link_callback(markdown, MARKDOWN_OPTIONS, Some(&mut cb));
+
+    let doc = map_links(doc, |target, title| {
+        // This check is imperfect, there's some overlap between valid intra-doc links
+        // and valid URLs so we choose to be too eager to try to resolve what might be
+        // a URL.
+        if target.contains("://") {
+            (Some(LinkType::Inline), target.to_string(), title.to_string())
+        } else {
+            // Two possibilities:
+            // * path-based links: `../../module/struct.MyStruct.html`
+            // * module-based links (AKA intra-doc links): `super::super::module::MyStruct`
+            if let Some((target, title)) = rewrite_intra_doc_link(db, definition, target, title) {
+                return (None, target, title);
+            }
+            if let Some(target) = rewrite_url_link(db, definition, target) {
+                return (Some(LinkType::Inline), target, title.to_string());
+            }
+
+            (None, target.to_string(), title.to_string())
+        }
+    });
+    let mut out = String::new();
+    cmark_resume_with_options(
+        doc,
+        &mut out,
+        None,
+        CMarkOptions { code_block_token_count: 3, ..Default::default() },
+    )
+    .ok();
+    out
+}
+Unixcoder Score: 0.07313092797994614
+--------------------------------------------------
+C_Code: 
+bool SaveStringToFd(int fd, const std::string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    if (content.empty()) {
+        UTILS_LOGI("content is empty, no need to save!");
+        return true;
+    }
+
+    const ssize_t len = write(fd, content.c_str(), content.length());
+    if (len < 0) {
+        UTILS_LOGE("write file failed!errno:%{public}d, err:%{public}s", errno, strerror(errno));
+        return false;
+    }
+
+    if (static_cast<unsigned long>(len) != content.length()) {
+        UTILS_LOGE("the length write to file is not equal to fileLength!len:%{public}zd, fileLen:%{public}zu",
+            len, content.length());
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_save_string_to_fd_003() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = CONTENT_STR.to_string();
+    let filename = FILE_PATH.to_string() + ".020";
+    let mut file = File::create_new(&filename).expect("Failed to create file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, content);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SaveStringToFd__idx5484_rank3.c", "source_rust_file": "API_Mapping__SaveStringToFd__idx5484_rank3.rs", "c_api": "write(fd, content.c_str(), content.length())", "rust_api": "file_ex::ffi::RustSaveStringToFd(fd, &content)", "mapping_type": "function", "description": "Writing string content to a file descriptor", "reasoning": "[FFI Check] -> The Rust code contains a call to an FFI function `file_ex::ffi::RustSaveStringToFd` which is a wrapper around the C function. [Task Analysis] -> The C function `SaveStringToFd` performs file I/O operations with validation and error handling. The Rust code is a test that calls the FFI wrapper function. [Similarity] -> The test function does not contain the actual logic of the C function, it only calls it. [Knowledge Extraction] -> No full or partial structural match due to FFI wrapper and test usage asymmetry. However, API mapping can be extracted between the FFI call and the C function's behavior."}]
+Unixcoder Score: 0.0011797146871685982
+--------------------------------------------------
+C_Code: 
+bool RustSaveBufferToFile(const rust::String& filePath, const rust::vec<char>& content, bool truncated)
+{
+    std::string tmpPath(filePath);
+    std::vector<char> tmpContent(content.begin(), content.end());
+    return SaveBufferToFile(tmpPath, tmpContent, truncated);
+}
+Function: 
+fn test_save_buffer_to_file_003() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let filename = FILE_PATH.to_string() + ".028";
+    let content = "ttxx".to_string();
+    create_test_file(&filename, &content);
+
+    let new_content: Vec<c_char> = vec!['x' as c_char, 'x' as c_char, 't' as c_char, 't' as c_char];
+    let mut ret = file_ex::ffi::RustSaveBufferToFile(&filename, &new_content, false);
+    assert!(ret);
+
+    let mut load_result = String::new();
+    ret = file_ex::ffi::RustLoadStringFromFile(&filename, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(&load_result, &(content + &String::from_utf8_lossy(&new_content)));
+}
+Unixcoder Score: -0.009150565601885319
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::QueryTasks(const std::vector<std::string> &tids, std::vector<TaskInfoRet> &rets)
+{
+    TaskInfoRet infoRet{ .code = ExceptionErrorCode::E_OTHER };
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, infoRet);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RequestServiceProxy::GetDescriptor());
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_QUERY), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request QueryTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request QueryTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+        TaskInfo info;
+        ParcelHelper::UnMarshal(reply, info);
+        rets[i].info = info;
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn show(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        debug!("Service show");
+        let permission = PermissionChecker::check_down_permission();
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > GET_INFO_MAX {
+            info!("Service show: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![(ErrorCode::Other, TaskInfo::new()); len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service show tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service show, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!("Service show, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service show, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!(
+                        "Service show, failed: check task uid. tid: {}, uid: {}",
+                        task_id, ipc_uid
+                    )
+                );
+                continue;
+            }
+
+            let info = self.task_manager.lock().unwrap().show(task_uid, task_id);
+            match info {
+                Some(task_info) => {
+                    if let Some((c, info)) = vec.get_mut(i) {
+                        *c = ErrorCode::ErrOk;
+                        *info = task_info;
+                    }
+                }
+                None => {
+                    error!("Service show, failed: task_id not found, tid: {}", task_id);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A18,
+                        &format!("Service show, failed: task_id not found, tid: {}", task_id)
+                    );
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                }
+            };
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for (c, info) in vec {
+            reply.write(&(c as i32))?;
+            // TODO: Sends info only when ErrOk.
+            serialize_task_info(info, reply)?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_argv_zero__idx131085_rank3.c", "source_rust_file": "API_Mapping__rust_get_argv_zero__idx131085_rank3.rs", "c_api": "free(argv)", "rust_api": "assert_eq!(cv.len(), 16)", "mapping_type": "function", "description": "Memory deallocation (implicit via test cleanup)", "reasoning": "[Task Analysis] C function retrieves argv[0] from system via sysctl, uses malloc/free for memory management; Rust test uses malloc-like allocation and indexing. [Similarity] Names do not refer to same concept (rust_get_argv_zero vs test_basic), and domains are mismatched (system call + memory mgmt vs testing heap buffer). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve memory allocation and deallocation patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_argv_zero__idx131085_rank3.c", "source_rust_file": "API_Mapping__rust_get_argv_zero__idx131085_rank3.rs", "c_api": "malloc(len)", "rust_api": "malloc(16)", "mapping_type": "function", "description": "Heap memory allocation", "reasoning": "[Task Analysis] C function retrieves argv[0] from system via sysctl, uses malloc/free for memory management; Rust test uses malloc-like allocation and indexing. [Similarity] Names do not refer to same concept (rust_get_argv_zero vs test_basic), and domains are mismatched (system call + memory mgmt vs testing heap buffer). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve memory allocation and deallocation patterns, so API mappings are extracted."}]
+Unixcoder Score: -0.039816342294216156
+--------------------------------------------------
+C_Code: 
+bool WriteMutableData(OHOS::NativeRdb::ValuesBucket &insertValues, CTaskInfo *taskInfo, CTaskConfig *taskConfig)
+{
+    insertValues.PutLong("mtime", taskInfo->commonData.mtime);
+    insertValues.PutInt("reason", taskInfo->commonData.reason);
+    insertValues.PutLong("tries", taskInfo->commonData.tries);
+    if (!WriteUpdateData(insertValues, taskInfo)) {
+        return false;
+    }
+    // write vectors
+    insertValues.PutBlob("form_items", CFormItemToBlob(taskConfig->formItemsPtr, taskConfig->formItemsLen));
+    insertValues.PutBlob("file_specs", CFileSpecToBlob(taskConfig->fileSpecsPtr, taskConfig->fileSpecsLen));
+    insertValues.PutBlob("body_file_names", CStringToBlob(taskConfig->bodyFileNamesPtr, taskConfig->bodyFileNamesLen));
+    insertValues.PutBlob("certs_paths", CStringToBlob(taskConfig->certsPathPtr, taskConfig->certsPathLen));
+    return true;
+}
+Function: 
+fn build_multipart_request(
+    task: Arc<RequestTask>,
+    index: usize,
+    abort_flag: Arc<AtomicBool>,
+) -> Option<Request> {
+    debug!("build multipart request");
+    let task_reader = TaskReader::new(task.clone(), index);
+    let task_operator = TaskOperator::new(task.clone(), abort_flag);
+    let mut multi_part = MultiPart::new();
+    for item in task.conf.form_items.iter() {
+        let part = Part::new()
+            .name(item.name.as_str())
+            .body(item.value.as_str());
+        multi_part = multi_part.part(part);
+    }
+    let upload_length;
+    {
+        let progress = task.progress.lock().unwrap();
+        upload_length = progress.sizes[index] as u64 - progress.processed[index] as u64;
+    }
+    debug!("upload length is {}", upload_length);
+    let part = Part::new()
+        .name(task.conf.file_specs[index].name.as_str())
+        .file_name(task.conf.file_specs[index].file_name.as_str())
+        .mime(task.conf.file_specs[index].mime_type.as_str())
+        .length(Some(upload_length))
+        .stream(task_reader);
+
+    multi_part = multi_part.part(part);
+    let uploader = Uploader::builder()
+        .multipart(multi_part)
+        .operator(task_operator)
+        .build();
+
+    match task.build_request_builder() {
+        Ok(request_builder) => {
+            let request: Result<Request, HttpClientError> =
+                request_builder.body(Body::multipart(uploader));
+            build_request_common(&task, index, request)
+        }
+        Err(err) => build_request_common(&task, index, Err(err)),
+    }
+}
+Unixcoder Score: -0.04429948329925537
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::QueryTasks(const std::vector<std::string> &tids, std::vector<TaskInfoRet> &rets)
+{
+    TaskInfoRet infoRet{ .code = ExceptionErrorCode::E_OTHER };
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, infoRet);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RequestServiceProxy::GetDescriptor());
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_QUERY), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request QueryTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request QueryTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+        TaskInfo info;
+        ParcelHelper::UnMarshal(reply, info);
+        rets[i].info = info;
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn show(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        debug!("Service show");
+        let permission = PermissionChecker::check_down_permission();
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > GET_INFO_MAX {
+            info!("Service show: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![(ErrorCode::Other, TaskInfo::new()); len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service show tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service show, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!("Service show, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service show, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!(
+                        "Service show, failed: check task uid. tid: {}, uid: {}",
+                        task_id, ipc_uid
+                    )
+                );
+                continue;
+            }
+
+            let info = self.task_manager.lock().unwrap().show(task_uid, task_id);
+            match info {
+                Some(task_info) => {
+                    if let Some((c, info)) = vec.get_mut(i) {
+                        *c = ErrorCode::ErrOk;
+                        *info = task_info;
+                    }
+                }
+                None => {
+                    error!("Service show, failed: task_id not found, tid: {}", task_id);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A18,
+                        &format!("Service show, failed: task_id not found, tid: {}", task_id)
+                    );
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                }
+            };
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for (c, info) in vec {
+            reply.write(&(c as i32))?;
+            // TODO: Sends info only when ErrOk.
+            serialize_task_info(info, reply)?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__linenoiseHistoryAdd__idx22074_rank5.c", "source_rust_file": "API_Mapping__linenoiseHistoryAdd__idx22074_rank5.rs", "c_api": "malloc(sizeof(char*)*history_max_len)", "rust_api": "Box::new(...)", "mapping_type": "function", "description": "Memory allocation for history list", "reasoning": "[Task Analysis] C function manages command-line input history with allocation, duplication, and shifting; Rust function prepends text to a line in a styled buffer. [Similarity] No structural similarity at the block level; C handles memory management and history list operations, while Rust manipulates string content in a structured buffer. [Knowledge Extraction] No full or partial match due to domain mismatch (memory/history vs text rendering). However, both involve list-like operations and memory handling patterns that can be mapped. C uses malloc/free, strdup, memmove; Rust uses vector-like operations and string manipulation. [API Mappings] Extracted API mappings based on similar logical operations: memory allocation (malloc vs Box::new), string duplication (strdup vs String::from), and list shifting (memmove vs Vec::remove/insert)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__linenoiseHistoryAdd__idx22074_rank5.c", "source_rust_file": "API_Mapping__linenoiseHistoryAdd__idx22074_rank5.rs", "c_api": "memmove(history,history+1,sizeof(char*)*(history_max_len-1))", "rust_api": "Vec::insert(...)", "mapping_type": "function", "description": "Shifting history entries", "reasoning": "[Task Analysis] C function manages command-line input history with allocation, duplication, and shifting; Rust function prepends text to a line in a styled buffer. [Similarity] No structural similarity at the block level; C handles memory management and history list operations, while Rust manipulates string content in a structured buffer. [Knowledge Extraction] No full or partial match due to domain mismatch (memory/history vs text rendering). However, both involve list-like operations and memory handling patterns that can be mapped. C uses malloc/free, strdup, memmove; Rust uses vector-like operations and string manipulation. [API Mappings] Extracted API mappings based on similar logical operations: memory allocation (malloc vs Box::new), string duplication (strdup vs String::from), and list shifting (memmove vs Vec::remove/insert)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__linenoiseHistoryAdd__idx22074_rank5.c", "source_rust_file": "API_Mapping__linenoiseHistoryAdd__idx22074_rank5.rs", "c_api": "strdup(line)", "rust_api": "String::from(...)", "mapping_type": "function", "description": "String duplication", "reasoning": "[Task Analysis] C function manages command-line input history with allocation, duplication, and shifting; Rust function prepends text to a line in a styled buffer. [Similarity] No structural similarity at the block level; C handles memory management and history list operations, while Rust manipulates string content in a structured buffer. [Knowledge Extraction] No full or partial match due to domain mismatch (memory/history vs text rendering). However, both involve list-like operations and memory handling patterns that can be mapped. C uses malloc/free, strdup, memmove; Rust uses vector-like operations and string manipulation. [API Mappings] Extracted API mappings based on similar logical operations: memory allocation (malloc vs Box::new), string duplication (strdup vs String::from), and list shifting (memmove vs Vec::remove/insert)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__linenoiseHistoryAdd__idx22074_rank5.c", "source_rust_file": "API_Mapping__linenoiseHistoryAdd__idx22074_rank5.rs", "c_api": "free(history[0])", "rust_api": "Vec::remove(...)", "mapping_type": "function", "description": "Memory deallocation of oldest entry", "reasoning": "[Task Analysis] C function manages command-line input history with allocation, duplication, and shifting; Rust function prepends text to a line in a styled buffer. [Similarity] No structural similarity at the block level; C handles memory management and history list operations, while Rust manipulates string content in a structured buffer. [Knowledge Extraction] No full or partial match due to domain mismatch (memory/history vs text rendering). However, both involve list-like operations and memory handling patterns that can be mapped. C uses malloc/free, strdup, memmove; Rust uses vector-like operations and string manipulation. [API Mappings] Extracted API mappings based on similar logical operations: memory allocation (malloc vs Box::new), string duplication (strdup vs String::from), and list shifting (memmove vs Vec::remove/insert)."}]
+Unixcoder Score: -0.045738592743873596
+--------------------------------------------------
+C_Code: 
+struct debug_section_info
+{
+  /* Section file offset.  */
+  off_t offset;
+  /* Section size.  */
+  size_t size;
+  /* Section contents, after read from file.  */
+  const unsigned char *data;
+}
+Function: 
+crate struct BorrowData<'tcx> {
+    /// Location where the borrow reservation starts.
+    /// In many cases, this will be equal to the activation location but not always.
+    crate reserve_location: Location,
+    /// Location where the borrow is activated. None if this is not a
+    /// 2-phase borrow.
+    crate activation_location: Option<Location>,
+    /// What kind of borrow this is
+    crate kind: mir::BorrowKind,
+    /// The region for which this borrow is live
+    crate region: Region<'tcx>,
+    /// Place from which we are borrowing
+    crate borrowed_place: mir::Place<'tcx>,
+    /// Place to which the borrow was stored
+    crate assigned_place: mir::Place<'tcx>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx110183_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx110183_rank2.rs", "c_api": "env::split_paths(&var).collect()", "rust_api": "strsep(&str, \":\")", "mapping_type": "function", "description": "Splitting PATH-like string into components", "reasoning": "[Task Analysis] C function `rust_get_path_array` manages PATH environment variable parsing with memory allocation and string manipulation; Rust function `dylib_path` retrieves and parses PATH-like environment variable using standard library APIs. [Similarity] Names refer to different concepts (`rust_get_path_array` vs `dylib_path`), and domains differ: C uses low-level memory management and manual string parsing, while Rust uses high-level abstractions. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both involve environment variable handling and PATH parsing. API mappings found for environment variable access and path splitting operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx110183_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx110183_rank2.rs", "c_api": "env::var_os(dylib_path_var())", "rust_api": "rust_get_path(NULL, &len)", "mapping_type": "function", "description": "Environment variable retrieval", "reasoning": "[Task Analysis] C function `rust_get_path_array` manages PATH environment variable parsing with memory allocation and string manipulation; Rust function `dylib_path` retrieves and parses PATH-like environment variable using standard library APIs. [Similarity] Names refer to different concepts (`rust_get_path_array` vs `dylib_path`), and domains differ: C uses low-level memory management and manual string parsing, while Rust uses high-level abstractions. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both involve environment variable handling and PATH parsing. API mappings found for environment variable access and path splitting operations."}]
+Unixcoder Score: -0.053450457751750946
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::QueryTasks(const std::vector<std::string> &tids, std::vector<TaskInfoRet> &rets)
+{
+    TaskInfoRet infoRet{ .code = ExceptionErrorCode::E_OTHER };
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, infoRet);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RequestServiceProxy::GetDescriptor());
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_QUERY), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request QueryTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request QueryTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+        TaskInfo info;
+        ParcelHelper::UnMarshal(reply, info);
+        rets[i].info = info;
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn query(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        if !is_system_api() {
+            error!("Service query: not system api");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A05,
+                "Service query: not system api"
+            );
+            reply.write(&(ErrorCode::SystemApi as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+        let permission = PermissionChecker::check_manager();
+        let action = match permission.get_action() {
+            Some(a) => a,
+            None => {
+                error!("Service query: no QUERY permission");
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A05,
+                    "Service query: no QUERY permission"
+                );
+                reply.write(&(ErrorCode::Permission as i32))?;
+                return Err(IpcStatusCode::Failed);
+            }
+        };
+
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > GET_INFO_MAX {
+            info!("Service query: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let mut vec = vec![(ErrorCode::Other, TaskInfo::new()); len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service query tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service query, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A06,
+                    &format!("Service query, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            let info = self.task_manager.lock().unwrap().query(task_id, action);
+            match info {
+                Some(task_info) => {
+                    if let Some((c, info)) = vec.get_mut(i) {
+                        *c = ErrorCode::ErrOk;
+                        *info = task_info;
+                    }
+                }
+                None => {
+                    error!("Service query, failed: task_id not found, tid: {}", task_id);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A06,
+                        &format!("Service query, failed: task_id not found, tid: {}", task_id)
+                    );
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                }
+            };
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for (c, info) in vec {
+            reply.write(&(c as i32))?;
+            // TODO: Sends info only when ErrOk.
+            serialize_task_info(info, reply)?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RustLoadBufferFromFile__idx5490_rank1.c", "source_rust_file": "API_Mapping__RustLoadBufferFromFile__idx5490_rank1.rs", "c_api": "bool RustLoadBufferFromFile(const rust::String& filePath, rust::vec<char>& content)", "rust_api": "file_ex::ffi::RustLoadBufferFromFile(&filename, &mut buff)", "mapping_type": "function", "description": "Load file content into a buffer via FFI", "reasoning": "[Task Analysis] C function `RustLoadBufferFromFile` loads file content into a vector; Rust test `test_load_buffer_from_file_004` calls this function to verify behavior on invalid input. [Similarity] Names do not match (`RustLoadBufferFromFile` vs `test_load_buffer_from_file_004`), and the Rust side is a test calling the function, not implementing logic. [Knowledge Extraction] Filter 6 blocks Full/Partial classification due to Definition vs Usage mismatch. However, there is a clear API mapping between the FFI call in Rust and the C function, and the logic of file loading and error handling is mirrored. [API Mappings] Extracted mapping between C function and Rust FFI call."}]
+Unixcoder Score: -0.05403761565685272
+--------------------------------------------------
+C_Code: 
+bool WriteMutableData(OHOS::NativeRdb::ValuesBucket &insertValues, CTaskInfo *taskInfo, CTaskConfig *taskConfig)
+{
+    insertValues.PutLong("mtime", taskInfo->commonData.mtime);
+    insertValues.PutInt("reason", taskInfo->commonData.reason);
+    insertValues.PutLong("tries", taskInfo->commonData.tries);
+    if (!WriteUpdateData(insertValues, taskInfo)) {
+        return false;
+    }
+    // write vectors
+    insertValues.PutBlob("form_items", CFormItemToBlob(taskConfig->formItemsPtr, taskConfig->formItemsLen));
+    insertValues.PutBlob("file_specs", CFileSpecToBlob(taskConfig->fileSpecsPtr, taskConfig->fileSpecsLen));
+    insertValues.PutBlob("body_file_names", CStringToBlob(taskConfig->bodyFileNamesPtr, taskConfig->bodyFileNamesLen));
+    insertValues.PutBlob("certs_paths", CStringToBlob(taskConfig->certsPathPtr, taskConfig->certsPathLen));
+    return true;
+}
+Function: 
+async fn prepare_single_upload(&self, index: usize) -> bool {
+        let Some(file) = self.files.get(index) else {
+            error!("task {} file {} not found", self.task_id(), index);
+            return false;
+        };
+        {
+            let mut progress = self.progress.lock().unwrap();
+            if self.upload_resume.load(Ordering::SeqCst) {
+                self.upload_resume.store(false, Ordering::SeqCst);
+            } else {
+                progress.processed[index] = 0;
+            }
+            progress.common_data.index = index;
+            progress.common_data.total_processed = progress.processed.iter().take(index).sum();
+        }
+
+        let processed = self.progress.lock().unwrap().processed[index] as u64;
+        if self.conf.common_data.index == index as u32 {
+            let Ok(metadata) = task_control::file_metadata(file.clone()).await else {
+                error!("get file metadata failed");
+                return false;
+            };
+            if metadata.len() > self.progress.lock().unwrap().sizes[index] as u64 {
+                task_control::file_seek(
+                    file,
+                    SeekFrom::Start(self.conf.common_data.begins + processed),
+                )
+                .await
+            } else {
+                task_control::file_seek(file.clone(), SeekFrom::Start(processed)).await
+            }
+        } else {
+            task_control::file_seek(file, SeekFrom::Start(processed)).await
+        }
+        .is_ok()
+    }
+Unixcoder Score: -0.054426077753305435
+--------------------------------------------------

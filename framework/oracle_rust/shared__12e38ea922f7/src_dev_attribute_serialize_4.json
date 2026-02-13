@@ -1,0 +1,27 @@
+{
+  "project": "shared__12e38ea922f7",
+  "func_key": "src_dev_attribute_serialize_4",
+  "function_name": "DeviceSerializedAttributeRelease",
+  "source_c_file": "src/dev_attribute_serialize.c",
+  "c_code": "void DeviceSerializedAttributeRelease(struct HdfDeviceInfo * attribute)\n{\n    if (attribute == NULL) {\n        return;\n    }\n\n    if (attribute->moduleName != NULL) {\n        OsalMemFree((void *)attribute->moduleName);\n    }\n    if (attribute->svcName != NULL) {\n        OsalMemFree((void *)attribute->svcName);\n    }\n    if (attribute->deviceName != NULL) {\n        OsalMemFree((void *)attribute->deviceName);\n    }\n    if (attribute->deviceMatchAttr != NULL) {\n        OsalMemFree((void *)attribute->deviceMatchAttr);\n    }\n    OsalMemFree(attribute);\n}",
+  "rust_signature": "pub extern \"C\" fn DeviceSerializedAttributeRelease(attribute: *mut HdfDeviceInfo)",
+  "rust_code": "pub extern \"C\" fn DeviceSerializedAttributeRelease(attribute: *mut HdfDeviceInfo) {\n    if attribute.is_null() {\n        return;\n    }\n\n    unsafe {\n        if !(*attribute).moduleName.is_null() {\n            OsalMemFree((*attribute).moduleName as *mut ::core::ffi::c_void);\n        }\n        if !(*attribute).svcName.is_null() {\n            OsalMemFree((*attribute).svcName as *mut ::core::ffi::c_void);\n        }\n        if !(*attribute).deviceName.is_null() {\n            OsalMemFree((*attribute).deviceName as *mut ::core::ffi::c_void);\n        }\n        if !(*attribute).deviceMatchAttr.is_null() {\n            OsalMemFree((*attribute).deviceMatchAttr as *mut ::core::ffi::c_void);\n        }\n        OsalMemFree(attribute as *mut ::core::ffi::c_void);\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemFree",
+      "rust_api": "OsalMemFree",
+      "description": "Free memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

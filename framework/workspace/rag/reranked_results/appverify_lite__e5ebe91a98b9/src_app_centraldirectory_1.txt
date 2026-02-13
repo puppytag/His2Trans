@@ -1,0 +1,387 @@
+C_Code: 
+size_t SkData::copyRange(size_t offset, size_t length, void* buffer) const {
+    size_t available = fSize;
+    if (offset >= available || 0 == length) {
+        return 0;
+    }
+    available -= offset;
+    if (length > available) {
+        length = available;
+    }
+    SkASSERT(length > 0);
+
+    if (buffer) {
+        memcpy(buffer, this->bytes() + offset, length);
+    }
+    return length;
+}
+Function: 
+fn table_data(font_ref: &BridgeFontRef, tag: u32, offset: usize, data: &mut [u8]) -> usize {
+    let table_data = font_ref
+        .with_font(|f| f.table_data(Tag::from_be_bytes(tag.to_be_bytes())))
+        .unwrap_or_default();
+    let table_data = table_data.as_ref();
+    // Remaining table data size measured from offset to end, or 0 if offset is
+    // too large.
+    let mut to_copy_length = table_data.len().saturating_sub(offset);
+    match data.len() {
+        0 => to_copy_length,
+        _ => {
+            to_copy_length = to_copy_length.min(data.len());
+            let table_offset_data = table_data
+                .get(offset..offset + to_copy_length)
+                .unwrap_or_default();
+            data.get_mut(..table_offset_data.len())
+                .map_or(0, |data_slice| {
+                    data_slice.copy_from_slice(table_offset_data);
+                    data_slice.len()
+                })
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "key_pool.insert(sloc)", "rust_api": "high = i", "mapping_type": "function", "description": "Adjusting search boundaries", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "buf_.resize(sloc)", "rust_api": "low = if i == low { i + 1 } else { i }", "mapping_type": "function", "description": "Adjusting search boundaries", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "stack_.push_back(Value(static_cast<uint64_t>(sloc), FBT_KEY, BIT_WIDTH_8))", "rust_api": "return Some(i)", "mapping_type": "function", "description": "Returning a found index value", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "key_pool.find(sloc)", "rust_api": "match self.lazy_strcmp(key_address, key)", "mapping_type": "function", "description": "Comparing strings for equality", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "WriteBytes(str, len + 1)", "rust_api": "deref_offset(&self.buffer, key_offset_address, self.keys_width)", "mapping_type": "function", "description": "Reading data from buffer at an offset", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}]
+Unixcoder Score: 0.044216644018888474
+--------------------------------------------------
+C_Code: 
+bool CParcelReadBuffer(const CParcel *parcel, uint8_t *value, uint32_t len)
+{
+    if (!IsValidParcel(parcel, __func__) || value == nullptr) {
+        return false;
+    }
+    const uint8_t *data = parcel->parcel_->ReadBuffer(len);
+    if (data == nullptr) {
+        ZLOGE(LOG_LABEL, "%{public}s: read buffer failed\n", __func__);
+        return false;
+    }
+    if (len > 0 && memcpy_s(value, len, data, len) != EOK) {
+        ZLOGE(LOG_LABEL, "%{public}s: copy buffer failed\n", __func__);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn read_buffer(&mut self, len: usize) -> IpcResult<Vec<u8>> {
+        let pad_size = Self::get_pad_size(len);
+        let mut vec = Vec::with_capacity(len + pad_size);
+        match ReadBuffer(self.as_msg_parcel_mut(), len + pad_size, &mut vec) {
+            true => Ok({
+                unsafe { vec.set_len(len) };
+                vec
+            }),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: 0.009367064572870731
+--------------------------------------------------
+C_Code: 
+static bool CParcelBytesAllocatorErr(void *stringData, char **buffer, int32_t len)
+{
+    (void)stringData;
+    (void)buffer;
+    (void)len;
+    return false;
+}
+Function: 
+fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> Result<Self> {
+        let mut vec: Option<Vec<u8>> = None;
+        let ok_status = unsafe {
+            // SAFETY: `parcel` always contains a valid pointer to a  `CParcel`
+            ipc_binding::CParcelReadInterfaceToken(
+                parcel.as_raw(), 
+                &mut vec as *mut _ as *mut c_void,
+                allocate_vec_with_buffer::<u8>
+            )
+        };
+
+        if ok_status {
+            let result = vec.map(|s| {
+                println!("read interface token from native success, s: {:?}", s);
+                match String::from_utf8(s) {
+                    Ok(val) => val,
+                    Err(_) => String::from("")
+                }
+            });
+            if let Some(val) = result {
+                Ok(Self(val))
+            } else {
+                println!("convert interface token to String fail");
+                Err(-1)
+            }
+        }else{
+            println!("read interface token from native fail");
+            Err(-1)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__add_value__idx3352_rank2.h", "source_rust_file": "API_Mapping__add_value__idx3352_rank2.rs", "c_api": "fbb_.AddOffset(KeyValue::VT_VALUE, value)", "rust_api": "self.fbb_.push_slot::<i32>(Annotations::VT_VALUE, value, 0)", "mapping_type": "method", "description": "Adding a field to a FlatBuffers builder", "reasoning": "[Task Analysis] C code defines a FlatBuffers builder struct with methods to add key/value fields. Rust code defines a method to add a value field to a builder. [Similarity] Names do not match ('KeyValueBuilder' vs 'Annotations'), but both involve adding fields to a FlatBuffers-style structure. [Knowledge Extraction] Found API mapping between C's 'add_value' and Rust's 'push_slot' for adding fields to a FlatBuffers builder, despite different naming and parameter types."}]
+Unixcoder Score: 0.007470850367099047
+--------------------------------------------------
+C_Code: 
+struct current {
+    char *buf;  /* Current buffer. Always null terminated */
+    int bufmax; /* Size of the buffer, including space for the null termination */
+    int len;    /* Number of bytes in 'buf' */
+    int chars;  /* Number of chars in 'buf' (utf-8 chars) */
+    int pos;    /* Cursor position, measured in chars */
+    int cols;   /* Size of the window, in chars */
+    const char *prompt;
+    char *capture; /* Allocated capture buffer, or NULL for none. Always null terminated */
+#if defined(USE_TERMIOS)
+    int fd;     /* Terminal fd */
+#elif defined(USE_WINCONSOLE)
+    HANDLE outh; /* Console output handle */
+    HANDLE inh; /* Console input handle */
+    int rows;   /* Screen rows */
+    int x;      /* Current column during output */
+    int y;      /* Current row */
+#endif
+}
+Function: 
+pub struct DisplayBuffer<const SIZE: usize> {
+    buf: [MaybeUninit<u8>; SIZE],
+    len: usize,
+}
+Unixcoder Score: -0.006603478919714689
+--------------------------------------------------
+C_Code: 
+int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
+{
+    if (strategy >= Strategy::STRATEGY_BUTT) {
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto hapInfo = GetHapInfo(tokenId);
+    if (hapInfo.bundleName.empty() || hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
+        ZLOGE("invalid, user:%{public}d, bundleName:%{public}s, strategy:%{public}d, values size:%{public}zu",
+            hapInfo.user, hapInfo.bundleName.c_str(), strategy, values.size());
+        return ERROR;
+    }
+    return STRATEGY_SAVERS[strategy](values, hapInfo);
+}
+Function: 
+fn from(value: ipc_conn::CloudData) -> Self {
+        let mut vec = vec![];
+        for v in value.values.0 {
+            vec.push(v);
+        }
+        CloudDbData {
+            next_cursor: value.next_cursor,
+            has_more: value.has_more,
+            values: vec,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetCloudStrategy__idx5168_rank1.c", "source_rust_file": "API_Mapping__SetCloudStrategy__idx5168_rank1.rs", "c_api": "values.push_back(...)", "rust_api": "vec.push(...)", "mapping_type": "method", "description": "Appending an element to a vector", "reasoning": "[Task Analysis] C function handles cloud strategy setting with validation and calls a strategy handler; Rust function converts IPC data to database data. [Similarity] No structural similarity at function level due to different domains (strategy management vs data conversion). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data collection and iteration."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetCloudStrategy__idx5168_rank1.c", "source_rust_file": "API_Mapping__SetCloudStrategy__idx5168_rank1.rs", "c_api": "for (auto it = values.begin(); it != values.end(); ++it)", "rust_api": "for v in value.values.0", "mapping_type": "pattern", "description": "Iterating over a collection of values", "reasoning": "[Task Analysis] C function handles cloud strategy setting with validation and calls a strategy handler; Rust function converts IPC data to database data. [Similarity] No structural similarity at function level due to different domains (strategy management vs data conversion). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data collection and iteration."}]
+Unixcoder Score: -0.009103969670832157
+--------------------------------------------------
+C_Code: 
+struct current {
+    char *buf;  /* Current buffer. Always null terminated */
+    int bufmax; /* Size of the buffer, including space for the null termination */
+    int len;    /* Number of bytes in 'buf' */
+    int chars;  /* Number of chars in 'buf' (utf-8 chars) */
+    int pos;    /* Cursor position, measured in chars */
+    int cols;   /* Size of the window, in chars */
+    const char *prompt;
+    char *capture; /* Allocated capture buffer, or NULL for none. Always null terminated */
+#if defined(USE_TERMIOS)
+    int fd;     /* Terminal fd */
+#elif defined(USE_WINCONSOLE)
+    HANDLE outh; /* Console output handle */
+    HANDLE inh; /* Console input handle */
+    int rows;   /* Screen rows */
+    int x;      /* Current column during output */
+    int y;      /* Current row */
+#endif
+}
+Function: 
+pub struct StyledBuffer {
+    lines: Vec<Vec<StyledChar>>,
+}
+Unixcoder Score: -0.01153674814850092
+--------------------------------------------------
+C_Code: 
+struct current {
+    char *buf;  /* Current buffer. Always null terminated */
+    int bufmax; /* Size of the buffer, including space for the null termination */
+    int len;    /* Number of bytes in 'buf' */
+    int chars;  /* Number of chars in 'buf' (utf-8 chars) */
+    int pos;    /* Cursor position, measured in chars */
+    int cols;   /* Size of the window, in chars */
+    const char *prompt;
+    char *capture; /* Allocated capture buffer, or NULL for none. Always null terminated */
+#if defined(USE_TERMIOS)
+    int fd;     /* Terminal fd */
+#elif defined(USE_WINCONSOLE)
+    HANDLE outh; /* Console output handle */
+    HANDLE inh; /* Console input handle */
+    int rows;   /* Screen rows */
+    int x;      /* Current column during output */
+    int y;      /* Current row */
+#endif
+}
+Function: 
+pub struct MemReader {
+    buf: ~[u8],
+    pos: uint
+}
+Unixcoder Score: -0.012973932549357414
+--------------------------------------------------
+C_Code: 
+FT_CALLBACK_DEF( unsigned long )
+  ft_ansi_stream_io( FT_Stream       stream,
+                     unsigned long   offset,
+                     unsigned char*  buffer,
+                     unsigned long   count )
+  {
+    FT_FILE*  file;
+
+
+    if ( offset > stream->size && !count )
+      return 1;
+
+    file = STREAM_FILE( stream );
+
+    if ( stream->pos != offset )
+      ft_fseek( file, (long)offset, SEEK_SET );
+
+    /* Avoid calling `fread` with `buffer=NULL` and `count=0`, */
+    /* which is undefined behaviour.                           */
+    if ( !count )
+      return 0;
+
+    return (unsigned long)ft_fread( buffer, 1, count, file );
+  }
+Function: 
+fn table_data(font_ref: &BridgeFontRef, tag: u32, offset: usize, data: &mut [u8]) -> usize {
+    let table_data = font_ref
+        .with_font(|f| f.table_data(Tag::from_be_bytes(tag.to_be_bytes())))
+        .unwrap_or_default();
+    let table_data = table_data.as_ref();
+    // Remaining table data size measured from offset to end, or 0 if offset is
+    // too large.
+    let mut to_copy_length = table_data.len().saturating_sub(offset);
+    match data.len() {
+        0 => to_copy_length,
+        _ => {
+            to_copy_length = to_copy_length.min(data.len());
+            let table_offset_data = table_data
+                .get(offset..offset + to_copy_length)
+                .unwrap_or_default();
+            data.get_mut(..table_offset_data.len())
+                .map_or(0, |data_slice| {
+                    data_slice.copy_from_slice(table_offset_data);
+                    data_slice.len()
+                })
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__uv_utf16_to_utf8__idx124440_rank1.c", "source_rust_file": "API_Mapping__uv_utf16_to_utf8__idx124440_rank1.rs", "c_api": "WideCharToMultiByte", "rust_api": "encode_wide", "mapping_type": "function", "description": "UTF-16 to UTF-8 encoding conversion", "reasoning": "[FFI Check] -> The C code contains a Windows API call `WideCharToMultiByte` which is an FFI wrapper. The Rust code contains a method call `encode_wide()` which is part of Rust's standard library string handling. [Task Analysis] -> This is a direct translation of a Windows UTF-16 to UTF-8 conversion function into Rust's built-in Unicode encoding. [Similarity] -> The overall task is the same (UTF-16 to UTF-8 conversion), but the implementation differs significantly due to platform-specific FFI usage vs standard library methods. [Knowledge Extraction] -> The FFI wrapper blocks full or partial classification, but the core API mapping between the conversion logic can still be extracted."}]
+Unixcoder Score: -0.017445269972085953
+--------------------------------------------------
+C_Code: 
+struct current {
+    char *buf;  /* Current buffer. Always null terminated */
+    int bufmax; /* Size of the buffer, including space for the null termination */
+    int len;    /* Number of bytes in 'buf' */
+    int chars;  /* Number of chars in 'buf' (utf-8 chars) */
+    int pos;    /* Cursor position, measured in chars */
+    int cols;   /* Size of the window, in chars */
+    const char *prompt;
+    char *capture; /* Allocated capture buffer, or NULL for none. Always null terminated */
+#if defined(USE_TERMIOS)
+    int fd;     /* Terminal fd */
+#elif defined(USE_WINCONSOLE)
+    HANDLE outh; /* Console output handle */
+    HANDLE inh; /* Console input handle */
+    int rows;   /* Screen rows */
+    int x;      /* Current column during output */
+    int y;      /* Current row */
+#endif
+}
+Function: 
+pub struct Position {
+    repr: PositionRepr,
+}
+Unixcoder Score: -0.019919535145163536
+--------------------------------------------------
+C_Code: 
+bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
+{
+    auto [status, cloudInfo] = GetCloudInfo(user);
+    if (status != SUCCESS) {
+        Report(GetDfxFaultType(scene), Fault::CSF_APP_SCHEMA, "", "UpdateSchema ret=" + std::to_string(status));
+        return false;
+    }
+    auto keys = cloudInfo.GetSchemaKey();
+    for (const auto &[bundle, key] : keys) {
+        HapInfo hapInfo{ .user = user, .instIndex = 0, .bundleName = bundle };
+        auto appInfoOpt = cloudInfo.GetAppInfo(bundle);
+        if (appInfoOpt.has_value()) {
+            const CloudInfo::AppInfo &appInfo = appInfoOpt.value();
+            hapInfo.instIndex = appInfo.instanceId;
+        }
+
+        SchemaMeta schemaMeta;
+        std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
+        if (status != SUCCESS) {
+            std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
+        }
+        if (status == NOT_SUPPORT) {
+            ZLOGW("app not support, del cloudInfo! user:%{public}d, bundleName:%{public}s", user, bundle.c_str());
+            MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+            return false;
+        }
+        if (status != SUCCESS) {
+            continue;
+        }
+        SchemaMeta oldMeta;
+        if (MetaDataManager::GetInstance().LoadMeta(key, oldMeta, true)) {
+            UpgradeSchemaMeta(user, oldMeta);
+            UpdateClearWaterMark(hapInfo, schemaMeta, oldMeta);
+        }
+        if (oldMeta != schemaMeta) {
+            MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true);
+        }
+    }
+    return true;
+}
+Function: 
+pub(crate) fn get_app_schema(
+        &mut self,
+        user_id: i32,
+        bundle_name: &str,
+    ) -> ConnectResult<RwLockReadGuard<Schema>> {
+        self.infos.entry(user_id).or_default();
+        let infos = self.infos.get_mut(&user_id).unwrap();
+
+        let mut lock = infos.app_schema.write().unwrap();
+
+        let mut msg_parcel = MsgParcel::new();
+
+        msg_parcel
+            .write_string16(bundle_name)
+            .map_err(|_| Error::WriteMsgParcelFailed)?;
+
+        let function_number = GetAppSchema as u32;
+        let remote_obj = self
+            .remote_obj
+            .clone()
+            .ok_or(Error::CreateMsgParcelFailed)?;
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
+            .map_err(|_| Error::SendRequestFailed)?;
+
+        lock.read(&mut receive)?;
+
+        drop(lock);
+
+        Ok(infos.app_schema.read().unwrap())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_fragment": "return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;", "rust_fragment": "if attrs.get(&Tag::UserId).is_some() { if unsafe { !CheckSystemHapPermission() } { return log_throw_error!(ErrCode::NotSystemApplication, \"[FATAL]The caller is not system application.\"); }", "description": "Both check for system HAP permission and return early on failure", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "IPCSkeleton::GetCallingTokenID()", "rust_api": "Skeleton::calling_uid()", "mapping_type": "function", "description": "Get calling process token/UID for permission validation", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "AccessTokenKit::GetTokenTypeFlag(tokenId)", "rust_api": "attrs.get(&Tag::UserId)", "mapping_type": "function", "description": "Check token type/attribute presence for system application validation", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "CheckSystemApp()", "rust_api": "CheckSystemHapPermission()", "mapping_type": "function", "description": "Validate if calling process is a system application", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "CheckPermission(permission.as_ptr())", "rust_api": "CheckPermission(permission.as_ptr())", "mapping_type": "function", "description": "Check specific permission using permission string", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}]
+Unixcoder Score: -0.0247227530926466
+--------------------------------------------------

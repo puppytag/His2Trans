@@ -1,0 +1,706 @@
+C_Code: 
+ExceptionError CJInitialize::GetFD(const std::string &path, const Config &config, int32_t &fd)
+{
+    ExceptionError err;
+    fd = config.action == Action::UPLOAD ? open(path.c_str(), O_RDONLY) : open(path.c_str(), O_TRUNC | O_RDWR);
+    if (fd >= 0) {
+        REQUEST_HILOGD("File already exists");
+        if (config.action == Action::UPLOAD) {
+            chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            close(fd);
+            return err;
+        } else {
+            chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        }
+
+        if (config.overwrite) {
+            close(fd);
+            return err;
+        }
+        if (!config.firstInit) {
+            REQUEST_HILOGD("CJRequestTask config is not firstInit");
+            close(fd);
+            return err;
+        }
+        close(fd);
+        err.code = ExceptionErrorCode::E_FILE_IO;
+        err.errInfo = "Download File already exists";
+        return err;
+    } else {
+        if (config.action == Action::UPLOAD) {
+            ExceptionErrorCode code = ExceptionErrorCode::E_FILE_IO;
+            err.code = ExceptionErrorCode::E_FILE_IO;
+            err.errInfo = "Failed to open file errno " + std::to_string(errno);
+            return err;
+        }
+        fd = open(path.c_str(), O_CREAT | O_RDWR, FILE_PERMISSION);
+        if (fd < 0) {
+            err.code = ExceptionErrorCode::E_FILE_IO;
+            err.errInfo = "Failed to open file errno " + std::to_string(errno);
+            return err;
+        }
+        chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        close(fd);
+    }
+    return err;
+}
+Function: 
+pub(crate) fn open(&self) -> Result<File, io::Error> {
+        if let Some(path) = Self::path(&self.task_id) {
+            OpenOptions::new().read(true).open(path)
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "cache store dir not created.",
+            ))
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__CreateTestFile__idx5464_rank1.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank1.rs", "reasoning": "[Task Analysis] C function creates a file and writes content, returning true on success; Rust function does the same with error handling. [Similarity] Both perform file I/O operations with similar control flow (open/create, write, return). [Knowledge Extraction] Full structural match with minor syntax differences (C++ iostream vs Rust std::fs::File), API mappings found for file creation and writing operations.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__CreateTestFile__idx5464_rank1.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank1.rs", "c_fragment": "ofstream out(path, ios_base::out | ios_base::trunc);\n    if (out.is_open()) {\n        out << content;\n        return true;\n    }\n\n    BENCHMARK_LOGD(\"open file failed! %{public}s\", path.c_str());\n    return false;", "rust_fragment": "if let Ok(mut file) = File::create(path) {\n        if let Err(err) = file.write_all(content.as_bytes()) {\n            println!(\"Error writing to file: {}\", err);\n            return false;\n        }\n        true\n    } else {\n        println!(\"Failed to create file: {}\", path);\n        false\n    }", "description": "Both functions attempt to create and write to a file, with error handling and return values indicating success or failure.", "reasoning": "[Task Analysis] C function creates a file and writes content, returning true on success; Rust function does the same with error handling. [Similarity] Both perform file I/O operations with similar control flow (open/create, write, return). [Knowledge Extraction] Full structural match with minor syntax differences (C++ iostream vs Rust std::fs::File), API mappings found for file creation and writing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank1.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank1.rs", "c_api": "out << content", "rust_api": "file.write_all(content.as_bytes())", "mapping_type": "function", "description": "Writing content to file in C++ vs Rust", "reasoning": "[Task Analysis] C function creates a file and writes content, returning true on success; Rust function does the same with error handling. [Similarity] Both perform file I/O operations with similar control flow (open/create, write, return). [Knowledge Extraction] Full structural match with minor syntax differences (C++ iostream vs Rust std::fs::File), API mappings found for file creation and writing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank1.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank1.rs", "c_api": "BENCHMARK_LOGD(\"open file failed! %{public}s\", path.c_str())", "rust_api": "println!(\"Failed to create file: {}\", path)", "mapping_type": "function", "description": "Logging error message in C++ vs Rust", "reasoning": "[Task Analysis] C function creates a file and writes content, returning true on success; Rust function does the same with error handling. [Similarity] Both perform file I/O operations with similar control flow (open/create, write, return). [Knowledge Extraction] Full structural match with minor syntax differences (C++ iostream vs Rust std::fs::File), API mappings found for file creation and writing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank1.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank1.rs", "c_api": "ofstream out(path, ios_base::out | ios_base::trunc)", "rust_api": "File::create(path)", "mapping_type": "function", "description": "File creation with truncation in C++ vs Rust", "reasoning": "[Task Analysis] C function creates a file and writes content, returning true on success; Rust function does the same with error handling. [Similarity] Both perform file I/O operations with similar control flow (open/create, write, return). [Knowledge Extraction] Full structural match with minor syntax differences (C++ iostream vs Rust std::fs::File), API mappings found for file creation and writing operations."}]
+Unixcoder Score: 0.09836528450250626
+--------------------------------------------------
+C_Code: 
+ExceptionError CJInitialize::GetFD(const std::string &path, const Config &config, int32_t &fd)
+{
+    ExceptionError err;
+    fd = config.action == Action::UPLOAD ? open(path.c_str(), O_RDONLY) : open(path.c_str(), O_TRUNC | O_RDWR);
+    if (fd >= 0) {
+        REQUEST_HILOGD("File already exists");
+        if (config.action == Action::UPLOAD) {
+            chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            close(fd);
+            return err;
+        } else {
+            chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        }
+
+        if (config.overwrite) {
+            close(fd);
+            return err;
+        }
+        if (!config.firstInit) {
+            REQUEST_HILOGD("CJRequestTask config is not firstInit");
+            close(fd);
+            return err;
+        }
+        close(fd);
+        err.code = ExceptionErrorCode::E_FILE_IO;
+        err.errInfo = "Download File already exists";
+        return err;
+    } else {
+        if (config.action == Action::UPLOAD) {
+            ExceptionErrorCode code = ExceptionErrorCode::E_FILE_IO;
+            err.code = ExceptionErrorCode::E_FILE_IO;
+            err.errInfo = "Failed to open file errno " + std::to_string(errno);
+            return err;
+        }
+        fd = open(path.c_str(), O_CREAT | O_RDWR, FILE_PERMISSION);
+        if (fd < 0) {
+            err.code = ExceptionErrorCode::E_FILE_IO;
+            err.errInfo = "Failed to open file errno " + std::to_string(errno);
+            return err;
+        }
+        chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        close(fd);
+    }
+    return err;
+}
+Function: 
+fn create_file(task_id: &TaskId, cache: Arc<RamCache>) -> Result<(), io::Error> {
+        if let Some(path) = Self::path(task_id) {
+            let mut file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(path.as_path())?;
+            io::copy(&mut cache.cursor(), &mut file)?;
+            file.flush()?;
+            file.rewind()?;
+            let file_name = format!("{}{}", task_id, FINISH_SUFFIX);
+            if let Some(new_path) = unsafe { FILE_STORE_DIR.join(file_name) } {
+                fs::rename(path, new_path)?;
+                return Ok(());
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "cache store dir not created.",
+        ))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_api": "out.is_open()", "rust_api": "File::create(path).is_ok()", "mapping_type": "function", "description": "Check if file operation succeeded", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_fragment": "ofstream out(path, ios_base::out | ios_base::trunc);\n    if (out.is_open()) {\n        out << content;\n        return true;\n    }\n\n    std::cout << \"open file failed!\" << path << std::endl;\n    return false;", "rust_fragment": "if let Ok(mut file) = File::create(path) {\n        if let Err(err) = file.write_all(content.as_bytes()) {\n            println!(\"Error writing to file: {}\", err);\n            return false;\n        }\n        true\n    } else {\n        println!(\"Failed to create file: {}\", path);\n        false\n    }", "description": "Both functions attempt to create a file and write content, with error handling and return logic.", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_api": "ofstream out(path, ios_base::out | ios_base::trunc)", "rust_api": "File::create(path)", "mapping_type": "function", "description": "File creation with truncation", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_api": "std::cout << \"open file failed!\" << path << std::endl", "rust_api": "println!(\"Failed to create file: {}\", path)", "mapping_type": "function", "description": "Error message logging", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_api": "out << content", "rust_api": "file.write_all(content.as_bytes())", "mapping_type": "function", "description": "Writing content to file", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}]
+Unixcoder Score: 0.0740576982498169
+--------------------------------------------------
+C_Code: 
+ExceptionError CJInitialize::GetFD(const std::string &path, const Config &config, int32_t &fd)
+{
+    ExceptionError err;
+    fd = config.action == Action::UPLOAD ? open(path.c_str(), O_RDONLY) : open(path.c_str(), O_TRUNC | O_RDWR);
+    if (fd >= 0) {
+        REQUEST_HILOGD("File already exists");
+        if (config.action == Action::UPLOAD) {
+            chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            close(fd);
+            return err;
+        } else {
+            chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        }
+
+        if (config.overwrite) {
+            close(fd);
+            return err;
+        }
+        if (!config.firstInit) {
+            REQUEST_HILOGD("CJRequestTask config is not firstInit");
+            close(fd);
+            return err;
+        }
+        close(fd);
+        err.code = ExceptionErrorCode::E_FILE_IO;
+        err.errInfo = "Download File already exists";
+        return err;
+    } else {
+        if (config.action == Action::UPLOAD) {
+            ExceptionErrorCode code = ExceptionErrorCode::E_FILE_IO;
+            err.code = ExceptionErrorCode::E_FILE_IO;
+            err.errInfo = "Failed to open file errno " + std::to_string(errno);
+            return err;
+        }
+        fd = open(path.c_str(), O_CREAT | O_RDWR, FILE_PERMISSION);
+        if (fd < 0) {
+            err.code = ExceptionErrorCode::E_FILE_IO;
+            err.errInfo = "Failed to open file errno " + std::to_string(errno);
+            return err;
+        }
+        chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        close(fd);
+    }
+    return err;
+}
+Function: 
+pub fn user_file(file: File) -> Self {
+        Self {
+            name: "".to_string(),
+            path: "".to_string(),
+            file_name: "".to_string(),
+            mime_type: "".to_string(),
+            is_user_file: true,
+            fd: Some(file.into_raw_fd()),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetCacheDir__idx1535_rank2.c", "source_rust_file": "Partial__GetCacheDir__idx1535_rank2.rs", "c_fragment": "if (context == nullptr) {\n        REQUEST_HILOGI(\"Get context nullptr, use default cache dir.\");\n        filePath = DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE;\n    } else {\n        std::string contextPath = context->GetCacheDir();\n        if (contextPath.empty()) {\n            REQUEST_HILOGI(\"Get context cache dir fail, use default cache dir.\");\n            filePath = DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE;\n        } else {\n            filePath = contextPath + SLASH + PRELOAD_CACHE;\n        }\n    }", "rust_fragment": "let res = GetCacheDir();\n    if res.is_empty() {\n        None\n    } else {\n        Some(res)\n    }", "description": "Both handle fallback logic for cache directory path retrieval, with C using nested conditionals and Rust using a simple check on the result.", "reasoning": "[Task Analysis] C function GetCacheDir() retrieves a cache directory path with fallback logic; Rust function get_cache_dir() wraps the result in an Option. [Similarity] Names refer to different concepts (GetCacheDir vs get_cache_dir), but the core logic is semantically aligned: both handle path retrieval with fallbacks. [Knowledge Extraction] Full classification blocked by naming difference and return type (std::string vs Option<String>), but partial structural match exists in the conditional logic and API mappings can be extracted for the path construction and fallback behavior."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetCacheDir__idx1535_rank2.c", "source_rust_file": "Partial__GetCacheDir__idx1535_rank2.rs", "c_api": "context->GetCacheDir()", "rust_api": "GetCacheDir()", "mapping_type": "function", "description": "Retrieval of cache directory from context", "reasoning": "[Task Analysis] C function GetCacheDir() retrieves a cache directory path with fallback logic; Rust function get_cache_dir() wraps the result in an Option. [Similarity] Names refer to different concepts (GetCacheDir vs get_cache_dir), but the core logic is semantically aligned: both handle path retrieval with fallbacks. [Knowledge Extraction] Full classification blocked by naming difference and return type (std::string vs Option<String>), but partial structural match exists in the conditional logic and API mappings can be extracted for the path construction and fallback behavior."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetCacheDir__idx1535_rank2.c", "source_rust_file": "Partial__GetCacheDir__idx1535_rank2.rs", "c_api": "REQUEST_HILOGI(...)", "rust_api": "info!(...)", "mapping_type": "function", "description": "Logging function for debug messages", "reasoning": "[Task Analysis] C function GetCacheDir() retrieves a cache directory path with fallback logic; Rust function get_cache_dir() wraps the result in an Option. [Similarity] Names refer to different concepts (GetCacheDir vs get_cache_dir), but the core logic is semantically aligned: both handle path retrieval with fallbacks. [Knowledge Extraction] Full classification blocked by naming difference and return type (std::string vs Option<String>), but partial structural match exists in the conditional logic and API mappings can be extracted for the path construction and fallback behavior."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetCacheDir__idx1535_rank2.c", "source_rust_file": "Partial__GetCacheDir__idx1535_rank2.rs", "c_api": "DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE", "rust_api": "DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE", "mapping_type": "pattern", "description": "Path construction pattern for default cache directory", "reasoning": "[Task Analysis] C function GetCacheDir() retrieves a cache directory path with fallback logic; Rust function get_cache_dir() wraps the result in an Option. [Similarity] Names refer to different concepts (GetCacheDir vs get_cache_dir), but the core logic is semantically aligned: both handle path retrieval with fallbacks. [Knowledge Extraction] Full classification blocked by naming difference and return type (std::string vs Option<String>), but partial structural match exists in the conditional logic and API mappings can be extracted for the path construction and fallback behavior."}]
+Unixcoder Score: 0.06425835937261581
+--------------------------------------------------
+C_Code: 
+ExceptionError CJInitialize::GetFD(const std::string &path, const Config &config, int32_t &fd)
+{
+    ExceptionError err;
+    fd = config.action == Action::UPLOAD ? open(path.c_str(), O_RDONLY) : open(path.c_str(), O_TRUNC | O_RDWR);
+    if (fd >= 0) {
+        REQUEST_HILOGD("File already exists");
+        if (config.action == Action::UPLOAD) {
+            chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            close(fd);
+            return err;
+        } else {
+            chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        }
+
+        if (config.overwrite) {
+            close(fd);
+            return err;
+        }
+        if (!config.firstInit) {
+            REQUEST_HILOGD("CJRequestTask config is not firstInit");
+            close(fd);
+            return err;
+        }
+        close(fd);
+        err.code = ExceptionErrorCode::E_FILE_IO;
+        err.errInfo = "Download File already exists";
+        return err;
+    } else {
+        if (config.action == Action::UPLOAD) {
+            ExceptionErrorCode code = ExceptionErrorCode::E_FILE_IO;
+            err.code = ExceptionErrorCode::E_FILE_IO;
+            err.errInfo = "Failed to open file errno " + std::to_string(errno);
+            return err;
+        }
+        fd = open(path.c_str(), O_CREAT | O_RDWR, FILE_PERMISSION);
+        if (fd < 0) {
+            err.code = ExceptionErrorCode::E_FILE_IO;
+            err.errInfo = "Failed to open file errno " + std::to_string(errno);
+            return err;
+        }
+        chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        close(fd);
+    }
+    return err;
+}
+Function: 
+fn create_file(task_id: &TaskId, cache: Arc<RamCache>) -> Result<(), io::Error> {
+        if let Some(path) = Self::path(task_id) {
+            let mut file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(path.as_path())?;
+            io::copy(&mut cache.cursor(), &mut file)?;
+            file.flush()?;
+            file.rewind()?;
+            let file_name = format!("{}{}", task_id, FINISH_SUFFIX);
+            if let Some(new_path) = unsafe { FILE_STORE_DIR.join(file_name) } {
+                fs::rename(path, new_path)?;
+                return Ok(());
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "cache store dir not created.",
+        ))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__GetCacheDir__idx1166_rank1.c", "source_rust_file": "Full__GetCacheDir__idx1166_rank1.rs", "c_api": "filePath = contextPath + SLASH + PRELOAD_CACHE;", "rust_api": "path.push(\"preload_caches\");", "mapping_type": "pattern", "description": "Path construction with subdirectory appending", "reasoning": "[Task Analysis] C function GetCacheDir retrieves cache directory path with fallback logic; Rust function get_curr_store_dir does similar with platform-specific handling and directory creation. [Similarity] Both perform conditional logic based on context availability and fallback behavior, with similar data flow (get path -> process -> return). [Knowledge Extraction] Found full structural match in core logic, partial match in error handling, and API mappings for path construction and fallback mechanisms."}, {"knowledge_type": "Partial", "source_c_file": "Full__GetCacheDir__idx1166_rank1.c", "source_rust_file": "Full__GetCacheDir__idx1166_rank1.rs", "c_fragment": "auto context = Context::GetApplicationContext();\n    std::string filePath;\n    if (context == nullptr) {\n        REQUEST_HILOGI(\"Get context nullptr, use default cache dir.\");\n        filePath = DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE;\n    } else {\n        std::string contextPath = context->GetCacheDir();\n        if (contextPath.empty()) {\n            REQUEST_HILOGI(\"Get context cache dir fail, use default cache dir.\");\n            filePath = DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE;\n        } else {\n            filePath = contextPath + SLASH + PRELOAD_CACHE;\n        }\n    }\n    return filePath;", "rust_fragment": "let mut path = match request_utils::context::get_cache_dir() {\n        Some(dir) => PathBuf::from_str(&dir).unwrap(),\n        None => {\n            error!(\"get cache dir failed\");\n            PathBuf::from_str(\"/data/storage/el2/base/cache\").unwrap()\n        }\n    };", "description": "Both functions retrieve a cache directory path with fallback logic when context is unavailable or fails.", "reasoning": "[Task Analysis] C function GetCacheDir retrieves cache directory path with fallback logic; Rust function get_curr_store_dir does similar with platform-specific handling and directory creation. [Similarity] Both perform conditional logic based on context availability and fallback behavior, with similar data flow (get path -> process -> return). [Knowledge Extraction] Found full structural match in core logic, partial match in error handling, and API mappings for path construction and fallback mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__GetCacheDir__idx1166_rank1.c", "source_rust_file": "Full__GetCacheDir__idx1166_rank1.rs", "c_api": "context->GetCacheDir()", "rust_api": "Some(dir) => PathBuf::from_str(&dir).unwrap()", "mapping_type": "method", "description": "Retrieval of cache directory from context", "reasoning": "[Task Analysis] C function GetCacheDir retrieves cache directory path with fallback logic; Rust function get_curr_store_dir does similar with platform-specific handling and directory creation. [Similarity] Both perform conditional logic based on context availability and fallback behavior, with similar data flow (get path -> process -> return). [Knowledge Extraction] Found full structural match in core logic, partial match in error handling, and API mappings for path construction and fallback mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__GetCacheDir__idx1166_rank1.c", "source_rust_file": "Full__GetCacheDir__idx1166_rank1.rs", "c_api": "Context::GetApplicationContext()", "rust_api": "request_utils::context::get_cache_dir()", "mapping_type": "function", "description": "Retrieval of application context/cache directory", "reasoning": "[Task Analysis] C function GetCacheDir retrieves cache directory path with fallback logic; Rust function get_curr_store_dir does similar with platform-specific handling and directory creation. [Similarity] Both perform conditional logic based on context availability and fallback behavior, with similar data flow (get path -> process -> return). [Knowledge Extraction] Found full structural match in core logic, partial match in error handling, and API mappings for path construction and fallback mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__GetCacheDir__idx1166_rank1.c", "source_rust_file": "Full__GetCacheDir__idx1166_rank1.rs", "c_api": "REQUEST_HILOGI", "rust_api": "error!", "mapping_type": "function", "description": "Logging of error/fallback messages", "reasoning": "[Task Analysis] C function GetCacheDir retrieves cache directory path with fallback logic; Rust function get_curr_store_dir does similar with platform-specific handling and directory creation. [Similarity] Both perform conditional logic based on context availability and fallback behavior, with similar data flow (get path -> process -> return). [Knowledge Extraction] Found full structural match in core logic, partial match in error handling, and API mappings for path construction and fallback mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__GetCacheDir__idx1166_rank1.c", "source_rust_file": "Full__GetCacheDir__idx1166_rank1.rs", "c_api": "DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE", "rust_api": "PathBuf::from_str(\"/data/storage/el2/base/cache\").unwrap()", "mapping_type": "pattern", "description": "Default fallback path construction", "reasoning": "[Task Analysis] C function GetCacheDir retrieves cache directory path with fallback logic; Rust function get_curr_store_dir does similar with platform-specific handling and directory creation. [Similarity] Both perform conditional logic based on context availability and fallback behavior, with similar data flow (get path -> process -> return). [Knowledge Extraction] Found full structural match in core logic, partial match in error handling, and API mappings for path construction and fallback mechanisms."}, {"knowledge_type": "Full", "source_c_file": "Full__GetCacheDir__idx1166_rank1.c", "source_rust_file": "Full__GetCacheDir__idx1166_rank1.rs", "reasoning": "[Task Analysis] C function GetCacheDir retrieves cache directory path with fallback logic; Rust function get_curr_store_dir does similar with platform-specific handling and directory creation. [Similarity] Both perform conditional logic based on context availability and fallback behavior, with similar data flow (get path -> process -> return). [Knowledge Extraction] Found full structural match in core logic, partial match in error handling, and API mappings for path construction and fallback mechanisms.", "description": "Full structural translation"}]
+Unixcoder Score: 0.03992464393377304
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::CheckUserFileSpec(const std::shared_ptr<OHOS::AbilityRuntime::Context> &context,
+    const Config &config, FileSpec &file, ExceptionError &error, bool isUpload)
+{
+    if (config.mode != Mode::FOREGROUND) {
+        error.code = E_PARAMETER_CHECK;
+        error.errInfo = "Parameter verification failed, user file can only for Mode::FOREGROUND";
+        return false;
+    }
+    if (isUpload) {
+        std::shared_ptr<Uri> uri = std::make_shared<Uri>(file.uri);
+        std::shared_ptr<AppExecFwk::DataAbilityHelper> dataAbilityHelper =
+            AppExecFwk::DataAbilityHelper::Creator(context, uri);
+        if (dataAbilityHelper == nullptr) {
+            REQUEST_HILOGE("dataAbilityHelper null");
+            error.code = E_PARAMETER_CHECK;
+            error.errInfo = "Parameter verification failed, dataAbilityHelper null";
+            SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_07, config.bundleName, "", error.errInfo);
+            return false;
+        }
+        file.fd = dataAbilityHelper->OpenFile(*uri, "r");
+    } else {
+        std::shared_ptr<AppFileService::ModuleFileUri::FileUri> fileUri =
+            std::make_shared<AppFileService::ModuleFileUri::FileUri>(file.uri);
+        std::string realPath = fileUri->GetRealPath();
+        if (config.firstInit) {
+            file.fd = open(realPath.c_str(), O_RDWR | O_TRUNC);
+        } else {
+            file.fd = open(realPath.c_str(), O_RDWR | O_APPEND);
+        }
+    }
+    if (file.fd < 0) {
+        REQUEST_HILOGE("Failed to open user file, fd: %{public}d", file.fd);
+        error.code = E_FILE_IO;
+        error.errInfo = "Failed to open user file";
+        SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_09, config.bundleName, "", error.errInfo);
+        return false;
+    }
+    fdsan_exchange_owner_tag(file.fd, 0, REQUEST_FDSAN_TAG);
+    StandardizeFileSpec(file);
+    return true;
+}
+Function: 
+fn open_file_readwrite(uid: u64, bundle_name: &str, path: &str) -> io::Result<File> {
+    Ok(cvt_res_error!(
+        OpenOptions::new()
+            .read(true)
+            .append(true)
+            .open(convert_path(uid, bundle_name, path)),
+        "open_file_readwrite failed"
+    ))
+}
+Unixcoder Score: 0.00469230255112052
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestAction::GetFdUpload(const std::string &path, const Config &config)
+{
+    if (!CheckPathIsFile(path)) {
+        return config.version == Version::API10 ? E_FILE_IO : E_FILE_PATH;
+    }
+    FILE *file = fopen(path.c_str(), "r");
+    if (file == nullptr) {
+        return config.version == Version::API10 ? E_FILE_IO : E_FILE_PATH;
+    }
+    REQUEST_HILOGD("upload file fopen ok");
+    int32_t ret = chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP);
+    if (ret != 0) {
+        REQUEST_HILOGE("upload file chmod fail: %{public}d", ret);
+    }
+    int32_t retClose = fclose(file);
+    if (retClose != 0) {
+        REQUEST_HILOGE("upload fclose fail: %{public}d", ret);
+    }
+    return E_OK;
+}
+Function: 
+fn open_task_files(config: &TaskConfig) -> Result<(Files, Vec<i64>), ServiceError> {
+    let tid = config.common_data.task_id;
+    let uid = config.common_data.uid;
+
+    let mut files = Vec::new();
+    let mut sizes = Vec::new();
+    let mut bundle_cache = BundleCache::new(config);
+
+    for (idx, fs) in config.file_specs.iter().enumerate() {
+        match config.common_data.action {
+            Action::Upload => {
+                let file = if fs.is_user_file {
+                    match fs.fd {
+                        Some(fd) => unsafe { File::from_raw_fd(fd) },
+                        None => {
+                            error!("None user file failed - task_id: {}, idx: {}", tid, idx);
+                            sys_event!(
+                                ExecFault,
+                                DfxCode::SA_ERROR_01,
+                                &format!("None user file failed - task_id: {}, idx: {}", tid, idx)
+                            );
+                            return Err(ServiceError::IoError(io::Error::new(
+                                io::ErrorKind::Other,
+                                "none user file",
+                            )));
+                        }
+                    }
+                } else {
+                    let bundle_name = bundle_cache.get_value()?;
+                    open_file_readonly(uid, &bundle_name, &fs.path)
+                        .map_err(ServiceError::IoError)?
+                };
+                let size = cvt_res_error!(
+                    file.metadata()
+                        .map(|data| data.len())
+                        .map_err(ServiceError::IoError),
+                    "Cannot get upload file's size - task_id: {}, idx: {}",
+                    tid,
+                    idx
+                );
+                files.push(Arc::new(Mutex::new(file)));
+                debug!(
+                    "Get file size succeed - task_id: {}, idx: {}, size: {}",
+                    tid, idx, size
+                );
+                sizes.push(size as i64);
+            }
+            Action::Download => {
+                let file = if fs.is_user_file {
+                    match fs.fd {
+                        Some(fd) => unsafe { File::from_raw_fd(fd) },
+                        None => {
+                            error!("None user file failed - task_id: {}, idx: {}", tid, idx);
+                            sys_event!(
+                                ExecFault,
+                                DfxCode::SA_ERROR_01,
+                                &format!("None user file failed - task_id: {}, idx: {}", tid, idx)
+                            );
+                            return Err(ServiceError::IoError(io::Error::new(
+                                io::ErrorKind::Other,
+                                "none user file",
+                            )));
+                        }
+                    }
+                } else {
+                    let bundle_name = bundle_cache.get_value()?;
+                    open_file_readwrite(uid, &bundle_name, &fs.path)
+                        .map_err(ServiceError::IoError)?
+                };
+                files.push(Arc::new(Mutex::new(file)));
+                sizes.push(-1)
+            }
+            _ => unreachable!("Action::Any in open_task_files should never reach"),
+        }
+    }
+    Ok((Files::new(files), sizes))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUserFileSpec__idx329_rank3.c", "source_rust_file": "Partial__CheckUserFileSpec__idx329_rank3.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "error!(...)", "mapping_type": "function", "description": "Logging error messages in C vs Rust", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mapping Inference] -> [Structural Fragment Matching] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUserFileSpec__idx329_rank3.c", "source_rust_file": "Partial__CheckUserFileSpec__idx329_rank3.rs", "c_api": "AppExecFwk::DataAbilityHelper::Creator(context, uri)", "rust_api": "open_file_readonly(uid, &bundle_name, &fs.path)", "mapping_type": "function", "description": "Creation of data ability helper in C vs opening a readonly file in Rust", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mapping Inference] -> [Structural Fragment Matching] -> [Final Classification]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckUserFileSpec__idx329_rank3.c", "source_rust_file": "Partial__CheckUserFileSpec__idx329_rank3.rs", "c_fragment": "if (file.fd < 0) {\n        REQUEST_HILOGE(\"Failed to open user file, fd: %{public}d\", file.fd);\n        return E_FILE_IO;\n    }", "rust_fragment": "sys_event!(\n                                ExecFault,\n                                DfxCode::SA_ERROR_01,\n                                &format!(\"None user file failed - task_id: {}, idx: {}\", tid, idx)\n                            );\n                            return Err(ServiceError::IoError(io::Error::new(\n                                io::ErrorKind::Other,\n                                \"none user file\",\n                            )));", "description": "Error handling for failed file operations with logging and return codes", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mapping Inference] -> [Structural Fragment Matching] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUserFileSpec__idx329_rank3.c", "source_rust_file": "Partial__CheckUserFileSpec__idx329_rank3.rs", "c_api": "open(realPath.c_str(), O_RDWR | O_TRUNC)", "rust_api": "open_file_readwrite(uid, &bundle_name, &fs.path)", "mapping_type": "function", "description": "Opening file with truncate flag in C vs opening a readwrite file in Rust", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mapping Inference] -> [Structural Fragment Matching] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUserFileSpec__idx329_rank3.c", "source_rust_file": "Partial__CheckUserFileSpec__idx329_rank3.rs", "c_api": "fdsan_exchange_owner_tag(file.fd, 0, REQUEST_FDSAN_TAG)", "rust_api": "sys_event!(ExecFault, ...)", "mapping_type": "function", "description": "File descriptor ownership tagging in C vs system event logging in Rust", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mapping Inference] -> [Structural Fragment Matching] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUserFileSpec__idx329_rank3.c", "source_rust_file": "Partial__CheckUserFileSpec__idx329_rank3.rs", "c_api": "std::make_shared<Uri>(file.uri)", "rust_api": "unsafe { File::from_raw_fd(fd) }", "mapping_type": "function", "description": "Creation of shared pointer to URI object in C vs creation of file handle from raw fd in Rust", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mapping Inference] -> [Structural Fragment Matching] -> [Final Classification]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckUserFileSpec__idx329_rank3.c", "source_rust_file": "Partial__CheckUserFileSpec__idx329_rank3.rs", "c_fragment": "if (isUpload) {\n        std::shared_ptr<Uri> uri = std::make_shared<Uri>(file.uri);\n        std::shared_ptr<AppExecFwk::DataAbilityHelper> dataAbilityHelper =\n            AppExecFwk::DataAbilityHelper::Creator(context, uri);\n        if (dataAbilityHelper == nullptr) {\n            REQUEST_HILOGE(\"dataAbilityHelper null\");\n            return E_PARAMETER_CHECK;\n        }\n        file.fd = dataAbilityHelper->OpenFile(*uri, \"r\");\n    } else {\n        std::shared_ptr<AppFileService::ModuleFileUri::FileUri> fileUri =\n            std::make_shared<AppFileService::ModuleFileUri::FileUri>(file.uri);\n        std::string realPath = fileUri->GetRealPath();\n        if (config.firstInit) {\n            file.fd = open(realPath.c_str(), O_RDWR | O_TRUNC);\n        } else {\n            file.fd = open(realPath.c_str(), O_RDWR | O_APPEND);\n        }\n    }", "rust_fragment": "let file = if fs.is_user_file {\n                    match fs.fd {\n                        Some(fd) => unsafe { File::from_raw_fd(fd) },\n                        None => {\n                            error!(\"None user file failed - task_id: {}, idx: {}\", tid, idx);\n                            sys_event!(\n                                ExecFault,\n                                DfxCode::SA_ERROR_01,\n                                &format!(\"None user file failed - task_id: {}, idx: {}\", tid, idx)\n                            );\n                            return Err(ServiceError::IoError(io::Error::new(\n                                io::ErrorKind::Other,\n                                \"none user file\",\n                            )));\n                        }\n                    }\n                } else {\n                    let bundle_name = bundle_cache.get_value()?;\n                    open_file_readonly(uid, &bundle_name, &fs.path)\n                        .map_err(ServiceError::IoError)?\n                };", "description": "Conditional file opening logic based on upload/download and user file type", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mapping Inference] -> [Structural Fragment Matching] -> [Final Classification]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckUserFileSpec__idx329_rank3.c", "source_rust_file": "Partial__CheckUserFileSpec__idx329_rank3.rs", "c_fragment": "if (config.mode != Mode::FOREGROUND) {\n        return E_PARAMETER_CHECK;\n    }", "rust_fragment": "match config.common_data.action {\n            Action::Upload => {", "description": "Initial validation of configuration mode/action before proceeding with file operations", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mapping Inference] -> [Structural Fragment Matching] -> [Final Classification]"}]
+Unixcoder Score: 0.003837117226794362
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::GetFdDownload(const std::string &path, const Config &config, ExceptionError &error)
+{
+    // File is exist.
+    if (JsInitialize::FindDir(path)) {
+        if (config.firstInit && !config.overwrite) {
+            error.code = config.version == Version::API10 ? E_FILE_IO : E_FILE_PATH;
+            error.errInfo = "GetFd File exists and other error";
+            SysEventLog::SendSysEventLog(STATISTIC_EVENT, APP_ERROR_00, config.bundleName, "", error.errInfo);
+            return false;
+        }
+    }
+
+    FILE *file = NULL;
+    if (config.firstInit) {
+        file = fopen(path.c_str(), "w+");
+    } else {
+        file = fopen(path.c_str(), "a+");
+    }
+
+    if (file == NULL) {
+        error.code = E_FILE_IO;
+        error.errInfo = "GetFd failed to open file errno " + std::to_string(errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_00, config.bundleName, "", error.errInfo);
+        return false;
+    }
+
+    int32_t ret = chmod(path.c_str(), PathUtils::WRITE_MODE);
+    if (ret != 0) {
+        REQUEST_HILOGE("download file chmod fail: %{public}d", ret);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_01, config.bundleName, "", std::to_string(ret));
+    };
+
+    int32_t retClose = fclose(file);
+    if (retClose != 0) {
+        REQUEST_HILOGE("download fclose fail: %{public}d", ret);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_02, config.bundleName, "", std::to_string(retClose));
+    }
+    return true;
+}
+Function: 
+fn create_file(path: &str) -> File {
+    File::options()
+        .read(true)
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(path)
+        .unwrap()
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__StandardizePath__idx1166_rank4.c", "source_rust_file": "API_Mapping__StandardizePath__idx1166_rank4.rs", "c_api": "FileToWhole(context, config, path)", "rust_api": "request_utils::context::get_cache_dir()", "mapping_type": "function", "description": "Retrieving cache directory path from context", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: StandardizePath, Rust: get_curr_store_dir). [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles path standardization logic, while Rust function handles directory path construction and creation. These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function standardizes a path string based on prefixes, while Rust function constructs a cache directory path. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to path handling and file system operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__StandardizePath__idx1166_rank4.c", "source_rust_file": "API_Mapping__StandardizePath__idx1166_rank4.rs", "c_api": "BaseToWhole(context, path)", "rust_api": "PathBuf::from_str(&dir).unwrap()", "mapping_type": "function", "description": "Converting string to path buffer", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: StandardizePath, Rust: get_curr_store_dir). [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles path standardization logic, while Rust function handles directory path construction and creation. These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function standardizes a path string based on prefixes, while Rust function constructs a cache directory path. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to path handling and file system operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__StandardizePath__idx1166_rank4.c", "source_rust_file": "API_Mapping__StandardizePath__idx1166_rank4.rs", "c_api": "path.erase(0, FILE_PREFIX.size())", "rust_api": "path.push(\"preload_caches\")", "mapping_type": "pattern", "description": "Path manipulation and directory construction", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: StandardizePath, Rust: get_curr_store_dir). [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles path standardization logic, while Rust function handles directory path construction and creation. These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function standardizes a path string based on prefixes, while Rust function constructs a cache directory path. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to path handling and file system operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__StandardizePath__idx1166_rank4.c", "source_rust_file": "API_Mapping__StandardizePath__idx1166_rank4.rs", "c_api": "CacheToWhole(context, path)", "rust_api": "fs::create_dir_all(path.as_path())", "mapping_type": "function", "description": "Creating directory if it does not exist", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: StandardizePath, Rust: get_curr_store_dir). [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles path standardization logic, while Rust function handles directory path construction and creation. These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function standardizes a path string based on prefixes, while Rust function constructs a cache directory path. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there are some API mappings related to path handling and file system operations."}]
+Unixcoder Score: 0.00256488099694252
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::CheckUserFileSpec(const std::shared_ptr<OHOS::AbilityRuntime::Context> &context,
+    const Config &config, FileSpec &file, ExceptionError &error, bool isUpload)
+{
+    if (config.mode != Mode::FOREGROUND) {
+        error.code = E_PARAMETER_CHECK;
+        error.errInfo = "Parameter verification failed, user file can only for Mode::FOREGROUND";
+        return false;
+    }
+    if (isUpload) {
+        std::shared_ptr<Uri> uri = std::make_shared<Uri>(file.uri);
+        std::shared_ptr<AppExecFwk::DataAbilityHelper> dataAbilityHelper =
+            AppExecFwk::DataAbilityHelper::Creator(context, uri);
+        if (dataAbilityHelper == nullptr) {
+            REQUEST_HILOGE("dataAbilityHelper null");
+            error.code = E_PARAMETER_CHECK;
+            error.errInfo = "Parameter verification failed, dataAbilityHelper null";
+            SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_07, config.bundleName, "", error.errInfo);
+            return false;
+        }
+        file.fd = dataAbilityHelper->OpenFile(*uri, "r");
+    } else {
+        std::shared_ptr<AppFileService::ModuleFileUri::FileUri> fileUri =
+            std::make_shared<AppFileService::ModuleFileUri::FileUri>(file.uri);
+        std::string realPath = fileUri->GetRealPath();
+        if (config.firstInit) {
+            file.fd = open(realPath.c_str(), O_RDWR | O_TRUNC);
+        } else {
+            file.fd = open(realPath.c_str(), O_RDWR | O_APPEND);
+        }
+    }
+    if (file.fd < 0) {
+        REQUEST_HILOGE("Failed to open user file, fd: %{public}d", file.fd);
+        error.code = E_FILE_IO;
+        error.errInfo = "Failed to open user file";
+        SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_09, config.bundleName, "", error.errInfo);
+        return false;
+    }
+    fdsan_exchange_owner_tag(file.fd, 0, REQUEST_FDSAN_TAG);
+    StandardizeFileSpec(file);
+    return true;
+}
+Function: 
+fn open_file_readonly(uid: u64, bundle_name: &str, path: &str) -> io::Result<File> {
+    Ok(cvt_res_error!(
+        OpenOptions::new()
+            .read(true)
+            .open(convert_path(uid, bundle_name, path)),
+        "open_file_readonly failed"
+    ))
+}
+Unixcoder Score: 0.0020198493730276823
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::CheckUserFileSpec(const std::shared_ptr<OHOS::AbilityRuntime::Context> &context,
+    const Config &config, FileSpec &file, ExceptionError &error, bool isUpload)
+{
+    if (config.mode != Mode::FOREGROUND) {
+        error.code = E_PARAMETER_CHECK;
+        error.errInfo = "Parameter verification failed, user file can only for Mode::FOREGROUND";
+        return false;
+    }
+    if (isUpload) {
+        std::shared_ptr<Uri> uri = std::make_shared<Uri>(file.uri);
+        std::shared_ptr<AppExecFwk::DataAbilityHelper> dataAbilityHelper =
+            AppExecFwk::DataAbilityHelper::Creator(context, uri);
+        if (dataAbilityHelper == nullptr) {
+            REQUEST_HILOGE("dataAbilityHelper null");
+            error.code = E_PARAMETER_CHECK;
+            error.errInfo = "Parameter verification failed, dataAbilityHelper null";
+            SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_07, config.bundleName, "", error.errInfo);
+            return false;
+        }
+        file.fd = dataAbilityHelper->OpenFile(*uri, "r");
+    } else {
+        std::shared_ptr<AppFileService::ModuleFileUri::FileUri> fileUri =
+            std::make_shared<AppFileService::ModuleFileUri::FileUri>(file.uri);
+        std::string realPath = fileUri->GetRealPath();
+        if (config.firstInit) {
+            file.fd = open(realPath.c_str(), O_RDWR | O_TRUNC);
+        } else {
+            file.fd = open(realPath.c_str(), O_RDWR | O_APPEND);
+        }
+    }
+    if (file.fd < 0) {
+        REQUEST_HILOGE("Failed to open user file, fd: %{public}d", file.fd);
+        error.code = E_FILE_IO;
+        error.errInfo = "Failed to open user file";
+        SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_09, config.bundleName, "", error.errInfo);
+        return false;
+    }
+    fdsan_exchange_owner_tag(file.fd, 0, REQUEST_FDSAN_TAG);
+    StandardizeFileSpec(file);
+    return true;
+}
+Function: 
+fn open_task_files(config: &TaskConfig) -> Result<(Files, Vec<i64>), ServiceError> {
+    let tid = config.common_data.task_id;
+    let uid = config.common_data.uid;
+
+    let mut files = Vec::new();
+    let mut sizes = Vec::new();
+    let mut bundle_cache = BundleCache::new(config);
+
+    for (idx, fs) in config.file_specs.iter().enumerate() {
+        match config.common_data.action {
+            Action::Upload => {
+                let file = if fs.is_user_file {
+                    match fs.fd {
+                        Some(fd) => unsafe { File::from_raw_fd(fd) },
+                        None => {
+                            error!("None user file failed - task_id: {}, idx: {}", tid, idx);
+                            sys_event!(
+                                ExecFault,
+                                DfxCode::SA_ERROR_01,
+                                &format!("None user file failed - task_id: {}, idx: {}", tid, idx)
+                            );
+                            return Err(ServiceError::IoError(io::Error::new(
+                                io::ErrorKind::Other,
+                                "none user file",
+                            )));
+                        }
+                    }
+                } else {
+                    let bundle_name = bundle_cache.get_value()?;
+                    open_file_readonly(uid, &bundle_name, &fs.path)
+                        .map_err(ServiceError::IoError)?
+                };
+                let size = cvt_res_error!(
+                    file.metadata()
+                        .map(|data| data.len())
+                        .map_err(ServiceError::IoError),
+                    "Cannot get upload file's size - task_id: {}, idx: {}",
+                    tid,
+                    idx
+                );
+                files.push(Arc::new(Mutex::new(file)));
+                debug!(
+                    "Get file size succeed - task_id: {}, idx: {}, size: {}",
+                    tid, idx, size
+                );
+                sizes.push(size as i64);
+            }
+            Action::Download => {
+                let file = if fs.is_user_file {
+                    match fs.fd {
+                        Some(fd) => unsafe { File::from_raw_fd(fd) },
+                        None => {
+                            error!("None user file failed - task_id: {}, idx: {}", tid, idx);
+                            sys_event!(
+                                ExecFault,
+                                DfxCode::SA_ERROR_01,
+                                &format!("None user file failed - task_id: {}, idx: {}", tid, idx)
+                            );
+                            return Err(ServiceError::IoError(io::Error::new(
+                                io::ErrorKind::Other,
+                                "none user file",
+                            )));
+                        }
+                    }
+                } else {
+                    let bundle_name = bundle_cache.get_value()?;
+                    open_file_readwrite(uid, &bundle_name, &fs.path)
+                        .map_err(ServiceError::IoError)?
+                };
+                files.push(Arc::new(Mutex::new(file)));
+                sizes.push(-1)
+            }
+            _ => unreachable!("Action::Any in open_task_files should never reach"),
+        }
+    }
+    Ok((Files::new(files), sizes))
+}
+Unixcoder Score: -0.008513832464814186
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::GetFdDownload(const std::string &path, const Config &config, ExceptionError &error)
+{
+    // File is exist.
+    if (JsInitialize::FindDir(path)) {
+        if (config.firstInit && !config.overwrite) {
+            error.code = config.version == Version::API10 ? E_FILE_IO : E_FILE_PATH;
+            error.errInfo = "GetFd File exists and other error";
+            SysEventLog::SendSysEventLog(STATISTIC_EVENT, APP_ERROR_00, config.bundleName, "", error.errInfo);
+            return false;
+        }
+    }
+
+    FILE *file = NULL;
+    if (config.firstInit) {
+        file = fopen(path.c_str(), "w+");
+    } else {
+        file = fopen(path.c_str(), "a+");
+    }
+
+    if (file == NULL) {
+        error.code = E_FILE_IO;
+        error.errInfo = "GetFd failed to open file errno " + std::to_string(errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_00, config.bundleName, "", error.errInfo);
+        return false;
+    }
+
+    int32_t ret = chmod(path.c_str(), PathUtils::WRITE_MODE);
+    if (ret != 0) {
+        REQUEST_HILOGE("download file chmod fail: %{public}d", ret);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_01, config.bundleName, "", std::to_string(ret));
+    };
+
+    int32_t retClose = fclose(file);
+    if (retClose != 0) {
+        REQUEST_HILOGE("download fclose fail: %{public}d", ret);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_02, config.bundleName, "", std::to_string(retClose));
+    }
+    return true;
+}
+Function: 
+fn open_file_readwrite(uid: u64, bundle_name: &str, path: &str) -> io::Result<File> {
+    Ok(cvt_res_error!(
+        OpenOptions::new()
+            .read(true)
+            .append(true)
+            .open(convert_path(uid, bundle_name, path)),
+        "open_file_readwrite failed"
+    ))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CheckPathIsFile__idx1192_rank1.c", "source_rust_file": "API_Mapping__CheckPathIsFile__idx1192_rank1.rs", "c_api": "std::filesystem::is_directory(path, err)", "rust_api": "filter_map_entry(entry, path)", "mapping_type": "function", "description": "Check if path is directory", "reasoning": "[Task Analysis] C function checks if a path is a file using filesystem operations; Rust function restores files from a directory using filesystem read and filtering. [Similarity] No full structural similarity due to different domains (validation vs restoration) and different control flow patterns. [Knowledge Extraction] Extract API mappings for filesystem operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CheckPathIsFile__idx1192_rank1.c", "source_rust_file": "API_Mapping__CheckPathIsFile__idx1192_rank1.rs", "c_api": "SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_03, error.errInfo)", "rust_api": "error!(\"read dir error {}\", e)", "mapping_type": "function", "description": "Error logging", "reasoning": "[Task Analysis] C function checks if a path is a file using filesystem operations; Rust function restores files from a directory using filesystem read and filtering. [Similarity] No full structural similarity due to different domains (validation vs restoration) and different control flow patterns. [Knowledge Extraction] Extract API mappings for filesystem operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CheckPathIsFile__idx1192_rank1.c", "source_rust_file": "API_Mapping__CheckPathIsFile__idx1192_rank1.rs", "c_api": "std::filesystem::exists(path, err)", "rust_api": "fs::read_dir(path)", "mapping_type": "function", "description": "Filesystem path existence check", "reasoning": "[Task Analysis] C function checks if a path is a file using filesystem operations; Rust function restores files from a directory using filesystem read and filtering. [Similarity] No full structural similarity due to different domains (validation vs restoration) and different control flow patterns. [Knowledge Extraction] Extract API mappings for filesystem operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CheckPathIsFile__idx1192_rank1.c", "source_rust_file": "API_Mapping__CheckPathIsFile__idx1192_rank1.rs", "c_api": "SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_04, error.errInfo)", "rust_api": "error!(\"restore file error {}\", e)", "mapping_type": "function", "description": "Error logging", "reasoning": "[Task Analysis] C function checks if a path is a file using filesystem operations; Rust function restores files from a directory using filesystem read and filtering. [Similarity] No full structural similarity due to different domains (validation vs restoration) and different control flow patterns. [Knowledge Extraction] Extract API mappings for filesystem operations and error handling patterns."}]
+Unixcoder Score: -0.01476642768830061
+--------------------------------------------------

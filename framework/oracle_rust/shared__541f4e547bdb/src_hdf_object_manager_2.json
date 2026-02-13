@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_object_manager_2",
+  "function_name": "HdfObjectManagerFreeObject",
+  "source_c_file": "src/hdf_object_manager.c",
+  "c_code": "void HdfObjectManagerFreeObject(struct HdfObject * object)\n{\n    const struct HdfObjectCreator *targetCreator = NULL;\n    if (object == NULL) {\n        return;\n    }\n    targetCreator = HdfObjectManagerGetCreators(object->objectId);\n    if ((targetCreator == NULL) || (targetCreator->Release == NULL)) {\n        return;\n    }\n    targetCreator->Release(object);\n}",
+  "rust_signature": "pub extern \"C\" fn HdfObjectManagerFreeObject(object: *mut crate::types::HdfObject)",
+  "rust_code": "pub extern \\\"C\\\" fn HdfObjectManagerFreeObject(object: *mut HdfObject) {\n    if object.is_null() {\n        return;\n    }\n    unsafe {\n        let creator = HdfObjectManagerGetCreators((*object).objectId);\n        if creator.is_null() || (*creator).Release.is_none() {\n            return;\n        }\n        (*creator).Release.unwrap()(object);\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfObjectManagerGetCreators",
+      "rust_api": "HdfObjectManagerGetCreators",
+      "description": "Lookup object creator table",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

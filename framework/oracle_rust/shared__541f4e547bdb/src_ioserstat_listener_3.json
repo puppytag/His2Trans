@@ -1,0 +1,35 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_ioserstat_listener_3",
+  "function_name": "IoServiceStatusListenerFree",
+  "source_c_file": "src/ioserstat_listener.c",
+  "c_code": "void IoServiceStatusListenerFree(struct ServiceStatusListener * listener)\n{\n    if (listener == NULL) {\n        return;\n    }\n    struct IoServiceStatusListener *ioservListener\n        = CONTAINER_OF(listener, struct IoServiceStatusListener, svcstatListener);\n    OsalMemFree(ioservListener);\n}",
+  "rust_signature": "pub extern \"C\" fn IoServiceStatusListenerFree(listener: *mut crate::types::ServiceStatusListener)",
+  "rust_code": "pub extern \\\"C\\\" fn IoServiceStatusListenerFree(listener: *mut ServiceStatusListener) {\n    if listener.is_null() {\n        return;\n    }\n    unsafe {\n        let base = (listener as *mut u8).offset(-(core::mem::offset_of!(IoServiceStatusListener, svcstatListener) as isize)) as *mut IoServiceStatusListener;\n        OsalMemFree(base as *mut core::ffi::c_void);\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemFree",
+      "rust_api": "OsalMemFree",
+      "description": "Free memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "CONTAINER_OF(p, T, field)",
+      "rust_fragment": "(p as *mut u8).offset(-(offset_of!(T, field) as isize)) as *mut T",
+      "description": "Implement container_of via `offset_of!` + pointer arithmetic",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

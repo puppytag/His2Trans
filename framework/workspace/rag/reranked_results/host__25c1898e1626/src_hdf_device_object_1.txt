@@ -1,0 +1,556 @@
+C_Code: 
+int32_t TestServiceStub::ServerPingService(MessageParcel &data, MessageParcel &reply)
+{
+    std::u16string serviceName = data.ReadString16();
+    int32_t result = TestPingService(serviceName);
+    ZLOGI(LABEL, "Result:%{public}d", result);
+    reply.WriteInt32(result);
+    return 0;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+            0
+        }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Unmarshal__idx5179_rank2.c", "source_rust_file": "API_Mapping__Unmarshal__idx5179_rank2.rs", "c_api": "GetValue(node, GET_NAME(name), name)", "rust_api": "name", "mapping_type": "pattern", "description": "Extracting field from JSON and assigning to struct field", "reasoning": "[Task Analysis] C function 'Unmarshal' deserializes a JSON object into a Database struct, while Rust function 'new' constructs a Database struct from fields. [Similarity] Names refer to different concepts ('Unmarshal' vs 'new'), and the logic is not structurally identical. [Knowledge Extraction] There are no full or partial structural matches. However, both involve constructing a Database from data, so we can extract API mappings for the field assignment patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Unmarshal__idx5179_rank2.c", "source_rust_file": "API_Mapping__Unmarshal__idx5179_rank2.rs", "c_api": "GetValue(node, GET_NAME(tables), tables)", "rust_api": "tables", "mapping_type": "pattern", "description": "Extracting field from JSON and assigning to struct field", "reasoning": "[Task Analysis] C function 'Unmarshal' deserializes a JSON object into a Database struct, while Rust function 'new' constructs a Database struct from fields. [Similarity] Names refer to different concepts ('Unmarshal' vs 'new'), and the logic is not structurally identical. [Knowledge Extraction] There are no full or partial structural matches. However, both involve constructing a Database from data, so we can extract API mappings for the field assignment patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Unmarshal__idx5179_rank2.c", "source_rust_file": "API_Mapping__Unmarshal__idx5179_rank2.rs", "c_api": "GetValue(node, GET_NAME(alias), alias)", "rust_api": "alias", "mapping_type": "pattern", "description": "Extracting field from JSON and assigning to struct field", "reasoning": "[Task Analysis] C function 'Unmarshal' deserializes a JSON object into a Database struct, while Rust function 'new' constructs a Database struct from fields. [Similarity] Names refer to different concepts ('Unmarshal' vs 'new'), and the logic is not structurally identical. [Knowledge Extraction] There are no full or partial structural matches. However, both involve constructing a Database from data, so we can extract API mappings for the field assignment patterns."}]
+Unixcoder Score: -0.008352131582796574
+--------------------------------------------------
+C_Code: 
+void CesStateListener::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HILOGI("DeviceSwitchCollect OnAddSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+    if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        HILOGE("DeviceSwitchCollect OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+        return;
+    }
+    auto deviceSwitchCollect = deviceSwitchCollect_.promote();
+    if (deviceSwitchCollect == nullptr) {
+        HILOGE("DeviceSwitchCollect switchEventSubscriber is nullptr");
+        return;
+    }
+    auto task = [this] () {
+        auto deviceSwitchCollect = deviceSwitchCollect_.promote();
+        if (deviceSwitchCollect == nullptr) {
+            HILOGE("DeviceSwitchCollect switchEventSubscriber is nullptr");
+            return;
+        }
+        deviceSwitchCollect->SubscribeSwitchEvent();
+    };
+    deviceSwitchCollect->PostDelayTask(task, 0);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.012138795107603073
+--------------------------------------------------
+C_Code: 
+int DBinderTestServiceProxy::PingService(std::u16string &serviceName)
+{
+    int error;
+    MessageOption option;
+    MessageParcel dataParcel, replyParcel;
+    DBINDER_LOGE(LOG_LABEL, "TestServiceProxy:PingService");
+    if (!dataParcel.WriteString16(serviceName.data())) {
+        DBINDER_LOGE(LOG_LABEL, "fail to write parcel");
+        return ERR_INVALID_STATE;
+    }
+    error = Remote()->SendRequest(REVERSEINT, dataParcel, replyParcel, option);
+    replyParcel.ReadInt32();
+    return error;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5178_rank3.c", "source_rust_file": "Partial__Unmarshal__idx5178_rank3.rs", "c_api": "GetValue(node, GET_NAME(alias), alias)", "rust_api": "value.alias.to_string()", "mapping_type": "field_access", "description": "Extracting a string field from a source structure and converting it to a target string.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls. Rust code is a try_from function that builds a new Database struct from an existing one, converting tables and cloning fields. [Similarity] Names don't match exactly but both perform data extraction/serialization logic. [Knowledge Extraction] Full match blocked by domain mismatch (JSON deserialization vs struct construction), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5178_rank3.c", "source_rust_file": "Partial__Unmarshal__idx5178_rank3.rs", "c_api": "GetValue(node, GET_NAME(name), name)", "rust_api": "value.name.clone()", "mapping_type": "field_access", "description": "Extracting a field from a source structure and assigning it to a target field.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls. Rust code is a try_from function that builds a new Database struct from an existing one, converting tables and cloning fields. [Similarity] Names don't match exactly but both perform data extraction/serialization logic. [Knowledge Extraction] Full match blocked by domain mismatch (JSON deserialization vs struct construction), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5178_rank3.c", "source_rust_file": "Partial__Unmarshal__idx5178_rank3.rs", "c_api": "GetValue(node, GET_NAME(tables), tables)", "rust_api": "for table in value.tables.values() {\n            tables.push(table.try_into()?);\n        }", "mapping_type": "pattern", "description": "Iterating over a collection and converting each element to a new type.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls. Rust code is a try_from function that builds a new Database struct from an existing one, converting tables and cloning fields. [Similarity] Names don't match exactly but both perform data extraction/serialization logic. [Knowledge Extraction] Full match blocked by domain mismatch (JSON deserialization vs struct construction), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Unmarshal__idx5178_rank3.c", "source_rust_file": "Partial__Unmarshal__idx5178_rank3.rs", "c_fragment": "GetValue(node, GET_NAME(name), name);\n    GetValue(node, GET_NAME(alias), alias);\n    GetValue(node, GET_NAME(tables), tables);\n    GetValue(node, GET_NAME(dbName), name);\n    GetValue(node, GET_NAME(autoSyncType), autoSyncType);\n    GetValue(node, GET_NAME(user), user);\n    GetValue(node, GET_NAME(deviceId), deviceId);\n    GetValue(node, GET_NAME(version), version);\n    GetValue(node, GET_NAME(bundleName), bundleName);", "rust_fragment": "let mut tables = vec![];\n        for table in value.tables.values() {\n            tables.push(table.try_into()?);\n        }", "description": "Both extract data from a source structure (JSON or struct) and populate fields in a target structure.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls. Rust code is a try_from function that builds a new Database struct from an existing one, converting tables and cloning fields. [Similarity] Names don't match exactly but both perform data extraction/serialization logic. [Knowledge Extraction] Full match blocked by domain mismatch (JSON deserialization vs struct construction), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.013885428197681904
+--------------------------------------------------
+C_Code: 
+int uv_getaddrinfo(uv_getaddrinfo_t* handle,
+                   uv_getaddrinfo_cb cb,
+                   const char* hostname,
+                   const char* service,
+                   const struct addrinfo* hints) {
+  eio_req* req;
+  uv_eio_init();
+
+  if (handle == NULL || cb == NULL ||
+      (hostname == NULL && service == NULL)) {
+    uv_err_new_artificial(NULL, UV_EINVAL);
+    return -1;
+  }
+
+  memset(handle, 0, sizeof(uv_getaddrinfo_t));
+
+  /* TODO don't alloc so much. */
+
+  if (hints) {
+    handle->hints = malloc(sizeof(struct addrinfo));
+    memcpy(&handle->hints, hints, sizeof(struct addrinfo));
+  }
+
+  /* TODO security! check lengths, check return values. */
+
+  handle->cb = cb;
+  handle->hostname = hostname ? strdup(hostname) : NULL;
+  handle->service = service ? strdup(service) : NULL;
+
+  /* TODO check handle->hostname == NULL */
+  /* TODO check handle->service == NULL */
+
+  uv_ref();
+
+  req = eio_custom(getaddrinfo_thread_proc, EIO_PRI_DEFAULT,
+      uv_getaddrinfo_done, handle);
+  assert(req);
+  assert(req->data == handle);
+
+  return 0;
+}
+Function: 
+pub unsafe fn getaddrinfo(loop_ptr: *libc::c_void,
+                           handle: *uv_getaddrinfo_t,
+                           cb: *u8,
+                           node_name_ptr: *u8,
+                           service_name_ptr: *u8,
+                           hints: *addrinfo) -> libc::c_int {
+    rustrt::rust_uv_getaddrinfo(loop_ptr,
+                           handle,
+                           cb,
+                           node_name_ptr,
+                           service_name_ptr,
+                           hints)
+}
+Unixcoder Score: -0.01746593788266182
+--------------------------------------------------
+C_Code: 
+OHIPCRemoteServiceStub::OHIPCRemoteServiceStub(std::u16string &desc, OH_OnRemoteRequestCallback requestCallback,
+    OH_OnRemoteDestroyCallback destroyCallback, void *userData)
+    : IPCObjectStub(desc), requestCallback_(requestCallback), destroyCallback_(destroyCallback), userData_(userData)
+{
+}
+Function: 
+pub fn on_remote_request(
+        &mut self,
+        code: u32,
+        data: Pin<&mut MessageParcel>,
+        reply: Pin<&mut MessageParcel>,
+    ) -> i32 {
+        unsafe {
+            let mut data = MsgParcel::from_ptr(data.get_unchecked_mut() as *mut MessageParcel);
+            let mut reply = MsgParcel::from_ptr(reply.get_unchecked_mut() as *mut MessageParcel);
+            self.inner.on_remote_request(code, &mut data, &mut reply)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank1.c", "source_rust_file": "Partial__Marshal__idx5187_rank1.rs", "c_api": "SetValue(node[GET_NAME(alias)], alias);", "rust_api": "alias: value.alias.clone(),", "mapping_type": "field_access", "description": "Assignment of alias field from source to destination.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node, while Rust function 'from' converts an ipc_conn::OrderTable into a Table struct. [Similarity] Names don't match but both perform data serialization/transfer. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for field assignment and collection building."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5187_rank1.c", "source_rust_file": "Partial__Marshal__idx5187_rank1.rs", "c_fragment": "for fd in &value.fields.0 {\n            fields.push(Field::from(fd));\n        }", "rust_fragment": "SetValue(node[GET_NAME(fields)], fields);", "description": "Both perform iteration over a collection and push elements to a result container.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node, while Rust function 'from' converts an ipc_conn::OrderTable into a Table struct. [Similarity] Names don't match but both perform data serialization/transfer. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for field assignment and collection building."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank1.c", "source_rust_file": "Partial__Marshal__idx5187_rank1.rs", "c_api": "SetValue(node[GET_NAME(name)], name);", "rust_api": "name: value.table_name.clone(),", "mapping_type": "field_access", "description": "Assignment of name field from source to destination.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node, while Rust function 'from' converts an ipc_conn::OrderTable into a Table struct. [Similarity] Names don't match but both perform data serialization/transfer. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for field assignment and collection building."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank1.c", "source_rust_file": "Partial__Marshal__idx5187_rank1.rs", "c_api": "SetValue(node[GET_NAME(fields)], fields);", "rust_api": "fields,", "mapping_type": "field_access", "description": "Assignment of fields collection from source to destination.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node, while Rust function 'from' converts an ipc_conn::OrderTable into a Table struct. [Similarity] Names don't match but both perform data serialization/transfer. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for field assignment and collection building."}]
+Unixcoder Score: -0.02777019515633583
+--------------------------------------------------
+C_Code: 
+int uv_getaddrinfo(uv_loop_t* loop,
+                   uv_getaddrinfo_t* handle,
+                   uv_getaddrinfo_cb getaddrinfo_cb,
+                   const char* node,
+                   const char* service,
+                   const struct addrinfo* hints) {
+  int nodesize = 0;
+  int servicesize = 0;
+  int hintssize = 0;
+  char* alloc_ptr = NULL;
+
+  if (handle == NULL || getaddrinfo_cb == NULL ||
+     (node == NULL && service == NULL)) {
+    uv__set_sys_error(loop, WSAEINVAL);
+    goto error;
+  }
+
+  uv_req_init(loop, (uv_req_t*)handle);
+
+  handle->getaddrinfo_cb = getaddrinfo_cb;
+  handle->res = NULL;
+  handle->type = UV_GETADDRINFO;
+  handle->loop = loop;
+
+  /* calculate required memory size for all input values */
+  if (node != NULL) {
+    nodesize = ALIGNED_SIZE(uv_utf8_to_utf16(node, NULL, 0) * sizeof(wchar_t));
+    if (nodesize == 0) {
+      uv__set_sys_error(loop, GetLastError());
+      goto error;
+    }
+  }
+
+  if (service != NULL) {
+    servicesize = ALIGNED_SIZE(uv_utf8_to_utf16(service, NULL, 0) *
+                               sizeof(wchar_t));
+    if (servicesize == 0) {
+      uv__set_sys_error(loop, GetLastError());
+      goto error;
+    }
+  }
+  if (hints != NULL) {
+    hintssize = ALIGNED_SIZE(sizeof(struct addrinfoW));
+  }
+
+  /* allocate memory for inputs, and partition it as needed */
+  alloc_ptr = (char*)malloc(nodesize + servicesize + hintssize);
+  if (!alloc_ptr) {
+    uv__set_sys_error(loop, WSAENOBUFS);
+    goto error;
+  }
+
+  /* save alloc_ptr now so we can free if error */
+  handle->alloc = (void*)alloc_ptr;
+
+  /* convert node string to UTF16 into allocated memory and save pointer in */
+  /* handle */
+  if (node != NULL) {
+    handle->node = (wchar_t*)alloc_ptr;
+    if (uv_utf8_to_utf16(node,
+                         (wchar_t*) alloc_ptr,
+                         nodesize / sizeof(wchar_t)) == 0) {
+      uv__set_sys_error(loop, GetLastError());
+      goto error;
+    }
+    alloc_ptr += nodesize;
+  } else {
+    handle->node = NULL;
+  }
+
+  /* convert service string to UTF16 into allocated memory and save pointer */
+  /* in handle */
+  if (service != NULL) {
+    handle->service = (wchar_t*)alloc_ptr;
+    if (uv_utf8_to_utf16(service,
+                         (wchar_t*) alloc_ptr,
+                         servicesize / sizeof(wchar_t)) == 0) {
+      uv__set_sys_error(loop, GetLastError());
+      goto error;
+    }
+    alloc_ptr += servicesize;
+  } else {
+    handle->service = NULL;
+  }
+
+  /* copy hints to allocated memory and save pointer in handle */
+  if (hints != NULL) {
+    handle->hints = (struct addrinfoW*)alloc_ptr;
+    handle->hints->ai_family = hints->ai_family;
+    handle->hints->ai_socktype = hints->ai_socktype;
+    handle->hints->ai_protocol = hints->ai_protocol;
+    handle->hints->ai_flags = hints->ai_flags;
+    handle->hints->ai_addrlen = 0;
+    handle->hints->ai_canonname = NULL;
+    handle->hints->ai_addr = NULL;
+    handle->hints->ai_next = NULL;
+  } else {
+    handle->hints = NULL;
+  }
+
+  /* init request for Post handling */
+  uv_req_init(loop, &handle->getadddrinfo_req);
+  handle->getadddrinfo_req.data = handle;
+  handle->getadddrinfo_req.type = UV_GETADDRINFO_REQ;
+
+  /* Ask thread to run. Treat this as a long operation */
+  if (QueueUserWorkItem(&getaddrinfo_thread_proc,
+                        handle,
+                        WT_EXECUTELONGFUNCTION) == 0) {
+    uv__set_sys_error(loop, GetLastError());
+    goto error;
+  }
+
+  uv_ref(loop);
+
+  return 0;
+
+error:
+  if (handle != NULL && handle->alloc != NULL) {
+    free(handle->alloc);
+  }
+  return -1;
+}
+Function: 
+pub fn new() -> GetAddrInfoRequest {
+        let req = unsafe { uvll::malloc_req(UV_GETADDRINFO) };
+        assert!(req.is_not_null());
+        let mut req: GetAddrInfoRequest = NativeHandle::from_native_handle(req);
+        req.install_req_data();
+        return req;
+    }
+Unixcoder Score: -0.03798704966902733
+--------------------------------------------------
+C_Code: 
+struct HostImageCopyDevicePerformanceQuery
+Function: 
+struct BridgeScalerMetrics {
+        has_overlaps: bool,
+    }
+Unixcoder Score: -0.04230327531695366
+--------------------------------------------------
+C_Code: 
+uint32_t DBinderService::OnRemoteInvokerDataBusMessage(IPCObjectProxy *proxy,
+    std::shared_ptr<struct DHandleEntryTxRx> replyMessage,
+    std::string &remoteDeviceId, int pid, int uid, uint32_t tokenId)
+{
+    if (CheckDeviceIdIllegal(remoteDeviceId)) {
+        DfxReportFailEvent(DbinderErrorCode::RPC_DRIVER, RADAR_ERR_INVALID_DATA, __FUNCTION__);
+        return DEVICEID_INVALID;
+    }
+    std::string sessionName = GetDatabusNameByProxy(proxy);
+    if (CheckSessionNameIsEmpty(sessionName)) {
+        DfxReportFailEvent(DbinderErrorCode::RPC_DRIVER, RADAR_GET_BUS_NAME_FAIL, __FUNCTION__);
+        return SESSION_NAME_NOT_FOUND;
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteUint16(IRemoteObject::DATABUS_TYPE) || !data.WriteString(GetLocalDeviceID()) ||
+        !data.WriteUint32(pid) || !data.WriteUint32(uid) || !data.WriteString(remoteDeviceId) ||
+        !data.WriteString(sessionName) || !data.WriteUint32(tokenId)) {
+        DBINDER_LOGE(LOG_LABEL, "write to parcel fail, handle:%{public}d", proxy->GetHandle());
+        DfxReportFailHandleEvent(DbinderErrorCode::RPC_DRIVER, proxy->GetHandle(),
+            RADAR_WRITE_PARCEL_FAIL, __FUNCTION__);
+        return WRITE_PARCEL_FAILED;
+    }
+    if (CheckInvokeListenThreadIllegal(proxy, data, reply)) {
+        DfxReportFailHandleEvent(DbinderErrorCode::RPC_DRIVER, proxy->GetHandle(),
+            RADAR_INVOKE_STUB_THREAD_FAIL, __FUNCTION__);
+        return INVOKE_STUB_THREAD_FAILED;
+    }
+
+    uint64_t stubIndex = reply.ReadUint64();
+    std::string serverSessionName = reply.ReadString();
+    std::string deviceId = reply.ReadString();
+    uint32_t selfTokenId = reply.ReadUint32();
+    if (CheckStubIndexAndSessionNameIllegal(stubIndex, serverSessionName, deviceId, proxy)) {
+        DfxReportFailHandleEvent(DbinderErrorCode::RPC_DRIVER, proxy->GetHandle(),
+            RADAR_SESSION_NAME_INVALID, __FUNCTION__);
+        return SESSION_NAME_INVALID;
+    }
+    if (!SetReplyMessage(replyMessage, stubIndex, serverSessionName, selfTokenId, proxy)) {
+        DfxReportFailHandleEvent(DbinderErrorCode::RPC_DRIVER, proxy->GetHandle(), RADAR_ERR_MEMCPY_DATA, __FUNCTION__);
+        return SESSION_NAME_INVALID;
+    }
+    return 0;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.04553353413939476
+--------------------------------------------------
+C_Code: 
+int uv_getaddrinfo(uv_loop_t* loop,
+                   uv_getaddrinfo_t* handle,
+                   uv_getaddrinfo_cb getaddrinfo_cb,
+                   const char* node,
+                   const char* service,
+                   const struct addrinfo* hints) {
+  int nodesize = 0;
+  int servicesize = 0;
+  int hintssize = 0;
+  char* alloc_ptr = NULL;
+
+  if (handle == NULL || getaddrinfo_cb == NULL ||
+     (node == NULL && service == NULL)) {
+    uv__set_sys_error(loop, WSAEINVAL);
+    goto error;
+  }
+
+  uv_req_init(loop, (uv_req_t*)handle);
+
+  handle->getaddrinfo_cb = getaddrinfo_cb;
+  handle->res = NULL;
+  handle->type = UV_GETADDRINFO;
+  handle->loop = loop;
+
+  /* calculate required memory size for all input values */
+  if (node != NULL) {
+    nodesize = ALIGNED_SIZE(uv_utf8_to_utf16(node, NULL, 0) * sizeof(wchar_t));
+    if (nodesize == 0) {
+      uv__set_sys_error(loop, GetLastError());
+      goto error;
+    }
+  }
+
+  if (service != NULL) {
+    servicesize = ALIGNED_SIZE(uv_utf8_to_utf16(service, NULL, 0) *
+                               sizeof(wchar_t));
+    if (servicesize == 0) {
+      uv__set_sys_error(loop, GetLastError());
+      goto error;
+    }
+  }
+  if (hints != NULL) {
+    hintssize = ALIGNED_SIZE(sizeof(struct addrinfoW));
+  }
+
+  /* allocate memory for inputs, and partition it as needed */
+  alloc_ptr = (char*)malloc(nodesize + servicesize + hintssize);
+  if (!alloc_ptr) {
+    uv__set_sys_error(loop, WSAENOBUFS);
+    goto error;
+  }
+
+  /* save alloc_ptr now so we can free if error */
+  handle->alloc = (void*)alloc_ptr;
+
+  /* convert node string to UTF16 into allocated memory and save pointer in */
+  /* handle */
+  if (node != NULL) {
+    handle->node = (wchar_t*)alloc_ptr;
+    if (uv_utf8_to_utf16(node,
+                         (wchar_t*) alloc_ptr,
+                         nodesize / sizeof(wchar_t)) == 0) {
+      uv__set_sys_error(loop, GetLastError());
+      goto error;
+    }
+    alloc_ptr += nodesize;
+  } else {
+    handle->node = NULL;
+  }
+
+  /* convert service string to UTF16 into allocated memory and save pointer */
+  /* in handle */
+  if (service != NULL) {
+    handle->service = (wchar_t*)alloc_ptr;
+    if (uv_utf8_to_utf16(service,
+                         (wchar_t*) alloc_ptr,
+                         servicesize / sizeof(wchar_t)) == 0) {
+      uv__set_sys_error(loop, GetLastError());
+      goto error;
+    }
+    alloc_ptr += servicesize;
+  } else {
+    handle->service = NULL;
+  }
+
+  /* copy hints to allocated memory and save pointer in handle */
+  if (hints != NULL) {
+    handle->hints = (struct addrinfoW*)alloc_ptr;
+    handle->hints->ai_family = hints->ai_family;
+    handle->hints->ai_socktype = hints->ai_socktype;
+    handle->hints->ai_protocol = hints->ai_protocol;
+    handle->hints->ai_flags = hints->ai_flags;
+    handle->hints->ai_addrlen = 0;
+    handle->hints->ai_canonname = NULL;
+    handle->hints->ai_addr = NULL;
+    handle->hints->ai_next = NULL;
+  } else {
+    handle->hints = NULL;
+  }
+
+  /* init request for Post handling */
+  uv_req_init(loop, &handle->getadddrinfo_req);
+  handle->getadddrinfo_req.data = handle;
+  handle->getadddrinfo_req.type = UV_GETADDRINFO_REQ;
+
+  /* Ask thread to run. Treat this as a long operation */
+  if (QueueUserWorkItem(&getaddrinfo_thread_proc,
+                        handle,
+                        WT_EXECUTELONGFUNCTION) == 0) {
+    uv__set_sys_error(loop, GetLastError());
+    goto error;
+  }
+
+  uv_ref(loop);
+
+  return 0;
+
+error:
+  if (handle != NULL && handle->alloc != NULL) {
+    free(handle->alloc);
+  }
+  return -1;
+}
+Function: 
+fn install_req_data(&mut self) {
+        let req = self.native_handle() as *uvll::uv_getaddrinfo_t;
+        let data = ~RequestData {
+            getaddrinfo_cb: None
+        };
+        unsafe {
+            let data = transmute::<~RequestData, *c_void>(data);
+            uvll::set_data_for_req(req, data);
+        }
+    }
+Unixcoder Score: -0.046057652682065964
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::Remove(uint32_t taskId)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility Remove started.");
+    return instance->Remove(taskId, IPCSkeleton::GetCallingUid());
+}
+Function: 
+pub fn remove(&mut self, uid: u64, task_id: u32) -> ErrorCode {
+        log_debug!("Remove a task");
+        let task = {
+            let task_map_guard = self.task_map.lock().unwrap();
+            let task = self.get_task(uid, task_id, &task_map_guard);
+            if let None = task {
+                log_error!("Remove failed");
+                return ErrorCode::TaskNotFound;
+            }
+            let task = task.unwrap();
+            task.set_status(State::REMOVED, Reason::UserOperation);
+            task
+        };
+        self.after_task_processed(task);
+        log_info!("remove success");
+        ErrorCode::ErrOk
+    }
+Unixcoder Score: -0.046881381422281265
+--------------------------------------------------

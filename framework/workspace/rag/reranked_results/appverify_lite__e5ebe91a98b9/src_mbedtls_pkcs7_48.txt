@@ -1,0 +1,282 @@
+C_Code: 
+static std::string X509_to_PEM(X509 *cert)
+{
+    if (!cert) {
+        return {};
+    }
+    BIO *bio = BIO_new(BIO_s_mem());
+    if (!bio) {
+        return {};
+    }
+    if (!PEM_write_bio_X509(bio, cert)) {
+        BIO_free(bio);
+        return {};
+    }
+
+    char *data = nullptr;
+    auto pemStringLength = BIO_get_mem_data(bio, &data);
+    if (!data) {
+        BIO_free(bio);
+        return {};
+    }
+    std::string certificateInPEM(data, pemStringLength);
+    BIO_free(bio);
+    return certificateInPEM;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Unixcoder Score: 0.06895764172077179
+--------------------------------------------------
+C_Code: 
+static void LoadCaCertFromMemory(X509_STORE *store, const std::string &pemCerts)
+{
+    if (!store || pemCerts.empty() || pemCerts.size() > static_cast<size_t>(INT_MAX)) {
+        return;
+    }
+
+    auto cbio = BIO_new_mem_buf(pemCerts.data(), static_cast<int>(pemCerts.size()));
+    if (!cbio) {
+        return;
+    }
+
+    auto inf = PEM_X509_INFO_read_bio(cbio, nullptr, nullptr, nullptr);
+    if (!inf) {
+        BIO_free(cbio);
+        return;
+    }
+
+    /* add each entry from PEM file to x509_store */
+    for (int i = 0; i < static_cast<int>(sk_X509_INFO_num(inf)); ++i) {
+        auto itmp = sk_X509_INFO_value(inf, i);
+        if (!itmp) {
+            continue;
+        }
+        if (itmp->x509) {
+            X509_STORE_add_cert(store, itmp->x509);
+        }
+        if (itmp->crl) {
+            X509_STORE_add_crl(store, itmp->crl);
+        }
+    }
+
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    BIO_free(cbio);
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetServerSSLCertOption__idx5357_rank4.c", "source_rust_file": "API_Mapping__SetServerSSLCertOption__idx5357_rank4.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_CAINFO, nullptr, context)", "rust_api": "self.0.add_root_certificate(cert)", "mapping_type": "function", "description": "Setting CA info option in CURL to use system certificates", "reasoning": "[Task Analysis] C function sets SSL certificate options for a CURL handle based on network security config; Rust function adds root certificates to a builder pattern. [Similarity] Names don't match but both involve certificate handling logic. [Knowledge Extraction] Found API mapping for certificate addition in builder pattern, no full or partial structural match due to domain mismatch (network config vs certificate builder)."}]
+Unixcoder Score: 0.042858533561229706
+--------------------------------------------------
+C_Code: 
+void LoadCallbackWrapper::OnLoadSystemAbilitySuccess(int32_t systemAbilityId, const sptr<IRemoteObject> &remoteObject)
+{
+    on_success_();
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        info!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.0377315916121006
+--------------------------------------------------
+C_Code: 
+int32_t LoadSystemAbilityWithCallback(int32_t systemAbilityId, rust::Fn<void()> on_success, rust::Fn<void()> on_fail)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto callback = sptr<LoadCallbackWrapper>::MakeSptr(on_success, on_fail);
+    return sysm->LoadSystemAbility(systemAbilityId, callback);
+}
+Function: 
+pub fn load_system_ability_with_callback(said: i32, on_success: fn(), on_fail: fn()) -> i32 {
+        debug!("load system ability {}", said);
+        LoadSystemAbilityWithCallback(said, on_success, on_fail)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx120850_rank1.c", "source_rust_file": "Partial__rust_start__idx120850_rank1.rs", "c_api": "panic::catch_unwind", "rust_api": "panic::catch_unwind", "mapping_type": "function", "description": "Exception handling and panic recovery mechanism", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes a Rust kernel, creates a main task, and runs the kernel. Rust function `lang_start_internal` is a lang item that handles runtime initialization, cleanup, and main execution with panic handling. [Similarity] The overall task is different: C initializes a custom kernel while Rust handles standard runtime startup. [Knowledge Extraction] No full structural match due to different domains (custom kernel vs standard runtime). However, both handle initialization, task creation, and execution lifecycle. API mappings found for panic handling and cleanup patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx120850_rank1.c", "source_rust_file": "Partial__rust_start__idx120850_rank1.rs", "c_api": "init(argc, argv, sigpipe)", "rust_api": "init(argc, argv, sigpipe)", "mapping_type": "function", "description": "Runtime initialization function", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes a Rust kernel, creates a main task, and runs the kernel. Rust function `lang_start_internal` is a lang item that handles runtime initialization, cleanup, and main execution with panic handling. [Similarity] The overall task is different: C initializes a custom kernel while Rust handles standard runtime startup. [Knowledge Extraction] No full structural match due to different domains (custom kernel vs standard runtime). However, both handle initialization, task creation, and execution lifecycle. API mappings found for panic handling and cleanup patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__rust_start__idx120850_rank1.c", "source_rust_file": "Partial__rust_start__idx120850_rank1.rs", "c_fragment": "panic::catch_unwind(cleanup).map_err(rt_abort)?;", "rust_fragment": "delete kernel;\n    free_env(env);", "description": "Both perform cleanup operations at the end of execution lifecycle.", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes a Rust kernel, creates a main task, and runs the kernel. Rust function `lang_start_internal` is a lang item that handles runtime initialization, cleanup, and main execution with panic handling. [Similarity] The overall task is different: C initializes a custom kernel while Rust handles standard runtime startup. [Knowledge Extraction] No full structural match due to different domains (custom kernel vs standard runtime). However, both handle initialization, task creation, and execution lifecycle. API mappings found for panic handling and cleanup patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx120850_rank1.c", "source_rust_file": "Partial__rust_start__idx120850_rank1.rs", "c_api": "rtabort!", "rust_api": "rtabort!", "mapping_type": "function", "description": "Abort function for runtime errors", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes a Rust kernel, creates a main task, and runs the kernel. Rust function `lang_start_internal` is a lang item that handles runtime initialization, cleanup, and main execution with panic handling. [Similarity] The overall task is different: C initializes a custom kernel while Rust handles standard runtime startup. [Knowledge Extraction] No full structural match due to different domains (custom kernel vs standard runtime). However, both handle initialization, task creation, and execution lifecycle. API mappings found for panic handling and cleanup patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__rust_start__idx120850_rank1.c", "source_rust_file": "Partial__rust_start__idx120850_rank1.rs", "c_fragment": "rust_kernel *kernel = new rust_kernel(env);\n\n    // Create the main task\n    rust_sched_id sched_id = kernel->main_sched_id();\n    rust_scheduler *sched = kernel->get_scheduler_by_id(sched_id);\n    assert(sched != NULL);\n    rust_task *root_task = sched->create_task(NULL, \"main\");\n\n    // Schedule the main Rust task\n    root_task->start((spawn_fn)main_fn, NULL, NULL);", "rust_fragment": "panic::catch_unwind(move || unsafe { init(argc, argv, sigpipe) }).map_err(rt_abort)?;", "description": "Both handle initialization of runtime components and task setup, though in different ways.", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes a Rust kernel, creates a main task, and runs the kernel. Rust function `lang_start_internal` is a lang item that handles runtime initialization, cleanup, and main execution with panic handling. [Similarity] The overall task is different: C initializes a custom kernel while Rust handles standard runtime startup. [Knowledge Extraction] No full structural match due to different domains (custom kernel vs standard runtime). However, both handle initialization, task creation, and execution lifecycle. API mappings found for panic handling and cleanup patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx120850_rank1.c", "source_rust_file": "Partial__rust_start__idx120850_rank1.rs", "c_api": "cleanup", "rust_api": "cleanup", "mapping_type": "function", "description": "Runtime cleanup function", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes a Rust kernel, creates a main task, and runs the kernel. Rust function `lang_start_internal` is a lang item that handles runtime initialization, cleanup, and main execution with panic handling. [Similarity] The overall task is different: C initializes a custom kernel while Rust handles standard runtime startup. [Knowledge Extraction] No full structural match due to different domains (custom kernel vs standard runtime). However, both handle initialization, task creation, and execution lifecycle. API mappings found for panic handling and cleanup patterns."}]
+Unixcoder Score: 0.03755473345518112
+--------------------------------------------------
+C_Code: 
+int32_t LoadSystemAbilityWithCallback(int32_t systemAbilityId, rust::Fn<void()> on_success, rust::Fn<void()> on_fail)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto callback = sptr<LoadCallbackWrapper>::MakeSptr(on_success, on_fail);
+    return sysm->LoadSystemAbility(systemAbilityId, callback);
+}
+Function: 
+pub fn load_system_ability_with_callback(said: i32, on_success: fn(), on_fail: fn()) -> i32 {
+        info!("load system ability {}", said);
+        LoadSystemAbilityWithCallback(said, on_success, on_fail)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_start__idx68176_rank1.c", "source_rust_file": "API_Mapping__rust_start__idx68176_rank1.rs", "c_api": "new rust_kernel(env)", "rust_api": "fn start<T>(_main: fn() -> T, _argc: isize, _argv: *const *const u8, _sigpipe: u8) {}", "mapping_type": "function", "description": "Kernel initialization", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` is a stub with no logic. [Similarity] Names do not refer to the same concept (`rust_start` vs `start`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial match due to name mismatch and empty Rust code. However, there are API mappings related to task creation and kernel management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_start__idx68176_rank1.c", "source_rust_file": "API_Mapping__rust_start__idx68176_rank1.rs", "c_api": "delete kernel", "rust_api": "fn start<T>(_main: fn() -> T, _argc: isize, _argv: *const *const u8, _sigpipe: u8) {}", "mapping_type": "function", "description": "Cleanup kernel", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` is a stub with no logic. [Similarity] Names do not refer to the same concept (`rust_start` vs `start`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial match due to name mismatch and empty Rust code. However, there are API mappings related to task creation and kernel management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_start__idx68176_rank1.c", "source_rust_file": "API_Mapping__rust_start__idx68176_rank1.rs", "c_api": "root_task->start((spawn_fn)main_fn, NULL, NULL)", "rust_api": "fn start<T>(_main: fn() -> T, _argc: isize, _argv: *const *const u8, _sigpipe: u8) {}", "mapping_type": "function", "description": "Start main task", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` is a stub with no logic. [Similarity] Names do not refer to the same concept (`rust_start` vs `start`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial match due to name mismatch and empty Rust code. However, there are API mappings related to task creation and kernel management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_start__idx68176_rank1.c", "source_rust_file": "API_Mapping__rust_start__idx68176_rank1.rs", "c_api": "kernel->get_scheduler_by_id(sched_id)", "rust_api": "fn start<T>(_main: fn() -> T, _argc: isize, _argv: *const *const u8, _sigpipe: u8) {}", "mapping_type": "function", "description": "Get scheduler by ID", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` is a stub with no logic. [Similarity] Names do not refer to the same concept (`rust_start` vs `start`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial match due to name mismatch and empty Rust code. However, there are API mappings related to task creation and kernel management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_start__idx68176_rank1.c", "source_rust_file": "API_Mapping__rust_start__idx68176_rank1.rs", "c_api": "kernel->run()", "rust_api": "fn start<T>(_main: fn() -> T, _argc: isize, _argv: *const *const u8, _sigpipe: u8) {}", "mapping_type": "function", "description": "Run kernel loop", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` is a stub with no logic. [Similarity] Names do not refer to the same concept (`rust_start` vs `start`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial match due to name mismatch and empty Rust code. However, there are API mappings related to task creation and kernel management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_start__idx68176_rank1.c", "source_rust_file": "API_Mapping__rust_start__idx68176_rank1.rs", "c_api": "sched->create_task(NULL, \"main\")", "rust_api": "fn start<T>(_main: fn() -> T, _argc: isize, _argv: *const *const u8, _sigpipe: u8) {}", "mapping_type": "function", "description": "Create main task", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` is a stub with no logic. [Similarity] Names do not refer to the same concept (`rust_start` vs `start`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial match due to name mismatch and empty Rust code. However, there are API mappings related to task creation and kernel management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_start__idx68176_rank1.c", "source_rust_file": "API_Mapping__rust_start__idx68176_rank1.rs", "c_api": "kernel->main_sched_id()", "rust_api": "fn start<T>(_main: fn() -> T, _argc: isize, _argv: *const *const u8, _sigpipe: u8) {}", "mapping_type": "function", "description": "Get main scheduler ID", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` is a stub with no logic. [Similarity] Names do not refer to the same concept (`rust_start` vs `start`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial match due to name mismatch and empty Rust code. However, there are API mappings related to task creation and kernel management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_start__idx68176_rank1.c", "source_rust_file": "API_Mapping__rust_start__idx68176_rank1.rs", "c_api": "free_env(env)", "rust_api": "fn start<T>(_main: fn() -> T, _argc: isize, _argv: *const *const u8, _sigpipe: u8) {}", "mapping_type": "function", "description": "Free environment", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` is a stub with no logic. [Similarity] Names do not refer to the same concept (`rust_start` vs `start`), and the Rust side is trivial/empty. [Knowledge Extraction] No full or partial match due to name mismatch and empty Rust code. However, there are API mappings related to task creation and kernel management."}]
+Unixcoder Score: 0.03462496027350426
+--------------------------------------------------
+C_Code: 
+int32_t LoadSystemAbilityWithCallback(int32_t systemAbilityId, rust::Fn<void()> on_success, rust::Fn<void()> on_fail)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto callback = sptr<LoadCallbackWrapper>::MakeSptr(on_success, on_fail);
+    return sysm->LoadSystemAbility(systemAbilityId, callback);
+}
+Function: 
+pub fn load_system_ability_with_callback(said: i32, on_success: fn(), on_fail: fn()) -> i32 {
+        info!("load system ability {}", said);
+        LoadSystemAbilityWithCallback(said, on_success, on_fail)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__bi_scan__idx79838_rank3.c", "source_rust_file": "Partial__bi_scan__idx79838_rank3.rs", "c_fragment": "biR = bi_0;\nfor (;;)\n    {\n    c = getc( f );\n    if ( c < '0' || c > '9' )\n        break;\n    biR = bi_int_add( bi_int_multiply( biR, 10 ), c - '0' );\n    }", "rust_fragment": "assert BigInt::from_str_radix(~\"10\", 10).get();\nassert BigInt::from_str_radix(~\"1\", 10).get();\nassert BigInt::from_str_radix(~\"0\", 10).get();", "description": "Iteratively building integer from character digits", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('bi_scan' vs 'test_from_str_radix'), but both involve bigint parsing logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve parsing numeric strings into big integers, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a parser, Rust function is a test suite; however, the test suite contains logic that mirrors the parsing behavior. [Full BLOCKERS] -> Code lengths are not mismatched (>3x), and both are implementation-level logic. [Semantic & Domain Consistency] -> Both perform string-to-bigint conversion, so domain is consistent. [Partial/Full Classification] -> While not full due to test vs implementation mismatch, there are structural similarities in how numbers are parsed and validated. [API Mappings] -> There are API correspondences in how big integer values are constructed and validated from string representations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_scan__idx79838_rank3.c", "source_rust_file": "Partial__bi_scan__idx79838_rank3.rs", "c_api": "bi_int_multiply( biR, 10 )", "rust_api": "BigInt::from_biguint(Plus, BigUint::from_uint(10))", "mapping_type": "function", "description": "Multiplying current value by 10 during digit accumulation", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('bi_scan' vs 'test_from_str_radix'), but both involve bigint parsing logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve parsing numeric strings into big integers, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a parser, Rust function is a test suite; however, the test suite contains logic that mirrors the parsing behavior. [Full BLOCKERS] -> Code lengths are not mismatched (>3x), and both are implementation-level logic. [Semantic & Domain Consistency] -> Both perform string-to-bigint conversion, so domain is consistent. [Partial/Full Classification] -> While not full due to test vs implementation mismatch, there are structural similarities in how numbers are parsed and validated. [API Mappings] -> There are API correspondences in how big integer values are constructed and validated from string representations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_scan__idx79838_rank3.c", "source_rust_file": "Partial__bi_scan__idx79838_rank3.rs", "c_api": "getc( f )", "rust_api": "BigInt::from_str_radix(~\"10\", 10).get()", "mapping_type": "function", "description": "Reading character input from file stream to parse number", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('bi_scan' vs 'test_from_str_radix'), but both involve bigint parsing logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve parsing numeric strings into big integers, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a parser, Rust function is a test suite; however, the test suite contains logic that mirrors the parsing behavior. [Full BLOCKERS] -> Code lengths are not mismatched (>3x), and both are implementation-level logic. [Semantic & Domain Consistency] -> Both perform string-to-bigint conversion, so domain is consistent. [Partial/Full Classification] -> While not full due to test vs implementation mismatch, there are structural similarities in how numbers are parsed and validated. [API Mappings] -> There are API correspondences in how big integer values are constructed and validated from string representations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__bi_scan__idx79838_rank3.c", "source_rust_file": "Partial__bi_scan__idx79838_rank3.rs", "c_fragment": "sign = 1;\nc = getc( f );\nif ( c == '-' )\n    sign = -1;\nelse\n    ungetc( c, f );", "rust_fragment": "assert BigInt::from_biguint(Plus, BigUint::from_uint(10)) == BigInt::from_str_radix(~\"10\", 10).get();\nassert BigInt::one()== BigInt::from_str_radix(~\"1\", 10).get();\nassert BigInt::zero() == BigInt::from_str_radix(~\"0\", 10).get();", "description": "Parsing sign and numeric values from string input", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('bi_scan' vs 'test_from_str_radix'), but both involve bigint parsing logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve parsing numeric strings into big integers, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a parser, Rust function is a test suite; however, the test suite contains logic that mirrors the parsing behavior. [Full BLOCKERS] -> Code lengths are not mismatched (>3x), and both are implementation-level logic. [Semantic & Domain Consistency] -> Both perform string-to-bigint conversion, so domain is consistent. [Partial/Full Classification] -> While not full due to test vs implementation mismatch, there are structural similarities in how numbers are parsed and validated. [API Mappings] -> There are API correspondences in how big integer values are constructed and validated from string representations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_scan__idx79838_rank3.c", "source_rust_file": "Partial__bi_scan__idx79838_rank3.rs", "c_api": "c - '0'", "rust_api": "BigUint::from_uint(10)", "mapping_type": "function", "description": "Converting ASCII digit to numeric value", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('bi_scan' vs 'test_from_str_radix'), but both involve bigint parsing logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve parsing numeric strings into big integers, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a parser, Rust function is a test suite; however, the test suite contains logic that mirrors the parsing behavior. [Full BLOCKERS] -> Code lengths are not mismatched (>3x), and both are implementation-level logic. [Semantic & Domain Consistency] -> Both perform string-to-bigint conversion, so domain is consistent. [Partial/Full Classification] -> While not full due to test vs implementation mismatch, there are structural similarities in how numbers are parsed and validated. [API Mappings] -> There are API correspondences in how big integer values are constructed and validated from string representations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_scan__idx79838_rank3.c", "source_rust_file": "Partial__bi_scan__idx79838_rank3.rs", "c_api": "bi_negate( biR )", "rust_api": "BigInt::from_biguint(Minus, BigUint::one())", "mapping_type": "function", "description": "Applying negative sign to result", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('bi_scan' vs 'test_from_str_radix'), but both involve bigint parsing logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve parsing numeric strings into big integers, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a parser, Rust function is a test suite; however, the test suite contains logic that mirrors the parsing behavior. [Full BLOCKERS] -> Code lengths are not mismatched (>3x), and both are implementation-level logic. [Semantic & Domain Consistency] -> Both perform string-to-bigint conversion, so domain is consistent. [Partial/Full Classification] -> While not full due to test vs implementation mismatch, there are structural similarities in how numbers are parsed and validated. [API Mappings] -> There are API correspondences in how big integer values are constructed and validated from string representations."}]
+Unixcoder Score: 0.032572824507951736
+--------------------------------------------------
+C_Code: 
+int32_t LoadSystemAbilityWithCallback(int32_t systemAbilityId, rust::Fn<void()> on_success, rust::Fn<void()> on_fail)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto callback = sptr<LoadCallbackWrapper>::MakeSptr(on_success, on_fail);
+    return sysm->LoadSystemAbility(systemAbilityId, callback);
+}
+Function: 
+pub fn load_system_ability_with_callback(said: i32, on_success: fn(), on_fail: fn()) -> i32 {
+        info!("load system ability {}", said);
+        LoadSystemAbilityWithCallback(said, on_success, on_fail)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__rust_start__idx10647_rank1.c", "source_rust_file": "Partial__rust_start__idx10647_rank1.rs", "c_fragment": "rust_env *env = load_env(argc, argv);\n\n    global_crate_map = crate_map;\n\n    update_gc_metadata(crate_map);\n\n    update_log_settings(crate_map, env->logspec);\n\n    rust_kernel *kernel = new rust_kernel(env);\n\n    // Create the main task\n    rust_sched_id sched_id = kernel->main_sched_id();\n    rust_scheduler *sched = kernel->get_scheduler_by_id(sched_id);\n    assert(sched != NULL);\n    rust_task *root_task = sched->create_task(NULL, \"main\");\n\n    // Schedule the main Rust task\n    root_task->start((spawn_fn)main_fn, NULL, NULL);\n\n    // At this point the task lifecycle is responsible for it\n    // and our pointer may not be valid\n    root_task = NULL;\n\n    // Run the kernel until all schedulers exit\n    int ret = kernel->run();", "rust_fragment": "rt::init(argc, argv);\n    let exit_code = run(main);\n    // unsafe is ok b/c we're sure that the runtime is gone\n    unsafe { rt::cleanup() }\n    exit_code", "description": "Both functions initialize runtime components, execute a main task, and perform cleanup.", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` initializes the runtime, runs the main task, and cleans up. [Similarity] Names do not match (`rust_start` vs `start`), but both functions perform similar high-level runtime initialization and execution logic. [Knowledge Extraction] The core logic of initializing runtime, running a main task, and cleaning up is present in both. However, the domain is different: C uses manual memory management and scheduler logic while Rust uses higher-level abstractions. The structural similarity is partial due to different control flow and implementation details. API mappings are present for runtime initialization and execution patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx10647_rank1.c", "source_rust_file": "Partial__rust_start__idx10647_rank1.rs", "c_api": "delete kernel", "rust_api": "unsafe { rt::cleanup() }", "mapping_type": "function", "description": "Cleanup of runtime resources", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` initializes the runtime, runs the main task, and cleans up. [Similarity] Names do not match (`rust_start` vs `start`), but both functions perform similar high-level runtime initialization and execution logic. [Knowledge Extraction] The core logic of initializing runtime, running a main task, and cleaning up is present in both. However, the domain is different: C uses manual memory management and scheduler logic while Rust uses higher-level abstractions. The structural similarity is partial due to different control flow and implementation details. API mappings are present for runtime initialization and execution patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx10647_rank1.c", "source_rust_file": "Partial__rust_start__idx10647_rank1.rs", "c_api": "kernel->run()", "rust_api": "run(main)", "mapping_type": "function", "description": "Execution of the main task loop", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` initializes the runtime, runs the main task, and cleans up. [Similarity] Names do not match (`rust_start` vs `start`), but both functions perform similar high-level runtime initialization and execution logic. [Knowledge Extraction] The core logic of initializing runtime, running a main task, and cleaning up is present in both. However, the domain is different: C uses manual memory management and scheduler logic while Rust uses higher-level abstractions. The structural similarity is partial due to different control flow and implementation details. API mappings are present for runtime initialization and execution patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx10647_rank1.c", "source_rust_file": "Partial__rust_start__idx10647_rank1.rs", "c_api": "load_env(argc, argv)", "rust_api": "rt::init(argc, argv)", "mapping_type": "function", "description": "Environment and runtime initialization", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` initializes the runtime, runs the main task, and cleans up. [Similarity] Names do not match (`rust_start` vs `start`), but both functions perform similar high-level runtime initialization and execution logic. [Knowledge Extraction] The core logic of initializing runtime, running a main task, and cleaning up is present in both. However, the domain is different: C uses manual memory management and scheduler logic while Rust uses higher-level abstractions. The structural similarity is partial due to different control flow and implementation details. API mappings are present for runtime initialization and execution patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx10647_rank1.c", "source_rust_file": "Partial__rust_start__idx10647_rank1.rs", "c_api": "root_task->start((spawn_fn)main_fn, NULL, NULL)", "rust_api": "run(main)", "mapping_type": "function", "description": "Starting execution of the main task", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` initializes the runtime, runs the main task, and cleans up. [Similarity] Names do not match (`rust_start` vs `start`), but both functions perform similar high-level runtime initialization and execution logic. [Knowledge Extraction] The core logic of initializing runtime, running a main task, and cleaning up is present in both. However, the domain is different: C uses manual memory management and scheduler logic while Rust uses higher-level abstractions. The structural similarity is partial due to different control flow and implementation details. API mappings are present for runtime initialization and execution patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx10647_rank1.c", "source_rust_file": "Partial__rust_start__idx10647_rank1.rs", "c_api": "sched->create_task(NULL, \"main\")", "rust_api": "run(main)", "mapping_type": "function", "description": "Creation and scheduling of the main task", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` initializes the runtime, runs the main task, and cleans up. [Similarity] Names do not match (`rust_start` vs `start`), but both functions perform similar high-level runtime initialization and execution logic. [Knowledge Extraction] The core logic of initializing runtime, running a main task, and cleaning up is present in both. However, the domain is different: C uses manual memory management and scheduler logic while Rust uses higher-level abstractions. The structural similarity is partial due to different control flow and implementation details. API mappings are present for runtime initialization and execution patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx10647_rank1.c", "source_rust_file": "Partial__rust_start__idx10647_rank1.rs", "c_api": "kernel->main_sched_id()", "rust_api": "rt::init(argc, argv)", "mapping_type": "function", "description": "Initialization of scheduler or runtime context", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` initializes the runtime, runs the main task, and cleans up. [Similarity] Names do not match (`rust_start` vs `start`), but both functions perform similar high-level runtime initialization and execution logic. [Knowledge Extraction] The core logic of initializing runtime, running a main task, and cleaning up is present in both. However, the domain is different: C uses manual memory management and scheduler logic while Rust uses higher-level abstractions. The structural similarity is partial due to different control flow and implementation details. API mappings are present for runtime initialization and execution patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx10647_rank1.c", "source_rust_file": "Partial__rust_start__idx10647_rank1.rs", "c_api": "kernel->get_scheduler_by_id(sched_id)", "rust_api": "rt::init(argc, argv)", "mapping_type": "function", "description": "Accessing scheduler or runtime context", "reasoning": "[Task Analysis] C function `rust_start` is a runtime entry point that initializes environment, creates a kernel, schedules a main task, and runs the kernel. Rust function `start` initializes the runtime, runs the main task, and cleans up. [Similarity] Names do not match (`rust_start` vs `start`), but both functions perform similar high-level runtime initialization and execution logic. [Knowledge Extraction] The core logic of initializing runtime, running a main task, and cleaning up is present in both. However, the domain is different: C uses manual memory management and scheduler logic while Rust uses higher-level abstractions. The structural similarity is partial due to different control flow and implementation details. API mappings are present for runtime initialization and execution patterns."}]
+Unixcoder Score: 0.030811207368969917
+--------------------------------------------------
+C_Code: 
+int32_t LoadSystemAbilityWithCallback(int32_t systemAbilityId, rust::Fn<void()> on_success, rust::Fn<void()> on_fail)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto callback = sptr<LoadCallbackWrapper>::MakeSptr(on_success, on_fail);
+    return sysm->LoadSystemAbility(systemAbilityId, callback);
+}
+Function: 
+pub fn load_system_ability_with_callback(said: i32, on_success: fn(), on_fail: fn()) -> i32 {
+        debug!("load system ability {}", said);
+        LoadSystemAbilityWithCallback(said, on_success, on_fail)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx9239_rank1.c", "source_rust_file": "Partial__rust_start__idx9239_rank1.rs", "c_api": "free_env(env)", "rust_api": "core::rt::start(...)", "mapping_type": "function", "description": "Cleanup of environment after runtime start", "reasoning": "[Task Analysis] C function `rust_start` and Rust function `start` both handle runtime initialization and task scheduling, but with different control flows and abstractions. [Similarity] Names do not match exactly, and the C version has more explicit memory management and task creation logic, while Rust uses a higher-level `core::rt::start`. [Knowledge Extraction] No full structural match due to domain mismatch (C: explicit task/scheduler management; Rust: high-level runtime start), but partial fragments and API mappings can be extracted based on similar high-level intent and control flow patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__rust_start__idx9239_rank1.c", "source_rust_file": "Partial__rust_start__idx9239_rank1.rs", "c_fragment": "int ret = kernel->run();", "rust_fragment": "do core::rt::start(argc, argv, crate_map) { debug!(\"creating my own runtime is joy\"); }", "description": "Both represent the core execution loop or runtime start.", "reasoning": "[Task Analysis] C function `rust_start` and Rust function `start` both handle runtime initialization and task scheduling, but with different control flows and abstractions. [Similarity] Names do not match exactly, and the C version has more explicit memory management and task creation logic, while Rust uses a higher-level `core::rt::start`. [Knowledge Extraction] No full structural match due to domain mismatch (C: explicit task/scheduler management; Rust: high-level runtime start), but partial fragments and API mappings can be extracted based on similar high-level intent and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx9239_rank1.c", "source_rust_file": "Partial__rust_start__idx9239_rank1.rs", "c_api": "new rust_kernel(env)", "rust_api": "core::rt::start", "mapping_type": "function", "description": "Runtime/kernel initialization", "reasoning": "[Task Analysis] C function `rust_start` and Rust function `start` both handle runtime initialization and task scheduling, but with different control flows and abstractions. [Similarity] Names do not match exactly, and the C version has more explicit memory management and task creation logic, while Rust uses a higher-level `core::rt::start`. [Knowledge Extraction] No full structural match due to domain mismatch (C: explicit task/scheduler management; Rust: high-level runtime start), but partial fragments and API mappings can be extracted based on similar high-level intent and control flow patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__rust_start__idx9239_rank1.c", "source_rust_file": "Partial__rust_start__idx9239_rank1.rs", "c_fragment": "rust_kernel *kernel = new rust_kernel(env);", "rust_fragment": "do core::rt::start(argc, argv, crate_map)", "description": "Both initialize a runtime/kernel context for execution.", "reasoning": "[Task Analysis] C function `rust_start` and Rust function `start` both handle runtime initialization and task scheduling, but with different control flows and abstractions. [Similarity] Names do not match exactly, and the C version has more explicit memory management and task creation logic, while Rust uses a higher-level `core::rt::start`. [Knowledge Extraction] No full structural match due to domain mismatch (C: explicit task/scheduler management; Rust: high-level runtime start), but partial fragments and API mappings can be extracted based on similar high-level intent and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_start__idx9239_rank1.c", "source_rust_file": "Partial__rust_start__idx9239_rank1.rs", "c_api": "kernel->run()", "rust_api": "core::rt::start(...)", "mapping_type": "function", "description": "Starts the runtime execution loop", "reasoning": "[Task Analysis] C function `rust_start` and Rust function `start` both handle runtime initialization and task scheduling, but with different control flows and abstractions. [Similarity] Names do not match exactly, and the C version has more explicit memory management and task creation logic, while Rust uses a higher-level `core::rt::start`. [Knowledge Extraction] No full structural match due to domain mismatch (C: explicit task/scheduler management; Rust: high-level runtime start), but partial fragments and API mappings can be extracted based on similar high-level intent and control flow patterns."}]
+Unixcoder Score: 0.029868558049201965
+--------------------------------------------------
+C_Code: 
+int32_t LoadSystemAbilityWithCallback(int32_t systemAbilityId, rust::Fn<void()> on_success, rust::Fn<void()> on_fail)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto callback = sptr<LoadCallbackWrapper>::MakeSptr(on_success, on_fail);
+    return sysm->LoadSystemAbility(systemAbilityId, callback);
+}
+Function: 
+pub fn load_system_ability_with_callback(said: i32, on_success: fn(), on_fail: fn()) -> i32 {
+        debug!("load system ability {}", said);
+        LoadSystemAbilityWithCallback(said, on_success, on_fail)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_scan__idx79821_rank3.c", "source_rust_file": "Partial__bi_scan__idx79821_rank3.rs", "c_api": "getc( f )", "rust_api": "buf[0]", "mapping_type": "function", "description": "Character reading from input source", "reasoning": "[Task Analysis] C function `bi_scan` reads from a FILE* and parses a big integer, while Rust function `parse_bytes` parses a byte slice into a BigInt. [Similarity] Both perform string-to-integer conversion with sign handling and digit validation, but differ in data structures (FILE* vs &[u8]) and control flow (C uses manual loop, Rust uses library function). [Knowledge Extraction] Full match blocked by domain mismatch (C file I/O vs Rust slice parsing) and different data structures. Partial match found in digit parsing logic. API mappings identified for sign handling and digit conversion patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__bi_scan__idx79821_rank3.c", "source_rust_file": "Partial__bi_scan__idx79821_rank3.rs", "c_fragment": "for (;;)\n    {\n    c = getc( f );\n    if ( c < '0' || c > '9' )\n        break;\n    biR = bi_int_add( bi_int_multiply( biR, 10 ), c - '0' );\n    }", "rust_fragment": "return BigUint::parse_bytes(vec::view(buf, start, buf.len()), radix)\n    .map(|bu| BigInt::from_biguint(sign, *bu));", "description": "Digit parsing and numeric conversion logic", "reasoning": "[Task Analysis] C function `bi_scan` reads from a FILE* and parses a big integer, while Rust function `parse_bytes` parses a byte slice into a BigInt. [Similarity] Both perform string-to-integer conversion with sign handling and digit validation, but differ in data structures (FILE* vs &[u8]) and control flow (C uses manual loop, Rust uses library function). [Knowledge Extraction] Full match blocked by domain mismatch (C file I/O vs Rust slice parsing) and different data structures. Partial match found in digit parsing logic. API mappings identified for sign handling and digit conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_scan__idx79821_rank3.c", "source_rust_file": "Partial__bi_scan__idx79821_rank3.rs", "c_api": "bi_int_multiply( biR, 10 )", "rust_api": "BigUint::parse_bytes(...)", "mapping_type": "function", "description": "Numeric base conversion and digit accumulation", "reasoning": "[Task Analysis] C function `bi_scan` reads from a FILE* and parses a big integer, while Rust function `parse_bytes` parses a byte slice into a BigInt. [Similarity] Both perform string-to-integer conversion with sign handling and digit validation, but differ in data structures (FILE* vs &[u8]) and control flow (C uses manual loop, Rust uses library function). [Knowledge Extraction] Full match blocked by domain mismatch (C file I/O vs Rust slice parsing) and different data structures. Partial match found in digit parsing logic. API mappings identified for sign handling and digit conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_scan__idx79821_rank3.c", "source_rust_file": "Partial__bi_scan__idx79821_rank3.rs", "c_api": "c - '0'", "rust_api": "BigUint::parse_bytes(...)", "mapping_type": "pattern", "description": "Character to digit conversion", "reasoning": "[Task Analysis] C function `bi_scan` reads from a FILE* and parses a big integer, while Rust function `parse_bytes` parses a byte slice into a BigInt. [Similarity] Both perform string-to-integer conversion with sign handling and digit validation, but differ in data structures (FILE* vs &[u8]) and control flow (C uses manual loop, Rust uses library function). [Knowledge Extraction] Full match blocked by domain mismatch (C file I/O vs Rust slice parsing) and different data structures. Partial match found in digit parsing logic. API mappings identified for sign handling and digit conversion patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__bi_scan__idx79821_rank3.c", "source_rust_file": "Partial__bi_scan__idx79821_rank3.rs", "c_fragment": "c = getc( f );\nif ( c == '-' )\n    sign = -1;\nelse\n    ungetc( c, f );", "rust_fragment": "if buf[0] == ('-' as u8) {\n    sign  = Minus;\n    start = 1;\n}", "description": "Sign detection and handling logic", "reasoning": "[Task Analysis] C function `bi_scan` reads from a FILE* and parses a big integer, while Rust function `parse_bytes` parses a byte slice into a BigInt. [Similarity] Both perform string-to-integer conversion with sign handling and digit validation, but differ in data structures (FILE* vs &[u8]) and control flow (C uses manual loop, Rust uses library function). [Knowledge Extraction] Full match blocked by domain mismatch (C file I/O vs Rust slice parsing) and different data structures. Partial match found in digit parsing logic. API mappings identified for sign handling and digit conversion patterns."}]
+Unixcoder Score: 0.027210596948862076
+--------------------------------------------------
+C_Code: 
+CURLcode VerifyRootCaSslCtxFunction(CURL *curl, void *sslCtx, void *context)
+{
+#ifdef HTTP_ONLY_VERIFY_ROOT_CA_ENABLE
+    SSL_CTX *ctx = static_cast<SSL_CTX *>(sslCtx);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, VerifyCallback);
+    SSL_CTX_set_ex_data(ctx, SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX, context);
+#endif
+    return CURLE_OK;
+}
+Function: 
+pub fn tls_built_in_root_certs(self, tls_built_in_root_certs: bool) -> ClientBuilder {
+        Self(self.0.tls_built_in_root_certs(tls_built_in_root_certs))
+    }
+Unixcoder Score: 0.02694045752286911
+--------------------------------------------------

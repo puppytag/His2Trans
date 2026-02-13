@@ -1,0 +1,346 @@
+C_Code: 
+bool PathToRealPath(const string& path, string& realPath)
+{
+    if (path.empty()) {
+        UTILS_LOGD("path is empty!");
+        return false;
+    }
+
+    if ((path.length() >= PATH_MAX)) {
+        UTILS_LOGD("path len is error, the len is: [%{public}zu]", path.length());
+        return false;
+    }
+
+    char tmpPath[PATH_MAX] = {0};
+    if (realpath(path.c_str(), tmpPath) == nullptr) {
+        UTILS_LOGE("path (%{public}s) to realpath error: %{public}s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    realPath = tmpPath;
+    if (access(realPath.c_str(), F_OK) != 0) {
+        UTILS_LOGE("check realpath (%{private}s) error: %{public}s", realPath.c_str(), strerror(errno));
+        return false;
+    }
+    return true;
+}
+Function: 
+fn test_path_to_real_path_005()
+{
+    let path = "/data/test/data/test/data/test/data/test/data/test/data/ \
+    test/data/test/data/test/data/test/data/test/data/test/data/test/data/ \
+    test/data/test/data/test/data/test/data/test/data/test/data/test/data/ \
+    test/data/test/data/test/data/test/data/test/data/test/data/test/data/ \
+    test/data/test/data/test/data/test".to_string();
+    let mut realpath = String::new();
+    let ret = directory_ex::ffi::RustPathToRealPath(&path, &mut realpath);
+    assert!(!ret);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateAshmemStd__idx5436_rank4.c", "source_rust_file": "API_Mapping__CreateAshmemStd__idx5436_rank4.rs", "c_api": "std::shared_ptr<Ashmem> CreateAshmemStd", "rust_api": "ashmem::create_ashmem_instance", "mapping_type": "function", "description": "Ashmem instance creation with parameter validation", "reasoning": "[Task Analysis] C function creates Ashmem with validation and error handling; Rust test function validates Ashmem creation and behavior. [Similarity] Names don't match (CreateAshmemStd vs create_ashmem_instance), but both involve Ashmem creation and validation. [Knowledge Extraction] No full structural match due to domain mismatch (creation vs testing), but API mappings found for Ashmem creation and validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateAshmemStd__idx5436_rank4.c", "source_rust_file": "API_Mapping__CreateAshmemStd__idx5436_rank4.rs", "c_api": "UTILS_LOGE", "rust_api": "assert!(ashmem.is_none())", "mapping_type": "function", "description": "Error condition validation in test", "reasoning": "[Task Analysis] C function creates Ashmem with validation and error handling; Rust test function validates Ashmem creation and behavior. [Similarity] Names don't match (CreateAshmemStd vs create_ashmem_instance), but both involve Ashmem creation and validation. [Knowledge Extraction] No full structural match due to domain mismatch (creation vs testing), but API mappings found for Ashmem creation and validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateAshmemStd__idx5436_rank4.c", "source_rust_file": "API_Mapping__CreateAshmemStd__idx5436_rank4.rs", "c_api": "AshmemCreate(name, size)", "rust_api": "ashmem::create_ashmem_instance", "mapping_type": "function", "description": "Low-level Ashmem creation call", "reasoning": "[Task Analysis] C function creates Ashmem with validation and error handling; Rust test function validates Ashmem creation and behavior. [Similarity] Names don't match (CreateAshmemStd vs create_ashmem_instance), but both involve Ashmem creation and validation. [Knowledge Extraction] No full structural match due to domain mismatch (creation vs testing), but API mappings found for Ashmem creation and validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateAshmemStd__idx5436_rank4.c", "source_rust_file": "API_Mapping__CreateAshmemStd__idx5436_rank4.rs", "c_api": "std::make_shared<Ashmem>(fd, size)", "rust_api": "ashmem.unwrap()", "mapping_type": "function", "description": "Successful Ashmem instance construction", "reasoning": "[Task Analysis] C function creates Ashmem with validation and error handling; Rust test function validates Ashmem creation and behavior. [Similarity] Names don't match (CreateAshmemStd vs create_ashmem_instance), but both involve Ashmem creation and validation. [Knowledge Extraction] No full structural match due to domain mismatch (creation vs testing), but API mappings found for Ashmem creation and validation logic."}]
+Unixcoder Score: 0.03592338413000107
+--------------------------------------------------
+C_Code: 
+class Base {
+ public:
+  virtual ~Base() {}
+}
+Function: 
+pub struct Blob {
+    /// Length of the blob in bytes
+    pub length: u32,
+    /// A raw pointer to the contents
+    pub data: *mut u8,
+}
+Unixcoder Score: 0.02562708407640457
+--------------------------------------------------
+C_Code: 
+bool PathToRealPath(const string& path, string& realPath)
+{
+    if (path.empty()) {
+        UTILS_LOGD("path is empty!");
+        return false;
+    }
+
+    if ((path.length() >= PATH_MAX)) {
+        UTILS_LOGD("path len is error, the len is: [%{public}zu]", path.length());
+        return false;
+    }
+
+    char tmpPath[PATH_MAX] = {0};
+    if (realpath(path.c_str(), tmpPath) == nullptr) {
+        UTILS_LOGE("path (%{public}s) to realpath error: %{public}s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    realPath = tmpPath;
+    if (access(realPath.c_str(), F_OK) != 0) {
+        UTILS_LOGE("check realpath (%{private}s) error: %{public}s", realPath.c_str(), strerror(errno));
+        return false;
+    }
+    return true;
+}
+Function: 
+fn test_path_to_real_path_004()
+{
+    let path = String::new();
+    let mut realpath = String::new();
+    let ret = directory_ex::ffi::RustPathToRealPath(&path, &mut realpath);
+    assert!(!ret);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CheckPathBaseDir__idx1557_rank1.c", "source_rust_file": "API_Mapping__CheckPathBaseDir__idx1557_rank1.rs", "c_api": "filepath.find(AREA5) == 0", "rust_api": "s.len() > AREA1.len()", "mapping_type": "pattern", "description": "Checking if a string starts with a prefix (string prefix matching)", "reasoning": "[Task Analysis] C function checks if a file path is under a base directory, with specific area prefixes; Rust function filters a vector of string slices based on length comparison with AREA1. [Similarity] No structural similarity at the block level; C uses conditionals and string operations, Rust uses iterator method. [Knowledge Extraction] No full or partial match due to domain mismatch (path validation vs vector filtering). However, both involve checking string properties and filtering logic, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CheckPathBaseDir__idx1557_rank1.c", "source_rust_file": "API_Mapping__CheckPathBaseDir__idx1557_rank1.rs", "c_api": "v.retain(|s| s.len() > AREA1.len())", "rust_api": "filepath.find(AREA1) == 0", "mapping_type": "pattern", "description": "Filtering elements based on length condition (vector filtering)", "reasoning": "[Task Analysis] C function checks if a file path is under a base directory, with specific area prefixes; Rust function filters a vector of string slices based on length comparison with AREA1. [Similarity] No structural similarity at the block level; C uses conditionals and string operations, Rust uses iterator method. [Knowledge Extraction] No full or partial match due to domain mismatch (path validation vs vector filtering). However, both involve checking string properties and filtering logic, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CheckPathBaseDir__idx1557_rank1.c", "source_rust_file": "API_Mapping__CheckPathBaseDir__idx1557_rank1.rs", "c_api": "filepath.find(AREA1) == 0", "rust_api": "s.len() > AREA1.len()", "mapping_type": "pattern", "description": "Checking if a string starts with a prefix (string prefix matching)", "reasoning": "[Task Analysis] C function checks if a file path is under a base directory, with specific area prefixes; Rust function filters a vector of string slices based on length comparison with AREA1. [Similarity] No structural similarity at the block level; C uses conditionals and string operations, Rust uses iterator method. [Knowledge Extraction] No full or partial match due to domain mismatch (path validation vs vector filtering). However, both involve checking string properties and filtering logic, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CheckPathBaseDir__idx1557_rank1.c", "source_rust_file": "API_Mapping__CheckPathBaseDir__idx1557_rank1.rs", "c_api": "filepath.find(AREA2) == 0", "rust_api": "s.len() > AREA1.len()", "mapping_type": "pattern", "description": "Checking if a string starts with a prefix (string prefix matching)", "reasoning": "[Task Analysis] C function checks if a file path is under a base directory, with specific area prefixes; Rust function filters a vector of string slices based on length comparison with AREA1. [Similarity] No structural similarity at the block level; C uses conditionals and string operations, Rust uses iterator method. [Knowledge Extraction] No full or partial match due to domain mismatch (path validation vs vector filtering). However, both involve checking string properties and filtering logic, so API mappings are extracted."}]
+Unixcoder Score: 0.015334352850914001
+--------------------------------------------------
+C_Code: 
+struct Derived : public Base {}
+Function: 
+pub struct Buffer<T: BufferItem> {
+    _ptr: u32,
+    /// Glyphs in the buffer
+    pub glyphs: Vec<T>,
+}
+Unixcoder Score: -0.008362550288438797
+--------------------------------------------------
+C_Code: 
+bool PathToRealPath(const string& path, string& realPath)
+{
+    if (path.empty()) {
+        UTILS_LOGD("path is empty!");
+        return false;
+    }
+
+    if ((path.length() >= PATH_MAX)) {
+        UTILS_LOGD("path len is error, the len is: [%{public}zu]", path.length());
+        return false;
+    }
+
+    char tmpPath[PATH_MAX] = {0};
+    if (realpath(path.c_str(), tmpPath) == nullptr) {
+        UTILS_LOGE("path (%{public}s) to realpath error: %{public}s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    realPath = tmpPath;
+    if (access(realPath.c_str(), F_OK) != 0) {
+        UTILS_LOGE("check realpath (%{private}s) error: %{public}s", realPath.c_str(), strerror(errno));
+        return false;
+    }
+    return true;
+}
+Function: 
+fn test_path_to_real_path_006()
+{
+    let path: String = "x".repeat(directory_ex::PATH_MAX);
+    let mut realpath = String::new();
+    let ret = directory_ex::ffi::RustPathToRealPath(&path, &mut realpath);
+    assert!(!ret);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__CheckPathBaseDir__idx1555_rank4.c", "source_rust_file": "Full__CheckPathBaseDir__idx1555_rank4.rs", "c_api": "filepath.find(AREA2) == 0", "rust_api": "path.starts_with(AREA2)", "mapping_type": "function", "description": "Checking if a string starts with a specific prefix", "reasoning": "[Task Analysis] C function checks if a filepath is under certain base directories and logs an error if not. Rust function checks if a path starts with specific areas. [Similarity] Names don't match but logic is semantically equivalent for path prefix checking. [Knowledge Extraction] Full match on core logic, partial on structure (no error logging in Rust), API mappings found for string prefix checking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CheckPathBaseDir__idx1555_rank4.c", "source_rust_file": "Full__CheckPathBaseDir__idx1555_rank4.rs", "c_api": "filepath.find(AREA1) == 0", "rust_api": "path.starts_with(AREA1)", "mapping_type": "function", "description": "Checking if a string starts with a specific prefix", "reasoning": "[Task Analysis] C function checks if a filepath is under certain base directories and logs an error if not. Rust function checks if a path starts with specific areas. [Similarity] Names don't match but logic is semantically equivalent for path prefix checking. [Knowledge Extraction] Full match on core logic, partial on structure (no error logging in Rust), API mappings found for string prefix checking operations."}, {"knowledge_type": "Partial", "source_c_file": "Full__CheckPathBaseDir__idx1555_rank4.c", "source_rust_file": "Full__CheckPathBaseDir__idx1555_rank4.rs", "c_fragment": "if ((filepath.find(AREA1) == 0) || filepath.find(AREA2) == 0 || filepath.find(AREA5) == 0) {\n        return true;\n    }", "rust_fragment": "path.starts_with(AREA1) || path.starts_with(AREA2) || path.starts_with(AREA5)", "description": "Checking if a file path starts with one of several predefined areas.", "reasoning": "[Task Analysis] C function checks if a filepath is under certain base directories and logs an error if not. Rust function checks if a path starts with specific areas. [Similarity] Names don't match but logic is semantically equivalent for path prefix checking. [Knowledge Extraction] Full match on core logic, partial on structure (no error logging in Rust), API mappings found for string prefix checking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CheckPathBaseDir__idx1555_rank4.c", "source_rust_file": "Full__CheckPathBaseDir__idx1555_rank4.rs", "c_api": "filepath.find(AREA5) == 0", "rust_api": "path.starts_with(AREA5)", "mapping_type": "function", "description": "Checking if a string starts with a specific prefix", "reasoning": "[Task Analysis] C function checks if a filepath is under certain base directories and logs an error if not. Rust function checks if a path starts with specific areas. [Similarity] Names don't match but logic is semantically equivalent for path prefix checking. [Knowledge Extraction] Full match on core logic, partial on structure (no error logging in Rust), API mappings found for string prefix checking operations."}, {"knowledge_type": "Full", "source_c_file": "Full__CheckPathBaseDir__idx1555_rank4.c", "source_rust_file": "Full__CheckPathBaseDir__idx1555_rank4.rs", "reasoning": "[Task Analysis] C function checks if a filepath is under certain base directories and logs an error if not. Rust function checks if a path starts with specific areas. [Similarity] Names don't match but logic is semantically equivalent for path prefix checking. [Knowledge Extraction] Full match on core logic, partial on structure (no error logging in Rust), API mappings found for string prefix checking operations.", "description": "Full structural translation"}]
+Unixcoder Score: -0.009856137447059155
+--------------------------------------------------
+C_Code: 
+bool PathToRealPath(const string& path, string& realPath)
+{
+    if (path.empty()) {
+        UTILS_LOGD("path is empty!");
+        return false;
+    }
+
+    if ((path.length() >= PATH_MAX)) {
+        UTILS_LOGD("path len is error, the len is: [%{public}zu]", path.length());
+        return false;
+    }
+
+    char tmpPath[PATH_MAX] = {0};
+    if (realpath(path.c_str(), tmpPath) == nullptr) {
+        UTILS_LOGE("path (%{public}s) to realpath error: %{public}s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    realPath = tmpPath;
+    if (access(realPath.c_str(), F_OK) != 0) {
+        UTILS_LOGE("check realpath (%{private}s) error: %{public}s", realPath.c_str(), strerror(errno));
+        return false;
+    }
+    return true;
+}
+Function: 
+fn test_path_to_real_path_002()
+{
+    let path = "/data/../data/test".to_string();
+    let mut realpath = String::new();
+    let ret = directory_ex::ffi::RustPathToRealPath(&path, &mut realpath);
+    assert!(ret);
+    assert_eq!("/data/test", realpath);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_api": "out.is_open()", "rust_api": "File::create(path).is_ok()", "mapping_type": "function", "description": "Check if file operation succeeded", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_fragment": "ofstream out(path, ios_base::out | ios_base::trunc);\n    if (out.is_open()) {\n        out << content;\n        return true;\n    }\n\n    std::cout << \"open file failed!\" << path << std::endl;\n    return false;", "rust_fragment": "if let Ok(mut file) = File::create(path) {\n        if let Err(err) = file.write_all(content.as_bytes()) {\n            println!(\"Error writing to file: {}\", err);\n            return false;\n        }\n        true\n    } else {\n        println!(\"Failed to create file: {}\", path);\n        false\n    }", "description": "Both functions attempt to create a file and write content, with error handling and return logic.", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_api": "ofstream out(path, ios_base::out | ios_base::trunc)", "rust_api": "File::create(path)", "mapping_type": "function", "description": "File creation with truncation", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_api": "std::cout << \"open file failed!\" << path << std::endl", "rust_api": "println!(\"Failed to create file: {}\", path)", "mapping_type": "function", "description": "Error message logging", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CreateTestFile__idx5464_rank3.c", "source_rust_file": "Full__CreateTestFile__idx5464_rank3.rs", "c_api": "out << content", "rust_api": "file.write_all(content.as_bytes())", "mapping_type": "function", "description": "Writing content to file", "reasoning": "[Task Analysis] C and Rust functions both create a file and write content to it, with error handling and return values. [Similarity] Names differ (CreateTestFile vs create_test_file) but concept is the same. Both have conditional logic for file operations and error reporting. [Knowledge Extraction] Full structural similarity in logic flow and purpose, with minor syntax differences (C++ vs Rust). API mappings identified for file creation, writing, and error handling patterns."}]
+Unixcoder Score: -0.025251075625419617
+--------------------------------------------------
+C_Code: 
+static NError AsyncExec(ReaderIteratorArg &readerIterator, const string &pathStr)
+{
+    readerIterator.iterator = ::ReaderIterator(pathStr.c_str());
+    if (readerIterator.iterator == nullptr) {
+        HILOGE("Failed to read lines of the file, error: %{public}d", errno);
+        return NError(errno);
+    }
+    int ret = GetFileSize(pathStr, readerIterator.offset);
+    if (ret < 0) {
+        HILOGE("Failed to get size of the file ret %{public}d", ret);
+        return NError(ret);
+    }
+
+    return NError(ERRNO_NOERR);
+}
+Function: 
+pub(crate) unsafe fn next_line(iter: *mut c_void) -> Result<*mut Str, Error> {
+    if iter.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let reader = &mut *(iter as *mut BufReader<File>);
+    let mut line = String::new();
+    let len = reader.read_line(&mut line)? as c_uint;
+    if len > 0 {
+        let line_bytes = line.into_bytes();
+        let line = CString::from_vec_unchecked(line_bytes);
+        let item = Str {
+            str: line.into_raw(),
+            len,
+        };
+        Ok(Box::into_raw(Box::new(item)))
+    } else {
+        Ok(null_mut())
+    }
+}
+Unixcoder Score: -0.025545652955770493
+--------------------------------------------------
+C_Code: 
+bool PathToRealPath(const string& path, string& realPath)
+{
+    if (path.empty()) {
+        UTILS_LOGD("path is empty!");
+        return false;
+    }
+
+    if ((path.length() >= PATH_MAX)) {
+        UTILS_LOGD("path len is error, the len is: [%{public}zu]", path.length());
+        return false;
+    }
+
+    char tmpPath[PATH_MAX] = {0};
+    if (realpath(path.c_str(), tmpPath) == nullptr) {
+        UTILS_LOGE("path (%{public}s) to realpath error: %{public}s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    realPath = tmpPath;
+    if (access(realPath.c_str(), F_OK) != 0) {
+        UTILS_LOGE("check realpath (%{private}s) error: %{public}s", realPath.c_str(), strerror(errno));
+        return false;
+    }
+    return true;
+}
+Function: 
+fn test_path_to_real_path_003()
+{
+    let path = "./".to_string();
+    let mut realpath = String::new();
+    let ret = directory_ex::ffi::RustPathToRealPath(&path, &mut realpath);
+    assert!(ret);
+    assert_eq!("/data/test", realpath);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7657_rank3.c", "source_rust_file": "Partial__Sync__idx7657_rank3.rs", "c_api": "Box::into_raw(Box::new(reader)) as *mut c_void", "rust_api": "InstantiateReaderIterator(env, iterator, offset).val_", "mapping_type": "function", "description": "Wrapping reader in a boxed structure for FFI", "reasoning": "[Task Analysis] C function is a N-API callback that reads lines from a file using a reader iterator; Rust function is a low-level FFI wrapper for creating a reader iterator from a file path. [Similarity] Names don't match but both perform file reading logic with error handling and null checks. [Knowledge Extraction] Found partial structural match in file path validation and error handling, and API mapping for file reading/iterator creation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Sync__idx7657_rank3.c", "source_rust_file": "Partial__Sync__idx7657_rank3.rs", "c_fragment": "let path = CStr::from_ptr(path);\n    let path = match path.to_str() {\n        Ok(p) => p,\n        Err(_) => {\n            return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n        }\n    };", "rust_fragment": "auto [succPath, path, ignore] = NVal(env, funcArg[NARG_POS::FIRST]).ToUTF8StringPath();\n    if (!succPath) {\n        HILOGE(\"Invalid path from JS first argument\");\n        NError(EINVAL).ThrowErr(env);\n        return nullptr;\n    }", "description": "Conversion of C string to Rust string with error handling", "reasoning": "[Task Analysis] C function is a N-API callback that reads lines from a file using a reader iterator; Rust function is a low-level FFI wrapper for creating a reader iterator from a file path. [Similarity] Names don't match but both perform file reading logic with error handling and null checks. [Knowledge Extraction] Found partial structural match in file path validation and error handling, and API mapping for file reading/iterator creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7657_rank3.c", "source_rust_file": "Partial__Sync__idx7657_rank3.rs", "c_api": "File::open(path)?", "rust_api": "::ReaderIterator(path.get())", "mapping_type": "function", "description": "File opening and reader creation", "reasoning": "[Task Analysis] C function is a N-API callback that reads lines from a file using a reader iterator; Rust function is a low-level FFI wrapper for creating a reader iterator from a file path. [Similarity] Names don't match but both perform file reading logic with error handling and null checks. [Knowledge Extraction] Found partial structural match in file path validation and error handling, and API mapping for file reading/iterator creation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Sync__idx7657_rank3.c", "source_rust_file": "Partial__Sync__idx7657_rank3.rs", "c_fragment": "if (path.is_null()) {\n        return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n    }", "rust_fragment": "if (path.is_null()) {\n        return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n    }", "description": "Null pointer check for input path", "reasoning": "[Task Analysis] C function is a N-API callback that reads lines from a file using a reader iterator; Rust function is a low-level FFI wrapper for creating a reader iterator from a file path. [Similarity] Names don't match but both perform file reading logic with error handling and null checks. [Knowledge Extraction] Found partial structural match in file path validation and error handling, and API mapping for file reading/iterator creation."}]
+Unixcoder Score: -0.027030931785702705
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_ffi_write_read_005()
+{
+    let c_name = CString::new(MEMORY_NAME).expect("CString::new Failed!");
+    let ashmem = unsafe { ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE) };
+    assert!(!ashmem.is_null());
+
+    assert!(ashmem.MapReadAndWriteAshmem());
+    assert!(ashmem.SetProtection(ashmem::PROT_READ));
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    let c_content_ptr: *const ashmem::ffi::c_void = unsafe { ashmem::ffi::AsVoidPtr(c_content.as_ptr()) };
+    unsafe {
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    assert!(ashmem.MapReadOnlyAshmem());
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem::ffi::AsCharPtr(ashmem.ReadFromAshmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+    assert!(!readout_ptr.is_null());
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+    assert_eq!(readout_str, "");
+    
+    ashmem.UnmapAshmem();
+    ashmem.CloseAshmem();
+}
+Unixcoder Score: -0.03704458475112915
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::BaseToWhole(const std::shared_ptr<OHOS::AbilityRuntime::Context> &context, std::string &path)
+{
+    std::string base = context->GetBaseDir();
+    if (base.empty()) {
+        REQUEST_HILOGE("GetBaseDir error.");
+        SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_06, "GetCacheDir error");
+        return false;
+    }
+    path = base + "/" + path;
+    return true;
+}
+Function: 
+pub fn get_curr_store_dir() -> PathBuf {
+    #[cfg(feature = "ohos")]
+    let mut path = match request_utils::context::get_cache_dir() {
+        Some(dir) => PathBuf::from_str(&dir).unwrap(),
+        None => {
+            error!("get cache dir failed");
+            PathBuf::from_str("/data/storage/el2/base/cache").unwrap()
+        }
+    };
+    #[cfg(not(feature = "ohos"))]
+    let mut path = PathBuf::from_str("./").unwrap();
+
+    path.push("preload_caches");
+    if let Err(e) = fs::create_dir_all(path.as_path()) {
+        error!("create cache dir error {}", e);
+    }
+    path
+}
+Unixcoder Score: -0.03825809806585312
+--------------------------------------------------

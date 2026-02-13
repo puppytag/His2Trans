@@ -1,0 +1,174 @@
+C_Code: 
+static void
+zone_free_definite_size(malloc_zone_t *zone, void *ptr, size_t size)
+{
+
+	if (ivsalloc(ptr, config_prof) != 0) {
+		assert(ivsalloc(ptr, config_prof) == size);
+		je_free(ptr);
+		return;
+	}
+
+	free(ptr);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        unsafe { libc::free(ptr as *mut libc::c_void) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__current_kernel_free__idx9786_rank1.c", "source_rust_file": "API_Mapping__current_kernel_free__idx9786_rank1.rs", "c_api": "rust_task_thread::get_task()->kernel->free(ptr)", "rust_api": "free(v)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Filter 1: Entity Name Check] -> Names 'current_kernel_free' and 'free_req' refer to different concepts (kernel memory management vs generic free). [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> Not a pure FFI wrapper. [Filter 4: Semantic Domain Mismatch] -> C code operates on kernel memory, Rust code calls libc::free; different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not call sites. [Full Classification] -> Code lengths are similar, but domains mismatch. [Partial Classification] -> No matching structural blocks. [API Mapping] -> Both perform memory deallocation, but with different contexts and APIs. Extracting API mapping based on semantic equivalence of operation."}]
+Unixcoder Score: 0.25031864643096924
+--------------------------------------------------
+C_Code: 
+static void
+current_kernel_free(void* ptr) {
+  rust_task_thread::get_task()->kernel->free(ptr);
+}
+Function: 
+pub unsafe fn free_req(v: *c_void) {
+    free(v)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__current_kernel_free__idx9784_rank2.c", "source_rust_file": "API_Mapping__current_kernel_free__idx9784_rank2.rs", "c_api": "rust_task_thread::get_task()->kernel->free(ptr)", "rust_api": "free(v)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Filter 1: Entity Name Check] -> Names 'current_kernel_free' and 'free_handle' refer to different concepts (kernel memory management vs generic free). [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> Not a pure FFI wrapper. [Filter 4: Semantic Domain Mismatch] -> C code is kernel memory management, Rust code is a generic free function; domains are related but not semantically equivalent for full match. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not call sites. [Classification] -> is_full: false (domain mismatch and different conceptual scope). is_partial: false (no matching structural blocks). has_api_mappings: true (both perform memory deallocation, despite different contexts). [Knowledge Extraction] -> Extract API mapping for memory deallocation pattern."}]
+Unixcoder Score: 0.20096136629581451
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+pub unsafe extern fn __rdl_alloc_excess(size: usize,
+                                            align: usize,
+                                            excess: *mut usize,
+                                            err: *mut u8) -> *mut u8 {
+        let layout = Layout::from_size_align_unchecked(size, align);
+        match System.alloc_excess(layout) {
+            Ok(p) => {
+                *excess = p.1;
+                p.0
+            }
+            Err(e) => {
+                ptr::write(err as *mut AllocErr, e);
+                0 as *mut u8
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx132092_rank1.c", "source_rust_file": "API_Mapping__free__idx132092_rank1.rs", "c_api": "::free(ptr)", "rust_api": "System.dealloc(ptr, Layout::from_size_align_unchecked(size, align))", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function calls `::free(ptr)` and Rust function calls `System.dealloc(...)`; both are memory deallocation operations. [Similarity] Names do not match but the semantic operation is identical (freeing memory). [Knowledge Extraction] Extract API mapping for memory deallocation pattern."}]
+Unixcoder Score: 0.17160852253437042
+--------------------------------------------------
+C_Code: 
+static void
+current_kernel_free(void* ptr) {
+  rust_task_thread::get_task()->kernel->free(ptr);
+}
+Function: 
+pub unsafe fn free_handle(v: *c_void) {
+    free(v)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__eio_destroy__idx125338_rank3.c", "source_rust_file": "API_Mapping__eio_destroy__idx125338_rank3.rs", "c_api": "EIO_DESTROY (req)", "rust_api": "libc::pthread_mutex_unlock(mutex.0.get())", "mapping_type": "function", "description": "Cleanup of resource", "reasoning": "[Task Analysis] C function 'eio_destroy' frees memory and calls a macro, while Rust function 'destroy' handles mutex cleanup with FFI calls. [Similarity] Names refer to different concepts ('eio_destroy' vs 'destroy'), and domains are different (memory management vs mutex handling). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both involve cleanup operations and memory/resource handling patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__eio_destroy__idx125338_rank3.c", "source_rust_file": "API_Mapping__eio_destroy__idx125338_rank3.rs", "c_api": "free (req->ptr1)", "rust_api": "drop(mutex)", "mapping_type": "function", "description": "Resource deallocation", "reasoning": "[Task Analysis] C function 'eio_destroy' frees memory and calls a macro, while Rust function 'destroy' handles mutex cleanup with FFI calls. [Similarity] Names refer to different concepts ('eio_destroy' vs 'destroy'), and domains are different (memory management vs mutex handling). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both involve cleanup operations and memory/resource handling patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__eio_destroy__idx125338_rank3.c", "source_rust_file": "API_Mapping__eio_destroy__idx125338_rank3.rs", "c_api": "free (req->ptr2)", "rust_api": "forget(mutex)", "mapping_type": "function", "description": "Resource leak handling", "reasoning": "[Task Analysis] C function 'eio_destroy' frees memory and calls a macro, while Rust function 'destroy' handles mutex cleanup with FFI calls. [Similarity] Names refer to different concepts ('eio_destroy' vs 'destroy'), and domains are different (memory management vs mutex handling). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both involve cleanup operations and memory/resource handling patterns, so API mappings are extracted."}]
+Unixcoder Score: 0.16569052636623383
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+            libc::free(ptr as *mut libc::c_void)
+        }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__free__idx23816_rank1.c", "source_rust_file": "Partial__free__idx23816_rank1.rs", "c_api": "::free(ptr)", "rust_api": "self.realloc_fallback(ptr, layout, new_size)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function calls ::free(ptr) and Rust function calls self.realloc_fallback(ptr, layout, new_size) - both are memory management operations. [Similarity] Names do not match but both operate on memory pointers and layouts. [Knowledge Extraction] Both are memory deallocation/realloc logic; C uses standard library free, Rust uses custom realloc fallback. No full structural match due to different control flow and function signatures. Partial match in memory management pattern. API mapping identified between ::free and the fallback realloc logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__free__idx23816_rank1.c", "source_rust_file": "Partial__free__idx23816_rank1.rs", "c_fragment": "::free(ptr)", "rust_fragment": "self.realloc_fallback(ptr, layout, new_size)", "description": "Memory deallocation operation using a pointer", "reasoning": "[Task Analysis] C function calls ::free(ptr) and Rust function calls self.realloc_fallback(ptr, layout, new_size) - both are memory management operations. [Similarity] Names do not match but both operate on memory pointers and layouts. [Knowledge Extraction] Both are memory deallocation/realloc logic; C uses standard library free, Rust uses custom realloc fallback. No full structural match due to different control flow and function signatures. Partial match in memory management pattern. API mapping identified between ::free and the fallback realloc logic."}]
+Unixcoder Score: 0.12593583762645721
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        unsafe { libc::free(ptr as *mut libc::c_void) }
+    }
+Unixcoder Score: 0.12196411937475204
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let size = layout.size();
+        let align = layout.align();
+        unsafe { hermit_abi::malloc(size, align) }
+    }
+Unixcoder Score: 0.12094501405954361
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+pub extern fn __rust_deallocate(ptr: *mut u8, old_size: usize, align: usize) {
+    unsafe { imp::deallocate(ptr, old_size, align) }
+}
+Unixcoder Score: 0.12093818932771683
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+fn drop(&mut self) {
+            let (layout, _) = self.layout();
+            unsafe {
+                drop_in_place::<T>(&mut **self);
+                dealloc(self.ptr.cast().as_ptr(), layout);
+            }
+        }
+Unixcoder Score: 0.1208462193608284
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+fn from_iter<T: Iterator<A>>(mut iterator: T) -> ~[A] {
+        let (lower, _) = iterator.size_hint();
+        let cap = if lower == 0 {16} else {lower};
+        let mut cap = cap.checked_mul(&mem::size_of::<A>()).expect("cap overflow");
+        let mut len = 0;
+
+        unsafe {
+            let mut ptr = alloc(cap) as *mut Vec<A>;
+            let mut ret = cast::transmute(ptr);
+            for elt in iterator {
+                if len * mem::size_of::<A>() >= cap {
+                    cap = cap.checked_mul(&2).expect("cap overflow");
+                    let ptr2 = alloc(cap) as *mut Vec<A>;
+                    ptr::copy_nonoverlapping_memory(&mut (*ptr2).data,
+                                                    &(*ptr).data,
+                                                    len);
+                    free(ptr as *u8);
+                    cast::forget(ret);
+                    ret = cast::transmute(ptr2);
+                    ptr = ptr2;
+                }
+
+                let base = &mut (*ptr).data as *mut A;
+                intrinsics::move_val_init(&mut *base.offset(len as int), elt);
+                len += 1;
+                (*ptr).fill = len * mem::nonzero_size_of::<A>();
+            }
+            ret
+        }
+    }
+Unixcoder Score: 0.11985369771718979
+--------------------------------------------------

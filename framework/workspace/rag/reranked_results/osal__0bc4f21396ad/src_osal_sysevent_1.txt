@@ -1,0 +1,243 @@
+C_Code: 
+int HiSysEventWriteWrapper(const char* func, unsigned long long line, const char* domain, const char* name,
+    int type, const HiSysEventParamWrapper paramWrappers[], unsigned int size)
+{
+    HiSysEventParam params[size];
+    ConvertParamWrapper(paramWrappers, params, size);
+    int ret = HiSysEvent_Write(func, line, domain, name, HiSysEventEventType(type), params, size);
+    for (const auto& param : params) {
+        if ((param.t == HISYSEVENT_STRING) && (param.v.s != nullptr)) {
+            delete param.v.s;
+        }
+    }
+    return ret;
+}
+Function: 
+pub(crate) fn write(event_domain: &str, event_name: &str, event_type: c_int, event_params: &[HiSysEventParam]) -> i32 {
+    let mut params_wrapper: Vec<HiSysEventParamWrapper> = vec![];
+    for i in 0..event_params.len() {
+        params_wrapper.push(HiSysEventParamWrapper {
+            param_name: [0; MAX_LENGTH_OF_PARAM_NAME],
+            param_type: event_params[i].param_type as i32 as c_int,
+            param_value: event_params[i].param_value,
+            array_size: event_params[i].array_size as c_uint,
+        });
+        crate::utils::trans_slice_to_array(event_params[i].param_name, &mut params_wrapper[i].param_name);
+    }
+    let func = CString::new(crate::function!()).expect("Need a valid function name");
+    let domain = CString::new(event_domain).expect("Need a valid domain name");
+    let event_name = CString::new(event_name).expect("Need a valid event name");
+    // Safty: call C ffi border function, all risks are under control.
+    unsafe {
+        HiSysEventWriteWrapper(
+            func.as_ptr() as *const c_char,
+            line!() as c_ulonglong,
+            domain.as_ptr() as *const c_char,
+            event_name.as_ptr() as *const c_char,
+            event_type,
+            params_wrapper.as_mut_ptr(),
+            event_params.len() as c_uint
+        )
+    }
+}
+Unixcoder Score: 0.045599114149808884
+--------------------------------------------------
+C_Code: 
+int HiSysEventWriteWrapper(const char* func, unsigned long long line, const char* domain, const char* name,
+    int type, const HiSysEventParamWrapper paramWrappers[], unsigned int size)
+{
+    HiSysEventParam params[size];
+    ConvertParamWrapper(paramWrappers, params, size);
+    int ret = HiSysEvent_Write(func, line, domain, name, HiSysEventEventType(type), params, size);
+    for (const auto& param : params) {
+        if ((param.t == HISYSEVENT_STRING) && (param.v.s != nullptr)) {
+            delete param.v.s;
+        }
+    }
+    return ret;
+}
+Function: 
+pub fn build_string_arrays<'a>(param_name: &'a str, str_arr: &[&'a str]) -> HiSysEventParam<'a> {
+    let mut dest: Vec<*const c_char> = vec![];
+    for &item in str_arr {
+        let str_wrapper = CString::new(item).expect("Need a valid value with &str type.");
+        dest.push(str_wrapper.into_raw() as *const c_char);
+    }
+    HiSysEventParam {
+        param_name,
+        param_type: HiSysEventParamType::ParamTypeStringArray,
+        param_value: HiSysEventParamValue {
+            void_ptr_: std::boxed::Box::<[*const c_char]>::into_raw(dest.into_boxed_slice()) as *const c_int as *const (),
+        },
+        array_size: str_arr.len(),
+    }
+}
+Unixcoder Score: 0.026644034311175346
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    napi_env env;
+    napi_ref ref;
+    uint32_t paramNumber;
+    std::mutex mutex;
+    std::vector<int64_t> params;
+    ~NotifyData()
+    {
+        UvQueue::DeleteRef(env, ref);
+    }
+Function: 
+pub struct RequestAbility {
+    pub server_state: ServerRunState,
+    pub reg_remote_obj: Mutex<HashMap<String, RemoteObj>>,
+    unregistered_notify: Mutex<HashMap<String, u32>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__HiSysEventQuery__idx5558_rank2.c", "source_rust_file": "Partial__HiSysEventQuery__idx5558_rank2.rs", "c_api": "HiSysEventBaseManager::Query(argCls, queryRules, baseQuerierRust)", "rust_api": "sys_event_manager::query(query_arg, query_rules, querier)", "mapping_type": "function", "description": "System event query operation", "reasoning": "[Task Analysis] C function 'HiSysEventQuery' and Rust function 'query' both perform a system event query operation, but with different interfaces and internal logic. [Similarity] The overall structure is not full due to different parameter handling and control flow, but there's a clear API mapping in the core query logic. [Knowledge Extraction] Extract API mapping for the query operation, and partial structural similarity in the function signatures and return handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__HiSysEventQuery__idx5558_rank2.c", "source_rust_file": "Partial__HiSysEventQuery__idx5558_rank2.rs", "c_fragment": "return ret;", "rust_fragment": "sys_event_manager::query(query_arg, query_rules, querier)", "description": "Both functions return the result of the query operation.", "reasoning": "[Task Analysis] C function 'HiSysEventQuery' and Rust function 'query' both perform a system event query operation, but with different interfaces and internal logic. [Similarity] The overall structure is not full due to different parameter handling and control flow, but there's a clear API mapping in the core query logic. [Knowledge Extraction] Extract API mapping for the query operation, and partial structural similarity in the function signatures and return handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__HiSysEventQuery__idx5558_rank2.c", "source_rust_file": "Partial__HiSysEventQuery__idx5558_rank2.rs", "c_fragment": "if (querier == nullptr || querier->status != STATUS_NORMAL) {\n        return ERR_LISTENER_NOT_EXIST;\n    }", "rust_fragment": "pub fn query(query_arg: &QueryArg, query_rules: &[QueryRule], querier: &Querier) -> i32", "description": "Both functions validate input parameters before proceeding with the query operation.", "reasoning": "[Task Analysis] C function 'HiSysEventQuery' and Rust function 'query' both perform a system event query operation, but with different interfaces and internal logic. [Similarity] The overall structure is not full due to different parameter handling and control flow, but there's a clear API mapping in the core query logic. [Knowledge Extraction] Extract API mapping for the query operation, and partial structural similarity in the function signatures and return handling."}]
+Unixcoder Score: 0.02581198327243328
+--------------------------------------------------
+C_Code: 
+void TaskFault::ReportTaskFault(int error) const
+{
+    HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::REQUEST, TASK_FAULT,
+        OHOS::HiviewDFX::HiSysEvent::EventType::FAULT, TASKS_TYPE, DOWNLOAD, TOTAL_FILE_NUM, 1, FAIL_FILE_NUM, 1,
+        SUCCESS_FILE_NUM, 0, ERROR_INFO, error);
+}
+Function: 
+pub(crate) fn task_fault() -> Self {
+        Self {
+            event_kind: EventKind::TaskFault,
+            inner_type: EventType::Fault,
+            params: Vec::new(),
+        }
+    }
+Unixcoder Score: 0.025593755766749382
+--------------------------------------------------
+C_Code: 
+void SysEventLog::SendSysEventLog(const std::string &eventName, const uint32_t dCode, const std::string extraInfo)
+{
+    auto iter = sysEventMap_.find(eventName);
+    if (iter == sysEventMap_.end()) {
+        return;
+    }
+
+    SysEventInfo info = { .dCode = dCode, .bundleName = "", .moduleName = "", .extraInfo = extraInfo };
+    iter->second(info);
+}
+Function: 
+pub(crate) fn isys_fault(dfx_code: DfxCode, extra_info: &str) {
+    SysEvent::exec_fault()
+        .param(build_number_param!(PARAM_DFX_CODE, dfx_code as u32))
+        .param(build_str_param!(PARAM_BUNDLE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_MODULE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_EXTRA_INFO, extra_info))
+        .write();
+}
+Unixcoder Score: 0.023743681609630585
+--------------------------------------------------
+C_Code: 
+int OhHiSysEventRemoveRustWatcher(HiSysEventRustWatcherC* watcher)
+{
+    return HiSysEventRemoveWatcher(watcher);
+}
+Function: 
+pub fn remove_watcher(watcher: &Watcher) -> i32 {
+    sys_event_manager::remove_watcher(watcher)
+}
+Unixcoder Score: 0.0192975252866745
+--------------------------------------------------
+C_Code: 
+HiSysEventRustQuerier::HiSysEventRustQuerier(HiSysEventRustQuerierC* querier)
+    : querier_(querier)
+{
+}
+Function: 
+pub fn new<F1, F2>(on_query_callback: F1, on_complete_callback: F2) -> Option<Self>
+    where
+        F1: Fn(&[HiSysEventRecord]) + Send + Sync + 'static,
+        F2: Fn(i32, i32) + Send + Sync + 'static,
+    {
+        let on_query_callback = Box::into_raw(Box::new(on_query_callback));
+        let on_complete_callback = Box::into_raw(Box::new(on_complete_callback));
+        let native = unsafe {
+            CreateRustEventQuerier(on_query_callback as *mut c_void, Self::on_query_callback::<F1>,
+                on_complete_callback as *mut c_void, Self::on_complete_callback::<F2>)
+        };
+        if native.is_null() {
+            None
+        } else {
+            Some(Self {
+                native,
+                on_query_callback: on_query_callback as *mut c_void,
+                on_complete_callback: on_complete_callback as *mut c_void,
+            })
+        }
+    }
+Unixcoder Score: 0.015596534125506878
+--------------------------------------------------
+C_Code: 
+struct HiSysEventParam {
+    char name[MAX_LENGTH_OF_PARAM_NAME];
+    HiSysEventParamType t;
+    HiSysEventParamValue v;
+    size_t arraySize;
+}
+Function: 
+struct HiSysEventParamWrapper {
+    /// Param name.
+    pub param_name: [u8; MAX_LENGTH_OF_PARAM_NAME],
+
+    /// Param type.
+    pub param_type: c_int,
+
+    /// Param value.
+    pub param_value: HiSysEventParamValue,
+
+    /// Length of a param with array type.
+    pub array_size: c_uint,
+}
+Unixcoder Score: 0.015490624122321606
+--------------------------------------------------
+C_Code: 
+HiSysEventRustQuerier::HiSysEventRustQuerier(HiSysEventRustQuerierC* querier)
+    : querier_(querier)
+{
+}
+Function: 
+pub fn get_level(&self) -> String {
+        let level_arr = unsafe {
+            std::ffi::CString::from_raw(self.level as *mut std::ffi::c_char)
+        };
+        std::str::from_utf8(level_arr.to_bytes()).expect("need valid level pointer")
+            .trim_end_matches(char::from(0)).to_owned()
+    }
+Unixcoder Score: 0.014367545954883099
+--------------------------------------------------
+C_Code: 
+HiSysEventRustQuerier::HiSysEventRustQuerier(HiSysEventRustQuerierC* querier)
+    : querier_(querier)
+{
+}
+Function: 
+pub fn new<F1, F2>(on_event_callback: F1, on_service_died_callback: F2) -> Option<Self>
+    where
+        F1: Fn(HiSysEventRecord) + Send + Sync + 'static,
+        F2: Fn() + Send + Sync + 'static,
+    {
+        let on_event_callback = Box::into_raw(Box::new(on_event_callback));
+        let on_service_died_callback = Box::into_raw(Box::new(on_service_died_callback));
+        let native = unsafe {
+            CreateRustEventWatcher(on_event_callback as *mut c_void, Self::on_event::<F1>,
+                on_service_died_callback as *mut c_void, Self::on_service_died::<F2>)
+        };
+        if native.is_null() {
+            None
+        } else {
+            Some(Self {
+                native,
+                on_event_callback: on_event_callback as *mut c_void,
+                on_service_died_callback: on_service_died_callback as *mut c_void,
+            })
+        }
+    }
+Unixcoder Score: 0.013125439174473286
+--------------------------------------------------

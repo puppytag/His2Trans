@@ -1,0 +1,151 @@
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn signed_enum(&self) -> Race {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<Race>(Monster::VT_SIGNED_ENUM, Some(Race::None)).unwrap()}
+  }
+Unixcoder Score: -0.020961938425898552
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn signed_enum(&self) -> Race {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<Race>(Monster::VT_SIGNED_ENUM, Some(Race::None)).unwrap()}
+  }
+Unixcoder Score: -0.027568479999899864
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn signed_enum(&self) -> Race {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<Race>(Monster::VT_SIGNED_ENUM, Some(Race::None)).unwrap()}
+  }
+Unixcoder Score: -0.02830960974097252
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn add_signed_enum(&mut self, signed_enum: Race) {
+    self.fbb_.push_slot::<Race>(Monster::VT_SIGNED_ENUM, signed_enum, Race::None);
+  }
+Unixcoder Score: -0.03142419457435608
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn add_signed_enum(&mut self, signed_enum: Race) {
+    self.fbb_.push_slot::<Race>(Monster::VT_SIGNED_ENUM, signed_enum, Race::None);
+  }
+Unixcoder Score: -0.031474679708480835
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn add_signed_enum(&mut self, signed_enum: Race) {
+    self.fbb_.push_slot::<Race>(Monster::VT_SIGNED_ENUM, signed_enum, Race::None);
+  }
+Unixcoder Score: -0.03185488283634186
+--------------------------------------------------
+C_Code: 
+FsResult<size_t> FsStream::Write(const string &buf, const optional<WriteOptions> &options)
+{
+    auto fp = GetFilePtr();
+    if (!fp) {
+        HILOGE("Failed to get file ptr");
+        return FsResult<size_t>::Error(EIO);
+    }
+
+    size_t bufLen = static_cast<size_t>(buf.length());
+
+    auto [succ, retLen, offset] = ValidWriteArg(bufLen, options);
+    if (!succ) {
+        HILOGE("Invalid options");
+        return FsResult<size_t>::Error(EINVAL);
+    }
+
+    if (offset >= 0) {
+        int ret = fseek(fp.get(), static_cast<long>(offset), SEEK_SET);
+        if (ret < 0) {
+            HILOGE("Failed to set the offset location of the file stream pointer, ret: %{public}d", ret);
+            return FsResult<size_t>::Error(errno);
+        }
+    }
+
+    size_t writeLen = fwrite(buf.c_str(), 1, retLen, fp.get());
+    if ((writeLen == 0) && (writeLen != retLen)) {
+        HILOGE("Failed to fwrite stream");
+        return FsResult<size_t>::Error(EIO);
+    }
+    return FsResult<size_t>::Success(writeLen);
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_copy_output__idx120741_rank5.c", "source_rust_file": "API_Mapping__process_copy_output__idx120741_rank5.rs", "c_api": "write(fd, buf, read)", "rust_api": "write(buf)", "mapping_type": "function", "description": "Writing data to an output stream", "reasoning": "[Task Analysis] C function performs file I/O operations using Windows API (SetFilePointer, ReadFile, GetLastError) and writes to a file descriptor. Rust function is a simple write implementation that delegates to a reference's write method. [Similarity] No structural similarity at the function level; C uses Windows-specific file operations while Rust uses standard library I/O. [Knowledge Extraction] No full match, no partial match, but there is a pattern of writing data to a buffer/stream. The Rust write method is conceptually similar to the C write(fd, buf, read) call, even though they operate on different abstractions. [API Mapping] C's write(fd, buf, read) and Rust's write(buf) both represent writing data to an output stream, despite differing in abstraction level and API design."}]
+Unixcoder Score: -0.03559264913201332
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    serializer.serialize_unit_variant("Race", self.0 as u32, self.variant_name().unwrap())
+  }
+Unixcoder Score: -0.036097992211580276
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn add_signed_enum(&mut self, signed_enum: Race) {
+    self.fbb_.push_slot::<Race>(Monster::VT_SIGNED_ENUM, signed_enum, Race::None);
+  }
+Unixcoder Score: -0.037356458604335785
+--------------------------------------------------
+C_Code: 
+bool mutate_signed_enum(MyGame::Example::Race _signed_enum = static_cast<MyGame::Example::Race>(-1)) {
+    return SetField<int8_t>(VT_SIGNED_ENUM, static_cast<int8_t>(_signed_enum), -1);
+  }
+Function: 
+pub fn add_signed_enum(&mut self, signed_enum: Race) {
+    self.fbb_.push_slot::<Race>(Monster::VT_SIGNED_ENUM, signed_enum, Race::None);
+  }
+Unixcoder Score: -0.03817105293273926
+--------------------------------------------------

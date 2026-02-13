@@ -1,0 +1,580 @@
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+pub(crate) fn send_event(&self, event: ClientEvent) -> bool {
+        if self.tx.send(event).is_err() {
+            #[cfg(feature = "oh")]
+            unsafe {
+                if let Some(e) = PANIC_INFO.as_ref() {
+                    error!("Sends ClientManager event failed {}", e);
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::UDS_FAULT_02,
+                        &format!("Sends ClientManager event failed {}", e)
+                    );
+                } else {
+                    info!("ClientManager is unloading");
+                }
+            }
+            return false;
+        }
+        true
+    }
+Unixcoder Score: 0.005993418395519257
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+async fn handle_send_response(
+        &mut self,
+        tid: u32,
+        version: String,
+        status_code: u32,
+        reason: String,
+        headers: Headers,
+    ) {
+        let mut response = Vec::<u8>::new();
+
+        response.extend_from_slice(&REQUEST_MAGIC_NUM.to_le_bytes());
+
+        response.extend_from_slice(&self.message_id.to_le_bytes());
+        self.message_id += 1;
+
+        let message_type = MessageType::HttpResponse as u16;
+        response.extend_from_slice(&message_type.to_le_bytes());
+
+        let message_body_size: u16 = 0;
+        response.extend_from_slice(&message_body_size.to_le_bytes());
+
+        response.extend_from_slice(&tid.to_le_bytes());
+
+        response.extend_from_slice(&version.into_bytes());
+        response.push(b'\0');
+
+        response.extend_from_slice(&status_code.to_le_bytes());
+
+        response.extend_from_slice(&reason.into_bytes());
+        response.push(b'\0');
+
+        // The maximum length of the headers in uds should not exceed 8192
+        let mut buf_size = 0;
+        for (k, v) in headers {
+            buf_size += k.as_bytes().len() + v.iter().map(|f| f.len()).sum::<usize>();
+            if buf_size > HEADERS_MAX_SIZE as usize {
+                break;
+            }
+
+            response.extend_from_slice(k.as_bytes());
+            response.push(b':');
+            for (i, sub_value) in v.iter().enumerate() {
+                if i != 0 {
+                    response.push(b',');
+                }
+                response.extend_from_slice(sub_value);
+            }
+            response.push(b'\n');
+        }
+
+        let mut size = response.len() as u16;
+        if size > HEADERS_MAX_SIZE {
+            info!("send response too long");
+            response.truncate(HEADERS_MAX_SIZE as usize);
+            size = HEADERS_MAX_SIZE;
+        }
+        debug!("send response size, {:?}", size);
+        let size = size.to_le_bytes();
+        response[POSITION_OF_LENGTH as usize] = size[0];
+        response[(POSITION_OF_LENGTH + 1) as usize] = size[1];
+
+        self.send_message(response).await;
+    }
+Unixcoder Score: -0.007264047861099243
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+async fn send_message(&mut self, message: Vec<u8>) {
+        let ret = self.server_sock_fd.send(&message).await;
+        match ret {
+            Ok(size) => {
+                debug!("send message ok, pid: {}, size: {}", self.pid, size);
+                let mut buf: [u8; 4] = [0; 4];
+
+                match ylong_runtime::time::timeout(
+                    Duration::from_millis(500),
+                    self.server_sock_fd.recv(&mut buf),
+                )
+                .await
+                {
+                    Ok(ret) => match ret {
+                        Ok(len) => {
+                            debug!("message recv len {:}", len);
+                        }
+                        Err(e) => {
+                            debug!("message recv error: {:?}", e);
+                        }
+                    },
+                    Err(e) => {
+                        debug!("message recv {}", e);
+                        return;
+                    }
+                };
+
+                let len: u32 = u32::from_le_bytes(buf);
+                if len != message.len() as u32 {
+                    debug!("message len bad, send {:?}, recv {:?}", message.len(), len);
+                } else {
+                    debug!("notify done, pid: {}", self.pid);
+                }
+            }
+            Err(err) => {
+                error!("message send error: {:?}", err);
+            }
+        }
+    }
+Unixcoder Score: -0.008208759129047394
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+async fn send_message(&mut self, message: Vec<u8>) {
+        let ret = self.server_sock_fd.send(&message).await;
+        match ret {
+            Ok(size) => {
+                debug!("send message ok, pid: {}, size: {}", self.pid, size);
+                let mut buf: [u8; 4] = [0; 4];
+
+                match ylong_runtime::time::timeout(
+                    Duration::from_millis(500),
+                    self.server_sock_fd.recv(&mut buf),
+                )
+                .await
+                {
+                    Ok(ret) => match ret {
+                        Ok(len) => {
+                            debug!("message recv len {:}", len);
+                        }
+                        Err(e) => {
+                            debug!("message recv error: {:?}", e);
+                        }
+                    },
+                    Err(e) => {
+                        debug!("message recv {}", e);
+                        return;
+                    }
+                };
+
+                let len: u32 = u32::from_le_bytes(buf);
+                if len != message.len() as u32 {
+                    debug!("message len bad, send {:?}, recv {:?}", message.len(), len);
+                } else {
+                    debug!("notify done, pid: {}", self.pid);
+                }
+            }
+            Err(err) => {
+                error!("message send error: {:?}", err);
+            }
+        }
+    }
+Unixcoder Score: -0.010183488950133324
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+pub(crate) fn open_channel(&self, pid: u64) -> Result<Arc<UnixDatagram>, ErrorCode> {
+        let (tx, rx) = channel::<Result<Arc<UnixDatagram>, ErrorCode>>();
+        let event = ClientEvent::OpenChannel(pid, tx);
+        if !self.send_event(event) {
+            return Err(ErrorCode::Other);
+        }
+        let rx = Recv::new(rx);
+        match rx.get() {
+            Some(ret) => ret,
+            None => {
+                error!("open channel fail, recv none");
+                sys_event!(
+                    ExecFault,
+                    DfxCode::UDS_FAULT_03,
+                    "open channel fail, recv none"
+                );
+                Err(ErrorCode::Other)
+            }
+        }
+    }
+Unixcoder Score: -0.020987924188375473
+--------------------------------------------------
+C_Code: 
+int InnerWrite(const std::string& domain, const std::string& eventName,
+        int type, uint64_t timeStamp, Types... keyValues)
+    {
+        EventBase eventBase(domain, eventName, type, timeStamp);
+        if (IsError(eventBase)) {
+            return ExplainThenReturnRetCode(eventBase.GetRetCode());
+        }
+
+        WritebaseInfo(eventBase);
+        if (IsError(eventBase)) {
+            return ExplainThenReturnRetCode(eventBase.GetRetCode());
+        }
+
+        InnerWrite(eventBase, keyValues...);
+        if (IsError(eventBase)) {
+            return ExplainThenReturnRetCode(eventBase.GetRetCode());
+        }
+
+        SendSysEvent(eventBase);
+        return eventBase.GetRetCode();
+    }
+Function: 
+pub fn write(event_domain: &str, event_name: &str, event_type: EventType,
+    event_params: &[HiSysEventParam]) -> i32 {
+    sys_event::write(event_domain, event_name, event_type as std::ffi::c_int, event_params)
+}
+Unixcoder Score: -0.03207040950655937
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::GetFdDownload(const std::string &path, const Config &config, ExceptionError &error)
+{
+    // File is exist.
+    if (JsInitialize::FindDir(path)) {
+        if (config.firstInit && !config.overwrite) {
+            error.code = config.version == Version::API10 ? E_FILE_IO : E_FILE_PATH;
+            error.errInfo = "GetFd File exists and other error";
+            SysEventLog::SendSysEventLog(STATISTIC_EVENT, APP_ERROR_00, config.bundleName, "", error.errInfo);
+            return false;
+        }
+    }
+
+    FILE *file = NULL;
+    if (config.firstInit) {
+        file = fopen(path.c_str(), "w+");
+    } else {
+        file = fopen(path.c_str(), "a+");
+    }
+
+    if (file == NULL) {
+        error.code = E_FILE_IO;
+        error.errInfo = "GetFd failed to open file errno " + std::to_string(errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_00, config.bundleName, "", error.errInfo);
+        return false;
+    }
+
+    int32_t ret = chmod(path.c_str(), PathUtils::WRITE_MODE);
+    if (ret != 0) {
+        REQUEST_HILOGE("download file chmod fail: %{public}d", ret);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_01, config.bundleName, "", std::to_string(ret));
+    };
+
+    int32_t retClose = fclose(file);
+    if (retClose != 0) {
+        REQUEST_HILOGE("download fclose fail: %{public}d", ret);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_02, config.bundleName, "", std::to_string(retClose));
+    }
+    return true;
+}
+Function: 
+fn create_file(path: &str) -> File {
+    File::options()
+        .read(true)
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(path)
+        .unwrap()
+}
+Unixcoder Score: -0.03659803420305252
+--------------------------------------------------
+C_Code: 
+int32_t RequestServiceProxy::SubRunCount(const sptr<NotifyInterface> &listener)
+{
+    REQUEST_HILOGD("Request SubRunCount");
+    FwkRunningTaskCountManager::GetInstance()->SetSaStatus(true);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteRemoteObject(listener->AsObject());
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_SUB_RUNCOUNT), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request SubRunCount, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ret;
+    }
+    int32_t errCode = reply.ReadInt32();
+    if (errCode != E_OK) {
+        REQUEST_HILOGE("End Request SubRunCount, failed: %{public}d", errCode);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(errCode));
+        return errCode;
+    }
+    REQUEST_HILOGD("End Request SubRunCount ok");
+    return E_OK;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+        self.sa_handler.cancel_idle();
+        self.active_counter.increment();
+        const SERVICE_TOKEN: &str = "OHOS.Download.RequestServiceInterface";
+        debug!("Processes on_remote_request, code: {}", code);
+        match data.read_interface_token() {
+            Ok(token) if token == SERVICE_TOKEN => {}
+            _ => {
+                error!("Gets invalid token");
+                sys_event!(ExecError, DfxCode::INVALID_IPC_MESSAGE_A00, "Gets invalid token");
+                self.active_counter.decrement();
+                return IpcStatusCode::Failed as i32;
+            }
+        };
+        let res = match code {
+            interface::CONSTRUCT => self.construct(data, reply),
+            interface::PAUSE => self.pause(data, reply),
+            interface::QUERY => self.query(data, reply),
+            interface::QUERY_MIME_TYPE => self.query_mime_type(data, reply),
+            interface::REMOVE => self.remove(data, reply),
+            interface::RESUME => self.resume(data, reply),
+            interface::START => self.start(data, reply),
+            interface::STOP => self.stop(data, reply),
+            interface::SHOW => self.show(data, reply),
+            interface::TOUCH => self.touch(data, reply),
+            interface::SEARCH => self.search(data, reply),
+            interface::GET_TASK => self.get_task(data, reply),
+            interface::CLEAR => Ok(()),
+            interface::OPEN_CHANNEL => self.open_channel(reply),
+            interface::SUBSCRIBE => self.subscribe(data, reply),
+            interface::UNSUBSCRIBE => self.unsubscribe(data, reply),
+            interface::SUB_RUN_COUNT => self.subscribe_run_count(data, reply),
+            interface::UNSUB_RUN_COUNT => self.unsubscribe_run_count(reply),
+            interface::CREATE_GROUP => self.create_group(data, reply),
+            interface::ATTACH_GROUP => self.attach_group(data, reply),
+            interface::DELETE_GROUP => self.delete_group(data, reply),
+            interface::SET_MAX_SPEED => self.set_max_speed(data, reply),
+            interface::SET_MODE => self.set_mode(data, reply),
+            interface::DISABLE_TASK_NOTIFICATION => self.disable_task_notifications(data, reply),
+            _ => Err(IpcStatusCode::Failed),
+        };
+
+        self.active_counter.decrement();
+        match res {
+            Ok(_) => 0,
+            Err(e) => e as i32,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx870_rank4.c", "source_rust_file": "Partial__CreateTasks__idx870_rank4.rs", "c_api": "data.WriteInterfaceToken(GetDescriptor())", "rust_api": "let ipc_uid = ipc::Skeleton::calling_uid();", "mapping_type": "function", "description": "IPC interface identification and caller UID retrieval", "reasoning": "[Task Analysis] Both functions handle IPC communication with client data and server-side processing, but differ in domain: C function creates tasks via proxy, Rust function handles touch requests with permission checks and task management. [Similarity] The control flow includes reading data, validating length, looping over elements, and writing responses, but the semantic domains (task creation vs task touching) and data structures (configs/rets vs task info) are different. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, partial matching exists in data reading/writing patterns and loop structures. API mappings found for IPC data handling and error reporting mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx870_rank4.c", "source_rust_file": "Partial__CreateTasks__idx870_rank4.rs", "c_api": "WriteConfigData(config, data)", "rust_api": "let task_id: String = data.read()?;\n            let token: String = data.read()?;", "mapping_type": "function", "description": "Reading configuration/task data from IPC message", "reasoning": "[Task Analysis] Both functions handle IPC communication with client data and server-side processing, but differ in domain: C function creates tasks via proxy, Rust function handles touch requests with permission checks and task management. [Similarity] The control flow includes reading data, validating length, looping over elements, and writing responses, but the semantic domains (task creation vs task touching) and data structures (configs/rets vs task info) are different. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, partial matching exists in data reading/writing patterns and loop structures. API mappings found for IPC data handling and error reporting mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx870_rank4.c", "source_rust_file": "Partial__CreateTasks__idx870_rank4.rs", "c_api": "reply.ReadInt32()", "rust_api": "reply.write(&(c as i32))?;", "mapping_type": "function", "description": "Reading/writing integer values in IPC response", "reasoning": "[Task Analysis] Both functions handle IPC communication with client data and server-side processing, but differ in domain: C function creates tasks via proxy, Rust function handles touch requests with permission checks and task management. [Similarity] The control flow includes reading data, validating length, looping over elements, and writing responses, but the semantic domains (task creation vs task touching) and data structures (configs/rets vs task info) are different. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, partial matching exists in data reading/writing patterns and loop structures. API mappings found for IPC data handling and error reporting mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx870_rank4.c", "source_rust_file": "Partial__CreateTasks__idx870_rank4.rs", "c_api": "data.WriteUint32(len)", "rust_api": "let len: u32 = data.read()?;", "mapping_type": "function", "description": "Reading/writing length parameter in IPC communication", "reasoning": "[Task Analysis] Both functions handle IPC communication with client data and server-side processing, but differ in domain: C function creates tasks via proxy, Rust function handles touch requests with permission checks and task management. [Similarity] The control flow includes reading data, validating length, looping over elements, and writing responses, but the semantic domains (task creation vs task touching) and data structures (configs/rets vs task info) are different. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, partial matching exists in data reading/writing patterns and loop structures. API mappings found for IPC data handling and error reporting mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx870_rank4.c", "source_rust_file": "Partial__CreateTasks__idx870_rank4.rs", "c_api": "SysEventLog::SendSysEventLog(...)", "rust_api": "sys_event!(...);", "mapping_type": "function", "description": "System event logging for IPC faults", "reasoning": "[Task Analysis] Both functions handle IPC communication with client data and server-side processing, but differ in domain: C function creates tasks via proxy, Rust function handles touch requests with permission checks and task management. [Similarity] The control flow includes reading data, validating length, looping over elements, and writing responses, but the semantic domains (task creation vs task touching) and data structures (configs/rets vs task info) are different. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, partial matching exists in data reading/writing patterns and loop structures. API mappings found for IPC data handling and error reporting mechanisms."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CreateTasks__idx870_rank4.c", "source_rust_file": "Partial__CreateTasks__idx870_rank4.rs", "c_fragment": "uint32_t len = static_cast<uint32_t>(configs.size());\n    rets.resize(len, {\n                         .code = ExceptionErrorCode::E_OTHER,\n                     });\n    MessageParcel data;\n    MessageParcel reply;\n    MessageOption option;\n    data.WriteInterfaceToken(GetDescriptor());\n    data.WriteUint32(len);\n    for (auto &config : configs) {\n        WriteConfigData(config, data);\n    }\n    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_REQUEST), data, reply, option);", "rust_fragment": "let len: u32 = data.read()?;\n        let len = len as usize;\n\n        if len > GET_INFO_MAX {\n            info!(\"Service touch: out of size: {}\", len);\n            reply.write(&(ErrorCode::Other as i32))?;\n            return Err(IpcStatusCode::Failed);\n        }\n\n        let ipc_uid = ipc::Skeleton::calling_uid();\n        let mut vec = vec![(ErrorCode::Other, TaskInfo::new()); len];\n        for i in 0..len {\n            let task_id: String = data.read()?;\n            info!(\"Service touch tid {}\", task_id);", "description": "Both read a length parameter and initialize a container/vec, then loop over elements to read data.", "reasoning": "[Task Analysis] Both functions handle IPC communication with client data and server-side processing, but differ in domain: C function creates tasks via proxy, Rust function handles touch requests with permission checks and task management. [Similarity] The control flow includes reading data, validating length, looping over elements, and writing responses, but the semantic domains (task creation vs task touching) and data structures (configs/rets vs task info) are different. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, partial matching exists in data reading/writing patterns and loop structures. API mappings found for IPC data handling and error reporting mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx870_rank4.c", "source_rust_file": "Partial__CreateTasks__idx870_rank4.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "error!(...);", "mapping_type": "function", "description": "Error logging in IPC communication", "reasoning": "[Task Analysis] Both functions handle IPC communication with client data and server-side processing, but differ in domain: C function creates tasks via proxy, Rust function handles touch requests with permission checks and task management. [Similarity] The control flow includes reading data, validating length, looping over elements, and writing responses, but the semantic domains (task creation vs task touching) and data structures (configs/rets vs task info) are different. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, partial matching exists in data reading/writing patterns and loop structures. API mappings found for IPC data handling and error reporting mechanisms."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CreateTasks__idx870_rank4.c", "source_rust_file": "Partial__CreateTasks__idx870_rank4.rs", "c_fragment": "for (uint32_t i = 0; i < len; i++) {\n        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());\n        rets[i].tid = std::to_string(reply.ReadInt32());\n    }", "rust_fragment": "reply.write(&(ErrorCode::ErrOk as i32))?;\n        for (c, info) in vec {\n            reply.write(&(c as i32))?;\n            // TODO: Sends info only when ErrOk.\n            serialize_task_info(info, reply)?;\n        }", "description": "Both iterate through results and write them back to the reply message.", "reasoning": "[Task Analysis] Both functions handle IPC communication with client data and server-side processing, but differ in domain: C function creates tasks via proxy, Rust function handles touch requests with permission checks and task management. [Similarity] The control flow includes reading data, validating length, looping over elements, and writing responses, but the semantic domains (task creation vs task touching) and data structures (configs/rets vs task info) are different. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, partial matching exists in data reading/writing patterns and loop structures. API mappings found for IPC data handling and error reporting mechanisms."}]
+Unixcoder Score: -0.03967731073498726
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceProxy::Pause(uint32_t taskId)
+{
+    MessageParcel data, reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteUint32(taskId);
+    DOWNLOAD_HILOGD("DownloadServiceProxy Pause started.");
+    bool ret = Remote()->SendRequest(CMD_PAUSE, data, reply, option);
+    if (ret != ERR_NONE) {
+        DOWNLOAD_HILOGE("Pause, ret = %{public}d", ret);
+        return false;
+    }
+    DOWNLOAD_HILOGD("DownloadServiceProxy Pause succeeded.");
+    return true;
+}
+Function: 
+fn on_remote_request(
+    stub: &dyn RequestServiceInterface,
+    code: u32,
+    data: &BorrowedMsgParcel,
+    reply: &mut BorrowedMsgParcel,
+) -> IpcResult<()> {
+    info!(LOG_LABEL, "on_remote_request code {}", @public(code));
+    let service_token: InterfaceToken =
+        InterfaceToken::new("OHOS.Download.RequestServiceInterface");
+    let token: InterfaceToken = match data.read::<InterfaceToken>() {
+        Ok(i) => i,
+        _ => InterfaceToken::new("token error"),
+    };
+    if service_token.get_token() != token.get_token() {
+        error!(LOG_LABEL, "token error");
+        return Err(IpcStatusCode::Failed);
+    }
+    match code.try_into()? {
+        RequestCode::Construct => stub.construct(data, reply),
+        RequestCode::Pause => stub.pause(data, reply),
+        RequestCode::Query => stub.show(data, reply),
+        RequestCode::QueryMimeType => stub.query_mime_type(data, reply),
+        RequestCode::Remove => stub.remove(data, reply),
+        RequestCode::Resume => stub.resume(data, reply),
+        RequestCode::On => stub.on(data, reply),
+        RequestCode::Off => stub.off(data, reply),
+        RequestCode::Start => stub.start(data, reply),
+        RequestCode::Stop => stub.stop(data, reply),
+        RequestCode::Show => stub.show(data, reply),
+        RequestCode::Touch => stub.touch(data, reply),
+        RequestCode::Search => stub.search(data, reply),
+        RequestCode::Clear => stub.clear(data, reply),
+    }
+}
+Unixcoder Score: -0.040487971156835556
+--------------------------------------------------
+C_Code: 
+int InnerWrite(const std::string& domain, const std::string& eventName,
+        int type, Types... keyValues)
+    {
+        EventBase eventBase(domain, eventName, type);
+        WritebaseInfo(eventBase);
+        if (IsError(eventBase)) {
+            ExplainRetCode(eventBase);
+            return eventBase.GetRetCode();
+        }
+
+        InnerWrite(eventBase, keyValues...);
+        if (IsError(eventBase)) {
+            ExplainRetCode(eventBase);
+            return eventBase.GetRetCode();
+        }
+
+        SendSysEvent(eventBase);
+        return eventBase.GetRetCode();
+    }
+Function: 
+pub fn write<const N: usize>(event_domain: &str, event_name: &str, event_type: c_int, event_params: &[HiSysEventParam; N]) -> i32 {
+    let mut param_wrappers = [
+        HiSysEventParamWrapper {
+            param_name: [0; MAX_LENGTH_OF_PARAM_NAME],
+            param_type: 0,
+            param_value: HiSysEventParamValue {
+                b_: false,
+            },
+            array_size: 0,
+        }; N];
+    convert_param_to_wrapper(event_params, &mut param_wrappers);
+    unsafe {
+        let func = CString::new(crate::function!()).unwrap();
+        let domain = CString::new(event_domain).unwrap();
+        let event_name = CString::new(event_name).unwrap();
+        let params = &param_wrappers as *const [HiSysEventParamWrapper; N];
+        HiSysEventWriteWrapper(
+            func.as_ptr() as *const c_char,
+            line!() as c_ulonglong,
+            domain.as_ptr() as *const c_char,
+            event_name.as_ptr() as *const c_char,
+            event_type,
+            params as *const HiSysEventParamWrapper,
+            N as c_uint
+        )
+    }
+}
+Unixcoder Score: -0.04193514958024025
+--------------------------------------------------

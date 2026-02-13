@@ -1,0 +1,389 @@
+C_Code: 
+int32_t RequestServiceProxy::Subscribe(const std::string &tid)
+{
+    REQUEST_HILOGD("Request Subscribe, tid: %{public}s", tid.c_str());
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(tid);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_SUBSCRIBE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request Subscribe, tid: %{public}s, failed: %{public}d", tid.c_str(), ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    REQUEST_HILOGD("End Request Subscribe ok, tid: %{public}s", tid.c_str());
+    int32_t errCode = reply.ReadInt32();
+    return errCode;
+}
+Function: 
+pub(crate) fn unsubscribe(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let task_id: String = data.read()?;
+        info!("Service unsubscribe tid {}", task_id);
+
+        let Ok(task_id) = task_id.parse::<u32>() else {
+            error!("End Service unsubscribe, failed: task_id not valid");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A30,
+                "End Service unsubscribe, failed: task_id not valid"
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+        let uid = ipc::Skeleton::calling_uid();
+
+        if !self.check_task_uid(task_id, uid) {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        if self.client_manager.unsubscribe(task_id) == ErrorCode::ErrOk {
+            reply.write(&(ErrorCode::ErrOk as i32))?;
+            Ok(())
+        } else {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            Err(IpcStatusCode::Failed)
+        }
+    }
+Unixcoder Score: -0.01801426149904728
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(RemoteStubWrapper *ability, std::u16string descriptor) : IPCObjectStub(descriptor)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn on_remote_request(
+        &mut self,
+        code: u32,
+        data: Pin<&mut MessageParcel>,
+        reply: Pin<&mut MessageParcel>,
+    ) -> i32 {
+        unsafe {
+            let mut data = MsgParcel::from_ptr(data.get_unchecked_mut() as *mut MessageParcel);
+            let mut reply = MsgParcel::from_ptr(reply.get_unchecked_mut() as *mut MessageParcel);
+            self.inner.on_remote_request(code, &mut data, &mut reply)
+        }
+    }
+Unixcoder Score: -0.019810786470770836
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(RemoteStubWrapper *ability, std::u16string descriptor) : IPCObjectStub(descriptor)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn new<A: RemoteStub + 'static>(remote: A) -> Self {
+        Self {
+            inner: Box::new(remote),
+        }
+    }
+Unixcoder Score: -0.02044697105884552
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(RemoteStubWrapper *ability, std::u16string descriptor) : IPCObjectStub(descriptor)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn from_stub<T: RemoteStub + 'static>(stub: T) -> Option<Self> {
+        RemoteStubWrapper::new(stub).into_remote()
+    }
+Unixcoder Score: -0.022109484300017357
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(RemoteStubWrapper *ability, std::u16string descriptor) : IPCObjectStub(descriptor)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn new<A: RemoteStub + 'static>(remote: A) -> Self {
+        Self {
+            inner: Box::new(remote),
+        }
+    }
+Unixcoder Score: -0.023877663537859917
+--------------------------------------------------
+C_Code: 
+int32_t RequestServiceProxy::Subscribe(const std::string &tid)
+{
+    REQUEST_HILOGD("Request Subscribe, tid: %{public}s", tid.c_str());
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(tid);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_SUBSCRIBE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request Subscribe, tid: %{public}s, failed: %{public}d", tid.c_str(), ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    REQUEST_HILOGD("End Request Subscribe ok, tid: %{public}s", tid.c_str());
+    int32_t errCode = reply.ReadInt32();
+    return errCode;
+}
+Function: 
+pub(crate) fn subscribe(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let task_id: String = data.read()?;
+        debug!("Service subscribe tid {}", task_id);
+
+        let Ok(task_id) = task_id.parse::<u32>() else {
+            error!("End Service subscribe, failed: task_id not valid");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                "End Service subscribe, failed: task_id not valid"
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+        let uid = ipc::Skeleton::calling_uid();
+
+        if !self.check_task_uid(task_id, uid) {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let pid = ipc::Skeleton::calling_pid();
+        let token_id = ipc::Skeleton::calling_full_token_id();
+
+        let (event, rx) = TaskManagerEvent::subscribe(task_id, token_id);
+        if !self.task_manager.lock().unwrap().send_event(event) {
+            reply.write(&(ErrorCode::Other as i32))?;
+            error!(
+                "End Service subscribe, tid: {}, failed: send event failed",
+                task_id
+            );
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!(
+                    "End Service subscribe, tid: {}, failed: send event failed",
+                    task_id
+                )
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        let ret = match rx.get() {
+            Some(ret) => ret,
+            None => {
+                error!(
+                    "End Service subscribe, tid: {}, failed: receives ret failed",
+                    task_id
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A28,
+                    &format!(
+                        "End Service subscribe, tid: {}, failed: receives ret failed",
+                        task_id
+                    )
+                );
+                reply.write(&(ErrorCode::Other as i32))?;
+                return Err(IpcStatusCode::Failed);
+            }
+        };
+
+        if ret != ErrorCode::ErrOk {
+            error!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret)
+            );
+            reply.write(&(ret as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ret = self.client_manager.subscribe(task_id, pid, uid, token_id);
+        if ret == ErrorCode::ErrOk {
+            reply.write(&(ErrorCode::ErrOk as i32))?;
+            debug!("End Service subscribe ok: tid: {}", task_id);
+            Ok(())
+        } else {
+            error!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret)
+            );
+            reply.write(&(ret as i32))?;
+            Err(IpcStatusCode::Failed)
+        }
+    }
+Unixcoder Score: -0.02633499912917614
+--------------------------------------------------
+C_Code: 
+DBinderTestServiceProxy::DBinderTestServiceProxy(const sptr<IRemoteObject> &impl)
+    : IRemoteProxy<IDBinderTestService>(impl)
+{}
+Function: 
+pub fn try_new(wrap: UniquePtr<IRemoteObjectWrapper>) -> Option<Self> {
+        if wrap.is_null() {
+            return None;
+        }
+        Some(Self { inner: wrap })
+    }
+Unixcoder Score: -0.028666403144598007
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn publish<A: RemoteStub + 'static>(&self, ability: A) -> bool {
+        let ability = Box::new(AbilityStub::new(ability));
+        let system_ability = unsafe { Pin::new_unchecked(&mut *self.inner) };
+        system_ability.PublishWrapper(ability)
+    }
+Unixcoder Score: -0.029391735792160034
+--------------------------------------------------
+C_Code: 
+int32_t RequestServiceProxy::Subscribe(const std::string &tid)
+{
+    REQUEST_HILOGD("Request Subscribe, tid: %{public}s", tid.c_str());
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(tid);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_SUBSCRIBE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request Subscribe, tid: %{public}s, failed: %{public}d", tid.c_str(), ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    REQUEST_HILOGD("End Request Subscribe ok, tid: %{public}s", tid.c_str());
+    int32_t errCode = reply.ReadInt32();
+    return errCode;
+}
+Function: 
+pub(crate) fn subscribe(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let task_id: String = data.read()?;
+        debug!("Service subscribe tid {}", task_id);
+
+        let Ok(task_id) = task_id.parse::<u32>() else {
+            error!("End Service subscribe, failed: task_id not valid");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                "End Service subscribe, failed: task_id not valid"
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+        let uid = ipc::Skeleton::calling_uid();
+
+        if !self.check_task_uid(task_id, uid) {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let pid = ipc::Skeleton::calling_pid();
+        let token_id = ipc::Skeleton::calling_full_token_id();
+
+        let (event, rx) = TaskManagerEvent::subscribe(task_id, token_id);
+        if !self.task_manager.lock().unwrap().send_event(event) {
+            reply.write(&(ErrorCode::Other as i32))?;
+            error!(
+                "End Service subscribe, tid: {}, failed: send event failed",
+                task_id
+            );
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!(
+                    "End Service subscribe, tid: {}, failed: send event failed",
+                    task_id
+                )
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        let ret = match rx.get() {
+            Some(ret) => ret,
+            None => {
+                error!(
+                    "End Service subscribe, tid: {}, failed: receives ret failed",
+                    task_id
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A28,
+                    &format!(
+                        "End Service subscribe, tid: {}, failed: receives ret failed",
+                        task_id
+                    )
+                );
+                reply.write(&(ErrorCode::Other as i32))?;
+                return Err(IpcStatusCode::Failed);
+            }
+        };
+
+        if ret != ErrorCode::ErrOk {
+            error!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret)
+            );
+            reply.write(&(ret as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ret = self.client_manager.subscribe(task_id, pid, uid, token_id);
+        if ret == ErrorCode::ErrOk {
+            reply.write(&(ErrorCode::ErrOk as i32))?;
+            debug!("End Service subscribe ok: tid: {}", task_id);
+            Ok(())
+        } else {
+            error!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret)
+            );
+            reply.write(&(ret as i32))?;
+            Err(IpcStatusCode::Failed)
+        }
+    }
+Unixcoder Score: -0.029555877670645714
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.029563456773757935
+--------------------------------------------------

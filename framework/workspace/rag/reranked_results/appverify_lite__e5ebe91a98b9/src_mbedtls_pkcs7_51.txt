@@ -1,0 +1,965 @@
+C_Code: 
+void uv_process_getaddrinfo_req(uv_loop_t* loop, uv_getaddrinfo_t* handle,
+    uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len +
+          ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <=
+                 alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      NULL,
+                                      0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      cur_ptr,
+                                      name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  uv_unref(loop);
+}
+Function: 
+pub fn getaddrinfo(&mut self, loop_: &Loop, node: Option<&str>,
+                       service: Option<&str>, hints: Option<ai::Hint>,
+                       cb: GetAddrInfoCallback) {
+
+        assert!(node.is_some() || service.is_some());
+
+        let (c_node, c_node_ptr) = match node {
+            Some(n) => {
+                let c_node = n.to_c_str();
+                let c_node_ptr = c_node.with_ref(|r| r);
+                (Some(c_node), c_node_ptr)
+            }
+            None => (None, null())
+        };
+
+        let (c_service, c_service_ptr) = match service {
+            Some(s) => {
+                let c_service = s.to_c_str();
+                let c_service_ptr = c_service.with_ref(|r| r);
+                (Some(c_service), c_service_ptr)
+            }
+            None => (None, null())
+        };
+
+        let cb = Cell::new(cb);
+        let wrapper_cb: GetAddrInfoCallback = |req, addrinfo, err| {
+            // Capture some heap values that need to stay alive for the
+            // getaddrinfo call
+            let _ = &c_node;
+            let _ = &c_service;
+
+            let cb = cb.take();
+            cb(req, addrinfo, err)
+        };
+
+        let hint = hints.map(|hint| {
+            let mut flags = 0;
+            do each_ai_flag |cval, aival| {
+                if hint.flags & (aival as uint) != 0 {
+                    flags |= cval as i32;
+                }
+            }
+            /* XXX: do we really want to support these?
+            let socktype = match hint.socktype {
+                Some(ai::Stream) => uvll::rust_SOCK_STREAM(),
+                Some(ai::Datagram) => uvll::rust_SOCK_DGRAM(),
+                Some(ai::Raw) => uvll::rust_SOCK_RAW(),
+                None => 0,
+            };
+            let protocol = match hint.protocol {
+                Some(ai::UDP) => uvll::rust_IPPROTO_UDP(),
+                Some(ai::TCP) => uvll::rust_IPPROTO_TCP(),
+                _ => 0,
+            };
+            */
+            let socktype = 0;
+            let protocol = 0;
+
+            uvll::addrinfo {
+                ai_flags: flags,
+                ai_family: hint.family as c_int,
+                ai_socktype: socktype,
+                ai_protocol: protocol,
+                ai_addrlen: 0,
+                ai_canonname: null(),
+                ai_addr: null(),
+                ai_next: null(),
+            }
+        });
+        let hint_ptr = hint.as_ref().map_default(null(), |x| x as *uvll::addrinfo);
+
+        self.get_req_data().getaddrinfo_cb = Some(wrapper_cb);
+
+        unsafe {
+            assert!(0 == uvll::getaddrinfo(loop_.native_handle(),
+                                           self.native_handle(),
+                                           getaddrinfo_cb,
+                                           c_node_ptr,
+                                           c_service_ptr,
+                                           hint_ptr));
+        }
+
+        extern "C" fn getaddrinfo_cb(req: *uvll::uv_getaddrinfo_t,
+                                     status: c_int,
+                                     res: *uvll::addrinfo) {
+            let mut req: GetAddrInfoRequest = NativeHandle::from_native_handle(req);
+            let err = status_to_maybe_uv_error(status);
+            let addrinfo = net::UvAddrInfo(res);
+            let data = req.get_req_data();
+            (*data.getaddrinfo_cb.get_ref())(req, &addrinfo, err);
+            unsafe {
+                uvll::freeaddrinfo(res);
+            }
+        }
+    }
+Unixcoder Score: -0.04359785467386246
+--------------------------------------------------
+C_Code: 
+void uv_process_getaddrinfo_req(uv_loop_t* loop, uv_getaddrinfo_t* handle,
+    uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len +
+          ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <=
+                 alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      NULL,
+                                      0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      cur_ptr,
+                                      name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  uv_unref(loop);
+}
+Function: 
+pub unsafe fn getaddrinfo(loop_: *uv_loop_t, req: *uv_getaddrinfo_t,
+               getaddrinfo_cb: uv_getaddrinfo_cb,
+               node: *c_char, service: *c_char,
+               hints: *addrinfo) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+    return rust_uv_getaddrinfo(loop_, req, getaddrinfo_cb, node, service, hints);
+}
+Unixcoder Score: -0.0531015582382679
+--------------------------------------------------
+C_Code: 
+void uv_process_getaddrinfo_req(uv_loop_t* loop, uv_getaddrinfo_t* handle,
+    uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len +
+          ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <=
+                 alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      NULL,
+                                      0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname,
+                                      -1,
+                                      cur_ptr,
+                                      name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  uv_unref(loop);
+}
+Function: 
+extern "C" fn getaddrinfo_cb(req: *uvll::uv_getaddrinfo_t,
+                                     status: c_int,
+                                     res: *uvll::addrinfo) {
+            let mut req: GetAddrInfoRequest = NativeHandle::from_native_handle(req);
+            let err = status_to_maybe_uv_error(status);
+            let addrinfo = net::UvAddrInfo(res);
+            let data = req.get_req_data();
+            (*data.getaddrinfo_cb.get_ref())(req, &addrinfo, err);
+            unsafe {
+                uvll::freeaddrinfo(res);
+            }
+        }
+Unixcoder Score: -0.056673746556043625
+--------------------------------------------------
+C_Code: 
+struct  PSH_PointRec_
+  {
+    PSH_Point    prev;
+    PSH_Point    next;
+    PSH_Contour  contour;
+    FT_UInt      flags;
+    FT_UInt      flags2;
+    PSH_Dir      dir_in;
+    PSH_Dir      dir_out;
+    PSH_Hint     hint;
+    FT_Pos       org_u;
+    FT_Pos       org_v;
+    FT_Pos       cur_u;
+#ifdef DEBUG_HINTER
+    FT_Pos       org_x;
+    FT_Pos       cur_x;
+    FT_Pos       org_y;
+    FT_Pos       cur_y;
+    FT_UInt      flags_x;
+    FT_UInt      flags_y;
+#endif
+
+  }
+Function: 
+struct Point {
+        x: f32,
+        y: f32,
+    }
+Unixcoder Score: -0.06522081047296524
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+fn each_addr<A: ToSocketAddrs, F, T>(addr: A, mut f: F) -> io::Result<T>
+where
+    F: FnMut(io::Result<&SocketAddr>) -> io::Result<T>,
+{
+    let addrs = match addr.to_socket_addrs() {
+        Ok(addrs) => addrs,
+        Err(e) => return f(Err(e)),
+    };
+    let mut last_err = None;
+    for addr in addrs {
+        match f(Ok(&addr)) {
+            Ok(l) => return Ok(l),
+            Err(e) => last_err = Some(e),
+        }
+    }
+    Err(last_err.unwrap_or_else(|| {
+        io::const_io_error!(ErrorKind::InvalidInput, "could not resolve to any addresses")
+    }))
+}
+Unixcoder Score: -0.07612296938896179
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+fn fragment<T: AstNode>(template: &str, s: &str) -> Result<SyntaxNode, ()> {
+    let s = s.trim();
+    let input = template.replace("{}", s);
+    let parse = syntax::SourceFile::parse(&input);
+    if !parse.errors().is_empty() {
+        return Err(());
+    }
+    let node = parse.tree().syntax().descendants().find_map(T::cast).ok_or(())?;
+    if node.syntax().text() != s {
+        return Err(());
+    }
+    Ok(node.syntax().clone_subtree())
+}
+Unixcoder Score: -0.07822047173976898
+--------------------------------------------------
+C_Code: 
+static void uv_getaddrinfo_done(uv_getaddrinfo_t* handle, uv_req_t* req) {
+  int addrinfo_len = 0;
+  int name_len = 0;
+  size_t addrinfo_struct_len = ALIGNED_SIZE(sizeof(struct addrinfo));
+  struct addrinfoW* addrinfow_ptr;
+  struct addrinfo* addrinfo_ptr;
+  char* alloc_ptr = NULL;
+  char* cur_ptr = NULL;
+  uv_err_code uv_ret;
+
+  /* release input parameter memory */
+  if (handle->alloc != NULL) {
+    free(handle->alloc);
+    handle->alloc = NULL;
+  }
+
+  uv_ret = uv_translate_eai_error(handle->retcode);
+  if (handle->retcode == 0) {
+    /* convert addrinfoW to addrinfo */
+    /* first calculate required length */
+    addrinfow_ptr = handle->res;
+    while (addrinfow_ptr != NULL) {
+      addrinfo_len += addrinfo_struct_len + ALIGNED_SIZE(addrinfow_ptr->ai_addrlen);
+      if (addrinfow_ptr->ai_canonname != NULL) {
+        name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+        if (name_len == 0) {
+          uv_ret = uv_translate_sys_error(GetLastError());
+          goto complete;
+        }
+        addrinfo_len += ALIGNED_SIZE(name_len);
+      }
+      addrinfow_ptr = addrinfow_ptr->ai_next;
+    }
+
+    /* allocate memory for addrinfo results */
+    alloc_ptr = (char*)malloc(addrinfo_len);
+
+    /* do conversions */
+    if (alloc_ptr != NULL) {
+      cur_ptr = alloc_ptr;
+      addrinfow_ptr = handle->res;
+
+      while (addrinfow_ptr != NULL) {
+        /* copy addrinfo struct data */
+        assert(cur_ptr + addrinfo_struct_len <= alloc_ptr + addrinfo_len);
+        addrinfo_ptr = (struct addrinfo*)cur_ptr;
+        addrinfo_ptr->ai_family = addrinfow_ptr->ai_family;
+        addrinfo_ptr->ai_socktype = addrinfow_ptr->ai_socktype;
+        addrinfo_ptr->ai_protocol = addrinfow_ptr->ai_protocol;
+        addrinfo_ptr->ai_flags = addrinfow_ptr->ai_flags;
+        addrinfo_ptr->ai_addrlen = addrinfow_ptr->ai_addrlen;
+        addrinfo_ptr->ai_canonname = NULL;
+        addrinfo_ptr->ai_addr = NULL;
+        addrinfo_ptr->ai_next = NULL;
+
+        cur_ptr += addrinfo_struct_len;
+
+        /* copy sockaddr */
+        if (addrinfo_ptr->ai_addrlen > 0) {
+          assert(cur_ptr + addrinfo_ptr->ai_addrlen <= alloc_ptr + addrinfo_len);
+          memcpy(cur_ptr, addrinfow_ptr->ai_addr, addrinfo_ptr->ai_addrlen);
+          addrinfo_ptr->ai_addr = (struct sockaddr*)cur_ptr;
+          cur_ptr += ALIGNED_SIZE(addrinfo_ptr->ai_addrlen);
+        }
+
+        /* convert canonical name to UTF-8 */
+        if (addrinfow_ptr->ai_canonname != NULL) {
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, NULL, 0);
+          assert(name_len > 0);
+          assert(cur_ptr + name_len <= alloc_ptr + addrinfo_len);
+          name_len = uv_utf16_to_utf8(addrinfow_ptr->ai_canonname, -1, cur_ptr, name_len);
+          assert(name_len > 0);
+          addrinfo_ptr->ai_canonname = cur_ptr;
+          cur_ptr += ALIGNED_SIZE(name_len);
+        }
+        assert(cur_ptr <= alloc_ptr + addrinfo_len);
+
+        /* set next ptr */
+        addrinfow_ptr = addrinfow_ptr->ai_next;
+        if (addrinfow_ptr != NULL) {
+          addrinfo_ptr->ai_next = (struct addrinfo*)cur_ptr;
+        }
+      }
+    } else {
+      uv_ret = UV_ENOMEM;
+    }
+
+  }
+
+  /* return memory to system */
+  if (handle->res != NULL) {
+    FreeAddrInfoW(handle->res);
+    handle->res = NULL;
+  }
+
+complete:
+  /* finally do callback with converted result */
+  handle->getaddrinfo_cb(handle, uv_ret, (struct addrinfo*)alloc_ptr);
+
+  /* release copied result memory */
+  if (alloc_ptr != NULL) {
+    free(alloc_ptr);
+  }
+
+  uv_refs_--;
+}
+Function: 
+pub fn split_at_mut<T>(self_: &mut [T], mid: usize) -> (&mut [T], &mut [T]) {
+        let len = self_.len();
+        let ptr = self_.as_mut_ptr();
+
+        unsafe {
+            assert!(mid <= len);
+
+            (
+                from_raw_parts_mut(ptr, len - mid), // BUG: should be "mid" instead of "len - mid"
+                from_raw_parts_mut(ptr.offset(mid as isize), len - mid),
+            )
+        }
+    }
+Unixcoder Score: -0.09125693887472153
+--------------------------------------------------
+C_Code: 
+void iter_module_map(const mod_entry* map,
+                    void (*fn)(void* fptr, void* env, const mod_entry *entry),
+                    void* fptr,
+                    void* env
+                    ) {
+    for (const mod_entry* cur = map; cur->name; cur++) {
+        fn(fptr, env, cur);
+    }
+}
+Function: 
+fn next(&mut self) -> Option<GenericArg<'tcx>> {
+        debug!("next(): stack={:?}", self.stack);
+        loop {
+            let next = self.stack.pop()?;
+            self.last_subtree = self.stack.len();
+            if self.visited.insert(next) {
+                push_inner(&mut self.stack, next);
+                debug!("next: stack={:?}", self.stack);
+                return Some(next);
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx20251_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx20251_rank4.rs", "c_api": "cur++", "rust_api": "self.stack.pop()", "mapping_type": "pattern", "description": "State advancement in iteration", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function implements an iterator with loop and option handling. [Similarity] No structural similarity at the block level; C uses a for loop with function pointer callback, Rust uses a loop with Option unwrapping. [Knowledge Extraction] No full or partial match due to domain mismatch (iteration vs iterator implementation), but API mapping can be extracted for loop/iteration pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx20251_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx20251_rank4.rs", "c_api": "for (const mod_entry* cur = map; cur->name; cur++)", "rust_api": "loop {", "mapping_type": "pattern", "description": "Iterative control flow pattern", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function implements an iterator with loop and option handling. [Similarity] No structural similarity at the block level; C uses a for loop with function pointer callback, Rust uses a loop with Option unwrapping. [Knowledge Extraction] No full or partial match due to domain mismatch (iteration vs iterator implementation), but API mapping can be extracted for loop/iteration pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx20251_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx20251_rank4.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "push_inner(&mut self.stack, next)", "mapping_type": "function", "description": "Callback invocation pattern", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function implements an iterator with loop and option handling. [Similarity] No structural similarity at the block level; C uses a for loop with function pointer callback, Rust uses a loop with Option unwrapping. [Knowledge Extraction] No full or partial match due to domain mismatch (iteration vs iterator implementation), but API mapping can be extracted for loop/iteration pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx20251_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx20251_rank4.rs", "c_api": "cur->name", "rust_api": "self.visited.insert(next)", "mapping_type": "pattern", "description": "Condition check for continuation", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function implements an iterator with loop and option handling. [Similarity] No structural similarity at the block level; C uses a for loop with function pointer callback, Rust uses a loop with Option unwrapping. [Knowledge Extraction] No full or partial match due to domain mismatch (iteration vs iterator implementation), but API mapping can be extracted for loop/iteration pattern."}]
+Unixcoder Score: -0.11270973086357117
+--------------------------------------------------
+C_Code: 
+void iter_module_map(const mod_entry* map,
+                    void (*fn)(void* fptr, void* env, const mod_entry *entry),
+                    void* fptr,
+                    void* env
+                    ) {
+    for (const mod_entry* cur = map; cur->name; cur++) {
+        fn(fptr, env, cur);
+    }
+}
+Function: 
+fn try_rfold<Acc, G, R>(&mut self, init: Acc, g: G) -> R
+    where
+        Self: Sized,
+        G: FnMut(Acc, Self::Item) -> R,
+        R: Try<Output = Acc>,
+    {
+        self.iter.try_rfold(init, map_try_fold(&mut self.f, g))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx94499_rank1.c", "source_rust_file": "API_Mapping__iter_module_map__idx94499_rank1.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "f(token)", "mapping_type": "function", "description": "Callback invocation with context", "reasoning": "[Task Analysis] C function iter_module_map is a generic iterator over a module map, calling a provided function for each entry. Rust function descend_into_macros_impl is a complex macro expansion traversal logic with stack-based processing and token remapping. [Similarity] No structural similarity at the function level due to different domains (generic iteration vs macro expansion). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to iteration and function application patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx94499_rank1.c", "source_rust_file": "API_Mapping__iter_module_map__idx94499_rank1.rs", "c_api": "for (const mod_entry* cur = map; cur->name; cur++)", "rust_api": "while let Some(token) = stack.pop()", "mapping_type": "pattern", "description": "Loop iteration over a data structure", "reasoning": "[Task Analysis] C function iter_module_map is a generic iterator over a module map, calling a provided function for each entry. Rust function descend_into_macros_impl is a complex macro expansion traversal logic with stack-based processing and token remapping. [Similarity] No structural similarity at the function level due to different domains (generic iteration vs macro expansion). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to iteration and function application patterns."}]
+Unixcoder Score: -0.1258796751499176
+--------------------------------------------------
+C_Code: 
+void iter_module_map(const mod_entry* map,
+                    void (*fn)(void* fptr, void* env, const mod_entry *entry),
+                    void* fptr,
+                    void* env
+                    ) {
+    for (const mod_entry* cur = map; cur->name; cur++) {
+        fn(fptr, env, cur);
+    }
+}
+Function: 
+fn new(mut symbols: Vec<FileSymbol>) -> SymbolIndex {
+        fn cmp(lhs: &FileSymbol, rhs: &FileSymbol) -> Ordering {
+            let lhs_chars = lhs.name.chars().map(|c| c.to_ascii_lowercase());
+            let rhs_chars = rhs.name.chars().map(|c| c.to_ascii_lowercase());
+            lhs_chars.cmp(rhs_chars)
+        }
+
+        symbols.par_sort_by(cmp);
+
+        let mut builder = fst::MapBuilder::memory();
+
+        let mut last_batch_start = 0;
+
+        for idx in 0..symbols.len() {
+            if let Some(next_symbol) = symbols.get(idx + 1) {
+                if cmp(&symbols[last_batch_start], next_symbol) == Ordering::Equal {
+                    continue;
+                }
+            }
+
+            let start = last_batch_start;
+            let end = idx + 1;
+            last_batch_start = end;
+
+            let key = symbols[start].name.as_str().to_ascii_lowercase();
+            let value = SymbolIndex::range_to_map_value(start, end);
+
+            builder.insert(key, value).unwrap();
+        }
+
+        let map = fst::Map::new({
+            let mut buf = builder.into_inner().unwrap();
+            buf.shrink_to_fit();
+            buf
+        })
+        .unwrap();
+        SymbolIndex { symbols, map }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx20645_rank1.c", "source_rust_file": "Partial__iter_module_map__idx20645_rank1.rs", "c_api": "cur++", "rust_api": "iter.next_back()", "mapping_type": "method", "description": "Both increment or advance through an iterator or list.", "reasoning": "[Task Analysis] The C function `iter_module_map` is a generic iterator over a module map, calling a provided function for each entry. The Rust function `traverse_successor` implements a graph traversal algorithm using a stack and iterators. [Similarity] While both involve iteration, the domains are different: C iterates over a data structure with a known structure, while Rust implements a complex graph traversal with stack management and borrow checking. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, there are partial structural similarities in loop patterns and API mappings in how iteration is handled in both languages."}, {"knowledge_type": "Partial", "source_c_file": "Partial__iter_module_map__idx20645_rank1.c", "source_rust_file": "Partial__iter_module_map__idx20645_rank1.rs", "c_fragment": "for (const mod_entry* cur = map; cur->name; cur++) {\n        fn(fptr, env, cur);\n    }", "rust_fragment": "while let Some(&mut (_, ref mut iter)) = self.visit_stack.last_mut() && let Some(bb) = iter.next_back() {\n            if self.visited.insert(bb) {\n                if let Some(term) = &self.basic_blocks[bb].terminator {\n                    self.visit_stack.push((bb, term.successors()));\n                }\n            }\n        }", "description": "Both code blocks perform iterative operations over a data structure, though with different control flow and data structures involved.", "reasoning": "[Task Analysis] The C function `iter_module_map` is a generic iterator over a module map, calling a provided function for each entry. The Rust function `traverse_successor` implements a graph traversal algorithm using a stack and iterators. [Similarity] While both involve iteration, the domains are different: C iterates over a data structure with a known structure, while Rust implements a complex graph traversal with stack management and borrow checking. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, there are partial structural similarities in loop patterns and API mappings in how iteration is handled in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx20645_rank1.c", "source_rust_file": "Partial__iter_module_map__idx20645_rank1.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "self.visit_stack.push((bb, term.successors()))", "mapping_type": "function", "description": "Both perform a callback or action on each element in an iteration.", "reasoning": "[Task Analysis] The C function `iter_module_map` is a generic iterator over a module map, calling a provided function for each entry. The Rust function `traverse_successor` implements a graph traversal algorithm using a stack and iterators. [Similarity] While both involve iteration, the domains are different: C iterates over a data structure with a known structure, while Rust implements a complex graph traversal with stack management and borrow checking. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, there are partial structural similarities in loop patterns and API mappings in how iteration is handled in both languages."}]
+Unixcoder Score: -0.13010424375534058
+--------------------------------------------------

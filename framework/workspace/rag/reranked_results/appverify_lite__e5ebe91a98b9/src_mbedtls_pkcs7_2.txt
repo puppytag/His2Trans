@@ -1,0 +1,144 @@
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct Slice(&'static [i32]);
+Unixcoder Score: 0.11181691288948059
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct PkgId {
+    /// Remote path: for example, github.com/mozilla/quux-whatever
+    remote_path: RemotePath,
+    /// Local path: for example, /home/quux/github.com/mozilla/quux_whatever
+    /// Note that '-' normalizes to '_' when mapping a remote path
+    /// onto a local path
+    /// Also, this will change when we implement #6407, though we'll still
+    /// need to keep track of separate local and remote paths
+    local_path: LocalPath,
+    /// Short name. This is the local path's filestem, but we store it
+    /// redundantly so as to not call get() everywhere (filestem() returns an
+    /// option)
+    short_name: ~str,
+    version: Version
+}
+Unixcoder Score: 0.10939938575029373
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct Buf {
+    pub inner: Vec<u8>
+}
+Unixcoder Score: 0.10026805847883224
+--------------------------------------------------
+C_Code: 
+bool VerifyFromPointer(const uint8_t *const p, const size_t len) {
+    return Verify(static_cast<size_t>(p - buf_), len);
+  }
+Function: 
+pub fn root_with_opts<'opts, 'buf, T>(
+    opts: &'opts VerifierOptions,
+    data: &'buf [u8],
+) -> Result<T::Inner, InvalidFlatbuffer>
+where
+    T: 'buf + Follow<'buf> + Verifiable,
+{
+    let mut v = Verifier::new(opts, data);
+    <ForwardsUOffset<T>>::run_verifier(&mut v, 0)?;
+    // Safety:
+    // Run verifier above
+    Ok(unsafe { root_unchecked::<T>(data) })
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5019_rank1.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5019_rank1.rs", "c_api": "OhCloudExtHashMapIterGetKeyValuePair(value, &valKeys, &valValues)", "rust_api": "OhCloudExtHashMap::get_inner_ref(hash_map, SafetyCheckId::HashMap)", "mapping_type": "function", "description": "Retrieval of key-value vectors from a hash map", "reasoning": "[Task Analysis] C function `ConvertBucket` is a data conversion utility that iterates over a hash map and builds a `DBVBucket` from key-value pairs. Rust function `OhCloudExtHashMapIterGetKeyValuePair` is an FFI wrapper that retrieves key-value vectors from a hash map. [Similarity] Names do not refer to the same concept (`ConvertBucket` vs `OhCloudExtHashMapIterGetKeyValuePair`), and domains are different: C does data conversion while Rust does FFI retrieval. [Knowledge Extraction] No full or partial structural match. However, both involve iterating over key-value pairs and extracting data from containers, so API mappings can be extracted for the core operations like vector access and data retrieval."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5019_rank1.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5019_rank1.rs", "c_api": "OhCloudExtVectorGet(pValValues.get(), j, &valueItem, reinterpret_cast<unsigned int *>(&valueItemLen))", "rust_api": "map.values().cloned().collect()", "mapping_type": "function", "description": "Accessing values from a map", "reasoning": "[Task Analysis] C function `ConvertBucket` is a data conversion utility that iterates over a hash map and builds a `DBVBucket` from key-value pairs. Rust function `OhCloudExtHashMapIterGetKeyValuePair` is an FFI wrapper that retrieves key-value vectors from a hash map. [Similarity] Names do not refer to the same concept (`ConvertBucket` vs `OhCloudExtHashMapIterGetKeyValuePair`), and domains are different: C does data conversion while Rust does FFI retrieval. [Knowledge Extraction] No full or partial structural match. However, both involve iterating over key-value pairs and extracting data from containers, so API mappings can be extracted for the core operations like vector access and data retrieval."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5019_rank1.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5019_rank1.rs", "c_api": "OhCloudExtVectorGet(pValKeys.get(), j, &keyItem, reinterpret_cast<unsigned int *>(&keyItemLen))", "rust_api": "map.keys().cloned().collect()", "mapping_type": "function", "description": "Accessing elements from a vector by index", "reasoning": "[Task Analysis] C function `ConvertBucket` is a data conversion utility that iterates over a hash map and builds a `DBVBucket` from key-value pairs. Rust function `OhCloudExtHashMapIterGetKeyValuePair` is an FFI wrapper that retrieves key-value vectors from a hash map. [Similarity] Names do not refer to the same concept (`ConvertBucket` vs `OhCloudExtHashMapIterGetKeyValuePair`), and domains are different: C does data conversion while Rust does FFI retrieval. [Knowledge Extraction] No full or partial structural match. However, both involve iterating over key-value pairs and extracting data from containers, so API mappings can be extracted for the core operations like vector access and data retrieval."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5019_rank1.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5019_rank1.rs", "c_api": "OhCloudExtValueFree(valueOut)", "rust_api": "drop(valueOut)", "mapping_type": "function", "description": "Memory deallocation of a value", "reasoning": "[Task Analysis] C function `ConvertBucket` is a data conversion utility that iterates over a hash map and builds a `DBVBucket` from key-value pairs. Rust function `OhCloudExtHashMapIterGetKeyValuePair` is an FFI wrapper that retrieves key-value vectors from a hash map. [Similarity] Names do not refer to the same concept (`ConvertBucket` vs `OhCloudExtHashMapIterGetKeyValuePair`), and domains are different: C does data conversion while Rust does FFI retrieval. [Knowledge Extraction] No full or partial structural match. However, both involve iterating over key-value pairs and extracting data from containers, so API mappings can be extracted for the core operations like vector access and data retrieval."}]
+Unixcoder Score: 0.09674200415611267
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice<T> {
+    data: *const T,
+    len: usize,
+}
+Unixcoder Score: 0.09191841632127762
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice { slice: [u8] }
+Unixcoder Score: 0.08581768721342087
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct OwnedSlice {
+    /// This is conceptually a `&'self.owner [u8]`.
+    bytes: *const [u8],
+
+    // +---------------------------------------+
+    // | We expect `dead_code` lint here,      |
+    // | because we don't want to accidentally |
+    // | touch the owner — otherwise the owner |
+    // | could invalidate out `bytes` pointer  |
+    // |                                       |
+    // | so be quiet                           |
+    // +----+  +-------------------------------+
+    //       \/
+    //      ⊂(´･◡･⊂ )∘˚˳° (I am the phantom remnant of #97770)
+    #[expect(dead_code)]
+    owner: Lrc<dyn Send + Sync>,
+}
+Unixcoder Score: 0.08312412351369858
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct MultiplePointers<T: ?Sized>{
+    ptr1: *const T,
+    ptr2: *const T,
+}
+Unixcoder Score: 0.08030479401350021
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct SliceRepr {
+    ptr: *const u8,
+    len: usize,
+}
+Unixcoder Score: 0.07908765226602554
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Test<T: ?Sized>(T);
+Unixcoder Score: 0.07569899410009384
+--------------------------------------------------

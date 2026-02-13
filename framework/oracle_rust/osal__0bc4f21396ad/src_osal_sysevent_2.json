@@ -1,0 +1,51 @@
+{
+  "project": "osal__0bc4f21396ad",
+  "func_key": "src_osal_sysevent_2",
+  "function_name": "FinishEvent",
+  "source_c_file": "src/osal_sysevent.c",
+  "c_code": "static int FinishEvent(struct HdfIoService * service, const struct HdfSysEvent * event)\n{\n    struct HdfSBuf *sbuf = HdfSbufObtain(sizeof(uint64_t));\n\n    if (sbuf == NULL) {\n        return HDF_ERR_MALLOC_FAIL;\n    }\n\n    if (!HdfSbufWriteUint64(sbuf, event->syncToken)) {\n        HdfSbufRecycle(sbuf);\n        return HDF_FAILURE;\n    }\n\n    int ret = service->dispatcher->Dispatch(&service->object, KEVENT_COMPLETE_EVENT, sbuf, NULL);\n    if (ret != HDF_SUCCESS) {\n        HDF_LOGE(\"failed to finish sysevent, %{public}d\", ret);\n    }\n\n    HdfSbufRecycle(sbuf);\n    return ret;\n}",
+  "rust_signature": "fn FinishEvent(service: *mut crate::types::HdfIoService, event: *const crate::types::HdfSysEvent) -> i32",
+  "rust_code": "fn FinishEvent(service: *mut HdfIoService, event: *const HdfSysEvent) -> i32 {\n    const KEVENT_COMPLETE_EVENT: i32 = 1;\n    const HDF_ERR_MALLOC_FAIL: i32 = -6;\n    const HDF_FAILURE: i32 = -1;\n    const HDF_ERR_INVALID_OBJECT: i32 = -4;\n\n    unsafe {\n        let sbuf = HdfSbufObtain(core::mem::size_of::<u64>() as size_t);\n        if sbuf.is_null() {\n            return HDF_ERR_MALLOC_FAIL;\n        }\n\n        if event.is_null() || !HdfSbufWriteUint64(sbuf, (*event).syncToken) {\n            HdfSbufRecycle(sbuf);\n            return HDF_FAILURE;\n        }\n\n        let mut ret = HDF_ERR_INVALID_OBJECT;\n        if !service.is_null() && !(*service).dispatcher.is_null() {\n            if let Some(dispatch) = (*(*service).dispatcher).Dispatch {\n                ret = dispatch(core::ptr::addr_of_mut!((*service).object), KEVENT_COMPLETE_EVENT, sbuf, core::ptr::null_mut());\n            }\n        }\n\n        HdfSbufRecycle(sbuf);\n        ret\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufObtain",
+      "rust_api": "HdfSbufObtain",
+      "description": "Allocate an HdfSBuf for IPC payload",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufRecycle",
+      "rust_api": "HdfSbufRecycle",
+      "description": "Recycle HdfSBuf after use",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufWriteUint64",
+      "rust_api": "HdfSbufWriteUint64",
+      "description": "Serialize u64 into sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "svc->dispatcher->Dispatch(...)",
+      "rust_fragment": "(*dispatcher).Dispatch.unwrap()(...)",
+      "description": "Call function pointers via Option unwrap (avoid E0618)",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

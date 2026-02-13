@@ -1,0 +1,268 @@
+C_Code: 
+struct CUpdateStateInfo {
+    uint64_t mtime;
+    uint8_t state;
+    uint8_t reason;
+}
+Function: 
+pub(crate) struct DumpAllEachInfo {
+    pub(crate) task_id: u32,
+    pub(crate) action: Action,
+    pub(crate) state: State,
+    pub(crate) reason: Reason,
+}
+Unixcoder Score: 0.06235280632972717
+--------------------------------------------------
+C_Code: 
+struct CUpdateStateInfo {
+    uint64_t mtime;
+    uint8_t state;
+    uint8_t reason;
+}
+Function: 
+pub(crate) struct UpdateInfo {
+    pub(crate) mtime: u64,
+    pub(crate) reason: u8,
+    pub(crate) tries: u32,
+    pub(crate) mime_type: String,
+    pub(crate) progress: Progress,
+}
+Unixcoder Score: 0.055880412459373474
+--------------------------------------------------
+C_Code: 
+struct CUpdateStateInfo {
+    uint64_t mtime;
+    uint8_t state;
+    uint8_t reason;
+}
+Function: 
+pub(crate) struct UpdateInfo {
+    pub(crate) mtime: u64,
+    pub(crate) reason: u8,
+    pub(crate) tries: u32,
+    pub(crate) mime_type: String,
+    pub(crate) progress: Progress,
+}
+Unixcoder Score: 0.047026652842760086
+--------------------------------------------------
+C_Code: 
+struct CUpdateStateInfo {
+    uint64_t mtime;
+    uint8_t state;
+    uint8_t reason;
+}
+Function: 
+pub(crate) struct CUpdateInfo {
+    pub(crate) mtime: u64,
+    pub(crate) reason: u8,
+    pub(crate) tries: u32,
+    pub(crate) mime_type: CStringWrapper,
+    pub(crate) progress: CProgress,
+}
+Unixcoder Score: 0.03654664754867554
+--------------------------------------------------
+C_Code: 
+struct CUpdateStateInfo {
+    uint64_t mtime;
+    uint8_t state;
+    uint8_t reason;
+}
+Function: 
+pub(crate) struct DumpOneInfo {
+    pub(crate) task_id: u32,
+    pub(crate) action: Action,
+    pub(crate) state: State,
+    pub(crate) reason: Reason,
+}
+Unixcoder Score: 0.014201156795024872
+--------------------------------------------------
+C_Code: 
+void
+rust_task::set_state(rust_task_state state,
+                     rust_cond *cond, const char* cond_name) {
+    lifecycle_lock.must_have_lock();
+    this->state = state;
+    this->cond = cond;
+    this->cond_name = cond_name;
+}
+Function: 
+unsafe fn getcond(&mut self) -> *c_void {
+        match self.cond.load(atomics::Relaxed) {
+            0 => {}
+            n => return n as *c_void
+        }
+        let cond = imp::init_cond();
+        match self.cond.compare_and_swap(0, cond, atomics::SeqCst) {
+            0 => return cond as *c_void,
+            _ => {}
+        }
+        imp::free_cond(cond);
+        return self.cond.load(atomics::Relaxed) as *c_void;
+    }
+Unixcoder Score: -0.0081186443567276
+--------------------------------------------------
+C_Code: 
+void StateListener::OnAbilityNotLoadedLocked(int32_t systemAbilityId)
+{
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.c", "source_rust_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.rs", "c_api": "values.PutInt(\"state\", static_cast<uint8_t>(State::Failed))", "rust_api": "State::Failed", "mapping_type": "pattern", "description": "Setting a field value in a data structure for updating task state", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Domain Consistency] -> [Filter 1: Names] -> [Filter 2: Empty/Trivial] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.c", "source_rust_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.rs", "c_api": "store.Update", "rust_api": "database.update_task_state", "mapping_type": "function", "description": "Database update operation for changing task state", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Domain Consistency] -> [Filter 1: Names] -> [Filter 2: Empty/Trivial] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.c", "source_rust_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.rs", "c_fragment": "if (store.Update(changedRows, values, rdbPredicates) != OHOS::NativeRdb::E_OK) {\n        REQUEST_HILOGE(\"Updates all invalid task to `FAILED` state failed\");\n        return;\n    }\n    REQUEST_HILOGI(\"Updates all invalid task to `FAILED` state success\");", "rust_fragment": "database.update_task_state(task_id, State::Failed, reason);", "description": "Both handle updating a task's state in the database, with error handling and success logging.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Domain Consistency] -> [Filter 1: Names] -> [Filter 2: Empty/Trivial] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.c", "source_rust_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.rs", "c_api": "rdbPredicates.EqualTo(\"state\", static_cast<uint8_t>(State::Running))", "rust_api": "info.state != State::Running.repr", "mapping_type": "pattern", "description": "Filtering based on task state condition", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Domain Consistency] -> [Filter 1: Names] -> [Filter 2: Empty/Trivial] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.c", "source_rust_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.rs", "c_fragment": "REQUEST_HILOGI(\"Updates all invalid task to failed\");\n\n    OHOS::NativeRdb::ValuesBucket values;\n    values.PutInt(\"state\", static_cast<uint8_t>(State::Failed));", "rust_fragment": "info!(\"task {} failed\", task_id);\n        self.running_queue.task_finish(uid, task_id);", "description": "Both perform initial logging and state tracking for a task failure operation.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Domain Consistency] -> [Filter 1: Names] -> [Filter 2: Empty/Trivial] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.c", "source_rust_file": "Partial__RequestDBUpdateInvalidRecords__idx575_rank1.rs", "c_api": "REQUEST_HILOGI", "rust_api": "info!", "mapping_type": "function", "description": "Logging function for info level messages", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Domain Consistency] -> [Filter 1: Names] -> [Filter 2: Empty/Trivial] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}]
+Unixcoder Score: -0.010742015205323696
+--------------------------------------------------
+C_Code: 
+void
+rust_task::set_state(rust_task_state state,
+                     rust_cond *cond, const char* cond_name) {
+    lifecycle_lock.must_have_lock();
+    this->state = state;
+    this->cond = cond;
+    this->cond_name = cond_name;
+}
+Function: 
+fn test_rw_downgrade() {
+        // (1) A downgrader gets in write mode and does cond.wait.
+        // (2) A writer gets in write mode, sets state to 42, and does signal.
+        // (3) Downgrader wakes, sets state to 31337.
+        // (4) tells writer and all other readers to contend as it downgrades.
+        // (5) Writer attempts to set state back to 42, while downgraded task
+        //     and all reader tasks assert that it's 31337.
+        let arc = Arc::new(RWLock::new(0));
+
+        // Reader tasks
+        let mut reader_convos = Vec::new();
+        for _ in range(0, 10) {
+            let ((tx1, rx1), (tx2, rx2)) = (channel(), channel());
+            reader_convos.push((tx1, rx2));
+            let arcn = arc.clone();
+            task::spawn(proc() {
+                rx1.recv(); // wait for downgrader to give go-ahead
+                let lock = arcn.read();
+                assert_eq!(*lock, 31337);
+                tx2.send(());
+            });
+        }
+
+        // Writer task
+        let arc2 = arc.clone();
+        let ((tx1, rx1), (tx2, rx2)) = (channel(), channel());
+        task::spawn(proc() {
+            rx1.recv();
+            {
+                let mut lock = arc2.write();
+                assert_eq!(*lock, 0);
+                *lock = 42;
+                lock.cond.signal();
+            }
+            rx1.recv();
+            {
+                let mut lock = arc2.write();
+                // This shouldn't happen until after the downgrade read
+                // section, and all other readers, finish.
+                assert_eq!(*lock, 31337);
+                *lock = 42;
+            }
+            tx2.send(());
+        });
+
+        // Downgrader (us)
+        let mut lock = arc.write();
+        tx1.send(()); // send to another writer who will wake us up
+        while *lock == 0 {
+            lock.cond.wait();
+        }
+        assert_eq!(*lock, 42);
+        *lock = 31337;
+        // send to other readers
+        for &(ref mut rc, _) in reader_convos.mut_iter() {
+            rc.send(())
+        }
+        let lock = lock.downgrade();
+        // complete handshake with other readers
+        for &(_, ref mut rp) in reader_convos.mut_iter() {
+            rp.recv()
+        }
+        tx1.send(()); // tell writer to try again
+        assert_eq!(*lock, 31337);
+        drop(lock);
+
+        rx2.recv(); // complete handshake with writer
+    }
+Unixcoder Score: -0.016610268503427505
+--------------------------------------------------
+C_Code: 
+rust_task_state get_state() { return state; }
+Function: 
+pub fn new_with_keys(key0: u64, key1: u64) -> SipHasher128 {
+        let mut hasher = SipHasher128 {
+            nbuf: 0,
+            buf: MaybeUninit::uninit_array(),
+            state: State {
+                v0: key0 ^ 0x736f6d6570736575,
+                // The XOR with 0xee is only done on 128-bit algorithm version.
+                v1: key1 ^ (0x646f72616e646f6d ^ 0xee),
+                v2: key0 ^ 0x6c7967656e657261,
+                v3: key1 ^ 0x7465646279746573,
+            },
+            processed: 0,
+        };
+
+        unsafe {
+            // Initialize spill because we read from it in `short_write_process_buffer`.
+            *hasher.buf.get_unchecked_mut(BUFFER_SPILL_INDEX) = MaybeUninit::zeroed();
+        }
+
+        hasher
+    }
+Unixcoder Score: -0.018054500222206116
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityStateScheduler::SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener)
+{
+    std::unique_lock<samgr::shared_mutex> writeLock(listenerSetLock_);
+    auto iter = std::find_if(processListeners_.begin(), processListeners_.end(),
+        [listener](sptr<ISystemProcessStatusChange>& item) {
+        return item->AsObject() == listener->AsObject();
+    });
+    if (iter == processListeners_.end()) {
+        if (processListenerDeath_ != nullptr) {
+            bool ret = listener->AsObject()->AddDeathRecipient(processListenerDeath_);
+            HILOGI("SubscribeSystemProcess AddDeathRecipient %{public}s", ret ? "succeed" : "failed");
+        }
+        processListeners_.emplace_back(listener);
+    } else {
+        HILOGI("SubscribeSystemProcess listener already exists");
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.019640851765871048
+--------------------------------------------------

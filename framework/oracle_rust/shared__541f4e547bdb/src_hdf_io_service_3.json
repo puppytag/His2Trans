@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_io_service_3",
+  "function_name": "HdfIoServicePublish",
+  "source_c_file": "src/hdf_io_service.c",
+  "c_code": "struct HdfIoService * HdfIoServicePublish(const char * serviceName, uint32_t mode)\n{\n    if (HdfIoServiceAdapterPublish != NULL) {\n        return HdfIoServiceAdapterPublish(serviceName, mode);\n    }\n\n    return NULL;\n}",
+  "rust_signature": "pub extern \"C\" fn HdfIoServicePublish(serviceName: *const ::core::ffi::c_char, mode: u32) -> *mut crate::types::HdfIoService",
+  "rust_code": "pub extern \\\"C\\\" fn HdfIoServicePublish(serviceName: *const core::ffi::c_char, mode: u32) -> *mut HdfIoService {\n    unsafe {\n        // Mimic weak-symbol NULL check in C.\n        if (HdfIoServiceAdapterPublish as usize) != 0 {\n            return HdfIoServiceAdapterPublish(serviceName, mode);\n        }\n    }\n    core::ptr::null_mut()\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceAdapterPublish",
+      "rust_api": "HdfIoServiceAdapterPublish",
+      "description": "Publish io service via adapter",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

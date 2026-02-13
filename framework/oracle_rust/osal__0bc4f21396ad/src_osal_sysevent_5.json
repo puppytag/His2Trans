@@ -1,0 +1,35 @@
+{
+  "project": "osal__0bc4f21396ad",
+  "func_key": "src_osal_sysevent_5",
+  "function_name": "DeInitKeventIoServiceListenerLocked",
+  "source_c_file": "src/osal_sysevent.c",
+  "c_code": "static void DeInitKeventIoServiceListenerLocked(struct HdfSysEventNotifier * notifier)\n{\n    if (notifier->keventIoService == NULL) {\n        return;\n    }\n\n    (void)HdfDeviceUnregisterEventListener(notifier->keventIoService, &notifier->ioServiceListener);\n    HdfIoServiceRecycle(notifier->keventIoService);\n    notifier->keventIoService = NULL;\n}",
+  "rust_signature": "fn DeInitKeventIoServiceListenerLocked(notifier: *mut crate::types::HdfSysEventNotifier)",
+  "rust_code": "fn DeInitKeventIoServiceListenerLocked(notifier: *mut HdfSysEventNotifier) {\n    unsafe {\n        if notifier.is_null() || (*notifier).keventIoService.is_null() {\n            return;\n        }\n        let _ = HdfDeviceUnregisterEventListener((*notifier).keventIoService, core::ptr::addr_of_mut!((*notifier).ioServiceListener));\n        HdfIoServiceRecycle((*notifier).keventIoService);\n        (*notifier).keventIoService = core::ptr::null_mut();\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfDeviceUnregisterEventListener",
+      "rust_api": "HdfDeviceUnregisterEventListener",
+      "description": "Unregister device event listener",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceRecycle",
+      "rust_api": "HdfIoServiceRecycle",
+      "description": "Recycle HDF I/O service",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

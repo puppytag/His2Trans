@@ -1,0 +1,325 @@
+C_Code: 
+inline int32_t ReadVarintZigZag32(const char** p) {
+  uint64_t tmp;
+  *p = VarintParse(*p, &tmp);
+  return WireFormatLite::ZigZagDecode32(static_cast<uint32_t>(tmp));
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx112913_rank2.c", "source_rust_file": "Partial__insert_char__idx112913_rank2.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "self.reserve(lower_bound); iterator.for_each(move |c| self.push(c))", "mapping_type": "pattern", "description": "Buffer shifting and character insertion pattern", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function extends a collection with characters. [Similarity] No full structural match due to different domains (buffer manipulation vs collection extension). [Knowledge Extraction] Extract partial structural fragment and API mappings based on shared logic of character insertion and buffer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx112913_rank2.c", "source_rust_file": "Partial__insert_char__idx112913_rank2.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "iterator.for_each(move |c| self.push(c))", "mapping_type": "pattern", "description": "Character copying/insertion pattern", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function extends a collection with characters. [Similarity] No full structural match due to different domains (buffer manipulation vs collection extension). [Knowledge Extraction] Extract partial structural fragment and API mappings based on shared logic of character insertion and buffer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx112913_rank2.c", "source_rust_file": "Partial__insert_char__idx112913_rank2.rs", "c_api": "current->chars++", "rust_api": "self.push(c)", "mapping_type": "pattern", "description": "Character count increment pattern", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function extends a collection with characters. [Similarity] No full structural match due to different domains (buffer manipulation vs collection extension). [Knowledge Extraction] Extract partial structural fragment and API mappings based on shared logic of character insertion and buffer management."}, {"knowledge_type": "Partial", "source_c_file": "Partial__insert_char__idx112913_rank2.c", "source_rust_file": "Partial__insert_char__idx112913_rank2.rs", "c_fragment": "int n = utf8_getchars(buf, ch);\n\n    if (has_room(current, n) && pos >= 0 && pos <= current->chars) {\n        int p1, p2;\n        int ret = 1;\n        p1 = utf8_index(current->buf, pos);\n        p2 = p1 + n;\n\n#ifdef USE_TERMIOS\n        /* optimise the case where adding a single char to the end and no scrolling is needed */\n        if (current->pos == pos && current->chars == pos) {\n            if (ch >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {\n                IGNORE_RC(write(current->fd, buf, n));\n                ret = 2;\n            }\n        }\n#endif\n\n        memmove(current->buf + p2, current->buf + p1, current->len - p1);\n        memcpy(current->buf + p1, buf, n);\n        current->len += n;\n\n        current->chars++;\n        if (current->pos >= pos) {\n            current->pos++;\n        }\n        return ret;\n    }\n    return 0;", "rust_fragment": "let iterator = iter.into_iter();\n        let (lower_bound, _) = iterator.size_hint();\n        self.reserve(lower_bound);\n        iterator.for_each(move |c| self.push(c));", "description": "Both functions handle character insertion logic, with C doing manual buffer manipulation and Rust using iterator-based extension.", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function extends a collection with characters. [Similarity] No full structural match due to different domains (buffer manipulation vs collection extension). [Knowledge Extraction] Extract partial structural fragment and API mappings based on shared logic of character insertion and buffer management."}]
+Unixcoder Score: 0.11143827438354492
+--------------------------------------------------
+C_Code: 
+static uint32_t
+read_uint32 (struct dwarf_buf *buf)
+{
+  const unsigned char *p = buf->buf;
+
+  if (!advance (buf, 4))
+    return 0;
+  if (buf->is_bigendian)
+    return (((uint32_t) p[0] << 24) | ((uint32_t) p[1] << 16)
+	    | ((uint32_t) p[2] << 8) | (uint32_t) p[3]);
+  else
+    return (((uint32_t) p[3] << 24) | ((uint32_t) p[2] << 16)
+	    | ((uint32_t) p[1] << 8) | (uint32_t) p[0]);
+}
+Function: 
+pub unsafe fn read<T: Copy>(&mut self) -> T {
+        let Unaligned(result) = *(self.ptr as *const Unaligned<T>);
+        self.ptr = self.ptr.add(mem::size_of::<T>());
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__remove_char__idx78453_rank1.c", "source_rust_file": "API_Mapping__remove_char__idx78453_rank1.rs", "c_api": "current->chars--", "rust_api": "ret b;", "mapping_type": "function", "description": "Character count decrement", "reasoning": "[Task Analysis] C function removes a character from a UTF-8 buffer at a given position; Rust function pops the last byte from a string slice. [Similarity] Both involve manipulating string/byte buffers, but C operates on a specific index while Rust operates on the end. [Knowledge Extraction] No full structural match due to different logic domains (index-based removal vs end-based popping). However, both involve buffer manipulation and length adjustment. API mappings found for buffer operations and length management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__remove_char__idx78453_rank1.c", "source_rust_file": "API_Mapping__remove_char__idx78453_rank1.rs", "c_api": "memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1)", "rust_api": "s = substr(s, 0u, len - 1u)", "mapping_type": "function", "description": "Buffer shifting operation", "reasoning": "[Task Analysis] C function removes a character from a UTF-8 buffer at a given position; Rust function pops the last byte from a string slice. [Similarity] Both involve manipulating string/byte buffers, but C operates on a specific index while Rust operates on the end. [Knowledge Extraction] No full structural match due to different logic domains (index-based removal vs end-based popping). However, both involve buffer manipulation and length adjustment. API mappings found for buffer operations and length management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__remove_char__idx78453_rank1.c", "source_rust_file": "API_Mapping__remove_char__idx78453_rank1.rs", "c_api": "current->len -= (p2 - p1)", "rust_api": "let len = byte_len(s);", "mapping_type": "function", "description": "Length adjustment", "reasoning": "[Task Analysis] C function removes a character from a UTF-8 buffer at a given position; Rust function pops the last byte from a string slice. [Similarity] Both involve manipulating string/byte buffers, but C operates on a specific index while Rust operates on the end. [Knowledge Extraction] No full structural match due to different logic domains (index-based removal vs end-based popping). However, both involve buffer manipulation and length adjustment. API mappings found for buffer operations and length management."}]
+Unixcoder Score: 0.08272002637386322
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__read_uint32__idx122869_rank5.c", "source_rust_file": "Partial__read_uint32__idx122869_rank5.rs", "c_api": "read_uint32", "rust_api": "read", "mapping_type": "function", "description": "Buffer reading operation with type conversion", "reasoning": "[Task Analysis] C function reads a 32-bit integer from a buffer with endianness handling; Rust function reads a value of generic type T from a buffer. [Similarity] Names don't match but both perform buffer reading with type conversion. [Knowledge Extraction] No full structural match due to different logic and domain (endianness vs generic unaligned read). Partial match in buffer reading pattern. API mapping found for buffer read operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__read_uint32__idx122869_rank5.c", "source_rust_file": "Partial__read_uint32__idx122869_rank5.rs", "c_fragment": "const unsigned char *p = buf->buf;\n\n  if (!advance (buf, 4))\n    return 0;", "rust_fragment": "let Unaligned(result) = *(self.ptr as *const Unaligned<T>);", "description": "Both read data from a buffer, though C reads 4 bytes with error handling while Rust reads a generic type T.", "reasoning": "[Task Analysis] C function reads a 32-bit integer from a buffer with endianness handling; Rust function reads a value of generic type T from a buffer. [Similarity] Names don't match but both perform buffer reading with type conversion. [Knowledge Extraction] No full structural match due to different logic and domain (endianness vs generic unaligned read). Partial match in buffer reading pattern. API mapping found for buffer read operations."}]
+Unixcoder Score: 0.06913646310567856
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__HiTraceChainBytesToId__idx7496_rank4.h", "source_rust_file": "API_Mapping__HiTraceChainBytesToId__idx7496_rank4.rs", "c_api": "memcpy_s(&tmp1, sizeof(tmp1), pIdArray, sizeof(uint64_t))", "rust_api": "id_array_wrapper.push(item)", "mapping_type": "pattern", "description": "Memory copy from byte array to integer and push to vector", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `HiTraceChainIdToBytesWrapper` which is a wrapper around a C FFI function. [Task Analysis] -> The C function converts a byte array to a trace ID struct, while the Rust function converts a trace ID to a byte array. [Similarity] -> The functions are inverses of each other but operate on different data structures and involve FFI boundaries. [Knowledge Extraction] -> There are no full or partial structural matches due to domain mismatch (conversion vs FFI wrapper), but there are API mappings related to the conversion logic and FFI interaction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__HiTraceChainBytesToId__idx7496_rank4.h", "source_rust_file": "API_Mapping__HiTraceChainBytesToId__idx7496_rank4.rs", "c_api": "HiTraceChainInitId(&id)", "rust_api": "p_id_array[..arr_len].copy_from_slice(&id_array_wrapper[..arr_len])", "mapping_type": "function", "description": "Initialization of trace ID and copying result back to buffer", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `HiTraceChainIdToBytesWrapper` which is a wrapper around a C FFI function. [Task Analysis] -> The C function converts a byte array to a trace ID struct, while the Rust function converts a trace ID to a byte array. [Similarity] -> The functions are inverses of each other but operate on different data structures and involve FFI boundaries. [Knowledge Extraction] -> There are no full or partial structural matches due to domain mismatch (conversion vs FFI wrapper), but there are API mappings related to the conversion logic and FFI interaction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__HiTraceChainBytesToId__idx7496_rank4.h", "source_rust_file": "API_Mapping__HiTraceChainBytesToId__idx7496_rank4.rs", "c_api": "be64toh(tmp1)", "rust_api": "HiTraceChainIdToBytesWrapper(...)", "mapping_type": "function", "description": "Endianness conversion and FFI call for trace ID to bytes conversion", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `HiTraceChainIdToBytesWrapper` which is a wrapper around a C FFI function. [Task Analysis] -> The C function converts a byte array to a trace ID struct, while the Rust function converts a trace ID to a byte array. [Similarity] -> The functions are inverses of each other but operate on different data structures and involve FFI boundaries. [Knowledge Extraction] -> There are no full or partial structural matches due to domain mismatch (conversion vs FFI wrapper), but there are API mappings related to the conversion logic and FFI interaction."}]
+Unixcoder Score: 0.05162212252616882
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__HiTraceChainIsFlagEnabled__idx7479_rank4.h", "source_rust_file": "Partial__HiTraceChainIsFlagEnabled__idx7479_rank4.rs", "c_api": "HiTraceChainIsValid", "rust_api": "HiTraceChainIsValidWrapper", "mapping_type": "function", "description": "Trace ID validation function", "reasoning": "[Task Analysis] C function checks if a trace flag is enabled by validating the trace ID and checking a bitwise condition. Rust function checks validity via an FFI wrapper. [Similarity] Names don't match but the semantic domain is the same: trace ID validation. [Knowledge Extraction] No full structural match due to different logic flow and domain focus (C: flag checking, Rust: FFI call). However, there's a partial match in the validation logic and API mapping for trace ID validity check."}, {"knowledge_type": "Partial", "source_c_file": "Partial__HiTraceChainIsFlagEnabled__idx7479_rank4.h", "source_rust_file": "Partial__HiTraceChainIsFlagEnabled__idx7479_rank4.rs", "c_fragment": "HiTraceChainIsValid(pId)", "rust_fragment": "HiTraceChainIsValidWrapper(self as *const HiTraceId)", "description": "Both check the validity of a trace ID, with Rust using an FFI wrapper.", "reasoning": "[Task Analysis] C function checks if a trace flag is enabled by validating the trace ID and checking a bitwise condition. Rust function checks validity via an FFI wrapper. [Similarity] Names don't match but the semantic domain is the same: trace ID validation. [Knowledge Extraction] No full structural match due to different logic flow and domain focus (C: flag checking, Rust: FFI call). However, there's a partial match in the validation logic and API mapping for trace ID validity check."}]
+Unixcoder Score: 0.02072049304842949
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__HiTraceChainIsFlagEnabled__idx7481_rank3.h", "source_rust_file": "API_Mapping__HiTraceChainIsFlagEnabled__idx7481_rank3.rs", "c_api": "((pId->flags & (uint64_t)flag) != 0)", "rust_api": "unsafe { HiTraceChainEnableFlagWrapper(self as *mut HiTraceId, flag as i32); }", "mapping_type": "function", "description": "Flag checking and enabling operation", "reasoning": "[FFI Check] -> The Rust code contains an FFI call via `HiTraceChainEnableFlagWrapper` which is marked as a wrapper, and the C code does not contain any FFI calls. -> [Task Analysis] -> The C function checks a flag using bitwise operations, while the Rust function enables a flag via an FFI call. -> [Similarity] -> The semantic domains are mismatched: C is about flag checking logic, Rust is about enabling flags via FFI. -> [Knowledge Extraction] -> No full or partial match due to domain mismatch and FFI wrapper detection, but API mapping can be extracted for the flag enabling operation."}]
+Unixcoder Score: 0.00013902975479140878
+--------------------------------------------------
+C_Code: 
+std::pair<const char*, uint64> VarintParseSlow64(const char* p, uint32 res32) {
+  uint64 res = res32;
+  for (std::uint32_t i = 2; i < 10; i++) {
+    uint64 byte = static_cast<uint8>(p[i]);
+    res += (byte - 1) << (7 * i);
+    if (PROTOBUF_PREDICT_TRUE(byte < 128)) {
+      return {p + i + 1, res};
+    }
+  }
+  return {nullptr, 0};
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: -0.0011469905730336905
+--------------------------------------------------
+C_Code: 
+static uint64_t
+read_uint64 (struct dwarf_buf *buf)
+{
+  const unsigned char *p = buf->buf;
+
+  if (!advance (buf, 8))
+    return 0;
+  if (buf->is_bigendian)
+    return (((uint64_t) p[0] << 56) | ((uint64_t) p[1] << 48)
+	    | ((uint64_t) p[2] << 40) | ((uint64_t) p[3] << 32)
+	    | ((uint64_t) p[4] << 24) | ((uint64_t) p[5] << 16)
+	    | ((uint64_t) p[6] << 8) | (uint64_t) p[7]);
+  else
+    return (((uint64_t) p[7] << 56) | ((uint64_t) p[6] << 48)
+	    | ((uint64_t) p[5] << 40) | ((uint64_t) p[4] << 32)
+	    | ((uint64_t) p[3] << 24) | ((uint64_t) p[2] << 16)
+	    | ((uint64_t) p[1] << 8) | (uint64_t) p[0]);
+}
+Function: 
+pub unsafe fn read<T: Copy>(&mut self) -> T {
+        unsafe {
+            let result = self.ptr.cast::<T>().read_unaligned();
+            self.ptr = self.ptr.byte_add(mem::size_of::<T>());
+            result
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "memmove(...)", "mapping_type": "function", "description": "Move memory block within buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "memcpy(...)", "mapping_type": "function", "description": "Copy bytes from source to destination", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "utf8_getchars(buf, ch)", "rust_api": "push_utf8_bytes(buf, ch)", "mapping_type": "function", "description": "Convert character to UTF-8 bytes and append to buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "utf8_strlen(current->prompt, -1)", "rust_api": "utf8_strlen(...)", "mapping_type": "function", "description": "Calculate UTF-8 string length", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}]
+Unixcoder Score: -0.009178117848932743
+--------------------------------------------------
+C_Code: 
+int utf8_fromunicode(char *p, unsigned short uc)
+{
+    if (uc <= 0x7f) {
+        *p = uc;
+        return 1;
+    }
+    else if (uc <= 0x7ff) {
+        *p++ = 0xc0 | ((uc & 0x7c0) >> 6);
+        *p = 0x80 | (uc & 0x3f);
+        return 2;
+    }
+    else {
+        *p++ = 0xe0 | ((uc & 0xf000) >> 12);
+        *p++ = 0x80 | ((uc & 0xfc0) >> 6);
+        *p = 0x80 | (uc & 0x3f);
+        return 3;
+    }
+}
+Function: 
+pub(super) const fn utf8_is_cont_byte(byte: u8) -> bool {
+    (byte as i8) < -64
+}
+Unixcoder Score: -0.015259062871336937
+--------------------------------------------------
+C_Code: 
+std::pair<const char*, uint64> VarintParseSlow64(const char* p, uint32 res32) {
+  uint64 res = res32;
+  for (std::uint32_t i = 2; i < 10; i++) {
+    uint64 byte = static_cast<uint8>(p[i]);
+    res += (byte - 1) << (7 * i);
+    if (PROTOBUF_PREDICT_TRUE(byte < 128)) {
+      return {p + i + 1, res};
+    }
+  }
+  return {nullptr, 0};
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Unixcoder Score: -0.020093033090233803
+--------------------------------------------------

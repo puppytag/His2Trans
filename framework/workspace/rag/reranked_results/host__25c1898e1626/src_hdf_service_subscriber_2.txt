@@ -1,0 +1,480 @@
+C_Code: 
+void SubscriberWrapper::OnAccountsChanged(const int &id)
+{
+    REQUEST_HILOGI("Account Change to %{public}d", id);
+    on_accounts_changed_(id, *task_manager_);
+}
+Function: 
+pub(crate) fn registry_account_subscribe(task_manager: TaskManagerTx) {
+    static ONCE: Once = Once::new();
+
+    call_once(&ONCE, || unsafe {
+        TASK_MANAGER_TX = Some(task_manager.clone());
+    });
+
+    info!("registry_account_subscribe");
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED,
+            Box::new(task_manager.clone()),
+            |_, _| {},
+            |_new_id, _old_id, task_manager| update_accounts(task_manager.clone()),
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_switch_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_switch_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::ACTIVATED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_active_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_active_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::REMOVED,
+            Box::new(task_manager.clone()),
+            |id, task_manager| {
+                task_manager.send_event(TaskManagerEvent::Account(AccountEvent::Remove(*id)));
+            },
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_remove_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_remove_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::STOPPED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_stop_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_stop_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    update_accounts(task_manager.clone());
+}
+Unixcoder Score: 0.0266109611839056
+--------------------------------------------------
+C_Code: 
+void SubscriberWrapper::OnAccountsChanged(const int &id)
+{
+    REQUEST_HILOGI("Account Change to %{public}d", id);
+    on_accounts_changed_(id, *task_manager_);
+}
+Function: 
+pub(crate) fn registry_account_subscribe(task_manager: TaskManagerTx) {
+    static ONCE: Once = Once::new();
+
+    call_once(&ONCE, || unsafe {
+        TASK_MANAGER_TX = Some(task_manager.clone());
+    });
+
+    info!("registry_account_subscribe");
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED,
+            Box::new(task_manager.clone()),
+            |_, _| {},
+            |_new_id, _old_id, task_manager| update_accounts(task_manager.clone()),
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_switch_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_switch_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::ACTIVATED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_active_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_active_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::REMOVED,
+            Box::new(task_manager.clone()),
+            |id, task_manager| {
+                task_manager.send_event(TaskManagerEvent::Account(AccountEvent::Remove(*id)));
+            },
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_remove_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_remove_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::STOPPED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_stop_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_stop_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    update_accounts(task_manager.clone());
+}
+Unixcoder Score: 0.012355518527328968
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    SubscribeType type;
+    uint32_t taskId;
+    Progress progress;
+    Action action;
+    Version version;
+    Mode mode;
+    std::vector<TaskState> taskStates;
+}
+Function: 
+pub(crate) struct NotifyData {
+    pub(crate) bundle: String,
+    pub(crate) progress: Progress,
+    pub(crate) action: Action,
+    pub(crate) version: Version,
+    pub(crate) each_file_status: Vec<EachFileStatus>,
+    pub(crate) task_id: u32,
+    pub(crate) uid: u64,
+}
+Unixcoder Score: 0.005552393849939108
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener)
+{
+    if (abilityStateScheduler_ == nullptr) {
+        HILOGE("abilityStateScheduler is nullptr");
+        return ERR_INVALID_VALUE;
+    }
+    return abilityStateScheduler_->SubscribeSystemProcess(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTask__idx639_rank4.c", "source_rust_file": "Partial__GetTask__idx639_rank4.rs", "c_api": "CallProxyMethod(&RequestServiceInterface::GetTask, tid, token, config)", "rust_api": "self.download_queue.get(&(uid, task_id)).or_else(|| self.upload_queue.get(&(uid, task_id)))", "mapping_type": "function", "description": "Task retrieval from a service interface (C) vs task lookup in memory structures (Rust)", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('GetTask' vs 'get_task'), but both refer to the same conceptual operation (retrieving a task). [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task retrieval logic, but C uses a service proxy pattern with channel management while Rust uses direct map lookups. The domains are different (network/service vs in-memory data structure). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C function performs network/service logic with retries and logging, Rust function performs in-memory lookup. [Similarity] -> No full structural similarity due to domain mismatch and different logic patterns. [Knowledge Extraction] -> Partial structural match in the return logic, and API mapping in the task retrieval pattern."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetTask__idx639_rank4.c", "source_rust_file": "Partial__GetTask__idx639_rank4.rs", "c_fragment": "return ret;", "rust_fragment": "return ret;", "description": "Both functions return a value indicating success or failure of the operation.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('GetTask' vs 'get_task'), but both refer to the same conceptual operation (retrieving a task). [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task retrieval logic, but C uses a service proxy pattern with channel management while Rust uses direct map lookups. The domains are different (network/service vs in-memory data structure). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C function performs network/service logic with retries and logging, Rust function performs in-memory lookup. [Similarity] -> No full structural similarity due to domain mismatch and different logic patterns. [Knowledge Extraction] -> Partial structural match in the return logic, and API mapping in the task retrieval pattern."}]
+Unixcoder Score: -0.022239720448851585
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManager::UnSubscribeSystemAbilityLocked(
+    std::list<SAListener>& listenerList, const sptr<IRemoteObject>& listener)
+{
+    auto item = listenerList.begin();
+    for (; item != listenerList.end(); item++) {
+        if (item->listener == nullptr) {
+            HILOGE("listener is null");
+            return;
+        }
+        if (item->listener->AsObject() == listener) {
+            break;
+        }
+    }
+    if (item == listenerList.end()) {
+        return;
+    }
+    int32_t callpid = item->callingPid;
+    auto iterPair = subscribeCountMap_.find(callpid);
+    if (iterPair != subscribeCountMap_.end()) {
+        --(iterPair->second);
+        if (iterPair->second == 0) {
+            subscribeCountMap_.erase(iterPair);
+        }
+    }
+    listenerList.erase(item);
+    HILOGI("rm SAListener %{public}d,%{public}zu", callpid, listenerList.size());
+}
+Function: 
+pub fn unsubscribe(self) {
+        match self.inner {
+            Unsubscribe::Ability(mut p) => p.pin_mut().UnSubscribe(),
+            Unsubscribe::Process(mut p) => p.pin_mut().UnSubscribe(),
+        }
+    }
+Unixcoder Score: -0.023873383179306984
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener)
+{
+    if (abilityStateScheduler_ == nullptr) {
+        HILOGE("abilityStateScheduler is nullptr");
+        return ERR_INVALID_VALUE;
+    }
+    return abilityStateScheduler_->SubscribeSystemProcess(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotifyData__idx36_rank1.h", "source_rust_file": "API_Mapping__NotifyData__idx36_rank1.rs", "c_api": "Progress", "rust_api": "Progress", "mapping_type": "type", "description": "Progress data type", "reasoning": "[Task Analysis] The task is to compare two struct definitions with different field sets and names. [Similarity] The structs represent similar conceptual data (notification data with progress, action, version, etc.) but have different fields and naming conventions. [Knowledge Extraction] There are no full structural matches due to field differences and domain mismatch (C uses std::vector, Rust uses Vec). However, some field mappings can be identified based on semantic similarity."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotifyData__idx36_rank1.h", "source_rust_file": "API_Mapping__NotifyData__idx36_rank1.rs", "c_api": "Action", "rust_api": "Action", "mapping_type": "type", "description": "Action data type", "reasoning": "[Task Analysis] The task is to compare two struct definitions with different field sets and names. [Similarity] The structs represent similar conceptual data (notification data with progress, action, version, etc.) but have different fields and naming conventions. [Knowledge Extraction] There are no full structural matches due to field differences and domain mismatch (C uses std::vector, Rust uses Vec). However, some field mappings can be identified based on semantic similarity."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotifyData__idx36_rank1.h", "source_rust_file": "API_Mapping__NotifyData__idx36_rank1.rs", "c_api": "taskId", "rust_api": "task_id", "mapping_type": "field_access", "description": "Task identifier field", "reasoning": "[Task Analysis] The task is to compare two struct definitions with different field sets and names. [Similarity] The structs represent similar conceptual data (notification data with progress, action, version, etc.) but have different fields and naming conventions. [Knowledge Extraction] There are no full structural matches due to field differences and domain mismatch (C uses std::vector, Rust uses Vec). However, some field mappings can be identified based on semantic similarity."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotifyData__idx36_rank1.h", "source_rust_file": "API_Mapping__NotifyData__idx36_rank1.rs", "c_api": "taskStates", "rust_api": "each_file_status", "mapping_type": "field_access", "description": "Task state collection field", "reasoning": "[Task Analysis] The task is to compare two struct definitions with different field sets and names. [Similarity] The structs represent similar conceptual data (notification data with progress, action, version, etc.) but have different fields and naming conventions. [Knowledge Extraction] There are no full structural matches due to field differences and domain mismatch (C uses std::vector, Rust uses Vec). However, some field mappings can be identified based on semantic similarity."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotifyData__idx36_rank1.h", "source_rust_file": "API_Mapping__NotifyData__idx36_rank1.rs", "c_api": "Version", "rust_api": "Version", "mapping_type": "type", "description": "Version data type", "reasoning": "[Task Analysis] The task is to compare two struct definitions with different field sets and names. [Similarity] The structs represent similar conceptual data (notification data with progress, action, version, etc.) but have different fields and naming conventions. [Knowledge Extraction] There are no full structural matches due to field differences and domain mismatch (C uses std::vector, Rust uses Vec). However, some field mappings can be identified based on semantic similarity."}]
+Unixcoder Score: -0.033602017909288406
+--------------------------------------------------
+C_Code: 
+EventSubscriber::EventSubscriber(EventFwk::CommonEventSubscribeInfo &subscribeInfo, rust::Box<EventHandler> handler)
+    : CommonEventSubscriber(subscribeInfo)
+{
+    _handler = handler.into_raw();
+}
+Function: 
+pub fn subscribe_common_event<T: CommonEventSubscriber + 'static>(
+    events: Vec<&str>,
+    handler: T,
+) -> Result<(), i32> {
+    let res = ffi::SubscribeCommonEvent(events, Box::new(EventHandler::new(Box::new(handler))));
+    if res == 0 {
+        Ok(())
+    } else {
+        Err(res)
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__EventSubscriber__idx921_rank2.c", "source_rust_file": "API_Mapping__EventSubscriber__idx921_rank2.rs", "c_api": "_handler = handler.into_raw();", "rust_api": "Box::new(EventHandler::new(Box::new(handler)))", "mapping_type": "pattern", "description": "Handler wrapping and memory management", "reasoning": "[Task Analysis] C code defines a constructor for `EventSubscriber` that stores a raw pointer to a Rust handler. Rust code defines a function `subscribe_common_event` that calls an FFI function `SubscribeCommonEvent` and wraps the handler in a `Box`. [Similarity] The overall task is to subscribe to common events with a handler, but the structural patterns differ significantly: C uses a constructor with manual pointer handling, while Rust uses a function with a generic handler and FFI call. [Knowledge Extraction] No full structural match due to different control flow and implementation styles. However, there are API mappings related to event subscription and handler wrapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__EventSubscriber__idx921_rank2.c", "source_rust_file": "API_Mapping__EventSubscriber__idx921_rank2.rs", "c_api": "EventSubscriber::EventSubscriber(...)", "rust_api": "subscribe_common_event(...)", "mapping_type": "function", "description": "Event subscription setup", "reasoning": "[Task Analysis] C code defines a constructor for `EventSubscriber` that stores a raw pointer to a Rust handler. Rust code defines a function `subscribe_common_event` that calls an FFI function `SubscribeCommonEvent` and wraps the handler in a `Box`. [Similarity] The overall task is to subscribe to common events with a handler, but the structural patterns differ significantly: C uses a constructor with manual pointer handling, while Rust uses a function with a generic handler and FFI call. [Knowledge Extraction] No full structural match due to different control flow and implementation styles. However, there are API mappings related to event subscription and handler wrapping."}]
+Unixcoder Score: -0.03376423567533493
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::UnSubscribeSystemAbility(int32_t systemAbilityId,
+    const sptr<ISystemAbilityStatusChange>& listener)
+{
+    if (!CheckInputSysAbilityId(systemAbilityId) || listener == nullptr) {
+        HILOGW("UnSubscribeSA saId or listener invalid");
+        return ERR_INVALID_VALUE;
+    }
+
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    lock_guard<samgr::mutex> autoLock(listenerMapLock_);
+    auto& listeners = listenerMap_[systemAbilityId];
+    UnSubscribeSystemAbilityLocked(listeners, listener->AsObject());
+    if (abilityStatusDeath_ != nullptr) {
+        listener->AsObject()->RemoveDeathRecipient(abilityStatusDeath_);
+    }
+    HILOGI("UnSubscribeSA:%{public}d_%{public}d_%{public}zu", systemAbilityId, callingPid, listeners.size());
+    return ERR_OK;
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.03420579805970192
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityStateScheduler::SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener)
+{
+    std::unique_lock<samgr::shared_mutex> writeLock(listenerSetLock_);
+    auto iter = std::find_if(processListeners_.begin(), processListeners_.end(),
+        [listener](sptr<ISystemProcessStatusChange>& item) {
+        return item->AsObject() == listener->AsObject();
+    });
+    if (iter == processListeners_.end()) {
+        if (processListenerDeath_ != nullptr) {
+            bool ret = listener->AsObject()->AddDeathRecipient(processListenerDeath_);
+            HILOGI("SubscribeSystemProcess AddDeathRecipient %{public}s", ret ? "succeed" : "failed");
+        }
+        processListeners_.emplace_back(listener);
+    } else {
+        HILOGI("SubscribeSystemProcess listener already exists");
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.04041719064116478
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.04079798236489296
+--------------------------------------------------

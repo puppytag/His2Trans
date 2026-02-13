@@ -1,0 +1,35 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_service_status_1",
+  "function_name": "ServiceStatusMarshalling",
+  "source_c_file": "src/service_status.c",
+  "c_code": "int ServiceStatusMarshalling(struct ServiceStatus * status, struct HdfSBuf * buf)\n{\n    if (status == NULL || buf == NULL || status->serviceName == NULL) {\n        return HDF_ERR_INVALID_PARAM;\n    }\n    if (!HdfSbufWriteString(buf, status->serviceName)\n        || !HdfSbufWriteUint16(buf, status->deviceClass)\n        || !HdfSbufWriteUint16(buf, status->status)\n        || !HdfSbufWriteString(buf, status->info != NULL ? status->info : \"\")) {\n        HDF_LOGI(\"failed to marshalling service status\");\n        return HDF_FAILURE;\n    }\n\n    return HDF_SUCCESS;\n}",
+  "rust_signature": "pub extern \"C\" fn ServiceStatusMarshalling(status: *mut crate::types::ServiceStatus, buf: *mut crate::types::HdfSBuf) -> ::core::ffi::c_int",
+  "rust_code": "pub extern \\\"C\\\" fn ServiceStatusMarshalling(status: *mut ServiceStatus, buf: *mut HdfSBuf) -> core::ffi::c_int {\n    if status.is_null() || buf.is_null() {\n        return HDF_ERR_INVALID_PARAM;\n    }\n    unsafe {\n        if (*status).serviceName.is_null() {\n            return HDF_ERR_INVALID_PARAM;\n        }\n        let info = if (*status).info.is_null() {\n            b\\\"\\0\\\".as_ptr() as *const core::ffi::c_char\n        } else {\n            (*status).info\n        };\n        if !HdfSbufWriteString(buf, (*status).serviceName)\n            || !HdfSbufWriteUint16(buf, (*status).deviceClass)\n            || !HdfSbufWriteUint16(buf, (*status).status)\n            || !HdfSbufWriteString(buf, info)\n        {\n            return HDF_FAILURE;\n        }\n    }\n    HDF_SUCCESS\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufWriteString",
+      "rust_api": "HdfSbufWriteString",
+      "description": "Serialize string into sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufWriteUint16",
+      "rust_api": "HdfSbufWriteUint16",
+      "description": "Serialize u16 into sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

@@ -1,0 +1,446 @@
+C_Code: 
+FsResult<size_t> FsStream::Write(const string &buf, const optional<WriteOptions> &options)
+{
+    auto fp = GetFilePtr();
+    if (!fp) {
+        HILOGE("Failed to get file ptr");
+        return FsResult<size_t>::Error(EIO);
+    }
+
+    size_t bufLen = static_cast<size_t>(buf.length());
+
+    auto [succ, retLen, offset] = ValidWriteArg(bufLen, options);
+    if (!succ) {
+        HILOGE("Invalid options");
+        return FsResult<size_t>::Error(EINVAL);
+    }
+
+    if (offset >= 0) {
+        int ret = fseek(fp.get(), static_cast<long>(offset), SEEK_SET);
+        if (ret < 0) {
+            HILOGE("Failed to set the offset location of the file stream pointer, ret: %{public}d", ret);
+            return FsResult<size_t>::Error(errno);
+        }
+    }
+
+    size_t writeLen = fwrite(buf.c_str(), 1, retLen, fp.get());
+    if ((writeLen == 0) && (writeLen != retLen)) {
+        HILOGE("Failed to fwrite stream");
+        return FsResult<size_t>::Error(EIO);
+    }
+    return FsResult<size_t>::Success(writeLen);
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CppMessageExterns__idx6763_rank1.c", "source_rust_file": "Partial__CppMessageExterns__idx6763_rank1.rs", "c_fragment": "fn $new_thunk$() -> $pbr$::RawMessage;", "rust_fragment": "pub fn new(raw: RawRepeatedField) -> Self {", "description": "Function signature definition for creating a new instance of a repeated field.", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function is a constructor for a struct. [Similarity] Names do not match (CppMessageExterns vs new), but both involve creating/defining functions. [Knowledge Extraction] Full match not possible due to name mismatch and different scopes. Partial match found in the function creation logic. API mappings identified for function creation and struct initialization patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CppMessageExterns__idx6763_rank1.c", "source_rust_file": "Partial__CppMessageExterns__idx6763_rank1.rs", "c_api": "fn $new_thunk$() -> $pbr$::RawMessage;", "rust_api": "pub fn new(raw: RawRepeatedField) -> Self", "mapping_type": "function", "description": "Creation of a new raw repeated field instance.", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function is a constructor for a struct. [Similarity] Names do not match (CppMessageExterns vs new), but both involve creating/defining functions. [Knowledge Extraction] Full match not possible due to name mismatch and different scopes. Partial match found in the function creation logic. API mappings identified for function creation and struct initialization patterns."}]
+Unixcoder Score: 0.027030425146222115
+--------------------------------------------------
+C_Code: 
+FsResult<size_t> FsStream::Write(const ArrayBuffer &buf, const optional<WriteOptions> &options)
+{
+    auto fp = GetFilePtr();
+    if (!fp) {
+        HILOGE("Failed to get file ptr");
+        return FsResult<size_t>::Error(EIO);
+    }
+
+    auto [succ, retLen, offset] = ValidWriteArg(buf.length, options);
+    if (!succ) {
+        HILOGE("Invalid options");
+        return FsResult<size_t>::Error(EINVAL);
+    }
+
+    if (offset >= 0) {
+        int ret = fseek(fp.get(), static_cast<long>(offset), SEEK_SET);
+        if (ret < 0) {
+            HILOGE("Failed to set the offset location of the file stream pointer, ret: %{public}d", ret);
+            return FsResult<size_t>::Error(errno);
+        }
+    }
+
+    size_t writeLen = fwrite(buf.buf, 1, retLen, fp.get());
+    if ((writeLen == 0) && (writeLen != retLen)) {
+        HILOGE("Failed to fwrite stream");
+        return FsResult<size_t>::Error(EIO);
+    }
+    return FsResult<size_t>::Success(writeLen);
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CppMessageExterns__idx6772_rank4.c", "source_rust_file": "API_Mapping__CppMessageExterns__idx6772_rank4.rs", "c_api": "repeated_new_thunk", "rust_api": "Repeated::from_inner", "mapping_type": "function", "description": "Create new repeated field", "reasoning": "[Task Analysis] C function generates Rust function signatures for message externs; Rust function frees enum repeated fields. [Similarity] Names don't match but both involve repeated field management. [Knowledge Extraction] Found API mappings for repeated field operations and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CppMessageExterns__idx6772_rank4.c", "source_rust_file": "API_Mapping__CppMessageExterns__idx6772_rank4.rs", "c_api": "repeated_get_thunk", "rust_api": "InnerRepeated::from_raw", "mapping_type": "function", "description": "Get raw repeated field data", "reasoning": "[Task Analysis] C function generates Rust function signatures for message externs; Rust function frees enum repeated fields. [Similarity] Names don't match but both involve repeated field management. [Knowledge Extraction] Found API mappings for repeated field operations and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CppMessageExterns__idx6772_rank4.c", "source_rust_file": "API_Mapping__CppMessageExterns__idx6772_rank4.rs", "c_api": "repeated_clear_thunk", "rust_api": "std::mem::forget", "mapping_type": "function", "description": "Clear and forget repeated field", "reasoning": "[Task Analysis] C function generates Rust function signatures for message externs; Rust function frees enum repeated fields. [Similarity] Names don't match but both involve repeated field management. [Knowledge Extraction] Found API mappings for repeated field operations and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CppMessageExterns__idx6772_rank4.c", "source_rust_file": "API_Mapping__CppMessageExterns__idx6772_rank4.rs", "c_api": "repeated_free_thunk", "rust_api": "ProxiedInRepeated::repeated_free", "mapping_type": "function", "description": "Free repeated field memory", "reasoning": "[Task Analysis] C function generates Rust function signatures for message externs; Rust function frees enum repeated fields. [Similarity] Names don't match but both involve repeated field management. [Knowledge Extraction] Found API mappings for repeated field operations and memory management patterns."}]
+Unixcoder Score: -0.021516969427466393
+--------------------------------------------------
+C_Code: 
+int ares__read_line(FILE *fp, char **buf, size_t *bufsize)
+{
+  char *newbuf;
+  size_t offset = 0;
+  size_t len;
+
+  if (*buf == NULL)
+    {
+      *buf = malloc(128);
+      if (!*buf)
+        return ARES_ENOMEM;
+      *bufsize = 128;
+    }
+
+  for (;;)
+    {
+      int bytestoread = aresx_uztosi(*bufsize - offset);
+
+      if (!fgets(*buf + offset, bytestoread, fp))
+        return (offset != 0) ? 0 : (ferror(fp)) ? ARES_EFILE : ARES_EOF;
+      len = offset + strlen(*buf + offset);
+      if ((*buf)[len - 1] == '\n')
+        {
+          (*buf)[len - 1] = 0;
+          break;
+        }
+      offset = len;
+      if(len < *bufsize - 1)
+        continue;
+
+      /* Allocate more space. */
+      newbuf = realloc(*buf, *bufsize * 2);
+      if (!newbuf)
+        return ARES_ENOMEM;
+      *buf = newbuf;
+      *bufsize *= 2;
+    }
+  return ARES_SUCCESS;
+}
+Function: 
+pub fn read_line(&self, buf: &mut String) -> io::Result<usize> {
+        self.lock().read_line(buf)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__CppMessageExterns__idx5684_rank1.c", "source_rust_file": "Full__CppMessageExterns__idx5684_rank1.rs", "c_fragment": "ctx.Emit({{\"new_thunk\", ThunkName(ctx, msg, \"new\")},\n       {\"default_instance_thunk\", ThunkName(ctx, msg, \"default_instance\")},\n       {\"repeated_new_thunk\", ThunkName(ctx, msg, \"repeated_new\")},\n       {\"repeated_free_thunk\", ThunkName(ctx, msg, \"repeated_free\")},\n       {\"repeated_len_thunk\", ThunkName(ctx, msg, \"repeated_len\")},\n       {\"repeated_get_thunk\", ThunkName(ctx, msg, \"repeated_get\")},\n       {\"repeated_get_mut_thunk\", ThunkName(ctx, msg, \"repeated_get_mut\")},\n       {\"repeated_add_thunk\", ThunkName(ctx, msg, \"repeated_add\")},\n       {\"repeated_clear_thunk\", ThunkName(ctx, msg, \"repeated_clear\")},\n       {\"repeated_copy_from_thunk\", ThunkName(ctx, msg, \"repeated_copy_from\")},\n       {\"repeated_reserve_thunk\", ThunkName(ctx, msg, \"repeated_reserve\")},\n       {\"map_size_info_thunk\", ThunkName(ctx, msg, \"size_info\")}},", "rust_fragment": "pub fn raw(&self) -> RawRepeatedField {\n        self.raw\n    }", "description": "C emits function signatures for message externs; Rust returns a field.", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function returns a field. [Similarity] Names do not match ('CppMessageExterns' vs 'raw'), but both involve generating/returning function signatures and accessing data. [Knowledge Extraction] Full match on logic of emitting function signatures in C and returning a field in Rust; API mappings found for function signature generation and field access."}, {"knowledge_type": "Full", "source_c_file": "Full__CppMessageExterns__idx5684_rank1.c", "source_rust_file": "Full__CppMessageExterns__idx5684_rank1.rs", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function returns a field. [Similarity] Names do not match ('CppMessageExterns' vs 'raw'), but both involve generating/returning function signatures and accessing data. [Knowledge Extraction] Full match on logic of emitting function signatures in C and returning a field in Rust; API mappings found for function signature generation and field access.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CppMessageExterns__idx5684_rank1.c", "source_rust_file": "Full__CppMessageExterns__idx5684_rank1.rs", "c_api": "ctx.Emit", "rust_api": "self.raw", "mapping_type": "function", "description": "Function signature generation in C corresponds to field access in Rust.", "reasoning": "[Task Analysis] C function emits Rust function signatures for message externs; Rust function returns a field. [Similarity] Names do not match ('CppMessageExterns' vs 'raw'), but both involve generating/returning function signatures and accessing data. [Knowledge Extraction] Full match on logic of emitting function signatures in C and returning a field in Rust; API mappings found for function signature generation and field access."}]
+Unixcoder Score: -0.025729291141033173
+--------------------------------------------------
+C_Code: 
+UPB_INLINE void upb_MdDecoder_CheckOutOfMemory(upb_MdDecoder* d,
+                                               const void* ptr) {
+  if (!ptr) upb_MdDecoder_ErrorJmp(d, "Out of memory");
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__QrSegment__idx144398_rank1.c", "source_rust_file": "Partial__QrSegment__idx144398_rank1.rs", "c_api": "data(dt)", "rust_api": "&self.data", "mapping_type": "field_access", "description": "Accessing the data field of the struct", "reasoning": "[Task Analysis] C code defines a constructor for QrSegment struct, initializing fields with validation; Rust code defines a getter method for the data field. [Similarity] Names do not match exactly but refer to the same concept (data field access). However, the C code has logic (validation, initialization) while Rust only has a getter, so no full structural match. [Knowledge Extraction] Extract partial fragment for data field access and API mapping for field access pattern."}, {"knowledge_type": "Partial", "source_c_file": "Partial__QrSegment__idx144398_rank1.c", "source_rust_file": "Partial__QrSegment__idx144398_rank1.rs", "c_fragment": "data(dt)", "rust_fragment": "&self.data", "description": "Both access the data field of the struct, though C initializes it and Rust retrieves it.", "reasoning": "[Task Analysis] C code defines a constructor for QrSegment struct, initializing fields with validation; Rust code defines a getter method for the data field. [Similarity] Names do not match exactly but refer to the same concept (data field access). However, the C code has logic (validation, initialization) while Rust only has a getter, so no full structural match. [Knowledge Extraction] Extract partial fragment for data field access and API mapping for field access pattern."}]
+Unixcoder Score: -0.028831901028752327
+--------------------------------------------------
+C_Code: 
+TEST(Cpp, JsonNull) {
+  upb::DefPool defpool;
+  upb::MessageDefPtr md(upb_test_TestMessage_getmsgdef(defpool.ptr()));
+  upb::FieldDefPtr i32_f = md.FindFieldByName("i32");
+  upb::FieldDefPtr str_f = md.FindFieldByName("str");
+  ASSERT_TRUE(i32_f);
+  ASSERT_TRUE(str_f);
+  EXPECT_EQ(5, i32_f.default_value().int32_val);
+  EXPECT_EQ(0, strcmp(str_f.default_value().str_val.data, "abc"));
+  EXPECT_EQ(3, str_f.default_value().str_val.size);
+}
+Function: 
+fn array_ffi_test() {
+        // SAFETY: FFI unit test uses C API under expected patterns.
+        unsafe {
+            let arena = Arena::new();
+            let raw_arena = arena.raw();
+            let array = upb_Array_New(raw_arena, CType::Float);
+
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 7.0 }, raw_arena));
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 42.0 }, raw_arena));
+            assert_eq!(upb_Array_Size(array), 2);
+            assert!(matches!(upb_Array_Get(array, 1), upb_MessageValue { float_val: 42.0 }));
+
+            assert!(upb_Array_Resize(array, 3, raw_arena));
+            assert_eq!(upb_Array_Size(array), 3);
+            assert!(matches!(upb_Array_Get(array, 2), upb_MessageValue { float_val: 0.0 }));
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__CppMessageExterns__idx6762_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx6762_rank4.rs", "c_api": "ctx.Emit", "rust_api": "Self { raw }", "mapping_type": "pattern", "description": "Struct initialization pattern from raw data", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__CppMessageExterns__idx6762_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx6762_rank4.rs", "c_fragment": "ctx.Emit(...)", "rust_fragment": "pub unsafe fn from_raw(raw: RawRepeatedField) -> Self {\n        Self { raw }\n    }", "description": "Both emit or define a constructor that initializes a struct with a raw field.", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CppMessageExterns__idx6762_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx6762_rank4.rs", "c_api": "RawRepeatedField", "rust_api": "RawRepeatedField", "mapping_type": "type", "description": "Type representing a raw repeated field in both languages", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns."}, {"knowledge_type": "Full", "source_c_file": "Full__CppMessageExterns__idx6762_rank4.c", "source_rust_file": "Full__CppMessageExterns__idx6762_rank4.rs", "reasoning": "[Task Analysis] C function emits Rust function signatures for FFI; Rust function is a simple constructor. [Similarity] Names don't match ('CppMessageExterns' vs 'from_raw'), but both involve creating/initializing data structures. [Knowledge Extraction] Full match on struct initialization logic, API mappings for field access and construction patterns.", "description": "Full structural translation"}]
+Unixcoder Score: -0.047255780547857285
+--------------------------------------------------
+C_Code: 
+static int remove_char(struct current *current, int pos)
+{
+    if (pos >= 0 && pos < current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + utf8_index(current->buf + p1, 1);
+
+#ifdef USE_TERMIOS
+        /* optimise remove char in the case of removing the last char */
+        if (current->pos == pos + 1 && current->pos == current->chars) {
+            if (current->buf[pos] >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                ret = 2;
+                fd_printf(current->fd, "\b \b");
+            }
+        }
+#endif
+
+        /* Move the null char too */
+        memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1);
+        current->len -= (p2 - p1);
+        current->chars--;
+
+        if (current->pos > pos) {
+            current->pos--;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn pop_char(s: &mutable istr) -> char {
+    let end = byte_len(s);
+    while end > 0u && s[end - 1u] & 192u8 == tag_cont_u8 { end -= 1u; }
+    assert (end > 0u);
+    let ch = char_at(s, end - 1u);
+    s = substr(s, 0u, end - 1u);
+    ret ch;
+}
+Unixcoder Score: -0.04907260462641716
+--------------------------------------------------
+C_Code: 
+UPB_INLINE void upb_MdDecoder_ErrorJmp(upb_MdDecoder* d,
+                                                    const char* fmt, ...) {
+  if (d->status) {
+    va_list argp;
+    upb_Status_SetErrorMessage(d->status, "Error building mini table: ");
+    va_start(argp, fmt);
+    upb_Status_VAppendErrorFormat(d->status, fmt, argp);
+    va_end(argp);
+  }
+  UPB_LONGJMP(d->err, 1);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CppMessageExterns__idx5693_rank3.c", "source_rust_file": "API_Mapping__CppMessageExterns__idx5693_rank3.rs", "c_api": "repeated_reserve_thunk", "rust_api": "ProxiedInRepeated::repeated_reserve", "mapping_type": "function", "description": "Reserve additional capacity in a repeated field", "reasoning": "[Task Analysis] C function generates Rust function signatures for message externs; Rust function reserves space in repeated enum container. [Similarity] Names don't match but both involve repeated field management. [Knowledge Extraction] Found API mapping for repeated field reservation operation."}]
+Unixcoder Score: -0.0551975816488266
+--------------------------------------------------
+C_Code: 
+static int remove_char(struct current *current, int pos)
+{
+    if (pos >= 0 && pos < current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + utf8_index(current->buf + p1, 1);
+
+#ifdef USE_TERMIOS
+        /* optimise remove char in the case of removing the last char */
+        if (current->pos == pos + 1 && current->pos == current->chars) {
+            if (current->buf[pos] >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                ret = 2;
+                fd_printf(current->fd, "\b \b");
+            }
+        }
+#endif
+
+        /* Move the null char too */
+        memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1);
+        current->len -= (p2 - p1);
+        current->chars--;
+
+        if (current->pos > pos) {
+            current->pos--;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn sub_chars(node: @node, char_offset: uint, char_len: uint) -> @node {
+        alt(*node) {
+          node::leaf(x) {
+            if char_offset == 0u && char_len == x.char_len {
+                ret node;
+            }
+            let byte_offset =
+                str::byte_len_range(*x.content, 0u, char_offset);
+            let byte_len    =
+                str::byte_len_range(*x.content, byte_offset, char_len);
+            ret @leaf({byte_offset: byte_offset,
+                 byte_len:    byte_len,
+                 char_len:    char_len,
+                 content:     x.content});
+          }
+          node::concat(x) {
+            if char_offset == 0u && char_len == x.char_len {ret node;}
+            let left_len : uint = node::char_len(x.left);
+            if char_offset <= left_len {
+                if char_offset + char_len <= left_len {
+                    //Case 1: Everything fits in x.left
+                    ret sub_chars(x.left, char_offset, char_len);
+                    //TODO: Optimize manually this tail call?
+                } else {
+                    //Case 2: A (non-empty, possibly full) suffix
+                    //of x.left and a (non-empty, possibly full) prefix
+                    //of x.right
+                    let left_result  =
+                        sub_chars(x.left, char_offset, left_len);
+                    let right_result =
+                        sub_chars(x.right, 0u, left_len - char_offset);
+                    ret concat2(left_result, right_result)
+                }
+            } else {
+                //Case 3: Everything fits in x.right
+                ret sub_chars(x.right, char_offset - left_len, char_len);
+                //TODO: Optimize manually this tail call?
+            }
+          }
+        }
+    }
+Unixcoder Score: -0.0556812658905983
+--------------------------------------------------
+C_Code: 
+static int remove_char(struct current *current, int pos)
+{
+    if (pos >= 0 && pos < current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + utf8_index(current->buf + p1, 1);
+
+#ifdef USE_TERMIOS
+        /* optimise remove char in the case of removing the last char */
+        if (current->pos == pos + 1 && current->pos == current->chars) {
+            if (current->buf[pos] >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                ret = 2;
+                fd_printf(current->fd, "\b \b");
+            }
+        }
+#endif
+
+        /* Move the null char too */
+        memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1);
+        current->len -= (p2 - p1);
+        current->chars--;
+
+        if (current->pos > pos) {
+            current->pos--;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn of_substr(str: @str, byte_offset: uint, byte_len: uint) -> rope {
+    if byte_len == 0u { ret node::empty; }
+    ret node::content(node::of_substr(str, byte_offset, byte_len));
+}
+Unixcoder Score: -0.05813783034682274
+--------------------------------------------------
+C_Code: 
+static int remove_char(struct current *current, int pos)
+{
+    if (pos >= 0 && pos < current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + utf8_index(current->buf + p1, 1);
+
+#ifdef USE_TERMIOS
+        /* optimise remove char in the case of removing the last char */
+        if (current->pos == pos + 1 && current->pos == current->chars) {
+            if (current->buf[pos] >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                ret = 2;
+                fd_printf(current->fd, "\b \b");
+            }
+        }
+#endif
+
+        /* Move the null char too */
+        memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1);
+        current->len -= (p2 - p1);
+        current->chars--;
+
+        if (current->pos > pos) {
+            current->pos--;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            // Use Vec::drain. "Reaffirm" the bounds checks to avoid
+            // panic code being inserted again.
+            let self_vec = (*self.string).as_mut_vec();
+            if self.start <= self.end && self.end <= self_vec.len() {
+                self_vec.drain(self.start..self.end);
+            }
+        }
+    }
+Unixcoder Score: -0.06320088356733322
+--------------------------------------------------

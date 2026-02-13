@@ -1,0 +1,229 @@
+C_Code: 
+void SetAccessTokenPermission()
+{
+    auto permissions = std::vector<std::string>();
+    permissions.push_back("ohos.permission.INTERNET");
+    permissions.push_back("ohos.permission.GET_NETWORK_INFO");
+
+    auto processName = std::string("preload_info");
+    auto perms = std::make_unique<const char *[]>(permissions.size());
+    for (size_t i = 0; i < permissions.size(); i++) {
+        perms[i] = permissions[i].c_str();
+    }
+
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = permissions.size(),
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms.get(),
+        .acls = nullptr,
+        .processName = processName.c_str(),
+        .aplStr = "system_core",
+    };
+    auto tokenId = GetAccessTokenId(&infoInstance);
+    if (tokenId == 0) {
+        REQUEST_HILOGI("GetAccessTokenId failed.");
+        return;
+    }
+    int ret = SetSelfTokenID(tokenId);
+    if (ret != 0) {
+        REQUEST_HILOGI("SetSelfTokenID failed, code is %{public}d.", ret);
+        return;
+    }
+    ret = OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    if (ret < 0) {
+        REQUEST_HILOGI("ReloadNativeTokenInfo failed, code is %{public}d.", ret);
+        return;
+    }
+}
+Function: 
+fn remote() -> RemoteObj {
+    unsafe { SetAccessTokenPermission() };
+    let mut count = 0;
+    loop {
+        if let Some(download_server) =
+            SystemAbilityManager::check_system_ability(DOWNLOAD_SERVICE_ID)
+        {
+            return download_server;
+        }
+        SystemAbilityManager::load_system_ability(DOWNLOAD_SERVICE_ID, 15000).unwrap();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        count += 1;
+        println!("load download service {} seconds", count);
+    }
+}
+Unixcoder Score: 0.0286666601896286
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.027013126760721207
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.025764616206288338
+--------------------------------------------------
+C_Code: 
+void SetAccessTokenPermission()
+{
+    auto permissions = std::vector<std::string>();
+    permissions.push_back("ohos.permission.INTERNET");
+    permissions.push_back("ohos.permission.GET_NETWORK_INFO");
+
+    auto processName = std::string("preload_info");
+    auto perms = std::make_unique<const char *[]>(permissions.size());
+    for (size_t i = 0; i < permissions.size(); i++) {
+        perms[i] = permissions[i].c_str();
+    }
+
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = permissions.size(),
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms.get(),
+        .acls = nullptr,
+        .processName = processName.c_str(),
+        .aplStr = "system_core",
+    };
+    auto tokenId = GetAccessTokenId(&infoInstance);
+    if (tokenId == 0) {
+        REQUEST_HILOGI("GetAccessTokenId failed.");
+        return;
+    }
+    int ret = SetSelfTokenID(tokenId);
+    if (ret != 0) {
+        REQUEST_HILOGI("SetSelfTokenID failed, code is %{public}d.", ret);
+        return;
+    }
+    ret = OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    if (ret < 0) {
+        REQUEST_HILOGI("ReloadNativeTokenInfo failed, code is %{public}d.", ret);
+        return;
+    }
+}
+Function: 
+pub(crate) fn test_init() {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| {
+            unsafe { SYSTEM_CONFIG_MANAGER.write(SystemConfigManager::init()) };
+        });
+
+        let _ = std::fs::create_dir("test_files/");
+
+        unsafe { SetAccessTokenPermission() };
+    }
+Unixcoder Score: 0.025644266977906227
+--------------------------------------------------
+C_Code: 
+rust::string GetLocalDeviceID()
+{
+    return OHOS::IPCSkeleton::GetLocalDeviceID();
+}
+Function: 
+pub fn local_device_id() -> String {
+        GetLocalDeviceID()
+    }
+Unixcoder Score: 0.019880741834640503
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.017866961658000946
+--------------------------------------------------
+C_Code: 
+bool IsCalledByHAP(uint32_t tokenId)
+{
+    return AccessTokenKit::GetTokenTypeFlag(tokenId) == ATokenTypeEnum::TOKEN_HAP;
+}
+Function: 
+pub(crate) fn is_called_by_hap() -> bool {
+    let token_id = ipc::Skeleton::calling_token_id();
+    ffi::IsCalledByHAP(token_id)
+}
+Unixcoder Score: 0.014918048866093159
+--------------------------------------------------
+C_Code: 
+rust::string GetCallingDeviceID()
+{
+    return OHOS::IPCSkeleton::GetCallingDeviceID();
+}
+Function: 
+pub fn calling_device_id() -> String {
+        GetCallingDeviceID()
+    }
+Unixcoder Score: 0.013116068206727505
+--------------------------------------------------
+C_Code: 
+std::string IPCProcessSkeleton::GetLocalDeviceID()
+{
+    if (g_interface == nullptr) {
+        return "localDeviceID";
+    }
+    return GetDBinderDataBusInvokerInterfaceMock()->GetLocalDeviceID();
+}
+Function: 
+pub fn local_device_id() -> String {
+        GetLocalDeviceID()
+    }
+Unixcoder Score: 0.012833076529204845
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Unixcoder Score: 0.008094888180494308
+--------------------------------------------------

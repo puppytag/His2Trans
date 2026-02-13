@@ -1,0 +1,241 @@
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_api": "certInfo->certInfo.data = nullptr", "rust_api": "*info = CertInfo { cert: Some(certificates), };", "mapping_type": "pattern", "description": "Pointer nulling vs struct initialization - both represent clearing or resetting data structures", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_fragment": "free(certInfo->certInfo.data);\ncertInfo->certInfo.data = nullptr;", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Memory deallocation pattern - both perform cleanup of allocated memory, though Rust uses FFI call while C uses standard free.", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_api": "free(certInfo->certInfo.data)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation - C's free() equivalent in Rust via FFI call to FreeCertDataList", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}]
+Unixcoder Score: -0.01715875044465065
+--------------------------------------------------
+C_Code: 
+void
+bufrelease(struct buf *buf)
+{
+	if (!buf)
+		return;
+
+	free(buf->data);
+	free(buf);
+}
+Function: 
+extern "C" fn drop(b: Buffer) {
+            mem::drop(to_vec(b));
+        }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx33318_rank1.c", "source_rust_file": "API_Mapping__free__idx33318_rank1.rs", "c_api": "rusti::atomic_xsub(exchange_count, 1)", "rust_api": "rusti::atomic_xsub(exchange_count, 1)", "mapping_type": "function", "description": "Atomic decrement operation", "reasoning": "[Task Analysis] C function calls ::free, Rust calls c_free and rusti::atomic_xsub. Both perform memory deallocation with additional atomic operations. [Similarity] Names don't match but the core operation is memory deallocation with extra logic. [Knowledge Extraction] Extract API mapping for memory deallocation and atomic decrement, no full/partial match due to different control flow and logic structure."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx33318_rank1.c", "source_rust_file": "API_Mapping__free__idx33318_rank1.rs", "c_api": "::free(ptr)", "rust_api": "c_free(ptr)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function calls ::free, Rust calls c_free and rusti::atomic_xsub. Both perform memory deallocation with additional atomic operations. [Similarity] Names don't match but the core operation is memory deallocation with extra logic. [Knowledge Extraction] Extract API mapping for memory deallocation and atomic decrement, no full/partial match due to different control flow and logic structure."}]
+Unixcoder Score: -0.040168698877096176
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+pub unsafe extern fn __rust_dealloc(ptr: *mut u8,
+                                    size: usize,
+                                    align: usize) {
+    imp::deallocate(ptr, size, align)
+}
+Unixcoder Score: -0.05159308761358261
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+unsafe fn allocate_with_flags(size: usize, align: usize, flags: DWORD) -> *mut u8 {
+        if align <= MIN_ALIGN {
+            HeapAlloc(GetProcessHeap(), flags, size as SIZE_T) as *mut u8
+        } else {
+            let ptr = HeapAlloc(GetProcessHeap(), flags, (size + align) as SIZE_T) as *mut u8;
+            if ptr.is_null() {
+                return ptr;
+            }
+            align_ptr(ptr, align)
+        }
+    }
+Unixcoder Score: -0.05325920879840851
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        abi::realloc(ptr, layout.size(), layout.align(), new_size)
+    }
+Unixcoder Score: -0.05352400988340378
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+unsafe fn aligned_malloc(layout: &Layout) -> *mut u8 {
+    // On android we currently target API level 9 which unfortunately
+    // doesn't have the `posix_memalign` API used below. Instead we use
+    // `memalign`, but this unfortunately has the property on some systems
+    // where the memory returned cannot be deallocated by `free`!
+    //
+    // Upon closer inspection, however, this appears to work just fine with
+    // Android, so for this platform we should be fine to call `memalign`
+    // (which is present in API level 9). Some helpful references could
+    // possibly be chromium using memalign [1], attempts at documenting that
+    // memalign + free is ok [2] [3], or the current source of chromium
+    // which still uses memalign on android [4].
+    //
+    // [1]: https://codereview.chromium.org/10796020/
+    // [2]: https://code.google.com/p/android/issues/detail?id=35391
+    // [3]: https://bugs.chromium.org/p/chromium/issues/detail?id=138579
+    // [4]: https://chromium.googlesource.com/chromium/src/base/+/master/
+    //                                       /memory/aligned_memory.cc
+    libc::memalign(layout.align(), layout.size()) as *mut u8
+}
+Unixcoder Score: -0.05460254102945328
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+fn test_mmap() {
+    let page_size = page_size::get();
+    let ptr = unsafe {
+        libc::mmap(
+            ptr::null_mut(),
+            page_size,
+            libc::PROT_READ | libc::PROT_WRITE,
+            libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+            -1,
+            0,
+        )
+    };
+    assert!(!ptr.is_null());
+
+    // Ensure that freshly mapped allocations are zeroed
+    let slice = unsafe { slice::from_raw_parts_mut(ptr as *mut u8, page_size) };
+    assert!(slice.iter().all(|b| *b == 0));
+
+    // Do some writes, make sure they worked
+    for b in slice.iter_mut() {
+        *b = 1;
+    }
+    assert!(slice.iter().all(|b| *b == 1));
+
+    // Ensure that we can munmap with just an integer
+    let just_an_address = ptr::invalid_mut(ptr.addr());
+    let res = unsafe { libc::munmap(just_an_address, page_size) };
+    assert_eq!(res, 0i32);
+}
+Unixcoder Score: -0.05498141050338745
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+pub unsafe fn malloc(td: *TypeDesc, size: uint) -> *c_void {
+    unsafe {
+        assert td.is_not_null();
+
+        let total_size = get_box_size(size, (*td).align);
+        let p = c_malloc(total_size as size_t);
+        assert p.is_not_null();
+
+        // FIXME #4761: Would be very nice to not memset all allocations
+        let p: *mut u8 = transmute(p);
+        set_memory(p, 0, total_size);
+
+        // FIXME #3475: Converting between our two different tydesc types
+        let td: *TyDesc = transmute(td);
+
+        let box: &mut BoxRepr = transmute(p);
+        box.header.ref_count = -1; // Exchange values not ref counted
+        box.header.type_desc = td;
+        box.header.prev = null();
+        box.header.next = null();
+
+        let exchange_count = &mut *rust_get_exchange_count_ptr();
+        rusti::atomic_xadd(exchange_count, 1);
+
+        return transmute(box);
+    }
+}
+Unixcoder Score: -0.055075377225875854
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+pub unsafe extern fn __rdl_dealloc(ptr: *mut u8,
+                                       size: usize,
+                                       align: usize) {
+        System.dealloc(ptr, Layout::from_size_align_unchecked(size, align))
+    }
+Unixcoder Score: -0.05568356066942215
+--------------------------------------------------
+C_Code: 
+void
+rust_exchange_alloc::free(void *ptr) {
+  ::free(ptr);
+}
+Function: 
+unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        if layout.align() <= MIN_ALIGN && layout.align() <= new_size {
+            libc::realloc(ptr as *mut libc::c_void, new_size) as *mut u8
+        } else {
+            realloc_fallback(self, ptr, layout, new_size)
+        }
+    }
+Unixcoder Score: -0.055978886783123016
+--------------------------------------------------

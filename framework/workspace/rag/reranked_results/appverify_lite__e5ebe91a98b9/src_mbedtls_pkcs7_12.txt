@@ -1,0 +1,371 @@
+C_Code: 
+bool VerifyFromPointer(const uint8_t *const p, const size_t len) {
+    return Verify(static_cast<size_t>(p - buf_), len);
+  }
+Function: 
+pub fn size_prefixed_root<'buf, T>(data: &'buf [u8]) -> Result<T::Inner, InvalidFlatbuffer>
+where
+    T: 'buf + Follow<'buf> + Verifiable,
+{
+    let opts = VerifierOptions::default();
+    size_prefixed_root_with_opts::<T>(&opts, data)
+}
+Unixcoder Score: 0.03536161780357361
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx140640_rank5.c", "source_rust_file": "Full__leb128_len__idx140640_rank5.rs", "c_api": "(*p & 0x80) != 0", "rust_api": "byte & 0x80 == 0", "mapping_type": "pattern", "description": "Check for continuation bit in LEB128 encoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for LEB128 decoding logic."}, {"knowledge_type": "Full", "source_c_file": "Full__leb128_len__idx140640_rank5.c", "source_rust_file": "Full__leb128_len__idx140640_rank5.rs", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for LEB128 decoding logic.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__leb128_len__idx140640_rank5.c", "source_rust_file": "Full__leb128_len__idx140640_rank5.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = unsafe { self.read::<u8>() };\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Iterative byte processing with continuation check using MSB flag (0x80)", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for LEB128 decoding logic."}]
+Unixcoder Score: 0.03109343722462654
+--------------------------------------------------
+C_Code: 
+bool VerifyFromPointer(const uint8_t *const p, const size_t len) {
+    return Verify(static_cast<size_t>(p - buf_), len);
+  }
+Function: 
+pub fn root_with_opts<'opts, 'buf, T>(
+    opts: &'opts VerifierOptions,
+    data: &'buf [u8],
+) -> Result<T::Inner, InvalidFlatbuffer>
+where
+    T: 'buf + Follow<'buf> + Verifiable,
+{
+    let mut v = Verifier::new(opts, data);
+    <ForwardsUOffset<T>>::run_verifier(&mut v, 0)?;
+    // Safety:
+    // Run verifier above
+    Ok(unsafe { root_unchecked::<T>(data) })
+}
+Unixcoder Score: 0.02979126386344433
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "(*p & 0x80)", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Check continuation bit in LEB128 encoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "Full", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = self.read::<u8>();\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Iterative byte processing with continuation condition based on MSB flag", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "++p", "rust_api": "self.read::<u8>()", "mapping_type": "function", "description": "Advance to next byte in stream", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "++ret", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Accumulate size/shift during LEB128 decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}]
+Unixcoder Score: -0.014128810726106167
+--------------------------------------------------
+C_Code: 
+napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<AssetAttr> &updateAttrs)
+{
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
+    std::vector<uint32_t> queryValidTags;
+    queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
+    std::vector<uint32_t> updateValidTags;
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    return napi_ok;
+}
+Function: 
+fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    // Check attributes used to query.
+    common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
+    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    common::check_tag_validity(query, &valid_tags)?;
+    common::check_group_validity(query, calling_info)?;
+    common::check_value_validity(query)?;
+    common::check_system_permission(query)?;
+
+    if attrs_to_update.is_empty() {
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
+    }
+    // Check attributes to update.
+    valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
+    valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
+    common::check_tag_validity(attrs_to_update, &valid_tags)?;
+    common::check_value_validity(attrs_to_update)
+}
+Unixcoder Score: -0.02892497554421425
+--------------------------------------------------
+C_Code: 
+napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<AssetAttr> &updateAttrs)
+{
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
+    std::vector<uint32_t> queryValidTags;
+    queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
+    std::vector<uint32_t> updateValidTags;
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    return napi_ok;
+}
+Function: 
+fn add_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
+    if !is_only_change_local_labels(update) {
+        add_system_attrs(db_data)?;
+        add_normal_attrs(db_data);
+    }
+    db_data.insert(column::LOCAL_STATUS, Value::Number(LocalStatus::Local as u32));
+    Ok(())
+}
+Unixcoder Score: -0.029231689870357513
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "++ret", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Accumulate bit shift for value decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "(*p & 0x80)", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Check continuation bit in LEB128 encoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_api": "++p", "rust_api": "self.read::<u8>()", "mapping_type": "function", "description": "Advance to next byte in stream", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__leb128_len__idx140641_rank3.c", "source_rust_file": "Partial__leb128_len__idx140641_rank3.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = unsafe { self.read::<u8>() };\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Iterative byte processing with continuation condition based on MSB flag", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative byte processing, but domains differ (length calculation vs value decoding). [Knowledge Extraction] No full structural match due to domain mismatch (memory size vs decoding logic). Partial match exists in loop structure and bit operations. API mappings found for byte reading and bit manipulation patterns."}]
+Unixcoder Score: -0.034722596406936646
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "byte & 0x80", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Checking continuation bit in variable-length encoded data", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "self.read::<u8>()", "rust_api": "*p", "mapping_type": "function", "description": "Reading a byte from input stream for decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "++p", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Advancing through data stream during decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = self.read::<u8>();\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Both implement iterative decoding of variable-length encoded data using bit masking and loop control.", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}]
+Unixcoder Score: -0.03644469380378723
+--------------------------------------------------
+C_Code: 
+napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<AssetAttr> &updateAttrs)
+{
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
+    std::vector<uint32_t> queryValidTags;
+    queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
+    std::vector<uint32_t> updateValidTags;
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    return napi_ok;
+}
+Function: 
+fn is_only_change_local_labels(update: &AssetMap) -> bool {
+    let valid_tags = common::NORMAL_LOCAL_LABEL_ATTRS.to_vec();
+    for tag in update.keys() {
+        if !valid_tags.contains(tag) {
+            return false;
+        }
+    }
+    true
+}
+Unixcoder Score: -0.04201315715909004
+--------------------------------------------------
+C_Code: 
+napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<AssetAttr> &updateAttrs)
+{
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
+    std::vector<uint32_t> queryValidTags;
+    queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
+    std::vector<uint32_t> updateValidTags;
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    return napi_ok;
+}
+Function: 
+pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &AssetMap) -> Result<()> {
+    check_arguments(query, update, calling_info)?;
+
+    let mut query_db_data = common::into_db_map(query);
+    if query.get(&Tag::GroupId).is_some() {
+        common::add_group(calling_info, &mut query_db_data);
+    } else {
+        common::add_owner_info(calling_info, &mut query_db_data);
+    }
+    let mut update_db_data = common::into_db_map(update);
+
+    add_attrs(update, &mut update_db_data)?;
+
+    let mut db = build_db(query, calling_info)?;
+    let results = db.query_datas(&vec![], &query_db_data, None, true)?;
+    if results.is_empty() {
+        return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
+    }
+
+    if update.contains_key(&Tag::Secret) {
+        let mut results = db.query_datas(&vec![], &query_db_data, None, true)?;
+        if results.len() != 1 {
+            return log_throw_error!(
+                ErrCode::NotFound,
+                "query to-be-updated asset failed, found [{}] assets",
+                results.len()
+            );
+        }
+
+        let result = results.get_mut(0).unwrap();
+        result.insert(column::SECRET, update[&Tag::Secret].clone());
+
+        if common::need_upgrade(result)? {
+            upgrade_to_latest_version(result, &mut update_db_data);
+        }
+        let cipher = encrypt(calling_info, result)?;
+        update_db_data.insert(column::SECRET, Value::Bytes(cipher));
+    }
+
+    // call sql to update
+    let update_num = db.update_datas(&query_db_data, true, &update_db_data)?;
+    if update_num == 0 {
+        return log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
+    }
+
+    common::inform_asset_ext(calling_info, update);
+
+    Ok(())
+}
+Unixcoder Score: -0.046919409185647964
+--------------------------------------------------

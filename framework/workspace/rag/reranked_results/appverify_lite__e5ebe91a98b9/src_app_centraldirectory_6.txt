@@ -1,0 +1,622 @@
+C_Code: 
+struct debug_section_info
+{
+  /* Section file offset.  */
+  off_t offset;
+  /* Section size.  */
+  size_t size;
+  /* Section contents, after read from file.  */
+  const unsigned char *data;
+}
+Function: 
+crate struct BorrowData<'tcx> {
+    /// Location where the borrow reservation starts.
+    /// In many cases, this will be equal to the activation location but not always.
+    crate reserve_location: Location,
+    /// Location where the borrow is activated. None if this is not a
+    /// 2-phase borrow.
+    crate activation_location: Option<Location>,
+    /// What kind of borrow this is
+    crate kind: mir::BorrowKind,
+    /// The region for which this borrow is live
+    crate region: Region<'tcx>,
+    /// Place from which we are borrowing
+    crate borrowed_place: mir::Place<'tcx>,
+    /// Place to which the borrow was stored
+    crate assigned_place: mir::Place<'tcx>,
+}
+Unixcoder Score: 0.02439284883439541
+--------------------------------------------------
+C_Code: 
+bool LoadStringFromFd(int fd, string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    const off_t fileLength = lseek(fd, 0, SEEK_END);
+    if (fileLength > MAX_FILE_LENGTH) {
+        UTILS_LOGE("invalid file length(%{public}jd)!", static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    // lseek is not support the linux file node
+    if (fileLength < 0) {
+        return LoadStringFromFdToFile(fd, content);
+    }
+
+    if (fileLength == 0) {
+        return true;
+    }
+
+    content.resize(fileLength);
+    off_t loc = lseek(fd, 0, SEEK_SET);
+    if (loc == -1) {
+        UTILS_LOGE("lseek file to begin failed!");
+        return false;
+    }
+
+    const ssize_t len = read(fd, content.data(), fileLength);
+    if (len != fileLength) {
+        UTILS_LOGE("the length read from file is not equal to fileLength!len:%{public}zd,fileLen:%{public}jd",
+            len, static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_load_string_from_fd_002() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename =FILE_PATH.to_string() + ".008";
+    let content = NULL_STR.to_string();
+    create_test_file(&filename, &content);
+    let file = File::open(&filename).expect("Failed to open file");
+    let fd: RawFd = file.as_raw_fd();
+    assert!(file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, content);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_start__idx120738_rank2.c", "source_rust_file": "API_Mapping__process_start__idx120738_rank2.rs", "c_api": "CloseHandle", "rust_api": "ChildStdin::from_inner", "mapping_type": "function", "description": "Handle closing for cleanup", "reasoning": "[FFI Check] -> The Rust code does not contain any FFI calls. -> [Task Analysis] -> The C code is a Windows API process creation function using Win32 APIs like CreateFileW, CreateProcessW, etc., while the Rust code is a constructor for a Child process struct. -> [Similarity] -> There is no full structural similarity due to different domains (Windows API vs Rust stdlib-style process management). The C code has complex error handling with goto, while Rust uses a more idiomatic struct construction. -> [Knowledge Extraction] -> No full match, but there are API mappings related to process and handle management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_start__idx120738_rank2.c", "source_rust_file": "API_Mapping__process_start__idx120738_rank2.rs", "c_api": "SetHandleInformation", "rust_api": "ChildStdout::from_inner", "mapping_type": "function", "description": "Handle flag manipulation for inheritance", "reasoning": "[FFI Check] -> The Rust code does not contain any FFI calls. -> [Task Analysis] -> The C code is a Windows API process creation function using Win32 APIs like CreateFileW, CreateProcessW, etc., while the Rust code is a constructor for a Child process struct. -> [Similarity] -> There is no full structural similarity due to different domains (Windows API vs Rust stdlib-style process management). The C code has complex error handling with goto, while Rust uses a more idiomatic struct construction. -> [Knowledge Extraction] -> No full match, but there are API mappings related to process and handle management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_start__idx120738_rank2.c", "source_rust_file": "API_Mapping__process_start__idx120738_rank2.rs", "c_api": "CreateProcessW", "rust_api": "imp::Process", "mapping_type": "function", "description": "Process creation with handle inheritance", "reasoning": "[FFI Check] -> The Rust code does not contain any FFI calls. -> [Task Analysis] -> The C code is a Windows API process creation function using Win32 APIs like CreateFileW, CreateProcessW, etc., while the Rust code is a constructor for a Child process struct. -> [Similarity] -> There is no full structural similarity due to different domains (Windows API vs Rust stdlib-style process management). The C code has complex error handling with goto, while Rust uses a more idiomatic struct construction. -> [Knowledge Extraction] -> No full match, but there are API mappings related to process and handle management."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_start__idx120738_rank2.c", "source_rust_file": "API_Mapping__process_start__idx120738_rank2.rs", "c_api": "CreateFileW", "rust_api": "imp::StdioPipes", "mapping_type": "function", "description": "File handle creation for process I/O redirection", "reasoning": "[FFI Check] -> The Rust code does not contain any FFI calls. -> [Task Analysis] -> The C code is a Windows API process creation function using Win32 APIs like CreateFileW, CreateProcessW, etc., while the Rust code is a constructor for a Child process struct. -> [Similarity] -> There is no full structural similarity due to different domains (Windows API vs Rust stdlib-style process management). The C code has complex error handling with goto, while Rust uses a more idiomatic struct construction. -> [Knowledge Extraction] -> No full match, but there are API mappings related to process and handle management."}]
+Unixcoder Score: 0.0017981210257858038
+--------------------------------------------------
+C_Code: 
+bool LoadStringFromFd(int fd, string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    const off_t fileLength = lseek(fd, 0, SEEK_END);
+    if (fileLength > MAX_FILE_LENGTH) {
+        UTILS_LOGE("invalid file length(%{public}jd)!", static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    // lseek is not support the linux file node
+    if (fileLength < 0) {
+        return LoadStringFromFdToFile(fd, content);
+    }
+
+    if (fileLength == 0) {
+        return true;
+    }
+
+    content.resize(fileLength);
+    off_t loc = lseek(fd, 0, SEEK_SET);
+    if (loc == -1) {
+        UTILS_LOGE("lseek file to begin failed!");
+        return false;
+    }
+
+    const ssize_t len = read(fd, content.data(), fileLength);
+    if (len != fileLength) {
+        UTILS_LOGE("the length read from file is not equal to fileLength!len:%{public}zd,fileLen:%{public}jd",
+            len, static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_load_string_from_fd_004() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename = FILE_PATH.to_string() + ".010";
+    let content: String = "t".repeat(MAX_FILE_LENGTH);
+    create_test_file(&filename, &content);
+    let file = File::open(&filename).expect("Failed to open file");
+    let fd: RawFd = file.as_raw_fd();
+    assert!(file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, content);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_start__idx120805_rank1.c", "source_rust_file": "API_Mapping__process_start__idx120805_rank1.rs", "c_api": "CreateFileW", "rust_api": "fs::File", "mapping_type": "function", "description": "File creation/opening", "reasoning": "[Task Analysis] C code handles Windows API process creation and file management; Rust code converts a file into Stdio. [Similarity] No structural similarity due to different domains (Windows API vs Rust stdio handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to file/stdin/stdout handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_start__idx120805_rank1.c", "source_rust_file": "API_Mapping__process_start__idx120805_rank1.rs", "c_api": "CloseHandle", "rust_api": "fs::File::into_inner", "mapping_type": "function", "description": "Closing file handle", "reasoning": "[Task Analysis] C code handles Windows API process creation and file management; Rust code converts a file into Stdio. [Similarity] No structural similarity due to different domains (Windows API vs Rust stdio handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to file/stdin/stdout handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_start__idx120805_rank1.c", "source_rust_file": "API_Mapping__process_start__idx120805_rank1.rs", "c_api": "CreateProcessW", "rust_api": "Stdio::from_inner", "mapping_type": "function", "description": "Process creation", "reasoning": "[Task Analysis] C code handles Windows API process creation and file management; Rust code converts a file into Stdio. [Similarity] No structural similarity due to different domains (Windows API vs Rust stdio handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to file/stdin/stdout handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__process_start__idx120805_rank1.c", "source_rust_file": "API_Mapping__process_start__idx120805_rank1.rs", "c_api": "SetHandleInformation", "rust_api": "Stdio::from_inner", "mapping_type": "function", "description": "Handle inheritance control", "reasoning": "[Task Analysis] C code handles Windows API process creation and file management; Rust code converts a file into Stdio. [Similarity] No structural similarity due to different domains (Windows API vs Rust stdio handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to file/stdin/stdout handling."}]
+Unixcoder Score: -0.011518698185682297
+--------------------------------------------------
+C_Code: 
+struct debug_section_info
+{
+  /* Section file offset.  */
+  off_t offset;
+  /* Section size.  */
+  size_t size;
+  /* Section contents, after read from file.  */
+  const unsigned char *data;
+}
+Function: 
+crate struct BorrowData<'tcx> {
+    /// Location where the borrow reservation starts.
+    /// In many cases, this will be equal to the activation location but not always.
+    crate reserve_location: Location,
+    /// Location where the borrow is activated. None if this is not a
+    /// 2-phase borrow.
+    crate activation_location: Option<Location>,
+    /// What kind of borrow this is
+    crate kind: mir::BorrowKind,
+    /// The region for which this borrow is live
+    crate region: Region<'tcx>,
+    /// Place from which we are borrowing
+    crate borrowed_place: mir::Place<'tcx>,
+    /// Place to which the borrow was stored
+    crate assigned_place: mir::Place<'tcx>,
+}
+Unixcoder Score: -0.025486664846539497
+--------------------------------------------------
+C_Code: 
+void ParcelHelper::UnMarshal(MessageParcel &data, TaskInfo &info)
+{
+    UnMarshalBase(data, info);
+    if (!UnMarshalFormItem(data, info)) {
+        return;
+    }
+    if (!UnMarshalFileSpec(data, info)) {
+        return;
+    }
+    UnMarshalProgress(data, info);
+    if (!UnMarshalMapProgressExtras(data, info)) {
+        return;
+    }
+    if (!UnMarshalMapExtras(data, info)) {
+        return;
+    }
+    info.version = static_cast<Version>(data.ReadUint32());
+    if (!UnMarshalTaskState(data, info)) {
+        return;
+    }
+}
+Function: 
+pub fn file_spec(&mut self, file: File) -> &mut Self {
+        self.inner.file_specs.push(FileSpec::user_file(file));
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CTaskInfo__idx31_rank1.h", "source_rust_file": "Partial__CTaskInfo__idx31_rank1.rs", "c_fragment": "CFormItem *formItemsPtr;\n    uint32_t formItemsLen;", "rust_fragment": "pub(crate) form_items: Vec<CFormItem>,", "description": "Both represent a list of form items with a pointer and length in C, and a vector in Rust.", "reasoning": "[Task Analysis] The C struct defines a task info with fields like bundle, url, data, token, formItemsPtr, fileSpecsPtr, etc. The Rust struct defines an InfoSet with form_items, file_specs, sizes, processed, extras. [Similarity] Both represent data containers for task-related information, but with different field names and structures. [Knowledge Extraction] The field mapping between formItemsPtr and form_items, and fileSpecsPtr and file_specs indicates a structural correspondence. However, the overall structure and naming conventions differ significantly, so it's not a full match. [API Extraction] No direct API mappings found as the code doesn't show function calls or operations that can be mapped between C and Rust."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CTaskInfo__idx31_rank1.h", "source_rust_file": "Partial__CTaskInfo__idx31_rank1.rs", "c_fragment": "CFileSpec *fileSpecsPtr;\n    uint32_t fileSpecsLen;", "rust_fragment": "pub(crate) file_specs: Vec<CFileSpec>,", "description": "Both represent a list of file specs with a pointer and length in C, and a vector in Rust.", "reasoning": "[Task Analysis] The C struct defines a task info with fields like bundle, url, data, token, formItemsPtr, fileSpecsPtr, etc. The Rust struct defines an InfoSet with form_items, file_specs, sizes, processed, extras. [Similarity] Both represent data containers for task-related information, but with different field names and structures. [Knowledge Extraction] The field mapping between formItemsPtr and form_items, and fileSpecsPtr and file_specs indicates a structural correspondence. However, the overall structure and naming conventions differ significantly, so it's not a full match. [API Extraction] No direct API mappings found as the code doesn't show function calls or operations that can be mapped between C and Rust."}]
+Unixcoder Score: -0.029544780030846596
+--------------------------------------------------
+C_Code: 
+void ParcelHelper::UnMarshal(MessageParcel &data, TaskInfo &info)
+{
+    UnMarshalBase(data, info);
+    if (!UnMarshalFormItem(data, info)) {
+        return;
+    }
+    if (!UnMarshalFileSpec(data, info)) {
+        return;
+    }
+    UnMarshalProgress(data, info);
+    if (!UnMarshalMapProgressExtras(data, info)) {
+        return;
+    }
+    if (!UnMarshalMapExtras(data, info)) {
+        return;
+    }
+    info.version = static_cast<Version>(data.ReadUint32());
+    if (!UnMarshalTaskState(data, info)) {
+        return;
+    }
+}
+Function: 
+pub(crate) fn construct(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        debug!("Service construct");
+        let download_permission = PermissionChecker::check_down_permission();
+        if !PermissionChecker::check_internet() && !download_permission {
+            error!("Service start: no INTERNET permission.");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A01,
+                "Service start: no INTERNET permission."
+            );
+            reply.write(&(ErrorCode::Permission as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > CONSTRUCT_MAX {
+            info!("Service construct: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let uid = ipc::Skeleton::calling_uid();
+        let token_id = ipc::Skeleton::calling_full_token_id();
+        let pid = ipc::Skeleton::calling_pid();
+        let mut vec = vec![(ErrorCode::Other, 0u32); len];
+
+        let is_system_api = is_system_api();
+        let notification_permission =
+            check_permission("ohos.permission.REQUEST_DISABLE_NOTIFICATION");
+
+        for i in 0..len {
+            // You can continue only after reading everything.
+            let task_config = data.read::<TaskConfig>();
+            let notification_config = data.read::<NotificationConfig>();
+
+            let task_config = match task_config {
+                Ok(config) => config,
+                Err(e) => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::ParameterCheck);
+                    error!("task_config read err, {}, {}", i, e);
+                    continue;
+                }
+            };
+
+            let mut notification_config = match notification_config {
+                Ok(config) => config,
+                Err(e) => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::ParameterCheck);
+                    error!("notification_config read err, {}, {}", i, e);
+                    continue;
+                }
+            };
+
+            debug!("Service construct: task_config constructed");
+            let mode = task_config.common_data.mode;
+            let (event, rx) = TaskManagerEvent::construct(task_config);
+            if !self.task_manager.lock().unwrap().send_event(event) {
+                set_code_with_index_other(&mut vec, i, ErrorCode::Other);
+                continue;
+            }
+            let ret = match rx.get() {
+                Some(ret) => ret,
+                None => {
+                    error!("End Service construct, failed: receives ret failed");
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A02,
+                        "End Service construct, failed: receives ret failed"
+                    );
+                    set_code_with_index_other(&mut vec, i, ErrorCode::Other);
+                    continue;
+                }
+            };
+
+            let task_id = match ret {
+                Ok(id) => id,
+                Err(err_code) => {
+                    error!("End Service construct, failed: {:?}", err_code);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A02,
+                        &format!("End Service construct, failed: {:?}", err_code)
+                    );
+                    set_code_with_index_other(&mut vec, i, err_code);
+                    continue;
+                }
+            };
+
+            notification_config.task_id = task_id;
+            NotificationDispatcher::get_instance()
+                .update_task_customized_notification(&notification_config);
+
+            if notification_config.disable && is_system_api {
+                if !notification_permission {
+                    error!("End Service construct, notify permission: {}", task_id);
+                    if let Some((c, tid)) = vec.get_mut(i) {
+                        *c = ErrorCode::Permission;
+                        *tid = task_id;
+                    }
+                    continue;
+                }
+                if matches!(mode, Mode::BackGround) {
+                    NotificationDispatcher::get_instance().disable_task_notification(uid, task_id);
+                }
+            }
+
+            debug!("Service construct: construct event sent to manager");
+
+            let ret = self.client_manager.subscribe(task_id, pid, uid, token_id);
+            if ret != ErrorCode::ErrOk {
+                error!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A02,
+                    &format!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret)
+                );
+            }
+            if let Some((c, tid)) = vec.get_mut(i) {
+                *c = ret;
+                *tid = task_id;
+            }
+            debug!("End Service construct, succeed with tid: {}", task_id);
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for (c, tid) in vec {
+            reply.write(&(c as i32))?;
+            reply.write(&tid)?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx356_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx356_rank3.rs", "c_api": "insertValues.PutBlob(\"form_items\", CFormItemToBlob(...))", "rust_api": "multi_part = multi_part.part(part);", "mapping_type": "function", "description": "Adding form item data to a container in both C and Rust.", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] No full structural similarity due to different domains (database write vs HTTP request building). [Knowledge Extraction] Partial structural fragments found in loop patterns and data insertion logic; API mappings identified for data insertion and iteration patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__WriteMutableData__idx356_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx356_rank3.rs", "c_fragment": "for (int i = 0; i < taskConfig->formItemsLen; i++) {\n        insertValues.PutBlob(\"form_items\", CFormItemToBlob(taskConfig->formItemsPtr + i, 1));\n    }", "rust_fragment": "for item in task.conf.form_items.iter() {\n        let part = Part::new()\n            .name(item.name.as_str())\n            .body(item.value.as_str());\n\n        multi_part = multi_part.part(part);\n    }", "description": "Iterating over form items and adding them to a container in both C and Rust.", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] No full structural similarity due to different domains (database write vs HTTP request building). [Knowledge Extraction] Partial structural fragments found in loop patterns and data insertion logic; API mappings identified for data insertion and iteration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx356_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx356_rank3.rs", "c_api": "insertValues.PutBlob(\"file_specs\", CFileSpecToBlob(...))", "rust_api": "multi_part = multi_part.part(part);", "mapping_type": "function", "description": "Adding file specification data to a container in both C and Rust.", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] No full structural similarity due to different domains (database write vs HTTP request building). [Knowledge Extraction] Partial structural fragments found in loop patterns and data insertion logic; API mappings identified for data insertion and iteration patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__WriteMutableData__idx356_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx356_rank3.rs", "c_fragment": "for (int i = start; i < taskConfig->fileSpecsLen; i++) {\n        insertValues.PutBlob(\"file_specs\", CFileSpecToBlob(taskConfig->fileSpecsPtr + i, 1));\n    }", "rust_fragment": "for index in start..task.conf.file_specs.len() {\n        let task_reader = TaskReader::new(task.clone(), index);\n        let upload_length = {\n            let progress = task.progress.lock().unwrap();\n            progress.sizes[index] as u64 - progress.processed[index] as u64\n        };\n        let part = Part::new()\n            .name(task.conf.file_specs[index].name.as_str())\n            .file_name(task.conf.file_specs[index].file_name.as_str())\n            .mime(task.conf.file_specs[index].mime_type.as_str())\n            .length(Some(upload_length))\n            .stream(task_reader);\n\n        multi_part = multi_part.part(part);\n    }", "description": "Iterating over file specifications and adding them to a multipart request in both C and Rust.", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] No full structural similarity due to different domains (database write vs HTTP request building). [Knowledge Extraction] Partial structural fragments found in loop patterns and data insertion logic; API mappings identified for data insertion and iteration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx356_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx356_rank3.rs", "c_api": "insertValues.PutLong(\"mtime\", taskInfo->commonData.mtime)", "rust_api": "info!(\"multi part upload task {}\", task.task_id());", "mapping_type": "function", "description": "Setting metadata in both C and Rust (though different types of metadata).", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] No full structural similarity due to different domains (database write vs HTTP request building). [Knowledge Extraction] Partial structural fragments found in loop patterns and data insertion logic; API mappings identified for data insertion and iteration patterns."}]
+Unixcoder Score: -0.0404815711081028
+--------------------------------------------------
+C_Code: 
+void ParcelHelper::UnMarshal(MessageParcel &data, TaskInfo &info)
+{
+    UnMarshalBase(data, info);
+    if (!UnMarshalFormItem(data, info)) {
+        return;
+    }
+    if (!UnMarshalFileSpec(data, info)) {
+        return;
+    }
+    UnMarshalProgress(data, info);
+    if (!UnMarshalMapProgressExtras(data, info)) {
+        return;
+    }
+    if (!UnMarshalMapExtras(data, info)) {
+        return;
+    }
+    info.version = static_cast<Version>(data.ReadUint32());
+    if (!UnMarshalTaskState(data, info)) {
+        return;
+    }
+}
+Function: 
+fn deserialize(parcel: &mut ipc::parcel::MsgParcel) -> ipc::IpcResult<Self> {
+        let title = if parcel.read::<bool>()? {
+            Some(parcel.read::<String>()?)
+        } else {
+            None
+        };
+
+        let text = if parcel.read::<bool>()? {
+            Some(parcel.read::<String>()?)
+        } else {
+            None
+        };
+        let disable = parcel.read::<bool>()?;
+        let visibility = parcel.read::<u32>()?;
+
+        let config = NotificationConfig {
+            task_id: 0,
+            title,
+            text,
+            disable,
+            visibility,
+        };
+        Ok(config)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "read_address", "rust_api": "read_address", "mapping_type": "function", "description": "Reading address from buffer", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "add_line", "rust_api": "add_file", "mapping_type": "function", "description": "Adding line/file info to program", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "read_sleb128", "rust_api": "read_sleb128", "mapping_type": "function", "description": "Reading signed LEB128 encoded value", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "read_uint16", "rust_api": "read_uint16", "mapping_type": "function", "description": "Reading 16-bit unsigned integer", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "read_byte", "rust_api": "read_uleb128", "mapping_type": "function", "description": "Reading a byte from buffer", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "split_path_dir_and_file", "rust_api": "split_path_dir_and_file", "mapping_type": "function", "description": "Split path into directory and file", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "IS_ABSOLUTE_PATH", "rust_api": "is_absolute", "mapping_type": "function", "description": "Check if path is absolute", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "read_uleb128", "rust_api": "read_uleb128", "mapping_type": "function", "description": "Reading unsigned LEB128 encoded value", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "make_file_info", "rust_api": "make_file_info", "mapping_type": "function", "description": "Create file info structure", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "osstr_as_utf8_bytes", "rust_api": "osstr_as_utf8_bytes", "mapping_type": "function", "description": "Convert OS string to UTF-8 bytes", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "memcpy", "rust_api": "memcpy", "mapping_type": "function", "description": "Memory copy operation", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "backtrace_alloc", "rust_api": "alloc", "mapping_type": "function", "description": "Memory allocation", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "strnlen", "rust_api": "strnlen", "mapping_type": "function", "description": "String length with limit", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "strlen", "rust_api": "strlen", "mapping_type": "function", "description": "String length calculation", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "advance", "rust_api": "advance", "mapping_type": "function", "description": "Advance buffer pointer", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_line_program__idx23781_rank4.c", "source_rust_file": "API_Mapping__read_line_program__idx23781_rank4.rs", "c_api": "dwarf_buf_error", "rust_api": "dwarf_buf_error", "mapping_type": "function", "description": "Error reporting in buffer parsing", "reasoning": "[FFI Check] -> [Task Analysis] C function reads DWARF line number programs and processes opcodes, Rust function adds source file info to a line program. -> [Similarity] No structural similarity at function level; different domains (debug info parsing vs file path handling). -> [Knowledge Extraction] No full match, no partial match, but some API patterns may align in data handling (e.g., string/file operations)."}]
+Unixcoder Score: -0.0415564589202404
+--------------------------------------------------
+C_Code: 
+void ParcelHelper::UnMarshal(MessageParcel &data, TaskInfo &info)
+{
+    UnMarshalBase(data, info);
+    if (!UnMarshalFormItem(data, info)) {
+        return;
+    }
+    if (!UnMarshalFileSpec(data, info)) {
+        return;
+    }
+    UnMarshalProgress(data, info);
+    if (!UnMarshalMapProgressExtras(data, info)) {
+        return;
+    }
+    if (!UnMarshalMapExtras(data, info)) {
+        return;
+    }
+    info.version = static_cast<Version>(data.ReadUint32());
+    if (!UnMarshalTaskState(data, info)) {
+        return;
+    }
+}
+Function: 
+pub(crate) fn from_c_struct(c_struct: &CTaskInfo) -> Self {
+        let progress = Progress::from_c_struct(&c_struct.progress);
+        let extras = progress.extras.clone();
+
+        // Removes this logic if api9 and api10 matched.
+        let mime_type = if c_struct.common_data.version == Version::API9 as u8
+            || (c_struct.progress.common_data.state != State::Completed.repr
+                && c_struct.progress.common_data.state != State::Failed.repr)
+        {
+            c_struct.mime_type.to_string()
+        } else {
+            String::new()
+        };
+
+        let task_info = TaskInfo {
+            bundle: c_struct.bundle.to_string(),
+            url: c_struct.url.to_string(),
+            data: c_struct.data.to_string(),
+            token: c_struct.token.to_string(),
+            form_items: build_vec(
+                c_struct.form_items_ptr,
+                c_struct.form_items_len as usize,
+                FormItem::from_c_struct,
+            ),
+            file_specs: build_vec(
+                c_struct.file_specs_ptr,
+                c_struct.file_specs_len as usize,
+                FileSpec::from_c_struct,
+            ),
+            title: c_struct.title.to_string(),
+            description: c_struct.description.to_string(),
+            mime_type,
+            progress,
+            extras,
+            common_data: c_struct.common_data,
+            max_speed: c_struct.max_speed,
+            task_time: c_struct.task_time,
+        };
+
+        #[cfg(feature = "oh")]
+        {
+            unsafe { DeleteCFormItem(c_struct.form_items_ptr) };
+            unsafe { DeleteCFileSpec(c_struct.file_specs_ptr) };
+        }
+        task_info
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUploadBodyFiles__idx330_rank3.c", "source_rust_file": "Partial__CheckUploadBodyFiles__idx330_rank3.rs", "c_api": "SysEventLog::SendSysEventLog", "rust_api": "sys_event!", "mapping_type": "function", "description": "System event logging", "reasoning": "[Task Analysis] C function checks file paths and opens files with error handling; Rust function opens files with similar logic but uses different APIs and error handling patterns. [Similarity] Names don't match exactly but both perform file operations with validation and error reporting. [Knowledge Extraction] Found partial structural match in loop and file handling logic, and API mappings for file operations and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUploadBodyFiles__idx330_rank3.c", "source_rust_file": "Partial__CheckUploadBodyFiles__idx330_rank3.rs", "c_api": "fclose(bodyFile)", "rust_api": "Arc::new(Mutex::new(file))", "mapping_type": "function", "description": "File closing operation", "reasoning": "[Task Analysis] C function checks file paths and opens files with error handling; Rust function opens files with similar logic but uses different APIs and error handling patterns. [Similarity] Names don't match exactly but both perform file operations with validation and error reporting. [Knowledge Extraction] Found partial structural match in loop and file handling logic, and API mappings for file operations and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUploadBodyFiles__idx330_rank3.c", "source_rust_file": "Partial__CheckUploadBodyFiles__idx330_rank3.rs", "c_api": "fopen(path.c_str(), \"w+\")", "rust_api": "open_file_readwrite(uid, &bundle_name, path)", "mapping_type": "function", "description": "File opening operation", "reasoning": "[Task Analysis] C function checks file paths and opens files with error handling; Rust function opens files with similar logic but uses different APIs and error handling patterns. [Similarity] Names don't match exactly but both perform file operations with validation and error reporting. [Knowledge Extraction] Found partial structural match in loop and file handling logic, and API mappings for file operations and error handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckUploadBodyFiles__idx330_rank3.c", "source_rust_file": "Partial__CheckUploadBodyFiles__idx330_rank3.rs", "c_fragment": "for (size_t i = 0; i < len; i++) {\n        if (filePath.empty()) {\n            REQUEST_HILOGE(\"internal to cache error\");\n            error.code = E_PARAMETER_CHECK;\n            error.errInfo = \"Parameter verification failed, UploadBodyFiles error empty path\";\n            return false;\n        }\n        auto now = std::chrono::high_resolution_clock::now();\n        auto timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();\n        std::string path = filePath + \"/tmp_body_\" + std::to_string(i) + \"_\" + std::to_string(timestamp);\n        if (!NapiUtils::IsPathValid(path)) {\n            REQUEST_HILOGE(\"Upload IsPathValid error\");\n            error.code = E_PARAMETER_CHECK;\n            error.errInfo = \"Parameter verification failed, UploadBodyFiles error fail path\";\n            return false;\n        }\n        FILE *bodyFile = fopen(path.c_str(), \"w+\");\n        if (bodyFile == NULL) {\n            error.code = E_FILE_IO;\n            error.errInfo = \"UploadBodyFiles failed to open file errno \" + std::to_string(errno);\n            SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_00, config.bundleName, \"\", error.errInfo);\n            return false;\n        }\n        int32_t ret = chmod(path.c_str(), PathUtils::WRITE_MODE);\n        if (ret != 0) {\n            REQUEST_HILOGE(\"body chmod fail: %{public}d\", ret);\n            SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_01, config.bundleName, \"\", std::to_string(ret));\n        };\n\n        int32_t retClose = fclose(bodyFile);\n        if (retClose != 0) {\n            REQUEST_HILOGE(\"upload body fclose fail: %{public}d\", ret);\n            SysEventLog::SendSysEventLog(\n                FAULT_EVENT, STANDARD_FAULT_02, config.bundleName, \"\", std::to_string(retClose));\n        }\n        config.bodyFileNames.push_back(path);\n    }", "rust_fragment": "for (idx, path) in config.body_file_paths.iter().enumerate() {\n        let bundle_name = bundle_cache.get_value()?;\n        let file = open_file_readwrite(uid, &bundle_name, path).map_err(|e| {\n            error!(\"Open body_file failed - task_id: {}, idx: {}\", tid, idx);\n            sys_event!(\n                ExecFault,\n                DfxCode::SA_ERROR_02,\n                &format!(\"Open body_file failed - task_id: {}, idx: {}\", tid, idx)\n            );\n            ServiceError::IoError(e)\n        })?;\n        body_files.push(Arc::new(Mutex::new(file)))\n    }", "description": "Both loops iterate over file paths and perform file operations with error handling.", "reasoning": "[Task Analysis] C function checks file paths and opens files with error handling; Rust function opens files with similar logic but uses different APIs and error handling patterns. [Similarity] Names don't match exactly but both perform file operations with validation and error reporting. [Knowledge Extraction] Found partial structural match in loop and file handling logic, and API mappings for file operations and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUploadBodyFiles__idx330_rank3.c", "source_rust_file": "Partial__CheckUploadBodyFiles__idx330_rank3.rs", "c_api": "REQUEST_HILOGE", "rust_api": "error!", "mapping_type": "function", "description": "Error logging", "reasoning": "[Task Analysis] C function checks file paths and opens files with error handling; Rust function opens files with similar logic but uses different APIs and error handling patterns. [Similarity] Names don't match exactly but both perform file operations with validation and error reporting. [Knowledge Extraction] Found partial structural match in loop and file handling logic, and API mappings for file operations and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckUploadBodyFiles__idx330_rank3.c", "source_rust_file": "Partial__CheckUploadBodyFiles__idx330_rank3.rs", "c_api": "chmod(path.c_str(), PathUtils::WRITE_MODE)", "rust_api": "open_file_readwrite(uid, &bundle_name, path)", "mapping_type": "function", "description": "File permission setting", "reasoning": "[Task Analysis] C function checks file paths and opens files with error handling; Rust function opens files with similar logic but uses different APIs and error handling patterns. [Similarity] Names don't match exactly but both perform file operations with validation and error reporting. [Knowledge Extraction] Found partial structural match in loop and file handling logic, and API mappings for file operations and error handling."}]
+Unixcoder Score: -0.04311278089880943
+--------------------------------------------------
+C_Code: 
+int
+backtrace_get_view (struct backtrace_state *state ATTRIBUTE_UNUSED,
+		    int descriptor, off_t offset, size_t size,
+		    backtrace_error_callback error_callback,
+		    void *data, struct backtrace_view *view)
+{
+  size_t pagesize;
+  unsigned int inpage;
+  off_t pageoff;
+  void *map;
+
+  pagesize = getpagesize ();
+  inpage = offset % pagesize;
+  pageoff = offset - inpage;
+
+  size += inpage;
+  size = (size + (pagesize - 1)) & ~ (pagesize - 1);
+
+  map = mmap (NULL, size, PROT_READ, MAP_PRIVATE, descriptor, pageoff);
+  if (map == MAP_FAILED)
+    {
+      error_callback (data, "mmap", errno);
+      return 0;
+    }
+
+  view->data = (char *) map + inpage;
+  view->base = map;
+  view->len = size;
+
+  return 1;
+}
+Function: 
+fn main() {
+    unsafe {
+        let ptr = libc::mmap(
+            std::ptr::null_mut(),
+            4096,
+            libc::PROT_READ | libc::PROT_WRITE,
+            libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+            -1,
+            0,
+        );
+        libc::munmap(ptr, 4096);
+        let _x = *(ptr as *mut u8); //~ ERROR: was dereferenced after this allocation got freed
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__AllocResourceAndShare__idx5061_rank4.c", "source_rust_file": "Partial__AllocResourceAndShare__idx5061_rank4.rs", "c_fragment": "auto tokenId = IPCSkeleton::GetCallingTokenID();\n    auto hapInfo = GetHapInfo(tokenId);\n    if (hapInfo.bundleName.empty() || hapInfo.user == INVALID_USER_ID) {\n        ZLOGE(\"bundleName is empty or invalid user, user:%{public}d, storeId:%{public}s\", hapInfo.user,\n            Anonymous::Change(storeId).c_str());\n        return { E_ERROR, {} };\n    }", "rust_fragment": "let mut msg_parcel = MsgParcel::new();\n\n        msg_parcel\n            .write_string16(table)\n            .map_err(|_| Error::WriteMsgParcelFailed)?;\n        msg_parcel\n            .write(values)\n            .map_err(|_| Error::WriteMsgParcelFailed)?;\n        msg_parcel\n            .write(extends)\n            .map_err(|_| Error::WriteMsgParcelFailed)?;", "description": "Both functions prepare data for IPC communication by writing values to a message parcel.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AllocResourceAndShare__idx5061_rank4.c", "source_rust_file": "Partial__AllocResourceAndShare__idx5061_rank4.rs", "c_api": "ZLOGE(...)", "rust_api": "map_err(|_| Error::WriteMsgParcelFailed)", "mapping_type": "function", "description": "Both functions handle error conditions during IPC communication.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__AllocResourceAndShare__idx5061_rank4.c", "source_rust_file": "Partial__AllocResourceAndShare__idx5061_rank4.rs", "c_fragment": "for (auto &valueBucket : valueBuckets) {\n        NativeRdb::ValueObject object;\n        if (!valueBucket.GetObject(DistributedRdb::Field::SHARING_RESOURCE_FIELD, object)) {\n            continue;\n        }\n        std::string shareRes;\n        if (object.GetString(shareRes) != E_OK) {\n            continue;\n        }\n        Share(shareRes, participants, results);\n    }", "rust_fragment": "let mut results = vec![];\n        let length = receive\n            .read::<i32>()\n            .map_err(|_| Error::ReadMsgParcelFailed)?;\n        for _ in 0..length {\n            let error = receive\n                .read::<Error>()\n                .map_err(|_| Error::ReadMsgParcelFailed)?;\n            if !error.eq(&Error::Success) {\n                results.push(None);\n                continue;\n            } else {\n                let result = receive\n                    .read::<ValueBucket>()\n                    .map_err(|_| Error::ReadMsgParcelFailed)?;\n                results.push(Some(result));\n            }\n        }", "description": "Both functions iterate over a collection of data items and process each item, handling errors and collecting results.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__AllocResourceAndShare__idx5061_rank4.c", "source_rust_file": "Partial__AllocResourceAndShare__idx5061_rank4.rs", "c_fragment": "auto evt = std::make_unique<MakeQueryEvent>(storeInfo, memo, columns, asyncCallback);\n    EventCenter::GetInstance().PostEvent(std::move(evt));\n    if (query == nullptr) {\n        ZLOGE(\"query is null, storeId:%{public}s,\", Anonymous::Change(storeId).c_str());\n        return { E_ERROR, {} };\n    }", "rust_fragment": "let function_number = Insert as u32;\n        let remote_obj = self\n            .remote_obj\n            .as_ref()\n            .ok_or(Error::CreateMsgParcelFailed)?;\n        let mut receive = remote_obj\n            .send_request(function_number, &mut msg_parcel)\n            .map_err(|_| Error::SendRequestFailed)?;", "description": "Both functions initiate an IPC request to a remote service and handle potential errors.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AllocResourceAndShare__idx5061_rank4.c", "source_rust_file": "Partial__AllocResourceAndShare__idx5061_rank4.rs", "c_api": "EventCenter::GetInstance().PostEvent(std::move(evt))", "rust_api": "remote_obj.send_request(function_number, &mut msg_parcel)", "mapping_type": "function", "description": "Both functions send a request to a remote service via IPC.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AllocResourceAndShare__idx5061_rank4.c", "source_rust_file": "Partial__AllocResourceAndShare__idx5061_rank4.rs", "c_api": "Share(...)", "rust_api": "results.push(Some(result))", "mapping_type": "function", "description": "Both functions process and store results from a remote operation.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AllocResourceAndShare__idx5061_rank4.c", "source_rust_file": "Partial__AllocResourceAndShare__idx5061_rank4.rs", "c_api": "valueBucket.GetObject(...)", "rust_api": "receive.read::<ValueBucket>()", "mapping_type": "method", "description": "Both functions read data from a message parcel or similar structure.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AllocResourceAndShare__idx5061_rank4.c", "source_rust_file": "Partial__AllocResourceAndShare__idx5061_rank4.rs", "c_api": "IPCSkeleton::GetCallingTokenID()", "rust_api": "MsgParcel::new()", "mapping_type": "function", "description": "Both functions are used to initialize or prepare for IPC communication.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}]
+Unixcoder Score: -0.04452373459935188
+--------------------------------------------------
+C_Code: 
+void ParcelHelper::UnMarshal(MessageParcel &data, TaskInfo &info)
+{
+    UnMarshalBase(data, info);
+    if (!UnMarshalFormItem(data, info)) {
+        return;
+    }
+    if (!UnMarshalFileSpec(data, info)) {
+        return;
+    }
+    UnMarshalProgress(data, info);
+    if (!UnMarshalMapProgressExtras(data, info)) {
+        return;
+    }
+    if (!UnMarshalMapExtras(data, info)) {
+        return;
+    }
+    info.version = static_cast<Version>(data.ReadUint32());
+    if (!UnMarshalTaskState(data, info)) {
+        return;
+    }
+}
+Function: 
+pub(crate) fn serialize_task_info(tf: TaskInfo, reply: &mut MsgParcel) -> IpcResult<()> {
+    reply.write(&(tf.common_data.gauge))?;
+    reply.write(&(tf.common_data.retry))?;
+    reply.write(&(tf.common_data.action as u32))?;
+    reply.write(&(tf.common_data.mode as u32))?;
+    reply.write(&(tf.common_data.reason as u32))?;
+    reply.write(&(tf.common_data.tries))?;
+    reply.write(&(tf.common_data.uid.to_string()))?;
+    reply.write(&(tf.bundle))?;
+    reply.write(&(tf.url))?;
+    reply.write(&(tf.common_data.task_id.to_string()))?;
+    reply.write(&tf.title)?;
+    reply.write(&tf.mime_type)?;
+    reply.write(&(tf.common_data.ctime))?;
+    reply.write(&(tf.common_data.mtime))?;
+    reply.write(&(tf.data))?;
+    reply.write(&(tf.description))?;
+    reply.write(&(tf.common_data.priority))?;
+
+    reply.write(&(tf.form_items.len() as u32))?;
+    for i in 0..tf.form_items.len() {
+        reply.write(&(tf.form_items[i].name))?;
+        reply.write(&(tf.form_items[i].value))?;
+    }
+
+    reply.write(&(tf.file_specs.len() as u32))?;
+    for i in 0..tf.file_specs.len() {
+        reply.write(&(tf.file_specs[i].name))?;
+        reply.write(&(tf.file_specs[i].path))?;
+        reply.write(&(tf.file_specs[i].file_name))?;
+        reply.write(&(tf.file_specs[i].mime_type))?;
+    }
+
+    reply.write(&(tf.progress.common_data.state as u32))?;
+    let index = tf.progress.common_data.index;
+    reply.write(&(index as u32))?;
+    reply.write(&(tf.progress.processed[index] as u64))?;
+    reply.write(&(tf.progress.common_data.total_processed as u64))?;
+    reply.write(&(tf.progress.sizes))?;
+
+    reply.write(&(tf.progress.extras.len() as u32))?;
+    for (k, v) in tf.progress.extras.iter() {
+        reply.write(k)?;
+        reply.write(v)?;
+    }
+
+    reply.write(&(tf.extras.len() as u32))?;
+    for (k, v) in tf.extras.iter() {
+        reply.write(k)?;
+        reply.write(v)?;
+    }
+    reply.write(&(tf.common_data.version as u32))?;
+    let each_file_status = tf.build_each_file_status();
+    reply.write(&(each_file_status.len() as u32))?;
+    for item in each_file_status.iter() {
+        reply.write(&(item.path))?;
+        reply.write(&(item.reason.repr as u32))?;
+        reply.write(&(item.message))?;
+    }
+    Ok(())
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx355_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx355_rank3.rs", "c_api": "insertValues.PutBlob(\"form_items\", CFormItemToBlob(...))", "rust_api": "multi_part = multi_part.part(part);", "mapping_type": "function", "description": "Adding form item data to a multipart request", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] Names refer to different concepts (WriteMutableData vs build_multipart_request), and domains are different (database operations vs HTTP request building). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and loop structures, and some API mappings related to data insertion and iteration."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx355_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx355_rank3.rs", "c_api": "insertValues.PutLong(\"mtime\", taskInfo->commonData.mtime)", "rust_api": "let part = Part::new().name(task.conf.file_specs[index].name.as_str()).file_name(task.conf.file_specs[index].file_name.as_str()).mime(task.conf.file_specs[index].mime_type.as_str()).length(Some(upload_length)).stream(task_reader);", "mapping_type": "function", "description": "Setting metadata for a part in a multipart request", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] Names refer to different concepts (WriteMutableData vs build_multipart_request), and domains are different (database operations vs HTTP request building). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and loop structures, and some API mappings related to data insertion and iteration."}, {"knowledge_type": "Partial", "source_c_file": "Partial__WriteMutableData__idx355_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx355_rank3.rs", "c_fragment": "for (int i = 0; i < taskConfig->formItemsLen; i++) {\n        insertValues.PutBlob(\"form_items\", CFormItemToBlob(taskConfig->formItemsPtr + i, 1));\n    }", "rust_fragment": "for item in task.conf.form_items.iter() {\n        let part = Part::new()\n            .name(item.name.as_str())\n            .body(item.value.as_str());\n        multi_part = multi_part.part(part);\n    }", "description": "Both iterate over form items and add them to a collection.", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] Names refer to different concepts (WriteMutableData vs build_multipart_request), and domains are different (database operations vs HTTP request building). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and loop structures, and some API mappings related to data insertion and iteration."}]
+Unixcoder Score: -0.05030045285820961
+--------------------------------------------------

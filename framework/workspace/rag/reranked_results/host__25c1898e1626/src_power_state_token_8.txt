@@ -1,0 +1,254 @@
+C_Code: 
+void
+backtrace_free (struct backtrace_state *state ATTRIBUTE_UNUSED,
+		void *p, size_t size ATTRIBUTE_UNUSED,
+		backtrace_error_callback error_callback ATTRIBUTE_UNUSED,
+		void *data ATTRIBUTE_UNUSED)
+{
+  free (p);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        let size = layout.size();
+        let align = layout.align();
+        unsafe {
+            hermit_abi::free(ptr, size, align);
+        }
+    }
+Unixcoder Score: 0.06026824191212654
+--------------------------------------------------
+C_Code: 
+void
+backtrace_free (struct backtrace_state *state ATTRIBUTE_UNUSED,
+		void *p, size_t size ATTRIBUTE_UNUSED,
+		backtrace_error_callback error_callback ATTRIBUTE_UNUSED,
+		void *data ATTRIBUTE_UNUSED)
+{
+  free (p);
+}
+Function: 
+fn drop(&mut self) {}
+Unixcoder Score: 0.033132292330265045
+--------------------------------------------------
+C_Code: 
+void
+backtrace_free (struct backtrace_state *state ATTRIBUTE_UNUSED,
+		void *p, size_t size ATTRIBUTE_UNUSED,
+		backtrace_error_callback error_callback ATTRIBUTE_UNUSED,
+		void *data ATTRIBUTE_UNUSED)
+{
+  free (p);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        unsafe { libc::free(ptr as *mut libc::c_void) }
+    }
+Unixcoder Score: 0.03153390437364578
+--------------------------------------------------
+C_Code: 
+int OH_IPCParcel_WriteInterfaceToken(OHIPCParcel *parcel, const char *token)
+{
+    if (!IsIPCParcelValid(parcel, __func__) || token == nullptr) {
+        return OH_IPC_CHECK_PARAM_ERROR;
+    }
+
+    int tokenLen = strlen(token);
+    if (tokenLen == 0 || tokenLen > MAX_PARCEL_LEN) {
+        return OH_IPC_CHECK_PARAM_ERROR;
+    }
+    std::u16string u16Token = OHOS::Str8ToStr16(std::string(token, tokenLen));
+    if (u16Token.length() == 0 && tokenLen != 0) {
+        ZLOGE(LOG_LABEL, "convert token to u16string failed: %{public}d", tokenLen);
+        return OH_IPC_PARCEL_WRITE_ERROR;
+    }
+    size_t writePosition = parcel->msgParcel->GetWritePosition();
+    if (!parcel->msgParcel->WriteInterfaceToken(u16Token)) {
+        ZLOGE(LOG_LABEL, "WriteInterfaceToken failed! token len:%{public}d", tokenLen);
+        parcel->msgParcel->RewindWrite(writePosition);
+        return OH_IPC_PARCEL_WRITE_ERROR;
+    }
+    return OH_IPC_SUCCESS;
+}
+Function: 
+pub fn write_interface_token(&mut self, name: &str) -> IpcResult<()> {
+        self.write_process(name, WriteInterfaceToken)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__rust_begin_unwind__idx8485_rank1.c", "source_rust_file": "Full__rust_begin_unwind__idx8485_rank1.rs", "c_api": "throw token", "rust_api": "imp::panic(...)", "mapping_type": "function", "description": "Panic/exception throwing mechanism", "reasoning": "[Task Analysis] C function `rust_begin_unwind` and Rust function `__rust_start_panic` both handle panic/exception unwinding. [Similarity] Both are low-level panic handlers, with similar input parameters (token/data, vtable) and purpose (triggering panic). [Knowledge Extraction] Full structural match in purpose and control flow; API mappings identified for panic handling mechanisms."}, {"knowledge_type": "Partial", "source_c_file": "Full__rust_begin_unwind__idx8485_rank1.c", "source_rust_file": "Full__rust_begin_unwind__idx8485_rank1.rs", "c_fragment": "CDECL void\nrust_begin_unwind(uintptr_t token) {\n    throw token;\n}", "rust_fragment": "pub unsafe extern fn __rust_start_panic(data: usize, vtable: usize) -> u32 {\n    imp::panic(mem::transmute(raw::TraitObject {\n        data: data as *mut (),\n        vtable: vtable as *mut (),\n    }))\n}", "description": "Both functions handle panic unwinding, with similar input parameters and purpose.", "reasoning": "[Task Analysis] C function `rust_begin_unwind` and Rust function `__rust_start_panic` both handle panic/exception unwinding. [Similarity] Both are low-level panic handlers, with similar input parameters (token/data, vtable) and purpose (triggering panic). [Knowledge Extraction] Full structural match in purpose and control flow; API mappings identified for panic handling mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__rust_begin_unwind__idx8485_rank1.c", "source_rust_file": "Full__rust_begin_unwind__idx8485_rank1.rs", "c_api": "uintptr_t token", "rust_api": "data: usize, vtable: usize", "mapping_type": "pattern", "description": "Token/vtable parameters for panic handling", "reasoning": "[Task Analysis] C function `rust_begin_unwind` and Rust function `__rust_start_panic` both handle panic/exception unwinding. [Similarity] Both are low-level panic handlers, with similar input parameters (token/data, vtable) and purpose (triggering panic). [Knowledge Extraction] Full structural match in purpose and control flow; API mappings identified for panic handling mechanisms."}, {"knowledge_type": "Full", "source_c_file": "Full__rust_begin_unwind__idx8485_rank1.c", "source_rust_file": "Full__rust_begin_unwind__idx8485_rank1.rs", "reasoning": "[Task Analysis] C function `rust_begin_unwind` and Rust function `__rust_start_panic` both handle panic/exception unwinding. [Similarity] Both are low-level panic handlers, with similar input parameters (token/data, vtable) and purpose (triggering panic). [Knowledge Extraction] Full structural match in purpose and control flow; API mappings identified for panic handling mechanisms.", "description": "Full structural translation"}]
+Unixcoder Score: 0.02789616398513317
+--------------------------------------------------
+C_Code: 
+void
+backtrace_free (struct backtrace_state *state ATTRIBUTE_UNUSED,
+		void *p, size_t size ATTRIBUTE_UNUSED,
+		backtrace_error_callback error_callback ATTRIBUTE_UNUSED,
+		void *data ATTRIBUTE_UNUSED)
+{
+  free (p);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, x: Layout) {
+    }
+Unixcoder Score: 0.025305891409516335
+--------------------------------------------------
+C_Code: 
+void
+backtrace_free (struct backtrace_state *state ATTRIBUTE_UNUSED,
+		void *p, size_t size ATTRIBUTE_UNUSED,
+		backtrace_error_callback error_callback ATTRIBUTE_UNUSED,
+		void *data ATTRIBUTE_UNUSED)
+{
+  free (p);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+            if layout.align() <= MIN_ALIGN {
+                let err = HeapFree(GetProcessHeap(), 0, ptr as LPVOID);
+                debug_assert!(err != 0, "Failed to free heap memory: {}",
+                              GetLastError());
+            } else {
+                let header = get_header(ptr);
+                let err = HeapFree(GetProcessHeap(), 0, header.0 as LPVOID);
+                debug_assert!(err != 0, "Failed to free heap memory: {}",
+                              GetLastError());
+            }
+        }
+Unixcoder Score: 0.023810844868421555
+--------------------------------------------------
+C_Code: 
+static inline bool ParseRefQualifier(State *state) {
+  return ParseCharClass(state, "OR");
+}
+Function: 
+pub fn reference_table(&self, tag: &str) -> Blob {
+        let mut tag_u: u32 = 0;
+        let mut chars = tag.chars();
+        tag_u |= (chars.next().unwrap() as u32) << 24;
+        tag_u |= (chars.next().unwrap() as u32) << 16;
+        tag_u |= (chars.next().unwrap() as u32) << 8;
+        tag_u |= chars.next().unwrap() as u32;
+        let mut blob = Blob {
+            data: std::ptr::null_mut(),
+            length: 0,
+        };
+        unsafe {
+            face_copy_table(self.0, tag_u, &mut blob);
+        }
+        blob
+    }
+Unixcoder Score: 0.02379339002072811
+--------------------------------------------------
+C_Code: 
+void SetAccessTokenPermission()
+{
+    auto permissions = std::vector<std::string>();
+    permissions.push_back("ohos.permission.INTERNET");
+    permissions.push_back("ohos.permission.GET_NETWORK_INFO");
+
+    auto processName = std::string("preload_info");
+    auto perms = std::make_unique<const char *[]>(permissions.size());
+    for (size_t i = 0; i < permissions.size(); i++) {
+        perms[i] = permissions[i].c_str();
+    }
+
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = permissions.size(),
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms.get(),
+        .acls = nullptr,
+        .processName = processName.c_str(),
+        .aplStr = "system_core",
+    };
+    auto tokenId = GetAccessTokenId(&infoInstance);
+    if (tokenId == 0) {
+        REQUEST_HILOGI("GetAccessTokenId failed.");
+        return;
+    }
+    int ret = SetSelfTokenID(tokenId);
+    if (ret != 0) {
+        REQUEST_HILOGI("SetSelfTokenID failed, code is %{public}d.", ret);
+        return;
+    }
+    ret = OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    if (ret < 0) {
+        REQUEST_HILOGI("ReloadNativeTokenInfo failed, code is %{public}d.", ret);
+        return;
+    }
+}
+Function: 
+pub(crate) fn test_init() {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| {
+            unsafe { SYSTEM_CONFIG_MANAGER.write(SystemConfigManager::init()) };
+        });
+
+        let _ = std::fs::create_dir("test_files/");
+
+        unsafe { SetAccessTokenPermission() };
+    }
+Unixcoder Score: 0.012318683788180351
+--------------------------------------------------
+C_Code: 
+static void upbc_State_Fini(upbc_State* s) {
+  if (s->symtab) upb_DefPool_Free(s->symtab);
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            upb_Arena_Free(self.raw);
+        }
+    }
+Unixcoder Score: 0.010654936544597149
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn parse_type_alias(&mut self, defaultness: Defaultness) -> PResult<'a, ItemInfo> {
+        let ident = self.parse_ident()?;
+        let mut generics = self.parse_generics()?;
+
+        // Parse optional colon and param bounds.
+        let bounds =
+            if self.eat(&token::Colon) { self.parse_generic_bounds()? } else { Vec::new() };
+        let before_where_clause = self.parse_where_clause()?;
+
+        let ty = if self.eat(&token::Eq) { Some(self.parse_ty()?) } else { None };
+
+        let after_where_clause = self.parse_where_clause()?;
+
+        let where_clauses = (
+            TyAliasWhereClause(before_where_clause.has_where_token, before_where_clause.span),
+            TyAliasWhereClause(after_where_clause.has_where_token, after_where_clause.span),
+        );
+        let where_predicates_split = before_where_clause.predicates.len();
+        let mut predicates = before_where_clause.predicates;
+        predicates.extend(after_where_clause.predicates.into_iter());
+        let where_clause = WhereClause {
+            has_where_token: before_where_clause.has_where_token
+                || after_where_clause.has_where_token,
+            predicates,
+            span: DUMMY_SP,
+        };
+        generics.where_clause = where_clause;
+
+        self.expect_semi()?;
+
+        Ok((
+            ident,
+            ItemKind::TyAlias(Box::new(TyAlias {
+                defaultness,
+                generics,
+                where_clauses,
+                where_predicates_split,
+                bounds,
+                ty,
+            })),
+        ))
+    }
+Unixcoder Score: -0.0013342633610591292
+--------------------------------------------------

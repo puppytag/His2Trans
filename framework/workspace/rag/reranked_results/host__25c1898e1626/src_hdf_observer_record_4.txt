@@ -1,0 +1,558 @@
+C_Code: 
+void TestOnEventWrapperCb(OnRustCb callback, HiSysEventRecordC record)
+{
+    // do nothing
+}
+Function: 
+fn test_hisysevent_query_001() {
+    // write two events at first.
+    let mut ret = hisysevent::write(
+        "HIVIEWDFX",
+        "PLUGIN_LOAD",
+        EventType::Behavior,
+        &[hisysevent::build_str_param!("STRING_SINGLE", "test_hisysevent_query_001")]
+    );
+    assert!(ret == SUCCEED);
+    ret = hisysevent::write(
+        "HIVIEWDFX",
+        "PLUGIN_UNLOAD",
+        EventType::Behavior,
+        &[hisysevent::build_str_param!("STRING_SINGLE", "test_hisysevent_query_001")]
+    );
+    assert!(ret == SUCCEED);
+    // query event.
+    let query_arg = QueryArg {
+        begin_time: -1,
+        end_time: -1,
+        max_events: 2,
+    };
+    let query_rules = [
+        QueryRule {
+            domain: "HIVIEWDFX",
+            event_list: vec![
+                "PLUGIN_LOAD",
+                "PLUGIN_UNLOAD",
+            ],
+            condition: "{\"version\":\"V1\",\"condition\":{\"and\":[{\"param\":\"
+                NAME\",\"op\":\"=\",\"value\":\"SysEventService\"}]}}",
+        },
+        QueryRule {
+            domain: "HIVIEWDFX",
+            event_list: vec![
+                "PLUGIN_LOAD",
+            ],
+            condition: "",
+        }
+    ];
+    // step1: construct a querier.
+    let querier = Querier::new(|records: &[HiSysEventRecord]| {
+        for item in records {
+            assert!(item.get_domain() == "HIVIEWDFX");
+        }
+    }, |reason: i32, total: i32| {
+        assert!(reason == SUCCEED);
+        assert!(total == QUERY_CNT);
+    }).expect("Construct a querier by Querier::new");
+    // step2: query.
+    ret = hisysevent::query(&query_arg, &query_rules, &querier);
+    assert!(ret == SUCCEED);
+    // step3: recycle allocated memories of this Querier.
+    querier.try_to_recycle();
+    ret = hisysevent::query(&query_arg, &query_rules, &querier);
+    assert!(ret == LISTENER_NOT_EXIST);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__SystemEventHandler__idx4498_rank2.c", "source_rust_file": "Partial__SystemEventHandler__idx4498_rank2.rs", "c_api": "loge", "rust_api": "loge", "mapping_type": "function", "description": "Error logging", "reasoning": "[Task Analysis] C code defines a constructor for a SystemEventHandler class, initializing base class and member variables. Rust code defines a function that subscribes to system events using callbacks and logs results. [Similarity] Names don't match ('SystemEventHandler' vs 'subscribe'), but both involve event handling and callback registration. [Knowledge Extraction] Found partial structural match in callback setup and event subscription logic, and API mappings for event subscription and logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SystemEventHandler__idx4498_rank2.c", "source_rust_file": "Partial__SystemEventHandler__idx4498_rank2.rs", "c_api": "logi", "rust_api": "logi", "mapping_type": "function", "description": "Information logging", "reasoning": "[Task Analysis] C code defines a constructor for a SystemEventHandler class, initializing base class and member variables. Rust code defines a function that subscribes to system events using callbacks and logs results. [Similarity] Names don't match ('SystemEventHandler' vs 'subscribe'), but both involve event handling and callback registration. [Knowledge Extraction] Found partial structural match in callback setup and event subscription logic, and API mappings for event subscription and logging."}, {"knowledge_type": "Partial", "source_c_file": "Partial__SystemEventHandler__idx4498_rank2.c", "source_rust_file": "Partial__SystemEventHandler__idx4498_rank2.rs", "c_fragment": "explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack eventCallBack)\n        : CommonEventSubscriber(subscribeInfo), eventCallBack(eventCallBack) {}", "rust_fragment": "pub(crate) fn subscribe() {\n    unsafe {\n        let call_back = EventCallBack {\n            on_package_removed,\n            on_user_removed,\n            on_screen_off: delete_crypto_need_unlock,\n            on_charging: backup_db,\n            on_app_restore,\n            on_user_unlocked,\n            on_connectivity_change,\n        };", "description": "Both set up callback structures for event handling, though C uses constructor initializer list while Rust uses local variable assignment.", "reasoning": "[Task Analysis] C code defines a constructor for a SystemEventHandler class, initializing base class and member variables. Rust code defines a function that subscribes to system events using callbacks and logs results. [Similarity] Names don't match ('SystemEventHandler' vs 'subscribe'), but both involve event handling and callback registration. [Knowledge Extraction] Found partial structural match in callback setup and event subscription logic, and API mappings for event subscription and logging."}, {"knowledge_type": "Partial", "source_c_file": "Partial__SystemEventHandler__idx4498_rank2.c", "source_rust_file": "Partial__SystemEventHandler__idx4498_rank2.rs", "c_fragment": "CommonEventSubscriber(subscribeInfo), eventCallBack(eventCallBack)", "rust_fragment": "if SubscribeSystemEvent(call_back.clone())", "description": "Both attempt to register for system events, with C using base class initialization and Rust calling a subscription function.", "reasoning": "[Task Analysis] C code defines a constructor for a SystemEventHandler class, initializing base class and member variables. Rust code defines a function that subscribes to system events using callbacks and logs results. [Similarity] Names don't match ('SystemEventHandler' vs 'subscribe'), but both involve event handling and callback registration. [Knowledge Extraction] Found partial structural match in callback setup and event subscription logic, and API mappings for event subscription and logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SystemEventHandler__idx4498_rank2.c", "source_rust_file": "Partial__SystemEventHandler__idx4498_rank2.rs", "c_api": "SubscribeSystemEvent", "rust_api": "SubscribeSystemEvent", "mapping_type": "function", "description": "System event subscription", "reasoning": "[Task Analysis] C code defines a constructor for a SystemEventHandler class, initializing base class and member variables. Rust code defines a function that subscribes to system events using callbacks and logs results. [Similarity] Names don't match ('SystemEventHandler' vs 'subscribe'), but both involve event handling and callback registration. [Knowledge Extraction] Found partial structural match in callback setup and event subscription logic, and API mappings for event subscription and logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SystemEventHandler__idx4498_rank2.c", "source_rust_file": "Partial__SystemEventHandler__idx4498_rank2.rs", "c_api": "SubscribeSystemAbility", "rust_api": "SubscribeSystemAbility", "mapping_type": "function", "description": "System ability subscription", "reasoning": "[Task Analysis] C code defines a constructor for a SystemEventHandler class, initializing base class and member variables. Rust code defines a function that subscribes to system events using callbacks and logs results. [Similarity] Names don't match ('SystemEventHandler' vs 'subscribe'), but both involve event handling and callback registration. [Knowledge Extraction] Found partial structural match in callback setup and event subscription logic, and API mappings for event subscription and logging."}]
+Unixcoder Score: 0.09451361745595932
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    SubscribeType type;
+    uint32_t taskId;
+    Progress progress;
+    Action action;
+    Version version;
+    Mode mode;
+    std::vector<TaskState> taskStates;
+}
+Function: 
+pub(crate) struct NotifyData {
+    pub(crate) bundle: String,
+    pub(crate) progress: Progress,
+    pub(crate) action: Action,
+    pub(crate) version: Version,
+    pub(crate) each_file_status: Vec<EachFileStatus>,
+    pub(crate) task_id: u32,
+    pub(crate) uid: u64,
+}
+Unixcoder Score: 0.029222875833511353
+--------------------------------------------------
+C_Code: 
+class SystemEventHandler : public CommonEventSubscriber {
+public:
+    explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack eventCallBack)
+        : CommonEventSubscriber(subscribeInfo), eventCallBack(eventCallBack) {}
+    ~SystemEventHandler() = default;
+    void OnReceiveEvent(const CommonEventData &data) override
+    {
+        long startTime = std::clock();
+        auto want = data.GetWant();
+        std::string action = want.GetAction();
+        if (action == CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
+            HandlePackageRemoved(want, false, this->eventCallBack.onPackageRemoved);
+        } else if (action == CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
+            HandlePackageRemoved(want, true, this->eventCallBack.onPackageRemoved);
+        } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
+            int userId = data.GetCode();
+            if (this->eventCallBack.onUserRemoved != nullptr) {
+                this->eventCallBack.onUserRemoved(userId);
+            }
+            LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}d", userId);
+        } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
+            if (this->eventCallBack.onScreenOff != nullptr) {
+                this->eventCallBack.onScreenOff();
+            }
+            LOGI("[INFO]Receive event: SCREEN_OFF, start_time: %{public}ld", startTime);
+        } else if (action == CommonEventSupport::COMMON_EVENT_CHARGING) {
+            if (this->eventCallBack.onCharging != nullptr) {
+                this->eventCallBack.onCharging();
+            }
+            LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
+        } else if (action == CommonEventSupport::COMMON_EVENT_RESTORE_START) {
+            HandleAppRestore(want, this->eventCallBack.onAppRestore);
+        } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
+            if (this->eventCallBack.onUserUnlocked != nullptr) {
+                int userId = data.GetCode();
+                this->eventCallBack.onUserUnlocked(userId);
+            }
+            LOGI("[INFO]Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);
+        } else if (action == COMMON_EVENT_USER_PIN_CREATED) {
+            if (this->eventCallBack.onUserUnlocked != nullptr) {
+                int userId = data.GetCode();
+                this->eventCallBack.onUserUnlocked(userId);
+            }
+            LOGI("[INFO]Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
+        } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
+            HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
+        } else {
+            LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
+        }
+    }
+private:
+    const EventCallBack eventCallBack;
+}
+Function: 
+struct EventCallBack {
+    on_package_removed: extern "C" fn(PackageInfoFfi),
+    on_user_removed: extern "C" fn(i32),
+    on_screen_off: extern "C" fn(),
+    on_charging: extern "C" fn(),
+    on_app_restore: extern "C" fn(i32, *const u8, i32),
+    on_user_unlocked: extern "C" fn(i32),
+    on_connectivity_change: extern "C" fn(),
+}
+Unixcoder Score: 0.013380030170083046
+--------------------------------------------------
+C_Code: 
+void SubscriberWrapper::OnAccountsChanged(const int &id)
+{
+    REQUEST_HILOGI("Account Change to %{public}d", id);
+    on_accounts_changed_(id, *task_manager_);
+}
+Function: 
+pub(crate) fn registry_account_subscribe(task_manager: TaskManagerTx) {
+    static ONCE: Once = Once::new();
+
+    call_once(&ONCE, || unsafe {
+        TASK_MANAGER_TX = Some(task_manager.clone());
+    });
+
+    info!("registry_account_subscribe");
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED,
+            Box::new(task_manager.clone()),
+            |_, _| {},
+            |_new_id, _old_id, task_manager| update_accounts(task_manager.clone()),
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_switch_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_switch_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::ACTIVATED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_active_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_active_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::REMOVED,
+            Box::new(task_manager.clone()),
+            |id, task_manager| {
+                task_manager.send_event(TaskManagerEvent::Account(AccountEvent::Remove(*id)));
+            },
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_remove_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_remove_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::STOPPED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_stop_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_stop_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    update_accounts(task_manager.clone());
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__OnAccountsSwitch__idx495_rank3.c", "source_rust_file": "Partial__OnAccountsSwitch__idx495_rank3.rs", "c_api": "REQUEST_HILOGI", "rust_api": "info!", "mapping_type": "function", "description": "Logging function for account switching events", "reasoning": "[Task Analysis] C function handles account switch event, Rust function registers multiple account subscription types. [Similarity] Names don't match (SubscriberWrapper::OnAccountsSwitch vs registry_account_subscribe), but both handle account switching logic. [Knowledge Extraction] No full structural match due to different domains (event handler vs subscription registration), but partial matching in loop structures and error handling patterns. API mappings found for logging and subscription registration patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__OnAccountsSwitch__idx495_rank3.c", "source_rust_file": "Partial__OnAccountsSwitch__idx495_rank3.rs", "c_fragment": "on_accounts_switch_(newId, oldId, *task_manager_);", "rust_fragment": "|id, task_manager| { task_manager.send_event(TaskManagerEvent::Account(AccountEvent::Remove(*id))); }", "description": "Both handle account removal events by sending account-related events to task manager", "reasoning": "[Task Analysis] C function handles account switch event, Rust function registers multiple account subscription types. [Similarity] Names don't match (SubscriberWrapper::OnAccountsSwitch vs registry_account_subscribe), but both handle account switching logic. [Knowledge Extraction] No full structural match due to different domains (event handler vs subscription registration), but partial matching in loop structures and error handling patterns. API mappings found for logging and subscription registration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__OnAccountsSwitch__idx495_rank3.c", "source_rust_file": "Partial__OnAccountsSwitch__idx495_rank3.rs", "c_api": "task_manager_", "rust_api": "task_manager.clone()", "mapping_type": "pattern", "description": "Task manager parameter passed between functions", "reasoning": "[Task Analysis] C function handles account switch event, Rust function registers multiple account subscription types. [Similarity] Names don't match (SubscriberWrapper::OnAccountsSwitch vs registry_account_subscribe), but both handle account switching logic. [Knowledge Extraction] No full structural match due to different domains (event handler vs subscription registration), but partial matching in loop structures and error handling patterns. API mappings found for logging and subscription registration patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__OnAccountsSwitch__idx495_rank3.c", "source_rust_file": "Partial__OnAccountsSwitch__idx495_rank3.rs", "c_fragment": "REQUEST_HILOGI(\"AccountsSwitch newAccount=%{public}d, oldAccount=%{public}d\", newId, oldId);", "rust_fragment": "info!(\"registry_account_subscribe\");", "description": "Both log account-related information, though different logging mechanisms and formats", "reasoning": "[Task Analysis] C function handles account switch event, Rust function registers multiple account subscription types. [Similarity] Names don't match (SubscriberWrapper::OnAccountsSwitch vs registry_account_subscribe), but both handle account switching logic. [Knowledge Extraction] No full structural match due to different domains (event handler vs subscription registration), but partial matching in loop structures and error handling patterns. API mappings found for logging and subscription registration patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__OnAccountsSwitch__idx495_rank3.c", "source_rust_file": "Partial__OnAccountsSwitch__idx495_rank3.rs", "c_fragment": "on_accounts_switch_(newId, oldId, *task_manager_);", "rust_fragment": "|_new_id, _old_id, task_manager| update_accounts(task_manager.clone()),", "description": "Both handle account switch events by calling update_accounts function with task manager", "reasoning": "[Task Analysis] C function handles account switch event, Rust function registers multiple account subscription types. [Similarity] Names don't match (SubscriberWrapper::OnAccountsSwitch vs registry_account_subscribe), but both handle account switching logic. [Knowledge Extraction] No full structural match due to different domains (event handler vs subscription registration), but partial matching in loop structures and error handling patterns. API mappings found for logging and subscription registration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__OnAccountsSwitch__idx495_rank3.c", "source_rust_file": "Partial__OnAccountsSwitch__idx495_rank3.rs", "c_api": "on_accounts_switch_", "rust_api": "update_accounts", "mapping_type": "function", "description": "Function that processes account switch events", "reasoning": "[Task Analysis] C function handles account switch event, Rust function registers multiple account subscription types. [Similarity] Names don't match (SubscriberWrapper::OnAccountsSwitch vs registry_account_subscribe), but both handle account switching logic. [Knowledge Extraction] No full structural match due to different domains (event handler vs subscription registration), but partial matching in loop structures and error handling patterns. API mappings found for logging and subscription registration patterns."}]
+Unixcoder Score: -0.004358349833637476
+--------------------------------------------------
+C_Code: 
+struct NotifyData {
+    SubscribeType type;
+    uint32_t taskId;
+    Progress progress;
+    Action action;
+    Version version;
+    Mode mode;
+    std::vector<TaskState> taskStates;
+}
+Function: 
+pub(crate) struct NotifyData {
+    pub(crate) bundle: String,
+    pub(crate) progress: Progress,
+    pub(crate) action: Action,
+    pub(crate) version: Version,
+    pub(crate) each_file_status: Vec<EachFileStatus>,
+    pub(crate) task_id: u32,
+    pub(crate) uid: u64,
+}
+Unixcoder Score: -0.007250266615301371
+--------------------------------------------------
+C_Code: 
+int32_t DeviceSwitchCollect::OnStart()
+{
+    HILOGI("DeviceSwitchCollect OnStart called");
+    if (!needListenSwitchEvent_) {
+        return ERR_OK;
+    }
+    sptr<CesStateListener> cesStateListener = new CesStateListener(this);
+    return SystemAbilityManager::GetInstance()->SubscribeSystemAbility(COMMON_EVENT_SERVICE_ID,
+        cesStateListener);
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Unixcoder Score: -0.009866146370768547
+--------------------------------------------------
+C_Code: 
+void RegisterProxySubscriber()
+{
+    SysNetProxyManager::GetInstance().SubscriberEvent();
+}
+Function: 
+pub(crate) fn init() -> Self {
+        unsafe {
+            RegisterProxySubscriber();
+        }
+        Self
+    }
+Unixcoder Score: -0.010248265229165554
+--------------------------------------------------
+C_Code: 
+void SubscriberWrapper::OnAccountsSwitch(const int &newId, const int &oldId)
+{
+    REQUEST_HILOGI("AccountsSwitch newAccount=%{public}d, oldAccount=%{public}d", newId, oldId);
+    on_accounts_switch_(newId, oldId, *task_manager_);
+}
+Function: 
+pub(crate) fn registry_account_subscribe(task_manager: TaskManagerTx) {
+    static ONCE: Once = Once::new();
+
+    call_once(&ONCE, || unsafe {
+        TASK_MANAGER_TX = Some(task_manager.clone());
+    });
+
+    info!("registry_account_subscribe");
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED,
+            Box::new(task_manager.clone()),
+            |_, _| {},
+            |_new_id, _old_id, task_manager| update_accounts(task_manager.clone()),
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_switch_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_switch_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::ACTIVATED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_active_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_active_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::REMOVED,
+            Box::new(task_manager.clone()),
+            |id, task_manager| {
+                task_manager.send_event(TaskManagerEvent::Account(AccountEvent::Remove(*id)));
+            },
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_remove_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_remove_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        let ret = RegistryAccountSubscriber(
+            OS_ACCOUNT_SUBSCRIBE_TYPE::STOPPED,
+            Box::new(task_manager.clone()),
+            |_id, task_manager| update_accounts(task_manager.clone()),
+            |_, _, _| {},
+        );
+
+        if ret != 0 {
+            error!(
+                "registry_account_stop_subscribe failed: {} retry 500ms later",
+                ret
+            );
+            sys_event!(
+                ExecFault,
+                DfxCode::OS_ACCOUNT_FAULT_00,
+                &format!(
+                    "registry_account_stop_subscribe failed: {} retry 500ms later",
+                    ret
+                )
+            );
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        } else {
+            break;
+        }
+    }
+
+    update_accounts(task_manager.clone());
+}
+Unixcoder Score: -0.013812663033604622
+--------------------------------------------------
+C_Code: 
+int32_t ResponseMessageReceiver::SubscribeTypeFromParcel(SubscribeType &type, char *&parcel, int32_t &size)
+{
+    uint32_t temp;
+    if (Uint32FromParcel(temp, parcel, size) || temp > static_cast<uint32_t>(SubscribeType::BUTT)) {
+        return -1;
+    }
+    type = static_cast<SubscribeType>(temp);
+    return 0;
+}
+Function: 
+async fn handle_send_faults(
+        &mut self,
+        tid: u32,
+        subscribe_type: SubscribeType,
+        reason: Reason,
+    ) {
+        let mut message = Vec::<u8>::new();
+        message.extend_from_slice(&REQUEST_MAGIC_NUM.to_le_bytes());
+
+        message.extend_from_slice(&self.message_id.to_le_bytes());
+        self.message_id += 1;
+
+        let message_type = MessageType::Faults as u16;
+        message.extend_from_slice(&message_type.to_le_bytes());
+
+        let message_body_size: u16 = 0;
+        message.extend_from_slice(&message_body_size.to_le_bytes());
+
+        message.extend_from_slice(&tid.to_le_bytes());
+
+        message.extend_from_slice(&(subscribe_type as u32).to_le_bytes());
+
+        message.extend_from_slice(&(reason.repr as u32).to_le_bytes());
+
+        let size = message.len() as u16;
+        info!("send faults size, {:?}", size);
+        let size = size.to_le_bytes();
+        message[POSITION_OF_LENGTH as usize] = size[0];
+        message[(POSITION_OF_LENGTH + 1) as usize] = size[1];
+        self.send_message(message).await;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotificationSubscriber__idx568_rank5.c", "source_rust_file": "API_Mapping__NotificationSubscriber__idx568_rank5.rs", "c_api": "client_manager", "rust_api": "self.client_manager", "mapping_type": "field_access", "description": "Access client manager for notification", "reasoning": "[Task Analysis] C code is a constructor for a C++ class, Rust code is a method in a Rust struct. [Similarity] Names do not refer to the same concept (NotificationSubscriber vs pause_task), and domains are different (C++ class initialization vs Rust task management logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to task management and database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotificationSubscriber__idx568_rank5.c", "source_rust_file": "API_Mapping__NotificationSubscriber__idx568_rank5.rs", "c_api": "database.get_task_info", "rust_api": "database.get_task_info", "mapping_type": "method", "description": "Retrieve task info from database", "reasoning": "[Task Analysis] C code is a constructor for a C++ class, Rust code is a method in a Rust struct. [Similarity] Names do not refer to the same concept (NotificationSubscriber vs pause_task), and domains are different (C++ class initialization vs Rust task management logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to task management and database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotificationSubscriber__idx568_rank5.c", "source_rust_file": "API_Mapping__NotificationSubscriber__idx568_rank5.rs", "c_api": "taskManager", "rust_api": "self.qos.remove_task", "mapping_type": "method", "description": "Task removal from manager", "reasoning": "[Task Analysis] C code is a constructor for a C++ class, Rust code is a method in a Rust struct. [Similarity] Names do not refer to the same concept (NotificationSubscriber vs pause_task), and domains are different (C++ class initialization vs Rust task management logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to task management and database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotificationSubscriber__idx568_rank5.c", "source_rust_file": "API_Mapping__NotificationSubscriber__idx568_rank5.rs", "c_api": "Notifier::pause", "rust_api": "Notifier::pause", "mapping_type": "function", "description": "Send pause notification", "reasoning": "[Task Analysis] C code is a constructor for a C++ class, Rust code is a method in a Rust struct. [Similarity] Names do not refer to the same concept (NotificationSubscriber vs pause_task), and domains are different (C++ class initialization vs Rust task management logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to task management and database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotificationSubscriber__idx568_rank5.c", "source_rust_file": "API_Mapping__NotificationSubscriber__idx568_rank5.rs", "c_api": "database.change_status", "rust_api": "database.change_status", "mapping_type": "method", "description": "Change task status in database", "reasoning": "[Task Analysis] C code is a constructor for a C++ class, Rust code is a method in a Rust struct. [Similarity] Names do not refer to the same concept (NotificationSubscriber vs pause_task), and domains are different (C++ class initialization vs Rust task management logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to task management and database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotificationSubscriber__idx568_rank5.c", "source_rust_file": "API_Mapping__NotificationSubscriber__idx568_rank5.rs", "c_api": "running_queue.upload_resume.insert", "rust_api": "self.running_queue.upload_resume.insert", "mapping_type": "method", "description": "Insert task into upload resume queue", "reasoning": "[Task Analysis] C code is a constructor for a C++ class, Rust code is a method in a Rust struct. [Similarity] Names do not refer to the same concept (NotificationSubscriber vs pause_task), and domains are different (C++ class initialization vs Rust task management logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to task management and database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotificationSubscriber__idx568_rank5.c", "source_rust_file": "API_Mapping__NotificationSubscriber__idx568_rank5.rs", "c_api": "schedule_if_not_scheduled", "rust_api": "self.schedule_if_not_scheduled", "mapping_type": "method", "description": "Schedule task if not already scheduled", "reasoning": "[Task Analysis] C code is a constructor for a C++ class, Rust code is a method in a Rust struct. [Similarity] Names do not refer to the same concept (NotificationSubscriber vs pause_task), and domains are different (C++ class initialization vs Rust task management logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to task management and database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NotificationSubscriber__idx568_rank5.c", "source_rust_file": "API_Mapping__NotificationSubscriber__idx568_rank5.rs", "c_api": "running_queue.cancel_task", "rust_api": "self.running_queue.cancel_task", "mapping_type": "method", "description": "Cancel task in running queue", "reasoning": "[Task Analysis] C code is a constructor for a C++ class, Rust code is a method in a Rust struct. [Similarity] Names do not refer to the same concept (NotificationSubscriber vs pause_task), and domains are different (C++ class initialization vs Rust task management logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to task management and database operations."}]
+Unixcoder Score: -0.018465489149093628
+--------------------------------------------------
+C_Code: 
+bool ProcessSkeleton::IsValidObject(IRemoteObject *object, std::u16string &desc)
+{
+    CHECK_INSTANCE_EXIT_WITH_RETVAL(exitFlag_, false);
+    if (object == nullptr) {
+        return false;
+    }
+    std::shared_lock<std::shared_mutex> lockGuard(validObjectMutex_);
+    auto it = validObjectRecord_.find(object);
+    if (it != validObjectRecord_.end()) {
+        desc = it->second;
+        return true;
+    }
+    return false;
+}
+Function: 
+pub fn check_legalit(&self) -> bool {
+        self.inner.CheckObjectLegality()
+    }
+Unixcoder Score: -0.019684676080942154
+--------------------------------------------------

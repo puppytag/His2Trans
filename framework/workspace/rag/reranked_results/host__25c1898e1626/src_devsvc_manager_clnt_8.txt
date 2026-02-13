@@ -1,0 +1,271 @@
+C_Code: 
+SystemAbilityManagerStub::SystemAbilityManagerStub()
+{
+#ifdef SUPPORT_PENGLAI_MODE
+    SetPengLai(SamgrUtil::CheckPengLai());
+#endif
+    SetAbilityFuncMap();
+    SetProcessFuncMap();
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEMAND_REASON_EXTRA_DATA_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandReasonExtraData;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEAMND_POLICY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandPolicy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UPDATE_ONDEAMND_POLICY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalUpdateOnDemandPolicy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEMAND_SYSTEM_ABILITY_IDS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandSystemAbilityIds;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::SEND_STRATEGY_TRANASACTION)] =
+        SystemAbilityManagerStub::LocalSendStrategy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UNLOAD_ALL_IDLE_SYSTEM_ABILITY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalUnloadAllIdleSystemAbility;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_EXTENSION_SA_IDS_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetExtensionSaIds;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_EXTERNSION_SA_LIST_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetExtensionRunningSaList;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_SA_EXTENSION_INFO_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetRunningSaExtensionInfoList;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_COMMON_EVENT_EXTRA_ID_LIST_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetCommonEventExtraDataIdlist;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_LOCAL_ABILITY_MANAGER_PROXY_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetLocalAbilityManagerProxy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UNLOAD_IDLE_PROCESS_BYLIST)] =
+        SystemAbilityManagerStub::LocalUnloadProcess;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_LRU_IDLE_SYSTEM_ABILITY_PROCESS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetLruIdleSystemAbilityProc;
+}
+Function: 
+pub fn get_common_event_extra_data_id_list(said: i32, extraids: &mut Vec<i64>, event_name: &str) -> i32 {
+        let_cxx_string!(event_name = event_name);
+        GetCommonEventExtraDataIdlist(said, extraids, &event_name)
+    }
+Unixcoder Score: 0.030261371284723282
+--------------------------------------------------
+C_Code: 
+SystemAbilityManagerStub::SystemAbilityManagerStub()
+{
+#ifdef SUPPORT_PENGLAI_MODE
+    SetPengLai(SamgrUtil::CheckPengLai());
+#endif
+    SetAbilityFuncMap();
+    SetProcessFuncMap();
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEMAND_REASON_EXTRA_DATA_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandReasonExtraData;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEAMND_POLICY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandPolicy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UPDATE_ONDEAMND_POLICY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalUpdateOnDemandPolicy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEMAND_SYSTEM_ABILITY_IDS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandSystemAbilityIds;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::SEND_STRATEGY_TRANASACTION)] =
+        SystemAbilityManagerStub::LocalSendStrategy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UNLOAD_ALL_IDLE_SYSTEM_ABILITY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalUnloadAllIdleSystemAbility;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_EXTENSION_SA_IDS_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetExtensionSaIds;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_EXTERNSION_SA_LIST_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetExtensionRunningSaList;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_SA_EXTENSION_INFO_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetRunningSaExtensionInfoList;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_COMMON_EVENT_EXTRA_ID_LIST_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetCommonEventExtraDataIdlist;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_LOCAL_ABILITY_MANAGER_PROXY_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetLocalAbilityManagerProxy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UNLOAD_IDLE_PROCESS_BYLIST)] =
+        SystemAbilityManagerStub::LocalUnloadProcess;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_LRU_IDLE_SYSTEM_ABILITY_PROCESS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetLruIdleSystemAbilityProc;
+}
+Function: 
+pub fn unload_all_idle_system_ability(&self) -> i32 {
+        info!("unload all idle system ability");
+        UnloadAllIdleSystemAbility()
+    }
+Unixcoder Score: 0.01997237652540207
+--------------------------------------------------
+C_Code: 
+static void AnonymousTest(void)
+{
+    IpcIo anonymous;
+    uint8_t anonymousData[IPC_MAX_SIZE];
+    IpcIoInit(&anonymous, anonymousData, IPC_MAX_SIZE, 1);
+    WriteRemoteObject(&anonymous, &g_clientSvc);
+
+    IpcIo anonymousreply;
+    uintptr_t anonymousptr = 0;
+    int ret = SendRequest(g_serverSid, SERVER_OP_ADD_SERVICE, &anonymous, &anonymousreply, g_option, &anonymousptr);
+    int res = -1;
+    ReadInt32(&anonymousreply, &res);
+    RPC_LOG_INFO("add self to server = %d", res);
+    FreeBuffer((void *)anonymousptr);
+    EXPECT_EQ(ret, ERR_NONE);
+    EXPECT_EQ(res, ERR_NONE);
+}
+Function: 
+pub fn add_service(service: &RemoteObj, said: i32)
+{
+    let samgr = get_samgr().expect("samgr is not null");
+    let mut data = MsgParcel::new().expect("MsgParcel is not null");
+    match data.write(&InterFaceToken::new("ohos.samgr.accessToken")) {
+        Ok(()) => { println!("write token success") }
+        Err(val) => { println!("write token fail: {}", val) }
+    }
+    match data.write(&said) {
+        Ok(()) => { println!("write said success") }
+        Err(val) => { println!("write said fail: {}", val) }
+    }
+    match data.write(service) {
+        Ok(()) => { println!("write service success") }
+        Err(val) => { println!("write service fail: {}", val) }
+    }
+    match data.write(&false) {
+        Ok(()) => { println!("write bool success") }
+        Err(val) => { println!("write bool fail: {}", val) }
+    }
+    match data.write(&0) {
+        Ok(()) => { println!("write 0 success") }
+        Err(val) => { println!("write 0 fail: {}", val) }
+    }
+    match data.write(&String16::new("")) {
+        Ok(()) => { println!("write string16 111 success") }
+        Err(val) => { println!("write string16 111 fail: {}", val) }
+    }
+    match data.write(&String16::new("")) {
+        Ok(()) => { println!("write string16 222 success") }
+        Err(val) => { println!("write string16 222 fail: {}", val) }
+    }
+    let reply = samgr.send_request(3, &data, false).expect("failed to register service");
+    let replyValue: i32 = reply.read().expect("register service reply should 0");
+    println!("register service result: {}", replyValue);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__RegistryAccountSubscriber__idx495_rank1.c", "source_rust_file": "Full__RegistryAccountSubscriber__idx495_rank1.rs", "reasoning": "[Task Analysis] C function registers account subscribers with callbacks; Rust function implements subscription logic with loops and error handling. [Similarity] Names don't match exactly but refer to same concept (account subscription). [Knowledge Extraction] Full structural match in core logic (loop + error handling + FFI call), partial match in callback handling, API mappings found for Box allocation and function call patterns.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__RegistryAccountSubscriber__idx495_rank1.c", "source_rust_file": "Full__RegistryAccountSubscriber__idx495_rank1.rs", "c_fragment": "return OsAccountManager::SubscribeOsAccount(Wrapper);", "rust_fragment": "if ret != 0 {\n            error!(\n                \"registry_account_switch_subscribe failed: {} retry 500ms later\",\n                ret\n            );\n            sys_event!(\n                ExecFault,\n                DfxCode::OS_ACCOUNT_FAULT_00,\n                &format!(\n                    \"registry_account_switch_subscribe failed: {} retry 500ms later\",\n                    ret\n                )\n            );\n            std::thread::sleep(std::time::Duration::from_millis(500));\n        } else {\n            break;\n        }", "description": "Error handling and retry loop for subscription", "reasoning": "[Task Analysis] C function registers account subscribers with callbacks; Rust function implements subscription logic with loops and error handling. [Similarity] Names don't match exactly but refer to same concept (account subscription). [Knowledge Extraction] Full structural match in core logic (loop + error handling + FFI call), partial match in callback handling, API mappings found for Box allocation and function call patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__RegistryAccountSubscriber__idx495_rank1.c", "source_rust_file": "Full__RegistryAccountSubscriber__idx495_rank1.rs", "c_fragment": "auto const Wrapper = std::static_pointer_cast<OsAccountSubscriber>(std::make_shared<SubscriberWrapper>(type, std::move(task_manager), on_accounts_changed, on_accounts_switch));\n    return OsAccountManager::SubscribeOsAccount(Wrapper);", "rust_fragment": "let ret = RegistryAccountSubscriber(\n            OS_ACCOUNT_SUBSCRIBE_TYPE::SWITCHED,\n            Box::new(task_manager.clone()),\n            |_, _| {},\n            |_new_id, _old_id, task_manager| update_accounts(task_manager.clone()),\n        );", "description": "Core subscription logic with type and callback setup", "reasoning": "[Task Analysis] C function registers account subscribers with callbacks; Rust function implements subscription logic with loops and error handling. [Similarity] Names don't match exactly but refer to same concept (account subscription). [Knowledge Extraction] Full structural match in core logic (loop + error handling + FFI call), partial match in callback handling, API mappings found for Box allocation and function call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__RegistryAccountSubscriber__idx495_rank1.c", "source_rust_file": "Full__RegistryAccountSubscriber__idx495_rank1.rs", "c_api": "std::static_pointer_cast<OsAccountSubscriber>", "rust_api": "Box::new", "mapping_type": "function", "description": "Type conversion and wrapper creation", "reasoning": "[Task Analysis] C function registers account subscribers with callbacks; Rust function implements subscription logic with loops and error handling. [Similarity] Names don't match exactly but refer to same concept (account subscription). [Knowledge Extraction] Full structural match in core logic (loop + error handling + FFI call), partial match in callback handling, API mappings found for Box allocation and function call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__RegistryAccountSubscriber__idx495_rank1.c", "source_rust_file": "Full__RegistryAccountSubscriber__idx495_rank1.rs", "c_api": "OsAccountManager::SubscribeOsAccount", "rust_api": "RegistryAccountSubscriber", "mapping_type": "function", "description": "Account subscription FFI call", "reasoning": "[Task Analysis] C function registers account subscribers with callbacks; Rust function implements subscription logic with loops and error handling. [Similarity] Names don't match exactly but refer to same concept (account subscription). [Knowledge Extraction] Full structural match in core logic (loop + error handling + FFI call), partial match in callback handling, API mappings found for Box allocation and function call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__RegistryAccountSubscriber__idx495_rank1.c", "source_rust_file": "Full__RegistryAccountSubscriber__idx495_rank1.rs", "c_api": "std::make_shared<SubscriberWrapper>", "rust_api": "Box::new", "mapping_type": "function", "description": "Heap allocation for subscriber wrapper", "reasoning": "[Task Analysis] C function registers account subscribers with callbacks; Rust function implements subscription logic with loops and error handling. [Similarity] Names don't match exactly but refer to same concept (account subscription). [Knowledge Extraction] Full structural match in core logic (loop + error handling + FFI call), partial match in callback handling, API mappings found for Box allocation and function call patterns."}]
+Unixcoder Score: 0.018663492053747177
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::GetSystemAbility(int32_t systemAbilityId)
+{
+    return CheckSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.01863972656428814
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::GetSystemAbility(int32_t systemAbilityId)
+{
+    return CheckSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Unixcoder Score: 0.01809954084455967
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManagerStub::SetProcessFuncMap()
+{
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::ADD_SYSTEM_PROCESS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalAddSystemProcess;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_SYSTEM_PROCESS_INFO_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetSystemProcessInfo;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_RUNNING_SYSTEM_PROCESS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetRunningSystemProcess;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::SUBSCRIBE_SYSTEM_PROCESS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalSubscribeSystemProcess;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UNSUBSCRIBE_SYSTEM_PROCESS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalUnSubscribeSystemProcess;
+}
+Function: 
+pub fn get_system_process_info(said: i32) -> SystemProcessInfo {
+        info!("get system ability {} process info", said);
+        GetSystemProcessInfo(said)
+    }
+Unixcoder Score: 0.005666716489940882
+--------------------------------------------------
+C_Code: 
+SystemAbilityManagerStub::SystemAbilityManagerStub()
+{
+#ifdef SUPPORT_PENGLAI_MODE
+    SetPengLai(SamgrUtil::CheckPengLai());
+#endif
+    SetAbilityFuncMap();
+    SetProcessFuncMap();
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEMAND_REASON_EXTRA_DATA_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandReasonExtraData;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEAMND_POLICY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandPolicy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UPDATE_ONDEAMND_POLICY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalUpdateOnDemandPolicy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_ONDEMAND_SYSTEM_ABILITY_IDS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetOnDemandSystemAbilityIds;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::SEND_STRATEGY_TRANASACTION)] =
+        SystemAbilityManagerStub::LocalSendStrategy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UNLOAD_ALL_IDLE_SYSTEM_ABILITY_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalUnloadAllIdleSystemAbility;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_EXTENSION_SA_IDS_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetExtensionSaIds;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_EXTERNSION_SA_LIST_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetExtensionRunningSaList;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_SA_EXTENSION_INFO_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetRunningSaExtensionInfoList;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_COMMON_EVENT_EXTRA_ID_LIST_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetCommonEventExtraDataIdlist;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_LOCAL_ABILITY_MANAGER_PROXY_TRANSCATION)] =
+        SystemAbilityManagerStub::LocalGetLocalAbilityManagerProxy;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::UNLOAD_IDLE_PROCESS_BYLIST)] =
+        SystemAbilityManagerStub::LocalUnloadProcess;
+    memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_LRU_IDLE_SYSTEM_ABILITY_PROCESS_TRANSACTION)] =
+        SystemAbilityManagerStub::LocalGetLruIdleSystemAbilityProc;
+}
+Function: 
+pub fn get_on_demand_reason_extra_date(extra_data_id: i64, parcel: &mut MsgParcel) -> i32 {
+        GetOnDemandReasonExtraData(extra_data_id, parcel.pin_mut().unwrap())
+    }
+Unixcoder Score: 0.0017934064380824566
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> ISystemAbilityManagerMock::AsObject()
+{
+    return nullptr;
+}
+Function: 
+pub fn get_context_manager() -> Option<RemoteObj> {
+        info!("get context manager");
+        RemoteObj::from_sptr(GetContextManager())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.c", "source_rust_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.rs", "c_fragment": "if (sysm == nullptr) {\n        return nullptr;\n    }", "rust_fragment": "info!(\"get system ability {} with device id\", said);", "description": "Error handling for null system manager in C, logging in Rust", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns an Option. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling and return logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.c", "source_rust_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.rs", "c_api": "std::make_unique<SptrIRemoteObject>(std::move(ability))", "rust_api": "RemoteObj::from_sptr", "mapping_type": "function", "description": "Wrapping system ability into remote object", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns an Option. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling and return logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.c", "source_rust_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.rs", "c_api": "sysm->GetSystemAbility(systemAbilityId, deviceId)", "rust_api": "GetSystemAbilityWithDeviceId", "mapping_type": "function", "description": "System ability lookup by ID and device ID", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns an Option. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling and return logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.c", "source_rust_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.rs", "c_fragment": "if (ability == nullptr) {\n        return nullptr;\n    }", "rust_fragment": "RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))", "description": "Null check for system ability in C, conversion to RemoteObj in Rust", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns an Option. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling and return logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.c", "source_rust_file": "Partial__GetSystemAbilityWithDeviceId__idx4852_rank1.rs", "c_api": "SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager()", "rust_api": "GetSystemAbilityWithDeviceId", "mapping_type": "function", "description": "System ability manager retrieval", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns an Option. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling and return logic."}]
+Unixcoder Score: -0.004746852442622185
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> ISystemAbilityManagerMock::AsObject()
+{
+    return nullptr;
+}
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        debug!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSystemAbilityWithDeviceId__idx4882_rank1.c", "source_rust_file": "API_Mapping__GetSystemAbilityWithDeviceId__idx4882_rank1.rs", "c_api": "std::make_unique<SptrIRemoteObject>(std::move(ability))", "rust_api": "RemoteObj::from_sptr(...)", "mapping_type": "function", "description": "Wrap system ability into remote object", "reasoning": "[Task Analysis] C function returns a std::unique_ptr, Rust function returns an Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, and a pattern for optional return handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSystemAbilityWithDeviceId__idx4882_rank1.c", "source_rust_file": "API_Mapping__GetSystemAbilityWithDeviceId__idx4882_rank1.rs", "c_api": "info!(...)", "rust_api": "info!(\"get system ability {} with device id\", said)", "mapping_type": "function", "description": "Logging system ability lookup", "reasoning": "[Task Analysis] C function returns a std::unique_ptr, Rust function returns an Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, and a pattern for optional return handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSystemAbilityWithDeviceId__idx4882_rank1.c", "source_rust_file": "API_Mapping__GetSystemAbilityWithDeviceId__idx4882_rank1.rs", "c_api": "sysm->GetSystemAbility(systemAbilityId, deviceId)", "rust_api": "GetSystemAbilityWithDeviceId(said, &id)", "mapping_type": "function", "description": "Lookup system ability by ID and device ID", "reasoning": "[Task Analysis] C function returns a std::unique_ptr, Rust function returns an Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, and a pattern for optional return handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSystemAbilityWithDeviceId__idx4882_rank1.c", "source_rust_file": "API_Mapping__GetSystemAbilityWithDeviceId__idx4882_rank1.rs", "c_api": "return nullptr", "rust_api": "return None", "mapping_type": "pattern", "description": "Handle null return as None in Rust", "reasoning": "[Task Analysis] C function returns a std::unique_ptr, Rust function returns an Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but concept is same (system ability retrieval). [Knowledge Extraction] Found API mapping for system ability lookup, and a pattern for optional return handling."}]
+Unixcoder Score: -0.008932548575103283
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::GetSystemAbility(int32_t systemAbilityId)
+{
+    return CheckSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: -0.013647867366671562
+--------------------------------------------------

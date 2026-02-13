@@ -1,0 +1,247 @@
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__outputChars__idx121499_rank1.c", "source_rust_file": "API_Mapping__outputChars__idx121499_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.lock().write(buf)", "mapping_type": "function", "description": "Write data to a file-like resource", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args. Rust function 'write' is a method on a struct that locks and writes to a buffer. [Similarity] Both perform write operations to a file-like resource, but with different abstraction levels (raw syscall vs buffered I/O). [Knowledge Extraction] No full structural match due to abstraction difference and different domains (low-level I/O vs high-level buffered I/O). However, both represent write operations to a resource, so API mapping is extracted."}]
+Unixcoder Score: 0.12488409876823425
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__outputChars__idx121506_rank1.c", "source_rust_file": "Partial__outputChars__idx121506_rank1.rs", "c_fragment": "return write(current->fd, buf, len);", "rust_fragment": "self.inner.borrow_mut().write(buf)", "description": "Both perform a write operation to a file-like destination using a buffer.", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that borrows inner writer and writes a byte slice. [Similarity] Both perform write operations to a file-like object, but with different abstraction levels and signatures. [Knowledge Extraction] Names don't match but the core operation is the same (writing data to a destination). The C version uses raw file descriptor, Rust uses a wrapper with borrow semantics. No full structural match due to abstraction differences. Partial match in the write operation logic. API mapping identified between the write operations despite different interfaces."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__outputChars__idx121506_rank1.c", "source_rust_file": "Partial__outputChars__idx121506_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.inner.borrow_mut().write(buf)", "mapping_type": "function", "description": "Write data to a file-like object using a buffer", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' with file descriptor and buffer args; Rust function 'write' is a method on a struct that borrows inner writer and writes a byte slice. [Similarity] Both perform write operations to a file-like object, but with different abstraction levels and signatures. [Knowledge Extraction] Names don't match but the core operation is the same (writing data to a destination). The C version uses raw file descriptor, Rust uses a wrapper with borrow semantics. No full structural match due to abstraction differences. Partial match in the write operation logic. API mapping identified between the write operations despite different interfaces."}]
+Unixcoder Score: 0.10094344615936279
+--------------------------------------------------
+C_Code: 
+bool VerifyFromPointer(const uint8_t *const p, const size_t len) {
+    return Verify(static_cast<size_t>(p - buf_), len);
+  }
+Function: 
+pub fn size_prefixed_root<'buf, T>(data: &'buf [u8]) -> Result<T::Inner, InvalidFlatbuffer>
+where
+    T: 'buf + Follow<'buf> + Verifiable,
+{
+    let opts = VerifierOptions::default();
+    size_prefixed_root_with_opts::<T>(&opts, data)
+}
+Unixcoder Score: 0.09109021723270416
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__outputChars__idx121416_rank1.c", "source_rust_file": "API_Mapping__outputChars__idx121416_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "vec_write(&mut self.pos, &mut self.inner, buf)", "mapping_type": "function", "description": "Write bytes to a buffer/stream", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write' to write bytes to a file descriptor. Rust function 'write' is a method on a struct that writes bytes to an internal buffer. [Similarity] Both perform write operations, but the C version directly writes to a file descriptor while the Rust version writes to an internal buffer. [Knowledge Extraction] The core operation is a write to a buffer/stream; however, the domains differ (direct I/O vs buffered I/O), and the names do not refer to the same concept (outputChars vs write method). Therefore, no full or partial match. However, both represent a write operation, so API mapping is extracted."}]
+Unixcoder Score: 0.08315213024616241
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__outputChars__idx121653_rank1.c", "source_rust_file": "API_Mapping__outputChars__idx121653_rank1.rs", "c_api": "write(current->fd, buf, len)", "rust_api": "self.write_all(buf)", "mapping_type": "function", "description": "Low-level write to file descriptor/stream", "reasoning": "[Task Analysis] C function 'outputChars' wraps a system call 'write', while Rust function 'write_all' is a method on a type implementing Write trait. [Similarity] Names don't match but both perform low-level writing to a file descriptor/stream. [Knowledge Extraction] Found API mapping for low-level write operations, no structural fragments due to different abstraction levels and control flow."}]
+Unixcoder Score: 0.07819298654794693
+--------------------------------------------------
+C_Code: 
+bool VerifyFromPointer(const uint8_t *const p, const size_t len) {
+    return Verify(static_cast<size_t>(p - buf_), len);
+  }
+Function: 
+pub fn root_with_opts<'opts, 'buf, T>(
+    opts: &'opts VerifierOptions,
+    data: &'buf [u8],
+) -> Result<T::Inner, InvalidFlatbuffer>
+where
+    T: 'buf + Follow<'buf> + Verifiable,
+{
+    let mut v = Verifier::new(opts, data);
+    <ForwardsUOffset<T>>::run_verifier(&mut v, 0)?;
+    // Safety:
+    // Run verifier above
+    Ok(unsafe { root_unchecked::<T>(data) })
+}
+Unixcoder Score: 0.07672087103128433
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        handle_ebadf(self.0.write_all(buf), ())
+    }
+Unixcoder Score: 0.022771457210183144
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.extend(buf);
+        Ok(buf.len())
+    }
+Unixcoder Score: 0.02060733176767826
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, data: &[u8]) -> io::Result<usize> {
+        let len;
+
+        unsafe { len = abi::write(1, data.as_ptr() as *const u8, data.len()) }
+
+        if len < 0 {
+            Err(io::const_io_error!(io::ErrorKind::Uncategorized, "Stdout is not able to print"))
+        } else {
+            Ok(len as usize)
+        }
+    }
+Unixcoder Score: 0.01933738775551319
+--------------------------------------------------
+C_Code: 
+static int outputChars(struct current *current, const char *buf, int len)
+{
+    return write(current->fd, buf, len);
+}
+Function: 
+fn write(&mut self, s: &[u8]) -> core::result::Result<usize, io::Error> {
+        for c in s.chunks(core::mem::size_of::<usize>() * 4) {
+            // Text is grouped into 4x `usize` words. The id is 1100 plus
+            // the number of characters in this message.
+            // Ignore errors since we're already panicking.
+            try_scalar(self.log, LogScalar::AppendPanicMessage(&c).into()).ok();
+        }
+
+        // Serialize the text to the graphics panic handler, only if we were able
+        // to acquire a connection to it. Text length is encoded in the `valid` field,
+        // the data itself in the buffer. Typically several messages are require to
+        // fully transmit the entire panic message.
+        if let Some(gfx) = self.gfx {
+            #[repr(C, align(4096))]
+            struct Request([u8; 4096]);
+            let mut request = Request([0u8; 4096]);
+            for (&s, d) in s.iter().zip(request.0.iter_mut()) {
+                *d = s;
+            }
+            try_lend(gfx, 0 /* AppendPanicText */, &request.0, 0, s.len()).ok();
+        }
+        Ok(s.len())
+    }
+Unixcoder Score: 0.018969740718603134
+--------------------------------------------------

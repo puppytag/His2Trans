@@ -1,0 +1,608 @@
+C_Code: 
+bool CParcelReadBuffer(const CParcel *parcel, uint8_t *value, uint32_t len)
+{
+    if (!IsValidParcel(parcel, __func__) || value == nullptr) {
+        return false;
+    }
+    const uint8_t *data = parcel->parcel_->ReadBuffer(len);
+    if (data == nullptr) {
+        ZLOGE(LOG_LABEL, "%{public}s: read buffer failed\n", __func__);
+        return false;
+    }
+    if (len > 0 && memcpy_s(value, len, data, len) != EOK) {
+        ZLOGE(LOG_LABEL, "%{public}s: copy buffer failed\n", __func__);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn read_buffer(&mut self, len: usize) -> IpcResult<Vec<u8>> {
+        let pad_size = Self::get_pad_size(len);
+        let mut vec = Vec::with_capacity(len + pad_size);
+        match ReadBuffer(self.as_msg_parcel_mut(), len + pad_size, &mut vec) {
+            true => Ok({
+                unsafe { vec.set_len(len) };
+                vec
+            }),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: 0.02971787378191948
+--------------------------------------------------
+C_Code: 
+bool ParcelHelper::UnMarshalConfigBodyFileName(MessageParcel &data, Config &config)
+{
+    uint32_t size = data.ReadUint32();
+    if (size > data.GetReadableBytes()) {
+        REQUEST_HILOGE("Size exceeds the upper limit, size = %{public}u", size);
+        return false;
+    }
+    for (uint32_t i = 0; i < size; i++) {
+        std::string name = data.ReadString();
+        config.bodyFileNames.push_back(name);
+    }
+    return true;
+}
+Function: 
+pub(crate) fn build_config_set(&self) -> ConfigSet {
+        ConfigSet {
+            headers: hashmap_to_string(&self.headers),
+            extras: hashmap_to_string(&self.extras),
+            form_items: self.form_items.iter().map(|x| x.to_c_struct()).collect(),
+            file_specs: self.file_specs.iter().map(|x| x.to_c_struct()).collect(),
+            body_file_names: self
+                .body_file_paths
+                .iter()
+                .map(CStringWrapper::from)
+                .collect(),
+            certs_path: self.certs_path.iter().map(CStringWrapper::from).collect(),
+        }
+    }
+Unixcoder Score: 0.017895078286528587
+--------------------------------------------------
+C_Code: 
+bool ParcelHelper::UnMarshalConfigBodyFileName(MessageParcel &data, Config &config)
+{
+    uint32_t size = data.ReadUint32();
+    if (size > data.GetReadableBytes()) {
+        REQUEST_HILOGE("Size exceeds the upper limit, size = %{public}u", size);
+        return false;
+    }
+    for (uint32_t i = 0; i < size; i++) {
+        std::string name = data.ReadString();
+        config.bodyFileNames.push_back(name);
+    }
+    return true;
+}
+Function: 
+fn deserialize(parcel: &mut ipc::parcel::MsgParcel) -> ipc::IpcResult<Self> {
+        let action: u32 = parcel.read()?;
+        let action: Action = Action::from(action as u8);
+        let version: u32 = parcel.read()?;
+        let version: Version = Version::from(version as u8);
+        let mode: u32 = parcel.read()?;
+        let mode: Mode = Mode::from(mode as u8);
+        let bundle_type: u32 = parcel.read()?;
+        let cover: bool = parcel.read()?;
+        let network: u32 = parcel.read()?;
+        let network_config = NetworkConfig::from(network as u8);
+        let metered: bool = parcel.read()?;
+        let roaming: bool = parcel.read()?;
+        let retry: bool = parcel.read()?;
+        let redirect: bool = parcel.read()?;
+        let background: bool = parcel.read()?;
+        let multipart: bool = parcel.read()?;
+        let index: u32 = parcel.read()?;
+        let begins: i64 = parcel.read()?;
+        let ends: i64 = parcel.read()?;
+        let gauge: bool = parcel.read()?;
+        let precise: bool = parcel.read()?;
+        let priority: u32 = parcel.read()?;
+        let min_speed: i64 = parcel.read()?;
+        let min_duration: i64 = parcel.read()?;
+        let connection_timeout: u64 = parcel.read()?;
+        let total_timeout: u64 = parcel.read()?;
+        let url: String = parcel.read()?;
+        let title: String = parcel.read()?;
+        let method: String = parcel.read()?;
+        let token: String = parcel.read()?;
+        let description: String = parcel.read()?;
+        let data_base: String = parcel.read()?;
+        let proxy: String = parcel.read()?;
+        let certificate_pins: String = parcel.read()?;
+        let bundle = query_calling_bundle();
+        let uid = ipc::Skeleton::calling_uid();
+        let token_id = ipc::Skeleton::calling_full_token_id();
+        let certs_path_size: u32 = parcel.read()?;
+        if certs_path_size > parcel.readable() as u32 {
+            error!("deserialize failed: certs_path_size too large");
+            sys_event!(
+                ExecFault,
+                DfxCode::INVALID_IPC_MESSAGE_A00,
+                "deserialize failed: certs_path_size too large"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        let mut certs_path = Vec::new();
+        for _ in 0..certs_path_size {
+            let cert_path: String = parcel.read()?;
+            certs_path.push(cert_path);
+        }
+
+        let form_size: u32 = parcel.read()?;
+        if form_size > parcel.readable() as u32 {
+            error!("deserialize failed: form_size too large");
+            sys_event!(
+                ExecFault,
+                DfxCode::INVALID_IPC_MESSAGE_A00,
+                "deserialize failed: form_size too large"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        let mut form_items = Vec::new();
+        for _ in 0..form_size {
+            let name: String = parcel.read()?;
+            let value: String = parcel.read()?;
+            form_items.push(FormItem { name, value });
+        }
+
+        let file_size: u32 = parcel.read()?;
+        if file_size > parcel.readable() as u32 {
+            error!("deserialize failed: file_specs size too large");
+            sys_event!(
+                ExecFault,
+                DfxCode::INVALID_IPC_MESSAGE_A00,
+                "deserialize failed: file_specs size too large"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        let mut file_specs: Vec<FileSpec> = Vec::new();
+        for _ in 0..file_size {
+            let name: String = parcel.read()?;
+            let path: String = parcel.read()?;
+            let file_name: String = parcel.read()?;
+            let mime_type: String = parcel.read()?;
+            let is_user_file: bool = parcel.read()?;
+            let mut fd: Option<RawFd> = None;
+            if is_user_file {
+                let raw_fd = unsafe { parcel.read_raw_fd() };
+                if raw_fd < 0 {
+                    error!("Failed to open user file, fd: {}", raw_fd);
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::INVALID_IPC_MESSAGE_A00,
+                        "deserialize failed: failed to open user file"
+                    );
+                    return Err(IpcStatusCode::Failed);
+                }
+                let ipc_fd = unsafe { File::from_raw_fd(raw_fd) };
+                fd = Some(ipc_fd.into_raw_fd());
+            }
+            file_specs.push(FileSpec {
+                name,
+                path,
+                file_name,
+                mime_type,
+                is_user_file,
+                fd,
+            });
+        }
+
+        // Response bodies fd.
+        let body_file_size: u32 = parcel.read()?;
+        if body_file_size > parcel.readable() as u32 {
+            error!("deserialize failed: body_file size too large");
+            sys_event!(
+                ExecFault,
+                DfxCode::INVALID_IPC_MESSAGE_A00,
+                "deserialize failed: body_file size too large"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let mut body_file_paths: Vec<String> = Vec::new();
+        for _ in 0..body_file_size {
+            let file_name: String = parcel.read()?;
+            body_file_paths.push(file_name);
+        }
+
+        let header_size: u32 = parcel.read()?;
+        if header_size > parcel.readable() as u32 {
+            error!("deserialize failed: header size too large");
+            sys_event!(
+                ExecFault,
+                DfxCode::INVALID_IPC_MESSAGE_A00,
+                "deserialize failed: header size too large"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        let mut headers: HashMap<String, String> = HashMap::new();
+        for _ in 0..header_size {
+            let key: String = parcel.read()?;
+            let value: String = parcel.read()?;
+            headers.insert(key, value);
+        }
+
+        let extras_size: u32 = parcel.read()?;
+        if extras_size > parcel.readable() as u32 {
+            error!("deserialize failed: extras size too large");
+            sys_event!(
+                ExecFault,
+                DfxCode::INVALID_IPC_MESSAGE_A00,
+                "deserialize failed: extras size too large"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        let mut extras: HashMap<String, String> = HashMap::new();
+        for _ in 0..extras_size {
+            let key: String = parcel.read()?;
+            let value: String = parcel.read()?;
+            extras.insert(key, value);
+        }
+
+        let atomic_account = if bundle_type == ATOMIC_SERVICE {
+            GetOhosAccountUid()
+        } else {
+            "".to_string()
+        };
+
+        let task_config = TaskConfig {
+            bundle,
+            bundle_type,
+            atomic_account,
+            url,
+            title,
+            description,
+            method,
+            headers,
+            data: data_base,
+            token,
+            proxy,
+            certificate_pins,
+            extras,
+            version,
+            form_items,
+            file_specs,
+            body_file_paths,
+            certs_path,
+            common_data: CommonTaskConfig {
+                task_id: 0,
+                uid,
+                token_id,
+                action,
+                mode,
+                cover,
+                network_config,
+                metered,
+                roaming,
+                retry,
+                redirect,
+                index,
+                begins: begins as u64,
+                ends,
+                gauge,
+                precise,
+                priority,
+                background,
+                multipart,
+                min_speed: MinSpeed {
+                    speed: min_speed,
+                    duration: min_duration,
+                },
+                timeout: Timeout {
+                    connection_timeout,
+                    total_timeout,
+                },
+            },
+        };
+        Ok(task_config)
+    }
+Unixcoder Score: 0.007454974576830864
+--------------------------------------------------
+C_Code: 
+bool ParcelHelper::UnMarshalConfigBodyFileName(MessageParcel &data, Config &config)
+{
+    uint32_t size = data.ReadUint32();
+    if (size > data.GetReadableBytes()) {
+        REQUEST_HILOGE("Size exceeds the upper limit, size = %{public}u", size);
+        return false;
+    }
+    for (uint32_t i = 0; i < size; i++) {
+        std::string name = data.ReadString();
+        config.bodyFileNames.push_back(name);
+    }
+    return true;
+}
+Function: 
+fn open_body_files(config: &TaskConfig) -> Result<Files, ServiceError> {
+    let tid = config.common_data.task_id;
+    let uid = config.common_data.uid;
+    let mut bundle_cache = BundleCache::new(config);
+    let mut body_files = Vec::new();
+    for (idx, path) in config.body_file_paths.iter().enumerate() {
+        let bundle_name = bundle_cache.get_value()?;
+        let file = open_file_readwrite(uid, &bundle_name, path).map_err(|e| {
+            error!("Open body_file failed - task_id: {}, idx: {}", tid, idx);
+            sys_event!(
+                ExecFault,
+                DfxCode::SA_ERROR_02,
+                &format!("Open body_file failed - task_id: {}, idx: {}", tid, idx)
+            );
+            ServiceError::IoError(e)
+        })?;
+        body_files.push(Arc::new(Mutex::new(file)))
+    }
+    Ok(Files::new(body_files))
+}
+Unixcoder Score: 0.003950644750148058
+--------------------------------------------------
+C_Code: 
+bool CParcelReadString16(const CParcel *parcel, void *stringData, OnCParcelBytesAllocator allocator)
+{
+    if (!IsValidParcel(parcel, __func__) || allocator == nullptr) {
+        return false;
+    }
+    std::u16string u16string;
+    if (!parcel->parcel_->ReadString16(u16string)) {
+        ZLOGE(LOG_LABEL, "%{public}s: read u16string from parcel failed\n", __func__);
+        return false;
+    }
+    std::string value = Str16ToStr8(u16string);
+    if (u16string.length() != 0 && value.length() == 0) {
+        ZLOGE(LOG_LABEL, "%{public}s: u16string len: %u, string len: %u\n", __func__,
+            static_cast<uint32_t>(u16string.length()), static_cast<uint32_t>(value.length()));
+        return false;
+    }
+    char *buffer = nullptr;
+    bool isSuccess = allocator(stringData, &buffer, value.length());
+    if (!isSuccess) {
+        ZLOGE(LOG_LABEL, "%{public}s: allocate string buffer is null\n", __func__);
+        return false;
+    }
+    if (value.length() > 0 && memcpy_s(buffer, value.length(), value.data(), value.length()) != EOK) {
+        ZLOGE(LOG_LABEL, "%{public}s: memcpy string16 failed\n", __func__);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn read_string16_vec(&mut self) -> IpcResult<Vec<String>> {
+        let mut v = vec![];
+        match ReadString16Vector(self.as_parcel_mut(), &mut v) {
+            true => Ok(v),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx306_rank1.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx306_rank1.rs", "c_api": "data.ReadUint32()", "rust_api": "self.body_file_paths.iter()", "mapping_type": "function", "description": "Reading size from input stream in C vs iterating over stored paths in Rust", "reasoning": "[Task Analysis] C function reads a size, validates it, and loops to read strings into a config; Rust function builds a ConfigSet with similar data but from different fields. [Similarity] Names don't match but both involve reading/processing collections of data. [Knowledge Extraction] No full structural match due to domain mismatch (C: parcel reading, Rust: config building), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx306_rank1.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx306_rank1.rs", "c_api": "data.ReadString()", "rust_api": "CStringWrapper::from", "mapping_type": "function", "description": "Reading string from parcel in C vs converting to CString in Rust", "reasoning": "[Task Analysis] C function reads a size, validates it, and loops to read strings into a config; Rust function builds a ConfigSet with similar data but from different fields. [Similarity] Names don't match but both involve reading/processing collections of data. [Knowledge Extraction] No full structural match due to domain mismatch (C: parcel reading, Rust: config building), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx306_rank1.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx306_rank1.rs", "c_api": "config.bodyFileNames.push_back(name)", "rust_api": ".collect()", "mapping_type": "method", "description": "Appending string to vector in C vs collecting mapped items in Rust", "reasoning": "[Task Analysis] C function reads a size, validates it, and loops to read strings into a config; Rust function builds a ConfigSet with similar data but from different fields. [Similarity] Names don't match but both involve reading/processing collections of data. [Knowledge Extraction] No full structural match due to domain mismatch (C: parcel reading, Rust: config building), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UnMarshalConfigBodyFileName__idx306_rank1.c", "source_rust_file": "Partial__UnMarshalConfigBodyFileName__idx306_rank1.rs", "c_fragment": "for (uint32_t i = 0; i < size; i++) {\n        std::string name = data.ReadString();\n        config.bodyFileNames.push_back(name);\n    }", "rust_fragment": "body_file_names: self\n                .body_file_paths\n                .iter()\n                .map(CStringWrapper::from)\n                .collect(),", "description": "Both process a collection of items from input and store them in a container.", "reasoning": "[Task Analysis] C function reads a size, validates it, and loops to read strings into a config; Rust function builds a ConfigSet with similar data but from different fields. [Similarity] Names don't match but both involve reading/processing collections of data. [Knowledge Extraction] No full structural match due to domain mismatch (C: parcel reading, Rust: config building), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.009711707010865211
+--------------------------------------------------
+C_Code: 
+napi_value NAPI_IPCSkeleton_setCallingIdentity(napi_env env, napi_callback_info info)
+{
+    napi_value global = nullptr;
+    napi_get_global(env, &global);
+    napi_value napiActiveStatus = nullptr;
+    napi_get_named_property(env, global, "activeStatus_", &napiActiveStatus);
+    int32_t activeStatus = IRemoteInvoker::IDLE_INVOKER;
+    napi_get_value_int32(env, napiActiveStatus, &activeStatus);
+    if (activeStatus != IRemoteInvoker::ACTIVE_INVOKER) {
+        napi_value result = nullptr;
+        napi_get_boolean(env, true, &result);
+        return result;
+    }
+
+    napi_value retValue = nullptr;
+    napi_get_boolean(env, false, &retValue);
+
+    size_t argc = 1;
+    size_t expectedArgc = 1;
+    napi_value argv[ARGV_LENGTH_1] = { 0 };
+    napi_value thisVar = nullptr;
+    napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
+    NAPI_ASSERT_BASE(env, argc == expectedArgc, "requires 1 parameters", retValue);
+    napi_valuetype valueType = napi_null;
+    napi_typeof(env, argv[ARGV_INDEX_0], &valueType);
+    NAPI_ASSERT_BASE(env, valueType == napi_string, "type mismatch for parameter 1", retValue);
+    size_t bufferSize = 0;
+    size_t maxLen = 40960;
+    napi_get_value_string_utf8(env, argv[ARGV_INDEX_0], nullptr, 0, &bufferSize);
+    NAPI_ASSERT_BASE(env, bufferSize < maxLen, "string length too large", retValue);
+    char stringValue[bufferSize + 1];
+    size_t jsStringLength = 0;
+    napi_get_value_string_utf8(env, argv[ARGV_INDEX_0], stringValue, bufferSize + 1, &jsStringLength);
+    NAPI_ASSERT_BASE(env, jsStringLength == bufferSize, "string length wrong", retValue);
+
+    std::string identity = stringValue;
+    napi_value napiIsLocalCalling = nullptr;
+    napi_get_named_property(env, global, "isLocalCalling_", &napiIsLocalCalling);
+    bool isLocalCalling = true;
+    napi_get_value_bool(env, napiIsLocalCalling, &isLocalCalling);
+    napi_value result;
+    if (isLocalCalling) {
+        uint64_t token = 0;
+        auto ret = std::from_chars(identity.c_str(), identity.c_str() + identity.size(), token);
+        if (ret.ec != std::errc()) {
+            ZLOGE(LOG_LABEL, "identity is invalid");
+            napi_get_boolean(env, false, &result);
+            return result;
+        }
+        int32_t callerUid = static_cast<int32_t>(token >> PID_LEN);
+        int32_t callerPid = static_cast<int32_t>(token);
+        napi_value napiCallingPid;
+        napi_create_int32(env, callerPid, &napiCallingPid);
+        napi_set_named_property(env, global, "callingPid_", napiCallingPid);
+        napi_value napiCallingUid;
+        napi_create_int32(env, callerUid, &napiCallingUid);
+        napi_set_named_property(env, global, "callingUid_", napiCallingUid);
+        napi_get_boolean(env, true, &result);
+        return result;
+    } else {
+        if (identity.empty() || identity.length() <= DEVICEID_LENGTH) {
+            napi_get_boolean(env, false, &result);
+            return result;
+        }
+
+        std::string deviceId = identity.substr(0, DEVICEID_LENGTH);
+        const std::string readIdentity = identity.substr(DEVICEID_LENGTH, identity.length() - DEVICEID_LENGTH);
+        uint64_t token = 0;
+        auto ret = std::from_chars(readIdentity.c_str(), readIdentity.c_str() + readIdentity.size(), token);
+        if (ret.ec != std::errc()) {
+            ZLOGE(LOG_LABEL, "identity is invalid");
+            napi_get_boolean(env, false, &result);
+            return result;
+        }
+        int32_t callerUid = static_cast<int32_t>(token >> PID_LEN);
+        int32_t callerPid = static_cast<int32_t>(token);
+        napi_value napiCallingPid;
+        napi_create_int32(env, callerPid, &napiCallingPid);
+        napi_set_named_property(env, global, "callingPid_", napiCallingPid);
+        napi_value napiCallingUid;
+        napi_create_int32(env, callerUid, &napiCallingUid);
+        napi_set_named_property(env, global, "callingUid_", napiCallingUid);
+        napi_value napiCallingDeviceID = nullptr;
+        napi_create_string_utf8(env, deviceId.c_str(), NAPI_AUTO_LENGTH, &napiCallingDeviceID);
+        napi_set_named_property(env, global, "callingDeviceID_", napiCallingDeviceID);
+        napi_get_boolean(env, true, &result);
+        return result;
+    }
+}
+Function: 
+pub fn set_calling_identity(identity: &str) -> bool {
+        SetCallingIdentity(identity)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__check__idx76482_rank5.c", "source_rust_file": "API_Mapping__check__idx76482_rank5.rs", "c_api": "all[index].filename", "rust_api": "v.(3u)", "mapping_type": "field_access", "description": "Accessing filename field from struct array", "reasoning": "[Task Analysis] C function 'check' is a validation routine that compares fields of a struct against expected values and sets a failure flag on mismatch. Rust code is a test harness that calls 'check' with various array/string indexing operations. [Similarity] Names do not match ('check' vs 'main', 'failed' vs no equivalent), and domains are different (validation logic vs test execution). [Knowledge Extraction] No full structural match due to domain mismatch and different roles (validation vs test). However, there are API mappings for the 'check' function call and indexing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__check__idx76482_rank5.c", "source_rust_file": "API_Mapping__check__idx76482_rank5.rs", "c_api": "check", "rust_api": "check", "mapping_type": "function", "description": "Validation function that compares struct fields with expected values and sets failure flag", "reasoning": "[Task Analysis] C function 'check' is a validation routine that compares fields of a struct against expected values and sets a failure flag on mismatch. Rust code is a test harness that calls 'check' with various array/string indexing operations. [Similarity] Names do not match ('check' vs 'main', 'failed' vs no equivalent), and domains are different (validation logic vs test execution). [Knowledge Extraction] No full structural match due to domain mismatch and different roles (validation vs test). However, there are API mappings for the 'check' function call and indexing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__check__idx76482_rank5.c", "source_rust_file": "API_Mapping__check__idx76482_rank5.rs", "c_api": "strcmp", "rust_api": "check", "mapping_type": "function", "description": "String comparison function used in validation", "reasoning": "[Task Analysis] C function 'check' is a validation routine that compares fields of a struct against expected values and sets a failure flag on mismatch. Rust code is a test harness that calls 'check' with various array/string indexing operations. [Similarity] Names do not match ('check' vs 'main', 'failed' vs no equivalent), and domains are different (validation logic vs test execution). [Knowledge Extraction] No full structural match due to domain mismatch and different roles (validation vs test). However, there are API mappings for the 'check' function call and indexing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__check__idx76482_rank5.c", "source_rust_file": "API_Mapping__check__idx76482_rank5.rs", "c_api": "all[index].lineno", "rust_api": "v.(3u)", "mapping_type": "field_access", "description": "Accessing lineno field from struct array", "reasoning": "[Task Analysis] C function 'check' is a validation routine that compares fields of a struct against expected values and sets a failure flag on mismatch. Rust code is a test harness that calls 'check' with various array/string indexing operations. [Similarity] Names do not match ('check' vs 'main', 'failed' vs no equivalent), and domains are different (validation logic vs test execution). [Knowledge Extraction] No full structural match due to domain mismatch and different roles (validation vs test). However, there are API mappings for the 'check' function call and indexing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__check__idx76482_rank5.c", "source_rust_file": "API_Mapping__check__idx76482_rank5.rs", "c_api": "all[index].function", "rust_api": "s.(3u)", "mapping_type": "field_access", "description": "Accessing function field from struct array", "reasoning": "[Task Analysis] C function 'check' is a validation routine that compares fields of a struct against expected values and sets a failure flag on mismatch. Rust code is a test harness that calls 'check' with various array/string indexing operations. [Similarity] Names do not match ('check' vs 'main', 'failed' vs no equivalent), and domains are different (validation logic vs test execution). [Knowledge Extraction] No full structural match due to domain mismatch and different roles (validation vs test). However, there are API mappings for the 'check' function call and indexing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__check__idx76482_rank5.c", "source_rust_file": "API_Mapping__check__idx76482_rank5.rs", "c_api": "fprintf", "rust_api": "log", "mapping_type": "function", "description": "Error reporting function that outputs to stderr", "reasoning": "[Task Analysis] C function 'check' is a validation routine that compares fields of a struct against expected values and sets a failure flag on mismatch. Rust code is a test harness that calls 'check' with various array/string indexing operations. [Similarity] Names do not match ('check' vs 'main', 'failed' vs no equivalent), and domains are different (validation logic vs test execution). [Knowledge Extraction] No full structural match due to domain mismatch and different roles (validation vs test). However, there are API mappings for the 'check' function call and indexing operations."}]
+Unixcoder Score: -0.017990685999393463
+--------------------------------------------------
+C_Code: 
+bool CParcelReadString16(const CParcel *parcel, void *stringData, OnCParcelBytesAllocator allocator)
+{
+    if (!IsValidParcel(parcel, __func__) || allocator == nullptr) {
+        return false;
+    }
+    std::u16string u16string;
+    if (!parcel->parcel_->ReadString16(u16string)) {
+        ZLOGE(LOG_LABEL, "%{public}s: read u16string from parcel failed\n", __func__);
+        return false;
+    }
+    std::string value = Str16ToStr8(u16string);
+    if (u16string.length() != 0 && value.length() == 0) {
+        ZLOGE(LOG_LABEL, "%{public}s: u16string len: %u, string len: %u\n", __func__,
+            static_cast<uint32_t>(u16string.length()), static_cast<uint32_t>(value.length()));
+        return false;
+    }
+    char *buffer = nullptr;
+    bool isSuccess = allocator(stringData, &buffer, value.length());
+    if (!isSuccess) {
+        ZLOGE(LOG_LABEL, "%{public}s: allocate string buffer is null\n", __func__);
+        return false;
+    }
+    if (value.length() > 0 && memcpy_s(buffer, value.length(), value.data(), value.length()) != EOK) {
+        ZLOGE(LOG_LABEL, "%{public}s: memcpy string16 failed\n", __func__);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn read_string16(&mut self) -> IpcResult<String> {
+        Ok(ReadString16(self.as_parcel_mut()))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustModuleInstructionStats__idx83136_rank1.c", "source_rust_file": "API_Mapping__LLVMRustModuleInstructionStats__idx83136_rank1.rs", "c_api": "JOS.attribute(\"module\", Module->getName())", "rust_api": "str.splitn(2, '=').next_tuple().unwrap()", "mapping_type": "pattern", "description": "Extracting key-value pairs from a string", "reasoning": "[Filter 1: Entity Name Check] LLVMRustModuleInstructionStats vs main - different concepts, but API mapping extraction is still possible. [Filter 2: Empty/Trivial Code] Neither side is empty/trivial. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on LLVM module metadata; Rust operates on string parsing - domains are mismatched. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] C is a function definition, Rust is a main function with no direct usage of the C function. However, since this is a code pair for translation learning, we proceed to extract API mappings and structural fragments if any. [Task Analysis] C function processes LLVM module stats and outputs JSON; Rust function performs string splitting operations. [Similarity] No full or partial structural similarity due to domain mismatch. [Knowledge Extraction] Extract API mappings based on string manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustModuleInstructionStats__idx83136_rank1.c", "source_rust_file": "API_Mapping__LLVMRustModuleInstructionStats__idx83136_rank1.rs", "c_api": "JOS.attribute(\"total\", Module->getInstructionCount())", "rust_api": "str.splitn(3, '=').collect()", "mapping_type": "pattern", "description": "Parsing and collecting string components", "reasoning": "[Filter 1: Entity Name Check] LLVMRustModuleInstructionStats vs main - different concepts, but API mapping extraction is still possible. [Filter 2: Empty/Trivial Code] Neither side is empty/trivial. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on LLVM module metadata; Rust operates on string parsing - domains are mismatched. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] C is a function definition, Rust is a main function with no direct usage of the C function. However, since this is a code pair for translation learning, we proceed to extract API mappings and structural fragments if any. [Task Analysis] C function processes LLVM module stats and outputs JSON; Rust function performs string splitting operations. [Similarity] No full or partial structural similarity due to domain mismatch. [Knowledge Extraction] Extract API mappings based on string manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustModuleInstructionStats__idx83136_rank1.c", "source_rust_file": "API_Mapping__LLVMRustModuleInstructionStats__idx83136_rank1.rs", "c_api": "llvm::json::OStream JOS(OS)", "rust_api": "str.splitn(2, '=').nth(0)", "mapping_type": "pattern", "description": "String splitting for structured data access", "reasoning": "[Filter 1: Entity Name Check] LLVMRustModuleInstructionStats vs main - different concepts, but API mapping extraction is still possible. [Filter 2: Empty/Trivial Code] Neither side is empty/trivial. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on LLVM module metadata; Rust operates on string parsing - domains are mismatched. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] C is a function definition, Rust is a main function with no direct usage of the C function. However, since this is a code pair for translation learning, we proceed to extract API mappings and structural fragments if any. [Task Analysis] C function processes LLVM module stats and outputs JSON; Rust function performs string splitting operations. [Similarity] No full or partial structural similarity due to domain mismatch. [Knowledge Extraction] Extract API mappings based on string manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustModuleInstructionStats__idx83136_rank1.c", "source_rust_file": "API_Mapping__LLVMRustModuleInstructionStats__idx83136_rank1.rs", "c_api": "JOS.object([&] { ... })", "rust_api": "str.rsplitn(2, '=').next_tuple().unwrap()", "mapping_type": "pattern", "description": "Reverse string splitting for structured data access", "reasoning": "[Filter 1: Entity Name Check] LLVMRustModuleInstructionStats vs main - different concepts, but API mapping extraction is still possible. [Filter 2: Empty/Trivial Code] Neither side is empty/trivial. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on LLVM module metadata; Rust operates on string parsing - domains are mismatched. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] C is a function definition, Rust is a main function with no direct usage of the C function. However, since this is a code pair for translation learning, we proceed to extract API mappings and structural fragments if any. [Task Analysis] C function processes LLVM module stats and outputs JSON; Rust function performs string splitting operations. [Similarity] No full or partial structural similarity due to domain mismatch. [Knowledge Extraction] Extract API mappings based on string manipulation patterns."}]
+Unixcoder Score: -0.022158104926347733
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceMultiviewPerViewAttributesPropertiesNVX
+Function: 
+struct FfiPoint {
+        x: f32,
+        y: f32,
+    }
+Unixcoder Score: -0.03387000039219856
+--------------------------------------------------
+C_Code: 
+void
+LLVMRustModuleInstructionStats(LLVMModuleRef M, RustStringRef Str)
+{
+  RawRustStringOstream OS(Str);
+  llvm::json::OStream JOS(OS);
+  auto Module = unwrap(M);
+
+  JOS.object([&] {
+    JOS.attribute("module", Module->getName());
+    JOS.attribute("total", Module->getInstructionCount());
+  });
+}
+Function: 
+fn main() {
+    let str = "key=value=end";
+    let _ = str.splitn(2, '=').next();
+    let _ = str.splitn(2, '=').nth(0);
+    let _ = str.splitn(2, '=').nth(1);
+    let (_, _) = str.splitn(2, '=').next_tuple().unwrap();
+    let (_, _) = str.splitn(3, '=').next_tuple().unwrap();
+    let _: Vec<&str> = str.splitn(3, '=').collect();
+
+    let _ = str.rsplitn(2, '=').next();
+    let _ = str.rsplitn(2, '=').nth(0);
+    let _ = str.rsplitn(2, '=').nth(1);
+    let (_, _) = str.rsplitn(2, '=').next_tuple().unwrap();
+    let (_, _) = str.rsplitn(3, '=').next_tuple().unwrap();
+
+    let _ = str.splitn(5, '=').next();
+    let _ = str.splitn(5, '=').nth(3);
+    let _ = str.splitn(5, '=').nth(4);
+    let _ = str.splitn(5, '=').nth(5);
+}
+Unixcoder Score: -0.036910779774188995
+--------------------------------------------------
+C_Code: 
+int AshmemCreate(const char *name, size_t size)
+{
+    int ret;
+    int fd = AshmemOpen();
+    if (fd < 0) {
+        UTILS_LOGE("%{public}s: Failed to exec AshmemOpen fd = %{public}d", __func__, fd);
+        return fd;
+    }
+
+    if (name != nullptr) {
+        char buf[ASHMEM_NAME_LEN] = {0};
+        ret = strcpy_s(buf, sizeof(buf), name);
+        if (ret != EOK) {
+            UTILS_LOGE("%{public}s: Failed to exec strcpy_s, name= %{public}s, ret= %{public}d", __func__, name, ret);
+            close(fd);
+            return -1;
+        }
+        ret = TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_SET_NAME, buf));
+        if (ret < 0) {
+            UTILS_LOGE("%{public}s: Failed to set name, name= %{public}s, ret= %{public}d, errno = %{public}d",
+                       __func__, name, ret,  errno);
+            close(fd);
+            return ret;
+        }
+    }
+
+    ret = TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_SET_SIZE, size));
+    if (ret < 0) {
+        UTILS_LOGE("%{public}s: Failed to set size, size= %{public}zu, errno = %{public}d", __func__, size, errno);
+        close(fd);
+        return ret;
+    }
+    return fd;
+}
+Function: 
+pub unsafe fn create_ashmem_instance(name: &str, size: i32) -> Option<Ashmem> {
+    let c_name = CString::new(name).expect("CString::new Failed!");
+    let name_ptr = c_name.as_ptr();
+    let c_ashmem_ptr = ffi::CreateAshmemStd(name_ptr, size);
+
+    if c_ashmem_ptr.is_null() {
+        None
+    } else {
+        Some(Ashmem::new(c_ashmem_ptr))
+    }
+}
+Unixcoder Score: -0.043455857783555984
+--------------------------------------------------

@@ -1,0 +1,199 @@
+C_Code: 
+int32_t RemoveSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->RemoveSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.04779487103223801
+--------------------------------------------------
+C_Code: 
+int32_t RemoveSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->RemoveSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.04772984981536865
+--------------------------------------------------
+C_Code: 
+int32_t RemoveSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->RemoveSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.0459330752491951
+--------------------------------------------------
+C_Code: 
+int32_t RemoveSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->RemoveSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.04447536915540695
+--------------------------------------------------
+C_Code: 
+int32_t RemoveSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->RemoveSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.039654672145843506
+--------------------------------------------------
+C_Code: 
+int32_t RemoveSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->RemoveSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn unload_system_ability(said: i32) -> i32 {
+        info!("unload system ability {}", said);
+        UnloadSystemAbility(said)
+    }
+Unixcoder Score: 0.03869185596704483
+--------------------------------------------------
+C_Code: 
+int32_t RemoveSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->RemoveSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn unload_system_ability(said: i32) -> i32 {
+        info!("unload system ability {}", said);
+        UnloadSystemAbility(said)
+    }
+Unixcoder Score: 0.02246450074017048
+--------------------------------------------------
+C_Code: 
+int32_t RemoveSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    return sysm->RemoveSystemAbility(systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.0003334371722303331
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: -0.0014733525458723307
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability_with_extra<A: RemoteStub + 'static>(
+        said: i32,
+        ability: A,
+        is_distributed: bool,
+        dump_flags: DumpFlagPriority,
+        capability: &str,
+        permission: &str,
+    ) -> i32 {
+        info!("add system ability {}", said);
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: -0.006483215838670731
+--------------------------------------------------

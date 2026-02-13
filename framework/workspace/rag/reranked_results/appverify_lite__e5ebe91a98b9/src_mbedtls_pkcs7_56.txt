@@ -1,0 +1,333 @@
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_fs_lstat__idx143910_rank4.c", "source_rust_file": "Partial__uv_fs_lstat__idx143910_rank4.rs", "c_api": "QUEUE_FS_TP_JOB", "rust_api": "uvll::fs_stat", "mapping_type": "function", "description": "Queuing file system operation to thread pool", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_stat(...)` which is a direct wrapper around a C library function. The C code also makes FFI-like calls via `uv_fs_req_init_async` and `uv_fs_req_init_sync` which are part of the libuv C API. [Task Analysis] -> Both functions are related to file system operations (lstat/stat), but the Rust version is a higher-level wrapper that delegates to the underlying C FFI call. [Similarity] -> The C function handles both sync and async paths, while the Rust function only handles async (via callback). The core logic of calling the underlying libuv fs functions is present in both, but the Rust version abstracts away the complexity. [Knowledge Extraction] -> There is a partial structural match in the async handling and FFI delegation, and API mappings can be extracted for the core libuv fs operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_fs_lstat__idx143910_rank4.c", "source_rust_file": "Partial__uv_fs_lstat__idx143910_rank4.rs", "c_api": "uv_fs_req_init_async", "rust_api": "uvll::fs_stat", "mapping_type": "function", "description": "Async file system request initialization and execution", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_stat(...)` which is a direct wrapper around a C library function. The C code also makes FFI-like calls via `uv_fs_req_init_async` and `uv_fs_req_init_sync` which are part of the libuv C API. [Task Analysis] -> Both functions are related to file system operations (lstat/stat), but the Rust version is a higher-level wrapper that delegates to the underlying C FFI call. [Similarity] -> The C function handles both sync and async paths, while the Rust function only handles async (via callback). The core logic of calling the underlying libuv fs functions is present in both, but the Rust version abstracts away the complexity. [Knowledge Extraction] -> There is a partial structural match in the async handling and FFI delegation, and API mappings can be extracted for the core libuv fs operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_fs_lstat__idx143910_rank4.c", "source_rust_file": "Partial__uv_fs_lstat__idx143910_rank4.rs", "c_api": "UTF8_TO_UTF16", "rust_api": "path.with_ref", "mapping_type": "pattern", "description": "Encoding conversion from UTF-8 to UTF-16 for wide character paths", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_stat(...)` which is a direct wrapper around a C library function. The C code also makes FFI-like calls via `uv_fs_req_init_async` and `uv_fs_req_init_sync` which are part of the libuv C API. [Task Analysis] -> Both functions are related to file system operations (lstat/stat), but the Rust version is a higher-level wrapper that delegates to the underlying C FFI call. [Similarity] -> The C function handles both sync and async paths, while the Rust function only handles async (via callback). The core logic of calling the underlying libuv fs functions is present in both, but the Rust version abstracts away the complexity. [Knowledge Extraction] -> There is a partial structural match in the async handling and FFI delegation, and API mappings can be extracted for the core libuv fs operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__uv_fs_lstat__idx143910_rank4.c", "source_rust_file": "Partial__uv_fs_lstat__idx143910_rank4.rs", "c_fragment": "if (cb) {\n    uv_fs_req_init_async(loop, req, UV_FS_LSTAT, NULL, NULL, cb);\n     if (path2) {\n      req->path = path2;\n      UTF8_TO_UTF16(path2, req->pathw);\n    } else {\n      req->path = strdup(path);\n      UTF8_TO_UTF16(path, req->pathw);\n    }\n\n    QUEUE_FS_TP_JOB(loop, req);\n  } else {\n    uv_fs_req_init_sync(loop, req, UV_FS_LSTAT);\n    UTF8_TO_UTF16(path2 ? path2 : path, pathw);\n    fs__stat(req, pathw);\n    if (path2) {\n      free(path2);\n    }\n    free(pathw);\n    SET_UV_LAST_ERROR_FROM_REQ(req);\n    return req->result;\n  }", "rust_fragment": "pub fn stat(self, loop_: &Loop, path: &CString, cb: FsCallback) {\n        let complete_cb_ptr = {\n            let mut me = self;\n            me.req_boilerplate(Some(cb))\n        };\n        let ret = path.with_ref(|p| unsafe {\n            uvll::fs_stat(loop_.native_handle(),\n                          self.native_handle(), p, complete_cb_ptr)\n        });\n        assert_eq!(ret, 0);\n    }", "description": "Both functions handle file system stat operations with async callback support, delegating to underlying libuv FFI functions.", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_stat(...)` which is a direct wrapper around a C library function. The C code also makes FFI-like calls via `uv_fs_req_init_async` and `uv_fs_req_init_sync` which are part of the libuv C API. [Task Analysis] -> Both functions are related to file system operations (lstat/stat), but the Rust version is a higher-level wrapper that delegates to the underlying C FFI call. [Similarity] -> The C function handles both sync and async paths, while the Rust function only handles async (via callback). The core logic of calling the underlying libuv fs functions is present in both, but the Rust version abstracts away the complexity. [Knowledge Extraction] -> There is a partial structural match in the async handling and FFI delegation, and API mappings can be extracted for the core libuv fs operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__uv_fs_lstat__idx143910_rank4.c", "source_rust_file": "Partial__uv_fs_lstat__idx143910_rank4.rs", "c_api": "uv_fs_req_init_sync", "rust_api": "uvll::fs_stat", "mapping_type": "function", "description": "Synchronous file system request initialization and execution", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_stat(...)` which is a direct wrapper around a C library function. The C code also makes FFI-like calls via `uv_fs_req_init_async` and `uv_fs_req_init_sync` which are part of the libuv C API. [Task Analysis] -> Both functions are related to file system operations (lstat/stat), but the Rust version is a higher-level wrapper that delegates to the underlying C FFI call. [Similarity] -> The C function handles both sync and async paths, while the Rust function only handles async (via callback). The core logic of calling the underlying libuv fs functions is present in both, but the Rust version abstracts away the complexity. [Knowledge Extraction] -> There is a partial structural match in the async handling and FFI delegation, and API mappings can be extracted for the core libuv fs operations."}]
+Unixcoder Score: 0.026714492589235306
+--------------------------------------------------
+C_Code: 
+struct Http_ClientCert {
+  /** A path to a client certificate. */
+  char *certPath;
+  /** Client certificate type, see {@link Http_CertType}. */
+  Http_CertType type;
+  /** File path of your client certificate private key. */
+  char *keyPath;
+  /** Password for your client certificate private key. */
+  char *keyPassword;
+}
+Function: 
+pub struct Certificate {
+    inner: Vec<reqwest::Certificate>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__drawCodewords__idx144435_rank2.c", "source_rust_file": "Full__drawCodewords__idx144435_rank2.rs", "c_api": "getModuleBounded(qrcode, x, y)", "rust_api": "self.get_module_bounded(x, y)", "mapping_type": "method", "description": "Check if QR module is set at given coordinates", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) for placing codewords. [Similarity] Names differ (drawCodewords vs draw_codewords), but logic and structure are highly aligned. [Knowledge Extraction] Full structural match with minor syntax differences (naming, type casting, control flow). API mappings found for core operations like bit manipulation, module access, and coordinate calculation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__drawCodewords__idx144435_rank2.c", "source_rust_file": "Full__drawCodewords__idx144435_rank2.rs", "c_api": "setModuleBounded(qrcode, x, y, dark)", "rust_api": "self.set_module_bounded(x, y, ...)", "mapping_type": "method", "description": "Set QR module at given coordinates", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) for placing codewords. [Similarity] Names differ (drawCodewords vs draw_codewords), but logic and structure are highly aligned. [Knowledge Extraction] Full structural match with minor syntax differences (naming, type casting, control flow). API mappings found for core operations like bit manipulation, module access, and coordinate calculation."}, {"knowledge_type": "Full", "source_c_file": "Full__drawCodewords__idx144435_rank2.c", "source_rust_file": "Full__drawCodewords__idx144435_rank2.rs", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) for placing codewords. [Similarity] Names differ (drawCodewords vs draw_codewords), but logic and structure are highly aligned. [Knowledge Extraction] Full structural match with minor syntax differences (naming, type casting, control flow). API mappings found for core operations like bit manipulation, module access, and coordinate calculation.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__drawCodewords__idx144435_rank2.c", "source_rust_file": "Full__drawCodewords__idx144435_rank2.rs", "c_api": "getBit(data[i >> 3], 7 - (i & 7))", "rust_api": "get_bit(data[i >> 3].into(), 7 - ((i as u8) & 7))", "mapping_type": "function", "description": "Bit extraction from byte array", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) for placing codewords. [Similarity] Names differ (drawCodewords vs draw_codewords), but logic and structure are highly aligned. [Knowledge Extraction] Full structural match with minor syntax differences (naming, type casting, control flow). API mappings found for core operations like bit manipulation, module access, and coordinate calculation."}, {"knowledge_type": "Partial", "source_c_file": "Full__drawCodewords__idx144435_rank2.c", "source_rust_file": "Full__drawCodewords__idx144435_rank2.rs", "c_fragment": "for (right = qrsize - 1; right >= 1; right -= 2) {  // Index of right column in each column pair\n\tif (right == 6)\n\t\tright = 5;\n\tfor (vert = 0; vert < qrsize; vert++) {  // Vertical counter\n\t\tfor (j = 0; j < 2; j++) {\n\t\t\tint x = right - j;  // Actual x coordinate\n\t\t\tbool upward = ((right + 1) & 2) == 0;\n\t\t\tint y = upward ? qrsize - 1 - vert : vert;  // Actual y coordinate\n\t\t\tif (!getModuleBounded(qrcode, x, y) && i < dataLen * 8) {\n\t\t\t\tbool dark = getBit(data[i >> 3], 7 - (i & 7));\n\t\t\t\tsetModuleBounded(qrcode, x, y, dark);\n\t\t\t\ti++;\n\t\t\t}\n\t\t}\n\t}\n}", "rust_fragment": "while right >= 1 {  // Index of right column in each column pair\n\tif right == 6 {\n\t\tright = 5;\n\t}\n\tfor vert in 0 .. size {  // Vertical counter\n\t\tfor j in 0 .. 2 {\n\t\t\tlet x = (right - j) as u8;  // Actual x coordinate\n\t\t\tlet upward: bool = (right + 1) & 2 == 0;\n\t\t\tlet y = (if upward { size - 1 - vert } else { vert }) as u8;  // Actual y coordinate\n\t\t\tif !self.get_module_bounded(x, y) && i < data.len() * 8 {\n\t\t\t\tself.set_module_bounded(x, y, get_bit(data[i >> 3].into(), 7 - ((i as u8) & 7)));\n\t\t\t\ti += 1;\n\t\t\t}\n\t\t}\n\t}\n\tright -= 2;", "description": "Core zigzag scanning loop structure with nested loops for column and row traversal, including conditional module setting based on bit data.", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) for placing codewords. [Similarity] Names differ (drawCodewords vs draw_codewords), but logic and structure are highly aligned. [Knowledge Extraction] Full structural match with minor syntax differences (naming, type casting, control flow). API mappings found for core operations like bit manipulation, module access, and coordinate calculation."}]
+Unixcoder Score: 0.01801268197596073
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__getModule__idx144427_rank3.c", "source_rust_file": "Partial__getModule__idx144427_rank3.rs", "c_api": "module(x, y)", "rust_api": "get_bit(self.modules[byteindex].into(), bitindex as u8)", "mapping_type": "function", "description": "Accessing QR code module value", "reasoning": "[Task Analysis] C code defines a method to check if a QR code module is set at given coordinates, with bounds checking. Rust code implements a similar function with bounds checking and bit manipulation for module storage. [Similarity] Both perform bounds checking and module access, but differ in data representation (array vs bitfield) and coordinate handling (signed vs unsigned). [Knowledge Extraction] Full match blocked by domain mismatch (bounds checking + access pattern vs bit manipulation), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__getModule__idx144427_rank3.c", "source_rust_file": "Partial__getModule__idx144427_rank3.rs", "c_api": "0 <= x && x < size && 0 <= y && y < size", "rust_api": "let range = 0 .. *self.size; assert!(range.contains(&x) && range.contains(&y))", "mapping_type": "pattern", "description": "Bounds checking for coordinate access", "reasoning": "[Task Analysis] C code defines a method to check if a QR code module is set at given coordinates, with bounds checking. Rust code implements a similar function with bounds checking and bit manipulation for module storage. [Similarity] Both perform bounds checking and module access, but differ in data representation (array vs bitfield) and coordinate handling (signed vs unsigned). [Knowledge Extraction] Full match blocked by domain mismatch (bounds checking + access pattern vs bit manipulation), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__getModule__idx144427_rank3.c", "source_rust_file": "Partial__getModule__idx144427_rank3.rs", "c_fragment": "0 <= x && x < size && 0 <= y && y < size", "rust_fragment": "let range = 0 .. *self.size; assert!(range.contains(&x) && range.contains(&y))", "description": "Bounds checking for coordinate access", "reasoning": "[Task Analysis] C code defines a method to check if a QR code module is set at given coordinates, with bounds checking. Rust code implements a similar function with bounds checking and bit manipulation for module storage. [Similarity] Both perform bounds checking and module access, but differ in data representation (array vs bitfield) and coordinate handling (signed vs unsigned). [Knowledge Extraction] Full match blocked by domain mismatch (bounds checking + access pattern vs bit manipulation), but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.00630525266751647
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__getModule__idx144364_rank1.c", "source_rust_file": "Full__getModule__idx144364_rank1.rs", "reasoning": "[Task Analysis] C and Rust code both implement a method to check if a QR code module is set at given coordinates. [Similarity] Names differ (getModule vs get_module), but logic is semantically identical: bounds checking followed by module access. [Knowledge Extraction] Full structural match with minor naming/type differences; no API mappings since both use native language features.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__getModule__idx144364_rank1.c", "source_rust_file": "Full__getModule__idx144364_rank1.rs", "c_fragment": "bool QrCode::getModule(int x, int y) const {\n\treturn 0 <= x && x < size && 0 <= y && y < size && module(x, y);\n}", "rust_fragment": "pub fn get_module(&self, x: i32, y: i32) -> bool {\n\t\t(0 .. self.size).contains(&x) && (0 .. self.size).contains(&y) && self.module(x, y)\n\t}", "description": "Bounds checking and module access logic for QR code grid", "reasoning": "[Task Analysis] C and Rust code both implement a method to check if a QR code module is set at given coordinates. [Similarity] Names differ (getModule vs get_module), but logic is semantically identical: bounds checking followed by module access. [Knowledge Extraction] Full structural match with minor naming/type differences; no API mappings since both use native language features."}]
+Unixcoder Score: -0.013252023607492447
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__uv_fs_stat__idx143910_rank2.c", "source_rust_file": "Full__uv_fs_stat__idx143910_rank2.rs", "c_api": "uv_fs_req_init_async", "rust_api": "req_boilerplate", "mapping_type": "function", "description": "Initialize async filesystem request", "reasoning": "[Task Analysis] C function `uv_fs_stat` is a filesystem stat operation, Rust function `stat` is a wrapper around the same operation. [Similarity] Names don't match but conceptually they are the same operation (stat file). [Knowledge Extraction] Found full structural match in logic and purpose, with API mappings for async/sync handling and path conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__uv_fs_stat__idx143910_rank2.c", "source_rust_file": "Full__uv_fs_stat__idx143910_rank2.rs", "c_api": "QUEUE_FS_TP_JOB", "rust_api": "unsafe { uvll::fs_stat(...)}", "mapping_type": "pattern", "description": "Queue filesystem operation to thread pool", "reasoning": "[Task Analysis] C function `uv_fs_stat` is a filesystem stat operation, Rust function `stat` is a wrapper around the same operation. [Similarity] Names don't match but conceptually they are the same operation (stat file). [Knowledge Extraction] Found full structural match in logic and purpose, with API mappings for async/sync handling and path conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__uv_fs_stat__idx143910_rank2.c", "source_rust_file": "Full__uv_fs_stat__idx143910_rank2.rs", "c_api": "UTF8_TO_UTF16", "rust_api": "path.with_ref", "mapping_type": "pattern", "description": "Path encoding conversion from UTF-8 to UTF-16", "reasoning": "[Task Analysis] C function `uv_fs_stat` is a filesystem stat operation, Rust function `stat` is a wrapper around the same operation. [Similarity] Names don't match but conceptually they are the same operation (stat file). [Knowledge Extraction] Found full structural match in logic and purpose, with API mappings for async/sync handling and path conversion."}, {"knowledge_type": "Full", "source_c_file": "Full__uv_fs_stat__idx143910_rank2.c", "source_rust_file": "Full__uv_fs_stat__idx143910_rank2.rs", "reasoning": "[Task Analysis] C function `uv_fs_stat` is a filesystem stat operation, Rust function `stat` is a wrapper around the same operation. [Similarity] Names don't match but conceptually they are the same operation (stat file). [Knowledge Extraction] Found full structural match in logic and purpose, with API mappings for async/sync handling and path conversion.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__uv_fs_stat__idx143910_rank2.c", "source_rust_file": "Full__uv_fs_stat__idx143910_rank2.rs", "c_api": "uv_fs_req_init_sync", "rust_api": "req_boilerplate", "mapping_type": "function", "description": "Initialize sync filesystem request", "reasoning": "[Task Analysis] C function `uv_fs_stat` is a filesystem stat operation, Rust function `stat` is a wrapper around the same operation. [Similarity] Names don't match but conceptually they are the same operation (stat file). [Knowledge Extraction] Found full structural match in logic and purpose, with API mappings for async/sync handling and path conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__uv_fs_stat__idx143910_rank2.c", "source_rust_file": "Full__uv_fs_stat__idx143910_rank2.rs", "c_api": "uv_fs_stat", "rust_api": "uvll::fs_stat", "mapping_type": "function", "description": "Filesystem stat operation", "reasoning": "[Task Analysis] C function `uv_fs_stat` is a filesystem stat operation, Rust function `stat` is a wrapper around the same operation. [Similarity] Names don't match but conceptually they are the same operation (stat file). [Knowledge Extraction] Found full structural match in logic and purpose, with API mappings for async/sync handling and path conversion."}, {"knowledge_type": "Partial", "source_c_file": "Full__uv_fs_stat__idx143910_rank2.c", "source_rust_file": "Full__uv_fs_stat__idx143910_rank2.rs", "c_fragment": "if (cb) {\n    uv_fs_req_init_async(loop, req, UV_FS_STAT, NULL, NULL, cb);\n    if (path2) {\n      req->path = path2;\n      UTF8_TO_UTF16(path2, req->pathw);\n    } else {\n      req->path = strdup(path);\n      UTF8_TO_UTF16(path, req->pathw);\n    }\n\n    QUEUE_FS_TP_JOB(loop, req);\n  } else {\n    uv_fs_req_init_sync(loop, req, UV_FS_STAT);\n    UTF8_TO_UTF16(path2 ? path2 : path, pathw);\n    fs__stat(req, pathw);\n    if (path2) {\n      free(path2);\n    }\n    free(pathw);\n    SET_UV_LAST_ERROR_FROM_REQ(req);\n    return req->result;\n  }", "rust_fragment": "let complete_cb_ptr = {\n            let mut me = self;\n            me.req_boilerplate(Some(cb))\n        };\n        let ret = path.with_ref(|p| unsafe {\n            uvll::fs_stat(loop_.native_handle(),\n                          self.native_handle(), p, complete_cb_ptr)\n        });\n        assert_eq!(ret, 0);", "description": "Both functions handle async/sync filesystem stat operations with path conversion and callback handling.", "reasoning": "[Task Analysis] C function `uv_fs_stat` is a filesystem stat operation, Rust function `stat` is a wrapper around the same operation. [Similarity] Names don't match but conceptually they are the same operation (stat file). [Knowledge Extraction] Found full structural match in logic and purpose, with API mappings for async/sync handling and path conversion."}]
+Unixcoder Score: -0.024623306468129158
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: -0.02464573085308075
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: -0.025183700025081635
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: -0.025541242212057114
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: -0.029746025800704956
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__drawCodewords__idx144374_rank2.c", "source_rust_file": "Full__drawCodewords__idx144374_rank2.rs", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) to place data bits into a QR code module grid. [Similarity] Names differ (drawCodewords vs draw_codewords), but the core logic and control flow are highly similar. [Knowledge Extraction] Full structural match with minor differences in syntax and idioms (e.g., C-style for loops vs Rust-style iterators, bit manipulation, and module access). API mappings identified for equivalent operations like bit extraction, module setting, and coordinate calculation.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__drawCodewords__idx144374_rank2.c", "source_rust_file": "Full__drawCodewords__idx144374_rank2.rs", "c_api": "setModuleBounded(qrcode, x, y, dark)", "rust_api": "*self.module_mut(x, y) = get_bit(u32::from(data[i >> 3]), 7 - ((i as i32) & 7))", "mapping_type": "function", "description": "Set a QR code module at given coordinates to a specific value (dark/light).", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) to place data bits into a QR code module grid. [Similarity] Names differ (drawCodewords vs draw_codewords), but the core logic and control flow are highly similar. [Knowledge Extraction] Full structural match with minor differences in syntax and idioms (e.g., C-style for loops vs Rust-style iterators, bit manipulation, and module access). API mappings identified for equivalent operations like bit extraction, module setting, and coordinate calculation."}, {"knowledge_type": "Partial", "source_c_file": "Full__drawCodewords__idx144374_rank2.c", "source_rust_file": "Full__drawCodewords__idx144374_rank2.rs", "c_fragment": "for (right = qrsize - 1; right >= 1; right -= 2) {  // Index of right column in each column pair\n\tif (right == 6)\n\t\tright = 5;\n\tfor (vert = 0; vert < qrsize; vert++) {  // Vertical counter\n\t\tfor (j = 0; j < 2; j++) {\n\t\t\tint x = right - j;  // Actual x coordinate\n\t\t\tbool upward = ((right + 1) & 2) == 0;\n\t\t\tint y = upward ? qrsize - 1 - vert : vert;  // Actual y coordinate\n\t\t\tif (!getModuleBounded(qrcode, x, y) && i < dataLen * 8) {\n\t\t\t\tbool dark = getBit(data[i >> 3], 7 - (i & 7));\n\t\t\t\tsetModuleBounded(qrcode, x, y, dark);\n\t\t\t\ti++;\n\t\t\t}\n\t\t}\n\t}\n}", "rust_fragment": "while right >= 1 {  // Index of right column in each column pair\n\tif right == 6 {\n\t\tright = 5;\n\t}\n\tfor vert in 0 .. self.size {  // Vertical counter\n\t\tfor j in 0 .. 2 {\n\t\t\tlet x: i32 = right - j;  // Actual x coordinate\n\t\t\tlet upward: bool = (right + 1) & 2 == 0;\n\t\t\tlet y: i32 = if upward { self.size - 1 - vert } else { vert };  // Actual y coordinate\n\t\t\tif !self.isfunction[(y * self.size + x) as usize] && i < data.len() * 8 {\n\t\t\t\t*self.module_mut(x, y) = get_bit(u32::from(data[i >> 3]), 7 - ((i as i32) & 7));\n\t\t\t\ti += 1;\n\t\t\t}\n\t\t}\n\t}\n\tright -= 2;", "description": "Core zigzag scanning loop structure with nested loops for column, vertical, and bit-level iteration, including conditional module setting and bit extraction logic.", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) to place data bits into a QR code module grid. [Similarity] Names differ (drawCodewords vs draw_codewords), but the core logic and control flow are highly similar. [Knowledge Extraction] Full structural match with minor differences in syntax and idioms (e.g., C-style for loops vs Rust-style iterators, bit manipulation, and module access). API mappings identified for equivalent operations like bit extraction, module setting, and coordinate calculation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__drawCodewords__idx144374_rank2.c", "source_rust_file": "Full__drawCodewords__idx144374_rank2.rs", "c_api": "getModuleBounded(qrcode, x, y)", "rust_api": "self.isfunction[(y * self.size + x) as usize]", "mapping_type": "function", "description": "Check if a QR code module at given coordinates is already set.", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) to place data bits into a QR code module grid. [Similarity] Names differ (drawCodewords vs draw_codewords), but the core logic and control flow are highly similar. [Knowledge Extraction] Full structural match with minor differences in syntax and idioms (e.g., C-style for loops vs Rust-style iterators, bit manipulation, and module access). API mappings identified for equivalent operations like bit extraction, module setting, and coordinate calculation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__drawCodewords__idx144374_rank2.c", "source_rust_file": "Full__drawCodewords__idx144374_rank2.rs", "c_api": "getBit(data[i >> 3], 7 - (i & 7))", "rust_api": "get_bit(u32::from(data[i >> 3]), 7 - ((i as i32) & 7))", "mapping_type": "function", "description": "Extract a single bit from a byte array at a specified index.", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) to place data bits into a QR code module grid. [Similarity] Names differ (drawCodewords vs draw_codewords), but the core logic and control flow are highly similar. [Knowledge Extraction] Full structural match with minor differences in syntax and idioms (e.g., C-style for loops vs Rust-style iterators, bit manipulation, and module access). API mappings identified for equivalent operations like bit extraction, module setting, and coordinate calculation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__drawCodewords__idx144374_rank2.c", "source_rust_file": "Full__drawCodewords__idx144374_rank2.rs", "c_api": "qrcodegen_getSize(qrcode)", "rust_api": "self.size", "mapping_type": "field_access", "description": "Retrieve the size of the QR code grid.", "reasoning": "[Task Analysis] C and Rust functions both implement the same QR code drawing algorithm (zigzag scan) to place data bits into a QR code module grid. [Similarity] Names differ (drawCodewords vs draw_codewords), but the core logic and control flow are highly similar. [Knowledge Extraction] Full structural match with minor differences in syntax and idioms (e.g., C-style for loops vs Rust-style iterators, bit manipulation, and module access). API mappings identified for equivalent operations like bit extraction, module setting, and coordinate calculation."}]
+Unixcoder Score: -0.03423067554831505
+--------------------------------------------------

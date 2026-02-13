@@ -1,0 +1,26 @@
+# Minimal Python dependencies for running the framework in external API mode
+# (USE_VLLM=false) and without GPU-heavy components (e.g., Jina reranker).
+#
+# Tested with Python 3.11.
+#
+# Note:
+# - System deps like clang/libclang and Rust toolchain are NOT included here.
+# - For full-feature setup (RAG reranker / local vLLM), prefer conda:
+#   `bash framework/setup_conda_env.sh`
+
+openai==2.6.1
+tqdm==4.67.1
+nltk==3.9.2
+numpy==2.2.6
+
+# libclang-based extractor (requires system `libclang` shared library)
+clang==14.0
+
+# Tree-sitter (some modes/tools still import these modules)
+tree-sitter==0.21.0
+tree-sitter-cpp==0.21.0
+tree-sitter-rust==0.21.2
+
+# BM25 (used by RAG indexing/matching; safe to keep even if --run-rag false)
+rank-bm25==0.2.2
+

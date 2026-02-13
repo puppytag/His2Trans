@@ -1,0 +1,35 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_service_status_2",
+  "function_name": "ServiceStatusUnMarshalling",
+  "source_c_file": "src/service_status.c",
+  "c_code": "int ServiceStatusUnMarshalling(struct ServiceStatus * status, struct HdfSBuf * buf)\n{\n    if (status == NULL || buf == NULL) {\n        return HDF_ERR_INVALID_PARAM;\n    }\n    status->serviceName = HdfSbufReadString(buf);\n    if (status->serviceName == NULL) {\n        HDF_LOGI(\"failed to unmarshalling service status, service name is null\");\n        return HDF_FAILURE;\n    }\n\n    if (!HdfSbufReadUint16(buf, &status->deviceClass) || !HdfSbufReadUint16(buf, &status->status)) {\n        HDF_LOGI(\"failed to unmarshalling service status, deviceClass or status invalid\");\n        return HDF_FAILURE;\n    }\n\n    status->info = HdfSbufReadString(buf);\n    return HDF_SUCCESS;\n}",
+  "rust_signature": "pub extern \"C\" fn ServiceStatusUnMarshalling(status: *mut crate::types::ServiceStatus, buf: *mut crate::types::HdfSBuf) -> ::core::ffi::c_int",
+  "rust_code": "pub extern \\\"C\\\" fn ServiceStatusUnMarshalling(status: *mut ServiceStatus, buf: *mut HdfSBuf) -> core::ffi::c_int {\n    if status.is_null() || buf.is_null() {\n        return HDF_ERR_INVALID_PARAM;\n    }\n    unsafe {\n        (*status).serviceName = HdfSbufReadString(buf);\n        if (*status).serviceName.is_null() {\n            return HDF_FAILURE;\n        }\n        if !HdfSbufReadUint16(buf, core::ptr::addr_of_mut!((*status).deviceClass))\n            || !HdfSbufReadUint16(buf, core::ptr::addr_of_mut!((*status).status))\n        {\n            return HDF_FAILURE;\n        }\n        (*status).info = HdfSbufReadString(buf);\n    }\n    HDF_SUCCESS\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufReadString",
+      "rust_api": "HdfSbufReadString",
+      "description": "Deserialize string from sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufReadUint16",
+      "rust_api": "HdfSbufReadUint16",
+      "description": "Deserialize u16 from sbuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

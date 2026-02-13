@@ -1,0 +1,621 @@
+C_Code: 
+int
+bi_compare( bigint obia, bigint obib )
+    {
+    real_bigint bia = (real_bigint) obia;
+    real_bigint bib = (real_bigint) obib;
+    int r, c;
+
+    check( bia );
+    check( bib );
+
+    /* First check for pointer equality. */
+    if ( bia == bib )
+	r = 0;
+    else
+	{
+	/* Compare signs. */
+	if ( bia->sign > bib->sign )
+	    r = 1;
+	else if ( bia->sign < bib->sign )
+	    r = -1;
+	/* Signs are the same.  Check the number of components. */
+	else if ( bia->num_comps > bib->num_comps )
+	    r = bia->sign;
+	else if ( bia->num_comps < bib->num_comps )
+	    r = -bia->sign;
+	else
+	    {
+	    /* Same number of components.  Compare starting from the high end
+	    ** and working down.
+	    */
+	    r = 0;	/* if we complete the loop, the numbers are equal */
+	    for ( c = bia->num_comps - 1; c >= 0; --c )
+		{
+		if ( bia->comps[c] > bib->comps[c] )
+		    { r = bia->sign; break; }
+		else if ( bia->comps[c] < bib->comps[c] )
+		    { r = -bia->sign; break; }
+		}
+	    }
+	}
+
+    bi_free( bia );
+    bi_free( bib );
+    return r;
+    }
+Function: 
+fn cmp(other: &BigUint) -> int {
+        let s_len = self.data.len(), o_len = other.data.len();
+        if s_len < o_len { return -1; }
+        if s_len > o_len { return  1;  }
+
+        for vec::rev_eachi(self.data) |i, elm| {
+            match (*elm, other.data[i]) {
+                (l, r) if l < r => return -1,
+                (l, r) if l > r => return  1,
+                _               => loop
+            };
+        }
+        return 0;
+    }
+Unixcoder Score: 0.046545855700969696
+--------------------------------------------------
+C_Code: 
+int
+bi_compare( bigint obia, bigint obib )
+    {
+    real_bigint bia = (real_bigint) obia;
+    real_bigint bib = (real_bigint) obib;
+    int r, c;
+
+    check( bia );
+    check( bib );
+
+    /* First check for pointer equality. */
+    if ( bia == bib )
+	r = 0;
+    else
+	{
+	/* Compare signs. */
+	if ( bia->sign > bib->sign )
+	    r = 1;
+	else if ( bia->sign < bib->sign )
+	    r = -1;
+	/* Signs are the same.  Check the number of components. */
+	else if ( bia->num_comps > bib->num_comps )
+	    r = bia->sign;
+	else if ( bia->num_comps < bib->num_comps )
+	    r = -bia->sign;
+	else
+	    {
+	    /* Same number of components.  Compare starting from the high end
+	    ** and working down.
+	    */
+	    r = 0;	/* if we complete the loop, the numbers are equal */
+	    for ( c = bia->num_comps - 1; c >= 0; --c )
+		{
+		if ( bia->comps[c] > bib->comps[c] )
+		    { r = bia->sign; break; }
+		else if ( bia->comps[c] < bib->comps[c] )
+		    { r = -bia->sign; break; }
+		}
+	    }
+	}
+
+    bi_free( bia );
+    bi_free( bib );
+    return r;
+    }
+Function: 
+fn eq(&self, other: &BigUint) -> bool { self.cmp(other) == 0 }
+Unixcoder Score: 0.03143632784485817
+--------------------------------------------------
+C_Code: 
+int
+bi_compare( bigint obia, bigint obib )
+    {
+    real_bigint bia = (real_bigint) obia;
+    real_bigint bib = (real_bigint) obib;
+    int r, c;
+
+    check( bia );
+    check( bib );
+
+    /* First check for pointer equality. */
+    if ( bia == bib )
+	r = 0;
+    else
+	{
+	/* Compare signs. */
+	if ( bia->sign > bib->sign )
+	    r = 1;
+	else if ( bia->sign < bib->sign )
+	    r = -1;
+	/* Signs are the same.  Check the number of components. */
+	else if ( bia->num_comps > bib->num_comps )
+	    r = bia->sign;
+	else if ( bia->num_comps < bib->num_comps )
+	    r = -bia->sign;
+	else
+	    {
+	    /* Same number of components.  Compare starting from the high end
+	    ** and working down.
+	    */
+	    r = 0;	/* if we complete the loop, the numbers are equal */
+	    for ( c = bia->num_comps - 1; c >= 0; --c )
+		{
+		if ( bia->comps[c] > bib->comps[c] )
+		    { r = bia->sign; break; }
+		else if ( bia->comps[c] < bib->comps[c] )
+		    { r = -bia->sign; break; }
+		}
+	    }
+	}
+
+    bi_free( bia );
+    bi_free( bib );
+    return r;
+    }
+Function: 
+fn cmp(other: &BigInt) -> int {
+        let ss = self.sign, os = other.sign;
+        if ss < os { return -1; }
+        if ss > os { return  1; }
+
+        assert ss == os;
+        match ss {
+            Zero  => 0,
+            Plus  => self.data.cmp(&other.data),
+            Minus => self.data.cmp(&other.data).neg(),
+        }
+    }
+Unixcoder Score: 0.027568986639380455
+--------------------------------------------------
+C_Code: 
+int
+bi_compare( bigint obia, bigint obib )
+    {
+    real_bigint bia = (real_bigint) obia;
+    real_bigint bib = (real_bigint) obib;
+    int r, c;
+
+    check( bia );
+    check( bib );
+
+    /* First check for pointer equality. */
+    if ( bia == bib )
+	r = 0;
+    else
+	{
+	/* Compare signs. */
+	if ( bia->sign > bib->sign )
+	    r = 1;
+	else if ( bia->sign < bib->sign )
+	    r = -1;
+	/* Signs are the same.  Check the number of components. */
+	else if ( bia->num_comps > bib->num_comps )
+	    r = bia->sign;
+	else if ( bia->num_comps < bib->num_comps )
+	    r = -bia->sign;
+	else
+	    {
+	    /* Same number of components.  Compare starting from the high end
+	    ** and working down.
+	    */
+	    r = 0;	/* if we complete the loop, the numbers are equal */
+	    for ( c = bia->num_comps - 1; c >= 0; --c )
+		{
+		if ( bia->comps[c] > bib->comps[c] )
+		    { r = bia->sign; break; }
+		else if ( bia->comps[c] < bib->comps[c] )
+		    { r = -bia->sign; break; }
+		}
+	    }
+	}
+
+    bi_free( bia );
+    bi_free( bib );
+    return r;
+    }
+Function: 
+fn cmp(other: &BigInt) -> int {
+        let ss = self.sign, os = other.sign;
+        if ss < os { return -1; }
+        if ss > os { return  1; }
+
+        assert ss == os;
+        match ss {
+            Zero  => 0,
+            Plus  => self.data.cmp(&other.data),
+            Minus => self.data.cmp(&other.data).neg(),
+        }
+    }
+Unixcoder Score: 0.017990345135331154
+--------------------------------------------------
+C_Code: 
+int
+bi_compare( bigint obia, bigint obib )
+    {
+    real_bigint bia = (real_bigint) obia;
+    real_bigint bib = (real_bigint) obib;
+    int r, c;
+
+    check( bia );
+    check( bib );
+
+    /* First check for pointer equality. */
+    if ( bia == bib )
+	r = 0;
+    else
+	{
+	/* Compare signs. */
+	if ( bia->sign > bib->sign )
+	    r = 1;
+	else if ( bia->sign < bib->sign )
+	    r = -1;
+	/* Signs are the same.  Check the number of components. */
+	else if ( bia->num_comps > bib->num_comps )
+	    r = bia->sign;
+	else if ( bia->num_comps < bib->num_comps )
+	    r = -bia->sign;
+	else
+	    {
+	    /* Same number of components.  Compare starting from the high end
+	    ** and working down.
+	    */
+	    r = 0;	/* if we complete the loop, the numbers are equal */
+	    for ( c = bia->num_comps - 1; c >= 0; --c )
+		{
+		if ( bia->comps[c] > bib->comps[c] )
+		    { r = bia->sign; break; }
+		else if ( bia->comps[c] < bib->comps[c] )
+		    { r = -bia->sign; break; }
+		}
+	    }
+	}
+
+    bi_free( bia );
+    bi_free( bib );
+    return r;
+    }
+Function: 
+fn cmp(other: &BigUint) -> int {
+        let s_len = self.data.len(), o_len = other.data.len();
+        if s_len < o_len { return -1; }
+        if s_len > o_len { return  1;  }
+
+        for vec::rev_eachi(self.data) |i, elm| {
+            match (*elm, other.data[i]) {
+                (l, r) if l < r => return -1,
+                (l, r) if l > r => return  1,
+                _               => loop
+            };
+        }
+        return 0;
+    }
+Unixcoder Score: 0.012920086272060871
+--------------------------------------------------
+C_Code: 
+bigint
+bi_divide( bigint binumer, bigint obidenom )
+    {
+    real_bigint bidenom = (real_bigint) obidenom;
+    int sign;
+    bigint biquotient;
+
+    /* Check signs and trivial cases. */
+    sign = 1;
+    switch ( bi_compare( bi_copy( bidenom ), bi_0 ) )
+	{
+	case 0:
+	(void) fprintf( stderr, "bi_divide: divide by zero\n" );
+	(void) kill( getpid(), SIGFPE );
+	case -1:
+	sign *= -1;
+	bidenom = bi_negate( bidenom );
+	break;
+	}
+    switch ( bi_compare( bi_copy( binumer ), bi_0 ) )
+	{
+	case 0:
+	bi_free( binumer );
+	bi_free( bidenom );
+	return bi_0;
+	case -1:
+	sign *= -1;
+	binumer = bi_negate( binumer );
+	break;
+	}
+    switch ( bi_compare( bi_copy( binumer ), bi_copy( bidenom ) ) )
+	{
+	case -1:
+	bi_free( binumer );
+	bi_free( bidenom );
+	return bi_0;
+	case 0:
+	bi_free( binumer );
+	bi_free( bidenom );
+	if ( sign == 1 )
+	    return bi_1;
+	else
+	    return bi_m1;
+	}
+
+    /* Is the denominator small enough to do an int divide? */
+    if ( bidenom->num_comps == 1 )
+	{
+	/* Win! */
+	biquotient = bi_int_divide( binumer, bidenom->comps[0] );
+	bi_free( bidenom );
+	}
+    else
+	{
+	/* No, we have to do a full multi-by-multi divide. */
+	biquotient = multi_divide( binumer, bidenom );
+	}
+
+    if ( sign == -1 )
+	biquotient = bi_negate( biquotient );
+    return biquotient;
+    }
+Function: 
+fn neg(mut self) -> Self {
+        self.sign = !self.sign;
+        self
+    }
+Unixcoder Score: 0.007728956639766693
+--------------------------------------------------
+C_Code: 
+int
+bi_compare( bigint obia, bigint obib )
+    {
+    real_bigint bia = (real_bigint) obia;
+    real_bigint bib = (real_bigint) obib;
+    int r, c;
+
+    check( bia );
+    check( bib );
+
+    /* First check for pointer equality. */
+    if ( bia == bib )
+	r = 0;
+    else
+	{
+	/* Compare signs. */
+	if ( bia->sign > bib->sign )
+	    r = 1;
+	else if ( bia->sign < bib->sign )
+	    r = -1;
+	/* Signs are the same.  Check the number of components. */
+	else if ( bia->num_comps > bib->num_comps )
+	    r = bia->sign;
+	else if ( bia->num_comps < bib->num_comps )
+	    r = -bia->sign;
+	else
+	    {
+	    /* Same number of components.  Compare starting from the high end
+	    ** and working down.
+	    */
+	    r = 0;	/* if we complete the loop, the numbers are equal */
+	    for ( c = bia->num_comps - 1; c >= 0; --c )
+		{
+		if ( bia->comps[c] > bib->comps[c] )
+		    { r = bia->sign; break; }
+		else if ( bia->comps[c] < bib->comps[c] )
+		    { r = -bia->sign; break; }
+		}
+	    }
+	}
+
+    bi_free( bia );
+    bi_free( bib );
+    return r;
+    }
+Function: 
+fn le(&self, other: &BigInt) -> bool { self.cmp(other) <= 0 }
+Unixcoder Score: 0.007563519291579723
+--------------------------------------------------
+C_Code: 
+int
+bi_compare( bigint obia, bigint obib )
+    {
+    real_bigint bia = (real_bigint) obia;
+    real_bigint bib = (real_bigint) obib;
+    int r, c;
+
+    check( bia );
+    check( bib );
+
+    /* First check for pointer equality. */
+    if ( bia == bib )
+	r = 0;
+    else
+	{
+	/* Compare signs. */
+	if ( bia->sign > bib->sign )
+	    r = 1;
+	else if ( bia->sign < bib->sign )
+	    r = -1;
+	/* Signs are the same.  Check the number of components. */
+	else if ( bia->num_comps > bib->num_comps )
+	    r = bia->sign;
+	else if ( bia->num_comps < bib->num_comps )
+	    r = -bia->sign;
+	else
+	    {
+	    /* Same number of components.  Compare starting from the high end
+	    ** and working down.
+	    */
+	    r = 0;	/* if we complete the loop, the numbers are equal */
+	    for ( c = bia->num_comps - 1; c >= 0; --c )
+		{
+		if ( bia->comps[c] > bib->comps[c] )
+		    { r = bia->sign; break; }
+		else if ( bia->comps[c] < bib->comps[c] )
+		    { r = -bia->sign; break; }
+		}
+	    }
+	}
+
+    bi_free( bia );
+    bi_free( bib );
+    return r;
+    }
+Function: 
+fn lt(&self, other: &Sign) -> bool { self.cmp(other) <  0 }
+Unixcoder Score: 0.0056265066377818584
+--------------------------------------------------
+C_Code: 
+int
+bi_compare( bigint obia, bigint obib )
+    {
+    real_bigint bia = (real_bigint) obia;
+    real_bigint bib = (real_bigint) obib;
+    int r, c;
+
+    check( bia );
+    check( bib );
+
+    /* First check for pointer equality. */
+    if ( bia == bib )
+	r = 0;
+    else
+	{
+	/* Compare signs. */
+	if ( bia->sign > bib->sign )
+	    r = 1;
+	else if ( bia->sign < bib->sign )
+	    r = -1;
+	/* Signs are the same.  Check the number of components. */
+	else if ( bia->num_comps > bib->num_comps )
+	    r = bia->sign;
+	else if ( bia->num_comps < bib->num_comps )
+	    r = -bia->sign;
+	else
+	    {
+	    /* Same number of components.  Compare starting from the high end
+	    ** and working down.
+	    */
+	    r = 0;	/* if we complete the loop, the numbers are equal */
+	    for ( c = bia->num_comps - 1; c >= 0; --c )
+		{
+		if ( bia->comps[c] > bib->comps[c] )
+		    { r = bia->sign; break; }
+		else if ( bia->comps[c] < bib->comps[c] )
+		    { r = -bia->sign; break; }
+		}
+	    }
+	}
+
+    bi_free( bia );
+    bi_free( bib );
+    return r;
+    }
+Function: 
+fn ne(&self, other: &BigUint) -> bool { self.cmp(other) != 0 }
+Unixcoder Score: 0.003417424624785781
+--------------------------------------------------
+C_Code: 
+bigint
+bi_divide( bigint binumer, bigint obidenom )
+    {
+    real_bigint bidenom = (real_bigint) obidenom;
+    int sign;
+    bigint biquotient;
+
+    /* Check signs and trivial cases. */
+    sign = 1;
+    switch ( bi_compare( bi_copy( bidenom ), bi_0 ) )
+	{
+	case 0:
+	(void) fprintf( stderr, "bi_divide: divide by zero\n" );
+	(void) kill( getpid(), SIGFPE );
+	case -1:
+	sign *= -1;
+	bidenom = bi_negate( bidenom );
+	break;
+	}
+    switch ( bi_compare( bi_copy( binumer ), bi_0 ) )
+	{
+	case 0:
+	bi_free( binumer );
+	bi_free( bidenom );
+	return bi_0;
+	case -1:
+	sign *= -1;
+	binumer = bi_negate( binumer );
+	break;
+	}
+    switch ( bi_compare( bi_copy( binumer ), bi_copy( bidenom ) ) )
+	{
+	case -1:
+	bi_free( binumer );
+	bi_free( bidenom );
+	return bi_0;
+	case 0:
+	bi_free( binumer );
+	bi_free( bidenom );
+	if ( sign == 1 )
+	    return bi_1;
+	else
+	    return bi_m1;
+	}
+
+    /* Is the denominator small enough to do an int divide? */
+    if ( bidenom->num_comps == 1 )
+	{
+	/* Win! */
+	biquotient = bi_int_divide( binumer, bidenom->comps[0] );
+	bi_free( bidenom );
+	}
+    else
+	{
+	/* No, we have to do a full multi-by-multi divide. */
+	biquotient = multi_divide( binumer, bidenom );
+	}
+
+    if ( sign == -1 )
+	biquotient = bi_negate( biquotient );
+    return biquotient;
+    }
+Function: 
+fn ieee_rem(self, rhs: Self) -> StatusAnd<Self> {
+        let mut v = self;
+
+        let status;
+        v = unpack!(status=, v / rhs);
+        if status == Status::DIV_BY_ZERO {
+            return status.and(self);
+        }
+
+        assert!(Self::PRECISION < 128);
+
+        let status;
+        let x = unpack!(status=, v.to_i128_r(128, Round::NearestTiesToEven, &mut false));
+        if status == Status::INVALID_OP {
+            return status.and(self);
+        }
+
+        let status;
+        let mut v = unpack!(status=, Self::from_i128(x));
+        assert_eq!(status, Status::OK); // should always work
+
+        let status;
+        v = unpack!(status=, v * rhs);
+        assert_eq!(status - Status::INEXACT, Status::OK); // should not overflow or underflow
+
+        let status;
+        v = unpack!(status=, self - v);
+        assert_eq!(status - Status::INEXACT, Status::OK); // likewise
+
+        if v.is_zero() {
+            status.and(v.copy_sign(self)) // IEEE754 requires this
+        } else {
+            status.and(v)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_compare__idx79813_rank1.c", "source_rust_file": "API_Mapping__bi_compare__idx79813_rank1.rs", "c_api": "bi_compare( bigint obia, bigint obib )", "rust_api": "fn ge(&self, other: &BigInt) -> bool", "mapping_type": "function", "description": "Big integer greater than or equal comparison", "reasoning": "[Task Analysis] C function `bi_compare` performs a comparison of two big integers with detailed logic for sign, component count, and value comparison. Rust function `ge` is a simple comparison method that returns whether self is greater than or equal to other. [Similarity] The Rust function is a high-level abstraction that likely maps to a more complex comparison logic in the C code, but the full structural similarity is blocked by domain mismatch (low-level integer manipulation vs high-level comparison). [Knowledge Extraction] There are no full or partial structural matches due to domain mismatch and semantic differences. However, there is an API mapping between the C comparison logic and the Rust comparison method."}]
+Unixcoder Score: 0.002197219990193844
+--------------------------------------------------

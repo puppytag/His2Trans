@@ -1,0 +1,355 @@
+C_Code: 
+int rust_get_path_array(void * p, size_t * sz)
+{
+  char *path, *str;
+  char **buf;
+  int i, num;
+  size_t len;
+
+  if ((p == NULL) && (sz == NULL))
+    return -1;
+
+  /* get the length of the PATH value */
+  if (rust_get_path(NULL, &len) == -1)
+    return -1;
+
+  if (len == 0)
+    return -1;
+
+  /* allocate the buffer */
+  if ((path = calloc(len, sizeof(char))) == NULL)
+    return -1;
+
+  /* get the PATH value */
+  if (rust_get_path(path, &len) == -1)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* count the number of parts in the PATH */
+  num = 1;
+  for(str = path; *str != '\0'; str++)
+  {
+    if (*str == ':')
+      num++;
+  }
+
+  /* calculate the size of the buffer for the 2D array */
+  len = (num * sizeof(char*) + 1) + strlen(path) + 1;
+
+  if (p == NULL)
+  {
+    free(path);
+    *sz = len;
+    return 0;
+  }
+
+  /* make sure we have enough buffer space */
+  if (*sz < len)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* zero out the buffer */
+  buf = (char**)p;
+  memset(buf, 0, *sz);
+
+  /* copy the data into the right place */
+  str = p + ((num+1) * sizeof(char*));
+  memcpy(str, path, strlen(path));
+
+  /* parse the path into it's parts */
+  for (i = 0; i < num && (buf[i] = strsep(&str, ":")) != NULL; i++) {;}
+  buf[num] = NULL;
+
+  free(path);
+  return 0;
+}
+Function: 
+pub fn with_ref<T>(&self, f: &fn(*libc::c_char) -> T) -> T {
+        if self.buf.is_null() {
+            fail!("CString already wraps a `*libc::c_char`");
+        }
+        f(self.buf)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx8569_rank4.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx8569_rank4.rs", "c_api": "calloc(len, sizeof(char))", "rust_api": "Box::new", "mapping_type": "function", "description": "Memory allocation for string buffer", "reasoning": "[Task Analysis] C function `rust_get_path_array` manages memory allocation and parsing of a PATH environment variable into a 2D array, while Rust function `with_ref` is a wrapper for applying a function to a raw pointer. [Similarity] Names and domains do not match; C handles string parsing and memory management, Rust handles safe FFI access. [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to memory handling and pointer access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx8569_rank4.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx8569_rank4.rs", "c_api": "memcpy(str, path, strlen(path))", "rust_api": "ptr::copy_nonoverlapping", "mapping_type": "function", "description": "Memory copy operation", "reasoning": "[Task Analysis] C function `rust_get_path_array` manages memory allocation and parsing of a PATH environment variable into a 2D array, while Rust function `with_ref` is a wrapper for applying a function to a raw pointer. [Similarity] Names and domains do not match; C handles string parsing and memory management, Rust handles safe FFI access. [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to memory handling and pointer access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx8569_rank4.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx8569_rank4.rs", "c_api": "free(path)", "rust_api": "drop", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function `rust_get_path_array` manages memory allocation and parsing of a PATH environment variable into a 2D array, while Rust function `with_ref` is a wrapper for applying a function to a raw pointer. [Similarity] Names and domains do not match; C handles string parsing and memory management, Rust handles safe FFI access. [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to memory handling and pointer access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx8569_rank4.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx8569_rank4.rs", "c_api": "memset(buf, 0, *sz)", "rust_api": "ptr::write_bytes", "mapping_type": "function", "description": "Memory zeroing operation", "reasoning": "[Task Analysis] C function `rust_get_path_array` manages memory allocation and parsing of a PATH environment variable into a 2D array, while Rust function `with_ref` is a wrapper for applying a function to a raw pointer. [Similarity] Names and domains do not match; C handles string parsing and memory management, Rust handles safe FFI access. [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to memory handling and pointer access patterns."}]
+Unixcoder Score: -0.02844073437154293
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+fn struct_gep(&mut self, value_type: Type<'gcc>, ptr: RValue<'gcc>, idx: u64) -> RValue<'gcc> {
+        // FIXME(antoyo): it would be better if the API only called this on struct, not on arrays.
+        assert_eq!(idx as usize as u64, idx);
+        let value = ptr.dereference(None).to_rvalue();
+
+        if value_type.dyncast_array().is_some() {
+            let index = self.context.new_rvalue_from_long(self.u64_type, i64::try_from(idx).expect("i64::try_from"));
+            let element = self.context.new_array_access(None, value, index);
+            element.get_address(None)
+        }
+        else if let Some(vector_type) = value_type.dyncast_vector() {
+            let array_type = vector_type.get_element_type().make_pointer();
+            let array = self.bitcast(ptr, array_type);
+            let index = self.context.new_rvalue_from_long(self.u64_type, i64::try_from(idx).expect("i64::try_from"));
+            let element = self.context.new_array_access(None, array, index);
+            element.get_address(None)
+        }
+        else if let Some(struct_type) = value_type.is_struct() {
+            // NOTE: due to opaque pointers now being used, we need to bitcast here.
+            let ptr = self.bitcast_if_needed(ptr, value_type.make_pointer());
+            ptr.dereference_field(None, struct_type.get_field(idx as i32)).get_address(None)
+        }
+        else {
+            panic!("Unexpected type {:?}", value_type);
+        }
+    }
+Unixcoder Score: -0.05279974639415741
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+fn duplicate_heap_part(cx: &@block_ctxt, orig_vptr: ValueRef,
+                       unit_ty: ty::t) -> result {
+    // Cast to an opaque interior vector if we can't trust the pointer
+    // type.
+    let vptr;
+    if ty::type_has_dynamic_size(bcx_tcx(cx), unit_ty) {
+        vptr = cx.build.PointerCast(orig_vptr, T_ptr(T_opaque_ivec()));
+    } else { vptr = orig_vptr; }
+
+    let llunitty = type_of_or_i8(cx, unit_ty);
+    let llheappartty = T_ivec_heap_part(llunitty);
+
+    // Check to see if the vector is heapified.
+    let stack_len_ptr =
+        cx.build.InBoundsGEP(vptr, [C_int(0), C_uint(abi::ivec_elt_len)]);
+    let stack_len = cx.build.Load(stack_len_ptr);
+    let stack_len_is_zero =
+        cx.build.ICmp(lib::llvm::LLVMIntEQ, stack_len, C_int(0));
+    let maybe_on_heap_cx = new_sub_block_ctxt(cx, "maybe_on_heap");
+    let next_cx = new_sub_block_ctxt(cx, "next");
+    cx.build.CondBr(stack_len_is_zero, maybe_on_heap_cx.llbb,
+                    next_cx.llbb);
+
+    let stub_ptr =
+        maybe_on_heap_cx.build.PointerCast(vptr,
+                                           T_ptr(T_ivec_heap(llunitty)));
+    let heap_ptr_ptr =
+        maybe_on_heap_cx.build.InBoundsGEP(
+            stub_ptr,
+            [C_int(0),
+             C_uint(abi::ivec_heap_stub_elt_ptr)]);
+    let heap_ptr = maybe_on_heap_cx.build.Load(heap_ptr_ptr);
+    let heap_ptr_is_nonnull =
+        maybe_on_heap_cx.build.ICmp(lib::llvm::LLVMIntNE, heap_ptr,
+                                    C_null(T_ptr(llheappartty)));
+    let on_heap_cx = new_sub_block_ctxt(cx, "on_heap");
+    maybe_on_heap_cx.build.CondBr(heap_ptr_is_nonnull, on_heap_cx.llbb,
+                                  next_cx.llbb);
+
+    // Ok, the vector is on the heap. Copy the heap part.
+    let alen_ptr =
+        on_heap_cx.build.InBoundsGEP(
+            stub_ptr,
+            [C_int(0),
+             C_uint(abi::ivec_heap_stub_elt_alen)]);
+    let alen = on_heap_cx.build.Load(alen_ptr);
+
+    let heap_part_sz =
+        on_heap_cx.build.Add(alen, llsize_of(T_opaque_ivec_heap_part()));
+    let rs =
+        trans_shared_malloc(on_heap_cx, T_ptr(llheappartty),
+                            heap_part_sz);
+    on_heap_cx = rs.bcx;
+    let new_heap_ptr = rs.val;
+
+    rs = call_memmove(on_heap_cx, new_heap_ptr, heap_ptr, heap_part_sz);
+    on_heap_cx = rs.bcx;
+
+    on_heap_cx.build.Store(new_heap_ptr, heap_ptr_ptr);
+    on_heap_cx.build.Br(next_cx.llbb);
+
+    ret rslt(next_cx, C_nil());
+}
+Unixcoder Score: -0.05371040105819702
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+pub fn gep(&self, ptr: ValueRef, indices: &[ValueRef]) -> ValueRef {
+        self.count_insn("gep");
+        unsafe {
+            llvm::LLVMBuildGEP(self.llbuilder, ptr, vec::raw::to_ptr(indices),
+                               indices.len() as c_uint, noname())
+        }
+    }
+Unixcoder Score: -0.053801096975803375
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+fn StructGEP(cx: &@block_ctxt, Pointer: ValueRef, Idx: uint) -> ValueRef {
+    ret llvm::LLVMBuildStructGEP(*cx.build, Pointer, Idx, str::buf(""));
+}
+Unixcoder Score: -0.05398932471871376
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+pub fn get_usize<Bx: BuilderMethods<'a, 'tcx>>(
+        self,
+        bx: &mut Bx,
+        llvtable: Bx::Value,
+    ) -> Bx::Value {
+        // Load the data pointer from the object.
+        debug!("get_int({:?}, {:?})", llvtable, self);
+
+        let llty = bx.type_isize();
+        let llvtable = bx.pointercast(llvtable, bx.type_ptr_to(llty));
+        let usize_align = bx.tcx().data_layout.pointer_align.abi;
+        let gep = bx.inbounds_gep(llty, llvtable, &[bx.const_usize(self.0)]);
+        let ptr = bx.load(llty, gep, usize_align);
+        // VTable loads are invariant.
+        bx.set_invariant_load(ptr);
+        ptr
+    }
+Unixcoder Score: -0.05401764437556267
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+fn GEP(cx: &@block_ctxt, Pointer: ValueRef,
+       Indices: &[ValueRef]) -> ValueRef {
+    ret llvm::LLVMBuildGEP(*cx.build, Pointer, vec::to_ptr(Indices),
+                           vec::len(Indices), str::buf(""));
+}
+Unixcoder Score: -0.05451487377285957
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+fn gep(&mut self, _typ: Type<'gcc>, ptr: RValue<'gcc>, indices: &[RValue<'gcc>]) -> RValue<'gcc> {
+        let ptr_type = ptr.get_type();
+        let mut pointee_type = ptr.get_type();
+        // NOTE: we cannot use array indexing here like in inbounds_gep because array indexing is
+        // always considered in bounds in GCC (TODO(antoyo): to be verified).
+        // So, we have to cast to a number.
+        let mut result = self.context.new_bitcast(None, ptr, self.sizet_type);
+        // FIXME(antoyo): if there were more than 1 index, this code is probably wrong and would
+        // require dereferencing the pointer.
+        for index in indices {
+            pointee_type = pointee_type.get_pointee().expect("pointee type");
+            let pointee_size = self.context.new_rvalue_from_int(index.get_type(), pointee_type.get_size() as i32);
+            result = result + self.gcc_int_cast(*index * pointee_size, self.sizet_type);
+        }
+        self.context.new_bitcast(None, result, ptr_type)
+    }
+Unixcoder Score: -0.05452004447579384
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+fn struct_gep(&mut self, ty: &'ll Type, ptr: &'ll Value, idx: u64) -> &'ll Value {
+        assert_eq!(idx as c_uint as u64, idx);
+        unsafe { llvm::LLVMBuildStructGEP2(self.llbuilder, ty, ptr, idx as c_uint, UNNAMED) }
+    }
+Unixcoder Score: -0.054830607026815414
+--------------------------------------------------
+C_Code: 
+LLVMValueRef LLVMRustConstInBoundsGEP2(LLVMTypeRef Ty,
+                                                  LLVMValueRef ConstantVal,
+                                                  LLVMValueRef *ConstantIndices,
+                                                  unsigned NumIndices) {
+  ArrayRef<Constant *> IdxList(unwrap<Constant>(ConstantIndices, NumIndices),
+                               NumIndices);
+  Constant *Val = unwrap<Constant>(ConstantVal);
+  return wrap(ConstantExpr::getInBoundsGetElementPtr(unwrap(Ty), Val, IdxList));
+}
+Function: 
+fn inbounds_gep(
+        &mut self,
+        ty: &'ll Type,
+        ptr: &'ll Value,
+        indices: &[&'ll Value],
+    ) -> &'ll Value {
+        unsafe {
+            llvm::LLVMBuildInBoundsGEP2(
+                self.llbuilder,
+                ty,
+                ptr,
+                indices.as_ptr(),
+                indices.len() as c_uint,
+                UNNAMED,
+            )
+        }
+    }
+Unixcoder Score: -0.05540836974978447
+--------------------------------------------------

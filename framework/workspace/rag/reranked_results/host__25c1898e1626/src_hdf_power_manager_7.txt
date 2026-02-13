@@ -1,0 +1,396 @@
+C_Code: 
+void rust_scheduler::delete_this() {
+    destroy_task_threads();
+    delete launchfac;
+    delete this;
+}
+Function: 
+fn main() {
+    let mut def_err: Vec<u32> = Default::default();
+    def_err.push(0);
+
+    let mut new_err = Vec::<u32>::new();
+    new_err.push(1);
+
+    let mut cap_err = Vec::with_capacity(2);
+    cap_err.push(0);
+    cap_err.push(1);
+    cap_err.push(2);
+    if true {
+        // don't include this one
+        cap_err.push(3);
+    }
+
+    let mut cap_ok = Vec::with_capacity(10);
+    cap_ok.push(0);
+
+    new_err = Vec::new();
+    new_err.push(0);
+
+    let mut vec = Vec::new();
+    // control flow at block final expression
+    if true {
+        // no lint
+        vec.push(1);
+    }
+
+    let mut vec = Vec::with_capacity(5);
+    vec.push(1);
+    vec.push(2);
+    vec.push(3);
+    vec.push(4);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "ob->OnRunningTaskCountUpdate(...)", "rust_api": "ylong_runtime::block_on(rx).unwrap()", "mapping_type": "function", "description": "Callback invocation / result retrieval", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "RequestManagerImpl::GetInstance()->SubscribeSA()", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Service subscription / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "RequestManagerImpl::GetInstance()->SubRunCount(listener)", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Subscription request / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob)", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Observer attachment / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}]
+Unixcoder Score: 0.10359840095043182
+--------------------------------------------------
+C_Code: 
+void rust_scheduler::delete_this() {
+    destroy_task_threads();
+    delete launchfac;
+    delete this;
+}
+Function: 
+fn terminate_active_thread(&mut self) -> InterpResult<'tcx> {
+        let this = self.eval_context_mut();
+        let thread = this.active_thread_mut();
+        assert!(thread.stack.is_empty(), "only threads with an empty stack can be terminated");
+        thread.state = ThreadState::Terminated;
+
+        let current_span = this.machine.current_span();
+        for ptr in
+            this.machine.threads.thread_terminated(this.machine.data_race.as_mut(), current_span)
+        {
+            this.deallocate_ptr(ptr.into(), None, MiriMemoryKind::Tls.into())?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.c", "source_rust_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.rs", "c_api": "sys_event!", "rust_api": "sys_event!", "mapping_type": "function", "description": "System event logging for error conditions", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] The C code handles subscribing to running task count with observer pattern and IPC logic, while the Rust code implements an IPC handler for the same functionality. Both involve subscription logic, error handling, and IPC communication, but the domains are different (observer pattern vs IPC handler). The C code is a function that subscribes with error checking, while the Rust code is an IPC method that handles subscription and returns results. The structural similarity is limited to high-level concepts like subscription and error handling, but not in implementation details. No FFI calls detected. No full match due to domain mismatch (observer pattern vs IPC handler). Partial match possible in error handling and subscription logic. API mappings found for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.c", "source_rust_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.rs", "c_api": "REQUEST_HILOGE", "rust_api": "error!", "mapping_type": "function", "description": "Logging error messages", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] The C code handles subscribing to running task count with observer pattern and IPC logic, while the Rust code implements an IPC handler for the same functionality. Both involve subscription logic, error handling, and IPC communication, but the domains are different (observer pattern vs IPC handler). The C code is a function that subscribes with error checking, while the Rust code is an IPC method that handles subscription and returns results. The structural similarity is limited to high-level concepts like subscription and error handling, but not in implementation details. No FFI calls detected. No full match due to domain mismatch (observer pattern vs IPC handler). Partial match possible in error handling and subscription logic. API mappings found for IPC communication and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.c", "source_rust_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.rs", "c_fragment": "if (ret != E_OK) {\n        // IPC is failed, but observer has attached.\n        REQUEST_HILOGE(\"Subscribe running task count failed, ret: %{public}d.\", ret);\n        return ret;\n    }", "rust_fragment": "if ret != ErrorCode::ErrOk {\n            error!(\"End Service run_count subscribe, failed:{}\", ret as i32);\n            sys_event!(\n                ExecError,\n                DfxCode::INVALID_IPC_MESSAGE_A32,\n                &format!(\"End Service run_count subscribe, failed:{}\", ret as i32)\n            );\n            return Err(IpcStatusCode::Failed);\n        }", "description": "Error handling for failed subscription with logging and return value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] The C code handles subscribing to running task count with observer pattern and IPC logic, while the Rust code implements an IPC handler for the same functionality. Both involve subscription logic, error handling, and IPC communication, but the domains are different (observer pattern vs IPC handler). The C code is a function that subscribes with error checking, while the Rust code is an IPC method that handles subscription and returns results. The structural similarity is limited to high-level concepts like subscription and error handling, but not in implementation details. No FFI calls detected. No full match due to domain mismatch (observer pattern vs IPC handler). Partial match possible in error handling and subscription logic. API mappings found for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.c", "source_rust_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->AttachObserver", "rust_api": "self.run_count_manager.subscribe_run_count", "mapping_type": "method", "description": "Attaching observer to subscription manager", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] The C code handles subscribing to running task count with observer pattern and IPC logic, while the Rust code implements an IPC handler for the same functionality. Both involve subscription logic, error handling, and IPC communication, but the domains are different (observer pattern vs IPC handler). The C code is a function that subscribes with error checking, while the Rust code is an IPC method that handles subscription and returns results. The structural similarity is limited to high-level concepts like subscription and error handling, but not in implementation details. No FFI calls detected. No full match due to domain mismatch (observer pattern vs IPC handler). Partial match possible in error handling and subscription logic. API mappings found for IPC communication and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.c", "source_rust_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.rs", "c_fragment": "FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob);", "rust_fragment": "let ret = self.run_count_manager.subscribe_run_count(pid, obj);", "description": "Attaching/attaching observer to manager for subscription", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] The C code handles subscribing to running task count with observer pattern and IPC logic, while the Rust code implements an IPC handler for the same functionality. Both involve subscription logic, error handling, and IPC communication, but the domains are different (observer pattern vs IPC handler). The C code is a function that subscribes with error checking, while the Rust code is an IPC method that handles subscription and returns results. The structural similarity is limited to high-level concepts like subscription and error handling, but not in implementation details. No FFI calls detected. No full match due to domain mismatch (observer pattern vs IPC handler). Partial match possible in error handling and subscription logic. API mappings found for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.c", "source_rust_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.rs", "c_api": "return E_OK", "rust_api": "Ok(())", "mapping_type": "pattern", "description": "Successful return value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] The C code handles subscribing to running task count with observer pattern and IPC logic, while the Rust code implements an IPC handler for the same functionality. Both involve subscription logic, error handling, and IPC communication, but the domains are different (observer pattern vs IPC handler). The C code is a function that subscribes with error checking, while the Rust code is an IPC method that handles subscription and returns results. The structural similarity is limited to high-level concepts like subscription and error handling, but not in implementation details. No FFI calls detected. No full match due to domain mismatch (observer pattern vs IPC handler). Partial match possible in error handling and subscription logic. API mappings found for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.c", "source_rust_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.rs", "c_api": "RequestManagerImpl::GetInstance()->SubRunCount", "rust_api": "self.run_count_manager.subscribe_run_count", "mapping_type": "method", "description": "Subscribing to running task count via manager", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] The C code handles subscribing to running task count with observer pattern and IPC logic, while the Rust code implements an IPC handler for the same functionality. Both involve subscription logic, error handling, and IPC communication, but the domains are different (observer pattern vs IPC handler). The C code is a function that subscribes with error checking, while the Rust code is an IPC method that handles subscription and returns results. The structural similarity is limited to high-level concepts like subscription and error handling, but not in implementation details. No FFI calls detected. No full match due to domain mismatch (observer pattern vs IPC handler). Partial match possible in error handling and subscription logic. API mappings found for IPC communication and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.c", "source_rust_file": "Partial__SubscribeRunningTaskCount__idx869_rank1.rs", "c_api": "return ret", "rust_api": "return Err(IpcStatusCode::Failed)", "mapping_type": "pattern", "description": "Error return value propagation", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] The C code handles subscribing to running task count with observer pattern and IPC logic, while the Rust code implements an IPC handler for the same functionality. Both involve subscription logic, error handling, and IPC communication, but the domains are different (observer pattern vs IPC handler). The C code is a function that subscribes with error checking, while the Rust code is an IPC method that handles subscription and returns results. The structural similarity is limited to high-level concepts like subscription and error handling, but not in implementation details. No FFI calls detected. No full match due to domain mismatch (observer pattern vs IPC handler). Partial match possible in error handling and subscription logic. API mappings found for IPC communication and error handling patterns."}]
+Unixcoder Score: 0.08239075541496277
+--------------------------------------------------
+C_Code: 
+void
+rust_scheduler::exit() {
+    // Take a copy of the number of threads. After the last thread exits this
+    // scheduler will get destroyed, and our fields will cease to exist.
+    //
+    // This is also the reason we can't use the lock here (as in the other
+    // cases when accessing `threads`), after the loop the lock won't exist
+    // anymore. This is safe because this method is only called when all the
+    // task are dead, so there is no chance of a task trying to create new
+    // threads.
+    size_t current_num_threads = threads.size();
+    for(size_t i = 0; i < current_num_threads; ++i) {
+        threads[i]->get_loop()->exit();
+    }
+}
+Function: 
+pub fn wait(&mut self) {
+        match self.handles.take() {
+            Some(mut handles) => {
+                for handle in handles.mut_iter() {
+                    handle.send(Shutdown);
+                }
+            }
+            None => {}
+        }
+
+        for thread in util::replace(&mut self.threads, ~[]).move_iter() {
+            thread.join();
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__exit__idx10651_rank3.c", "source_rust_file": "Partial__exit__idx10651_rank3.rs", "c_fragment": "for(size_t i = 0; i < current_num_threads; ++i) {\n        threads[i]->get_loop()->exit();\n    }", "rust_fragment": "for thread in util::replace(&mut self.threads, ~[]).move_iter() {\n            thread.join();\n        }", "description": "Loop over thread resources and perform shutdown operation on each", "reasoning": "[Task Analysis] C function 'exit' and Rust function 'wait' both handle shutdown logic for scheduler/threads. [Similarity] Names don't match but domain is similar (thread lifecycle management). [Knowledge Extraction] Found partial structural match in loop logic and API mapping for thread shutdown pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__exit__idx10651_rank3.c", "source_rust_file": "Partial__exit__idx10651_rank3.rs", "c_api": "threads[i]->get_loop()->exit()", "rust_api": "thread.join()", "mapping_type": "method", "description": "Thread shutdown/termination", "reasoning": "[Task Analysis] C function 'exit' and Rust function 'wait' both handle shutdown logic for scheduler/threads. [Similarity] Names don't match but domain is similar (thread lifecycle management). [Knowledge Extraction] Found partial structural match in loop logic and API mapping for thread shutdown pattern."}]
+Unixcoder Score: 0.058105502277612686
+--------------------------------------------------
+C_Code: 
+void
+rust_scheduler::destroy_task_thread(rust_sched_launcher *thread) {
+    KLOG(kernel, kern, "deleting task thread: " PTR, thread);
+    delete thread;
+}
+Function: 
+fn thread_terminated(
+        &mut self,
+        mut data_race: Option<&mut data_race::GlobalState>,
+        current_span: Span,
+    ) -> Vec<Pointer<Provenance>> {
+        let mut free_tls_statics = Vec::new();
+        {
+            let mut thread_local_statics = self.thread_local_alloc_ids.borrow_mut();
+            thread_local_statics.retain(|&(_def_id, thread), &mut alloc_id| {
+                if thread != self.active_thread {
+                    // Keep this static around.
+                    return true;
+                }
+                // Delete this static from the map and from memory.
+                // We cannot free directly here as we cannot use `?` in this context.
+                free_tls_statics.push(alloc_id);
+                false
+            });
+        }
+        // Set the thread into a terminated state in the data-race detector.
+        if let Some(ref mut data_race) = data_race {
+            data_race.thread_terminated(self, current_span);
+        }
+        // Check if we need to unblock any threads.
+        let mut joined_threads = vec![]; // store which threads joined, we'll need it
+        for (i, thread) in self.threads.iter_enumerated_mut() {
+            if thread.state == ThreadState::BlockedOnJoin(self.active_thread) {
+                // The thread has terminated, mark happens-before edge to joining thread
+                if data_race.is_some() {
+                    joined_threads.push(i);
+                }
+                trace!("unblocking {:?} because {:?} terminated", i, self.active_thread);
+                thread.state = ThreadState::Enabled;
+            }
+        }
+        for &i in &joined_threads {
+            data_race.as_mut().unwrap().thread_joined(self, i, self.active_thread);
+        }
+        free_tls_statics
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateRunningTaskCount__idx858_rank3.c", "source_rust_file": "Partial__UpdateRunningTaskCount__idx858_rank3.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->GetCount()", "rust_api": "self.count", "mapping_type": "field_access", "description": "Accessing current task count value.", "reasoning": "[Task Analysis] C function calls a method on a member object, which in turn calls a static method to get a count and passes it to another method. Rust function updates a count field and notifies remotes if the count changed. [Similarity] Names do not refer to the same concept (UpdateRunningTaskCount vs change_run_count), and the logic is not structurally identical. [Knowledge Extraction] No full match due to domain mismatch (observer pattern update vs count change with notification). However, both involve updating a count and notifying listeners, so partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UpdateRunningTaskCount__idx858_rank3.c", "source_rust_file": "Partial__UpdateRunningTaskCount__idx858_rank3.rs", "c_fragment": "pInnerOb_->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount())", "rust_fragment": "self.remotes.retain(|_, remote| remote.notify_run_count(self.count as i64).is_ok())", "description": "Both involve notifying listeners about a count change.", "reasoning": "[Task Analysis] C function calls a method on a member object, which in turn calls a static method to get a count and passes it to another method. Rust function updates a count field and notifies remotes if the count changed. [Similarity] Names do not refer to the same concept (UpdateRunningTaskCount vs change_run_count), and the logic is not structurally identical. [Knowledge Extraction] No full match due to domain mismatch (observer pattern update vs count change with notification). However, both involve updating a count and notifying listeners, so partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateRunningTaskCount__idx858_rank3.c", "source_rust_file": "Partial__UpdateRunningTaskCount__idx858_rank3.rs", "c_api": "pInnerOb_->OnRunningTaskCountUpdate(...)", "rust_api": "remote.notify_run_count(...).is_ok()", "mapping_type": "function", "description": "Notifying observers of a running task count update.", "reasoning": "[Task Analysis] C function calls a method on a member object, which in turn calls a static method to get a count and passes it to another method. Rust function updates a count field and notifies remotes if the count changed. [Similarity] Names do not refer to the same concept (UpdateRunningTaskCount vs change_run_count), and the logic is not structurally identical. [Knowledge Extraction] No full match due to domain mismatch (observer pattern update vs count change with notification). However, both involve updating a count and notifying listeners, so partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: 0.03217262029647827
+--------------------------------------------------
+C_Code: 
+void
+rust_scheduler::destroy_task_thread(rust_sched_launcher *thread) {
+    KLOG(kernel, kern, "deleting task thread: " PTR, thread);
+    delete thread;
+}
+Function: 
+fn terminate_active_thread(&mut self) -> InterpResult<'tcx> {
+        let this = self.eval_context_mut();
+        let thread = this.active_thread_mut();
+        assert!(thread.stack.is_empty(), "only threads with an empty stack can be terminated");
+        thread.state = ThreadState::Terminated;
+
+        let current_span = this.machine.current_span();
+        for ptr in
+            this.machine.threads.thread_terminated(this.machine.data_race.as_mut(), current_span)
+        {
+            this.deallocate_ptr(ptr.into(), None, MiriMemoryKind::Tls.into())?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetUnavailable__idx500_rank1.c", "source_rust_file": "API_Mapping__NetUnavailable__idx500_rank1.rs", "c_api": "networkNotifier_->notify_offline()", "rust_api": "notify_offline(&self)", "mapping_type": "method", "description": "Network offline notification", "reasoning": "[Task Analysis] C function returns 0 and calls two methods, Rust function handles network offline state with logging. [Similarity] Names don't match but both handle network offline logic. [Knowledge Extraction] No full structural match due to different domains (C stub vs Rust state management), but API mapping found for notification logic."}]
+Unixcoder Score: 0.02889898791909218
+--------------------------------------------------
+C_Code: 
+void DownloadServiceAbility::OnStop()
+{
+    DOWNLOAD_HILOGI("OnStop started.");
+    if (state_ != ServiceRunningState::STATE_RUNNING) {
+        return;
+    }
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return;
+    }
+    instance->Destroy();
+    serviceHandler_ = nullptr;
+    instance_ = nullptr;
+    state_ = ServiceRunningState::STATE_NOT_START;
+    DOWNLOAD_HILOGI("OnStop end.");
+}
+Function: 
+pub fn stop(&mut self) {
+        debug!(LOG_LABEL, "stop");
+        if ServerRunState::NoStart == self.server_state {
+            return;
+        }
+        self.server_state = ServerRunState::NoStart;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx113593_rank5.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx113593_rank5.rs", "c_api": "ev_free (anfds)", "rust_api": "Vec { buf: RawVec::with_capacity_zeroed_in(n, alloc), len: n }", "mapping_type": "function", "description": "Memory deallocation and initialization", "reasoning": "[Task Analysis] C code is a loop-based cleanup function for an event loop, handling various backend resources and arrays. Rust code is a generic vector initialization function. [Similarity] No structural similarity at the function level due to different domains (resource cleanup vs vector construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to array/resource cleanup and memory allocation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx113593_rank5.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx113593_rank5.rs", "c_api": "close (evfd)", "rust_api": "ptr::write_bytes(v.as_mut_ptr(), elem as u8, n)", "mapping_type": "function", "description": "Resource cleanup and memory setting", "reasoning": "[Task Analysis] C code is a loop-based cleanup function for an event loop, handling various backend resources and arrays. Rust code is a generic vector initialization function. [Similarity] No structural similarity at the function level due to different domains (resource cleanup vs vector construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to array/resource cleanup and memory allocation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx113593_rank5.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx113593_rank5.rs", "c_api": "array_free (pending, [i])", "rust_api": "Vec::with_capacity_in(n, alloc)", "mapping_type": "function", "description": "Memory allocation for array-like structures", "reasoning": "[Task Analysis] C code is a loop-based cleanup function for an event loop, handling various backend resources and arrays. Rust code is a generic vector initialization function. [Similarity] No structural similarity at the function level due to different domains (resource cleanup vs vector construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to array/resource cleanup and memory allocation patterns."}]
+Unixcoder Score: 0.008428100496530533
+--------------------------------------------------
+C_Code: 
+void
+rust_scheduler::exit() {
+    // Take a copy of the number of threads. After the last thread exits this
+    // scheduler will get destroyed, and our fields will cease to exist.
+    //
+    // This is also the reason we can't use the lock here (as in the other
+    // cases when accessing `threads`), after the loop the lock won't exist
+    // anymore. This is safe because this method is only called when all the
+    // task are dead, so there is no chance of a task trying to create new
+    // threads.
+    size_t current_num_threads = threads.size();
+    for(size_t i = 0; i < current_num_threads; ++i) {
+        threads[i]->get_loop()->exit();
+    }
+}
+Function: 
+fn schedule(&mut self, clock: &Clock) -> InterpResult<'tcx, SchedulingAction> {
+        // This thread and the program can keep going.
+        if self.threads[self.active_thread].state == ThreadState::Enabled
+            && !self.yield_active_thread
+        {
+            // The currently active thread is still enabled, just continue with it.
+            return Ok(SchedulingAction::ExecuteStep);
+        }
+        // The active thread yielded or got terminated. Let's see if there are any timeouts to take
+        // care of. We do this *before* running any other thread, to ensure that timeouts "in the
+        // past" fire before any other thread can take an action. This ensures that for
+        // `pthread_cond_timedwait`, "an error is returned if [...] the absolute time specified by
+        // abstime has already been passed at the time of the call".
+        // <https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_cond_timedwait.html>
+        let potential_sleep_time =
+            self.timeout_callbacks.values().map(|info| info.call_time.get_wait_time(clock)).min();
+        if potential_sleep_time == Some(Duration::new(0, 0)) {
+            return Ok(SchedulingAction::ExecuteTimeoutCallback);
+        }
+        // No callbacks immediately scheduled, pick a regular thread to execute.
+        // The active thread blocked or yielded. So we go search for another enabled thread.
+        // Crucially, we start searching at the current active thread ID, rather than at 0, since we
+        // want to avoid always scheduling threads 0 and 1 without ever making progress in thread 2.
+        //
+        // `skip(N)` means we start iterating at thread N, so we skip 1 more to start just *after*
+        // the active thread. Then after that we look at `take(N)`, i.e., the threads *before* the
+        // active thread.
+        let threads = self
+            .threads
+            .iter_enumerated()
+            .skip(self.active_thread.index() + 1)
+            .chain(self.threads.iter_enumerated().take(self.active_thread.index()));
+        for (id, thread) in threads {
+            debug_assert_ne!(self.active_thread, id);
+            if thread.state == ThreadState::Enabled {
+                self.active_thread = id;
+                break;
+            }
+        }
+        self.yield_active_thread = false;
+        if self.threads[self.active_thread].state == ThreadState::Enabled {
+            return Ok(SchedulingAction::ExecuteStep);
+        }
+        // We have not found a thread to execute.
+        if self.threads.iter().all(|thread| thread.state == ThreadState::Terminated) {
+            unreachable!("all threads terminated without the main thread terminating?!");
+        } else if let Some(sleep_time) = potential_sleep_time {
+            // All threads are currently blocked, but we have unexecuted
+            // timeout_callbacks, which may unblock some of the threads. Hence,
+            // sleep until the first callback.
+            Ok(SchedulingAction::Sleep(sleep_time))
+        } else {
+            throw_machine_stop!(TerminationInfo::Deadlock);
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__exit__idx91515_rank1.c", "source_rust_file": "API_Mapping__exit__idx91515_rank1.rs", "c_api": "ThreadState::Enabled", "rust_api": "ThreadState::Enabled", "mapping_type": "type", "description": "Thread state type", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code is a scheduler exit function that iterates over threads and calls exit on their loops. Rust code is a scheduling function that handles thread scheduling logic including timeouts and thread state checks. -> [Similarity] -> No structural similarity at the function level due to different domains (scheduler exit vs thread scheduling). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to thread iteration and state checking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__exit__idx91515_rank1.c", "source_rust_file": "API_Mapping__exit__idx91515_rank1.rs", "c_api": "threads.size()", "rust_api": "self.threads.len()", "mapping_type": "function", "description": "Get number of threads", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code is a scheduler exit function that iterates over threads and calls exit on their loops. Rust code is a scheduling function that handles thread scheduling logic including timeouts and thread state checks. -> [Similarity] -> No structural similarity at the function level due to different domains (scheduler exit vs thread scheduling). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to thread iteration and state checking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__exit__idx91515_rank1.c", "source_rust_file": "API_Mapping__exit__idx91515_rank1.rs", "c_api": "threads[i]->get_loop()->exit()", "rust_api": "self.threads.iter_enumerated().skip(self.active_thread.index() + 1).chain(self.threads.iter_enumerated().take(self.active_thread.index()))", "mapping_type": "pattern", "description": "Thread iteration and exit logic", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code is a scheduler exit function that iterates over threads and calls exit on their loops. Rust code is a scheduling function that handles thread scheduling logic including timeouts and thread state checks. -> [Similarity] -> No structural similarity at the function level due to different domains (scheduler exit vs thread scheduling). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to thread iteration and state checking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__exit__idx91515_rank1.c", "source_rust_file": "API_Mapping__exit__idx91515_rank1.rs", "c_api": "threads[i]", "rust_api": "thread", "mapping_type": "pattern", "description": "Access thread by index", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code is a scheduler exit function that iterates over threads and calls exit on their loops. Rust code is a scheduling function that handles thread scheduling logic including timeouts and thread state checks. -> [Similarity] -> No structural similarity at the function level due to different domains (scheduler exit vs thread scheduling). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to thread iteration and state checking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__exit__idx91515_rank1.c", "source_rust_file": "API_Mapping__exit__idx91515_rank1.rs", "c_api": "ThreadState::Terminated", "rust_api": "ThreadState::Terminated", "mapping_type": "type", "description": "Thread state type", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code is a scheduler exit function that iterates over threads and calls exit on their loops. Rust code is a scheduling function that handles thread scheduling logic including timeouts and thread state checks. -> [Similarity] -> No structural similarity at the function level due to different domains (scheduler exit vs thread scheduling). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to thread iteration and state checking."}]
+Unixcoder Score: 0.005177759099751711
+--------------------------------------------------
+C_Code: 
+void
+rust_scheduler::exit() {
+    // Take a copy of the number of threads. After the last thread exits this
+    // scheduler will get destroyed, and our fields will cease to exist.
+    //
+    // This is also the reason we can't use the lock here (as in the other
+    // cases when accessing `threads`), after the loop the lock won't exist
+    // anymore. This is safe because this method is only called when all the
+    // task are dead, so there is no chance of a task trying to create new
+    // threads.
+    size_t current_num_threads = threads.size();
+    for(size_t i = 0; i < current_num_threads; ++i) {
+        threads[i]->get_loop()->exit();
+    }
+}
+Function: 
+fn thread_terminated(
+        &mut self,
+        mut data_race: Option<&mut data_race::GlobalState>,
+        current_span: Span,
+    ) -> Vec<Pointer<Provenance>> {
+        let mut free_tls_statics = Vec::new();
+        {
+            let mut thread_local_statics = self.thread_local_alloc_ids.borrow_mut();
+            thread_local_statics.retain(|&(_def_id, thread), &mut alloc_id| {
+                if thread != self.active_thread {
+                    // Keep this static around.
+                    return true;
+                }
+                // Delete this static from the map and from memory.
+                // We cannot free directly here as we cannot use `?` in this context.
+                free_tls_statics.push(alloc_id);
+                false
+            });
+        }
+        // Set the thread into a terminated state in the data-race detector.
+        if let Some(ref mut data_race) = data_race {
+            data_race.thread_terminated(self, current_span);
+        }
+        // Check if we need to unblock any threads.
+        let mut joined_threads = vec![]; // store which threads joined, we'll need it
+        for (i, thread) in self.threads.iter_enumerated_mut() {
+            if thread.state == ThreadState::BlockedOnJoin(self.active_thread) {
+                // The thread has terminated, mark happens-before edge to joining thread
+                if data_race.is_some() {
+                    joined_threads.push(i);
+                }
+                trace!("unblocking {:?} because {:?} terminated", i, self.active_thread);
+                thread.state = ThreadState::Enabled;
+            }
+        }
+        for &i in &joined_threads {
+            data_race.as_mut().unwrap().thread_joined(self, i, self.active_thread);
+        }
+        free_tls_statics
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__exit__idx91514_rank1.c", "source_rust_file": "Partial__exit__idx91514_rank1.rs", "c_fragment": "for(size_t i = 0; i < current_num_threads; ++i) {\n        threads[i]->get_loop()->exit();\n    }", "rust_fragment": "for (i, thread) in self.threads.iter_enumerated_mut() {\n            if thread.state == ThreadState::BlockedOnJoin(self.active_thread) {\n                // The thread has terminated, mark happens-before edge to joining thread\n                if data_race.is_some() {\n                    joined_threads.push(i);\n                }\n                trace!(\"unblocking {:?} because {:?} terminated\", i, self.active_thread);\n                thread.state = ThreadState::Enabled;\n            }\n        }", "description": "Both use loops to iterate over thread collections and perform operations on each thread.", "reasoning": "[Task Analysis] C function 'rust_scheduler::exit' manages thread termination by iterating through threads and calling exit on their loops. Rust function 'thread_terminated' handles thread cleanup, including TLS statics and data-race detection, with similar loop constructs for thread iteration. [Similarity] Both functions iterate over thread collections, but the domains differ: C manages scheduler lifecycle and thread exit, while Rust handles thread state transitions and memory cleanup. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, partial matching exists in loop patterns and thread iteration logic. No API mappings due to semantic mismatch in operations and data structures."}]
+Unixcoder Score: -0.0018473573727533221
+--------------------------------------------------
+C_Code: 
+void FwkIRunningTaskObserver::UpdateRunningTaskCount()
+{
+    pInnerOb_->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+}
+Function: 
+pub(crate) fn task_unload() {
+    let instance = RequestTaskCount::get_instance();
+    let mut task_count = instance.lock().unwrap();
+    if task_count.load_state {
+        let completed = task_count.completed_task_count;
+        let failed = task_count.failed_task_count;
+        sys_event!(
+            ExecError,
+            DfxCode::TASK_STATISTICS,
+            &format!("Task Completed {}, failed {}", completed, failed)
+        );
+        task_count.completed_task_count = 0;
+        task_count.failed_task_count = 0;
+        task_count.load_state = false;
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx120496_rank5.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx120496_rank5.rs", "c_api": "ev_free (anfds)", "rust_api": "assert!(self.data.insert(handle, x).is_none())", "mapping_type": "function", "description": "Memory deallocation and data insertion", "reasoning": "[Task Analysis] C code is a loop-based cleanup function for an event loop, handling various backend resources and arrays. Rust code is a memory allocation function for a handle manager. [Similarity] No structural similarity at the function level due to different domains (event loop cleanup vs handle allocation). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to resource management and array operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx120496_rank5.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx120496_rank5.rs", "c_api": "array_free (pending, [i])", "rust_api": "self.data.insert(handle, x).is_none()", "mapping_type": "function", "description": "Resource cleanup and insertion check", "reasoning": "[Task Analysis] C code is a loop-based cleanup function for an event loop, handling various backend resources and arrays. Rust code is a memory allocation function for a handle manager. [Similarity] No structural similarity at the function level due to different domains (event loop cleanup vs handle allocation). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to resource management and array operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx120496_rank5.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx120496_rank5.rs", "c_api": "close (evfd)", "rust_api": "let counter = self.counter.fetch_add(1, Ordering::SeqCst)", "mapping_type": "function", "description": "Resource closing and counter increment", "reasoning": "[Task Analysis] C code is a loop-based cleanup function for an event loop, handling various backend resources and arrays. Rust code is a memory allocation function for a handle manager. [Similarity] No structural similarity at the function level due to different domains (event loop cleanup vs handle allocation). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to resource management and array operations."}]
+Unixcoder Score: -0.0020989016629755497
+--------------------------------------------------
+C_Code: 
+void
+rust_scheduler::allow_exit() {
+    bool need_exit = false;
+    {
+        scoped_lock with(lock);
+        may_exit = true;
+        need_exit = live_tasks == 0;
+    }
+    if (need_exit) {
+        exit();
+    }
+}
+Function: 
+pub fn try_lock<'a>(&'a mut self) -> Option<Guard<'a>> {
+        self.lock.try_lock()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__allow_exit__idx78011_rank5.c", "source_rust_file": "API_Mapping__allow_exit__idx78011_rank5.rs", "c_api": "scoped_lock with(lock)", "rust_api": "self.lock.try_lock()", "mapping_type": "pattern", "description": "Acquire a scoped lock on a mutex", "reasoning": "[Task Analysis] C function `rust_scheduler::allow_exit()` manages thread exit logic with locking and condition checking. Rust function `try_lock` is a simple wrapper around a mutex lock attempt. [Similarity] No structural similarity at the block level; C has a complex control flow with scoped lock and conditional exit, while Rust just returns an Option from a lock attempt. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping between C's scoped lock and Rust's try_lock operation."}]
+Unixcoder Score: -0.002151462947949767
+--------------------------------------------------

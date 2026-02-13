@@ -1,0 +1,407 @@
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Unixcoder Score: 0.03600572422146797
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Unixcoder Score: -0.0071547552943229675
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "free", "rust_api": "free", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_fragment": "for (uint32_t i = 0; i < certs->len; i++) {\n        FreeCertData(certs->certDataList[i]);\n    }\n    free(certs->certDataList);\n    free(certs);", "rust_fragment": "for item in c_cert_list_ptr.iter() {\n            let cert = unsafe { &**item };\n            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };\n            match Certificate::from_pem(cert_slice) {\n                Ok(cert) => {\n                    certificates.push(cert);\n                }\n                Err(e) => {\n                    error!(\"parse security cert path failed, error is {:?}\", e);\n                    return;\n                }\n            };\n        }\n        unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Both iterate over a list of certificate data and free memory, though Rust also includes parsing logic.", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory deallocation of certificate data list", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertData", "rust_api": "FreeCertData", "mapping_type": "function", "description": "Free individual certificate data", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}]
+Unixcoder Score: -0.007820884697139263
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn build_task_certificate_pins(
+    config: &TaskConfig,
+) -> Result<Option<PubKeyPins>, Box<dyn Error + Send + Sync>> {
+    if config.certificate_pins.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(cvt_res_error!(
+        PubKeyPins::builder()
+            .add(&config.url, &config.certificate_pins)
+            .build()
+            .map_err(Box::new),
+        "Create task certificate pinned_key failed",
+    )))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertData__idx555_rank5.c", "source_rust_file": "Partial__FreeCertData__idx555_rank5.rs", "c_fragment": "if (cert == nullptr) {\n        return;\n    }\n\n    if (cert->data != nullptr) {\n        free(cert->data);\n        cert->data = nullptr;\n    }\n    cert->size = 0;\n    free(cert);", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Memory deallocation pattern: freeing allocated memory for certificate data and list.", "reasoning": "[Task Analysis] C function frees memory allocated for a cert struct and its data; Rust function retrieves cert data via FFI, processes it, and updates cert info. [Similarity] No full structural match due to different domains (memory cleanup vs data processing), but partial matching fragments exist in memory handling patterns. [Knowledge Extraction] Extract API mappings for memory deallocation and data processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertData__idx555_rank5.c", "source_rust_file": "Partial__FreeCertData__idx555_rank5.rs", "c_api": "free(cert)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation for certificate struct", "reasoning": "[Task Analysis] C function frees memory allocated for a cert struct and its data; Rust function retrieves cert data via FFI, processes it, and updates cert info. [Similarity] No full structural match due to different domains (memory cleanup vs data processing), but partial matching fragments exist in memory handling patterns. [Knowledge Extraction] Extract API mappings for memory deallocation and data processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertData__idx555_rank5.c", "source_rust_file": "Partial__FreeCertData__idx555_rank5.rs", "c_api": "free(cert->data)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation for certificate data", "reasoning": "[Task Analysis] C function frees memory allocated for a cert struct and its data; Rust function retrieves cert data via FFI, processes it, and updates cert info. [Similarity] No full structural match due to different domains (memory cleanup vs data processing), but partial matching fragments exist in memory handling patterns. [Knowledge Extraction] Extract API mappings for memory deallocation and data processing patterns."}]
+Unixcoder Score: -0.020505594089627266
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank4.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank4.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory cleanup function for certificate data list", "reasoning": "[Task Analysis] C function FreeCertDataList calls a C++ method, Rust function update_system_cert manages certificate data and calls the same C function via FFI. [Similarity] The C function is a thin wrapper around a C++ method, while the Rust function contains the full logic including FFI call to FreeCertDataList. [Knowledge Extraction] Full structural match in the FFI call pattern, partial match in the certificate processing logic, and API mapping for FreeCertDataList between C and Rust."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank4.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank4.rs", "c_fragment": "void FreeCertDataList(struct CRequestCerts *certs)\n{\n    RequestCertManager::GetInstance().FreeCertDataList(certs);\n}", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "C function FreeCertDataList calls a C++ method, Rust function calls the same C function via FFI.", "reasoning": "[Task Analysis] C function FreeCertDataList calls a C++ method, Rust function update_system_cert manages certificate data and calls the same C function via FFI. [Similarity] The C function is a thin wrapper around a C++ method, while the Rust function contains the full logic including FFI call to FreeCertDataList. [Knowledge Extraction] Full structural match in the FFI call pattern, partial match in the certificate processing logic, and API mapping for FreeCertDataList between C and Rust."}]
+Unixcoder Score: -0.02337092161178589
+--------------------------------------------------
+C_Code: 
+uint32_t VerifyCert(const CertBlob *cert, const CertBlob *caCert)
+{
+    uint32_t verifyResult = SSL_X509_V_ERR_UNSPECIFIED;
+    X509 *certX509 = nullptr;
+    X509 *caX509 = nullptr;
+    X509_STORE *store = nullptr;
+    X509_STORE_CTX *ctx = nullptr;
+    do {
+        certX509 = CertBlobToX509(cert);
+        if (certX509 == nullptr) {
+            NETSTACK_LOGE("x509 of cert is nullptr\n");
+        }
+        caX509 = CertBlobToX509(caCert);
+        if (caX509 == nullptr) {
+            NETSTACK_LOGE("x509 of ca is nullptr\n");
+        }
+        store = X509_STORE_new();
+        if (store == nullptr) {
+            continue;
+        }
+        if (X509_STORE_add_cert(store, caX509) != VERIFY_RESULT_SUCCESS) {
+            NETSTACK_LOGE("add ca to store failed\n");
+        }
+        ctx = X509_STORE_CTX_new();
+        if (ctx == nullptr) {
+            continue;
+        }
+        X509_STORE_CTX_init(ctx, store, certX509, nullptr);
+        verifyResult = static_cast<uint32_t>(X509_verify_cert(ctx));
+        if (verifyResult != VERIFY_RESULT_SUCCESS) {
+            verifyResult = static_cast<uint32_t>(X509_STORE_CTX_get_error(ctx) + SSL_ERROR_CODE_BASE);
+            NETSTACK_LOGE("failed to verify certificate: %{public}s (%{public}d)\n",
+                          X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)), verifyResult);
+            break;
+        } else {
+            verifyResult = X509_V_OK;
+            NETSTACK_LOGD("certificate validation succeeded.\n");
+        }
+    } while (false);
+
+    FreeResources(&certX509, &caX509, &store, &ctx);
+    return verifyResult;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSystemProcessInfoInner__idx4895_rank2.c", "source_rust_file": "API_Mapping__GetSystemProcessInfoInner__idx4895_rank2.rs", "c_api": "GetSystemProcessInfo(systemAbilityId, processInfo)", "rust_api": "GetSystemProcessInfo(said)", "mapping_type": "function", "description": "Retrieving system process info", "reasoning": "[Task Analysis] C function handles IPC message processing with permission checks and data serialization; Rust function is a wrapper that logs and calls a system function. [Similarity] Names don't match (SystemAbilityManagerStub::GetSystemProcessInfoInner vs get_system_process_info), but both involve retrieving system process info. [Knowledge Extraction] No full structural match due to different domains (IPC handling vs simple function call). However, there are API mappings for logging and system process info retrieval."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSystemProcessInfoInner__idx4895_rank2.c", "source_rust_file": "API_Mapping__GetSystemProcessInfoInner__idx4895_rank2.rs", "c_api": "HILOGI(\"GetSystemProcessInfoInner called\")", "rust_api": "info!(\"get system ability {} process info\", said)", "mapping_type": "function", "description": "Logging with debug level", "reasoning": "[Task Analysis] C function handles IPC message processing with permission checks and data serialization; Rust function is a wrapper that logs and calls a system function. [Similarity] Names don't match (SystemAbilityManagerStub::GetSystemProcessInfoInner vs get_system_process_info), but both involve retrieving system process info. [Knowledge Extraction] No full structural match due to different domains (IPC handling vs simple function call). However, there are API mappings for logging and system process info retrieval."}]
+Unixcoder Score: -0.056200385093688965
+--------------------------------------------------
+C_Code: 
+static NError AsyncExec(ReaderIteratorArg &readerIterator, const string &pathStr)
+{
+    readerIterator.iterator = ::ReaderIterator(pathStr.c_str());
+    if (readerIterator.iterator == nullptr) {
+        HILOGE("Failed to read lines of the file, error: %{public}d", errno);
+        return NError(errno);
+    }
+    int ret = GetFileSize(pathStr, readerIterator.offset);
+    if (ret < 0) {
+        HILOGE("Failed to get size of the file ret %{public}d", ret);
+        return NError(ret);
+    }
+
+    return NError(ERRNO_NOERR);
+}
+Function: 
+pub(crate) unsafe fn reader_iterator(path: *const c_char) -> Result<*mut c_void, Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = CStr::from_ptr(path);
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+    Ok(Box::into_raw(Box::new(reader)) as *mut c_void)
+}
+Unixcoder Score: -0.05789843946695328
+--------------------------------------------------
+C_Code: 
+bigint
+str_to_bi( char* str )
+    {
+    int sign;
+    bigint biR;
+
+    sign = 1;
+    if ( *str == '-' )
+	{
+	sign = -1;
+	++str;
+	}
+    for ( biR = bi_0; *str >= '0' && *str <= '9'; ++str )
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), *str - '0' );
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn parse_bytes(buf: &[u8], radix: uint)
+        -> Option<BigInt> {
+        if buf.is_empty() { return None; }
+        let mut sign  = Plus;
+        let mut start = 0;
+        if buf[0] == ('-' as u8) {
+            sign  = Minus;
+            start = 1;
+        }
+        return BigUint::parse_bytes(vec::view(buf, start, buf.len()), radix)
+            .map(|bu| BigInt::from_biguint(sign, *bu));
+    }
+Unixcoder Score: -0.0584760420024395
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::GetFdDownload(const std::string &path, const Config &config, ExceptionError &error)
+{
+    // File is exist.
+    if (JsInitialize::FindDir(path)) {
+        if (config.firstInit && !config.overwrite) {
+            error.code = config.version == Version::API10 ? E_FILE_IO : E_FILE_PATH;
+            error.errInfo = "GetFd File exists and other error";
+            SysEventLog::SendSysEventLog(STATISTIC_EVENT, APP_ERROR_00, config.bundleName, "", error.errInfo);
+            return false;
+        }
+    }
+
+    FILE *file = NULL;
+    if (config.firstInit) {
+        file = fopen(path.c_str(), "w+");
+    } else {
+        file = fopen(path.c_str(), "a+");
+    }
+
+    if (file == NULL) {
+        error.code = E_FILE_IO;
+        error.errInfo = "GetFd failed to open file errno " + std::to_string(errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_00, config.bundleName, "", error.errInfo);
+        return false;
+    }
+
+    int32_t ret = chmod(path.c_str(), PathUtils::WRITE_MODE);
+    if (ret != 0) {
+        REQUEST_HILOGE("download file chmod fail: %{public}d", ret);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_01, config.bundleName, "", std::to_string(ret));
+    };
+
+    int32_t retClose = fclose(file);
+    if (retClose != 0) {
+        REQUEST_HILOGE("download fclose fail: %{public}d", ret);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, STANDARD_FAULT_02, config.bundleName, "", std::to_string(retClose));
+    }
+    return true;
+}
+Function: 
+fn create_file(path: &str) -> File {
+    File::options()
+        .read(true)
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(path)
+        .unwrap()
+}
+Unixcoder Score: -0.06037018820643425
+--------------------------------------------------
+C_Code: 
+static NError AsyncExec(ReaderIteratorArg &readerIterator, const string &pathStr)
+{
+    readerIterator.iterator = ::ReaderIterator(pathStr.c_str());
+    if (readerIterator.iterator == nullptr) {
+        HILOGE("Failed to read lines of the file, error: %{public}d", errno);
+        return NError(errno);
+    }
+    int ret = GetFileSize(pathStr, readerIterator.offset);
+    if (ret < 0) {
+        HILOGE("Failed to get size of the file ret %{public}d", ret);
+        return NError(ret);
+    }
+
+    return NError(ERRNO_NOERR);
+}
+Function: 
+pub(crate) unsafe fn next_line(iter: *mut c_void) -> Result<*mut Str, Error> {
+    if iter.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let reader = &mut *(iter as *mut BufReader<File>);
+    let mut line = String::new();
+    let len = reader.read_line(&mut line)? as c_uint;
+    if len > 0 {
+        let line_bytes = line.into_bytes();
+        let line = CString::from_vec_unchecked(line_bytes);
+        let item = Str {
+            str: line.into_raw(),
+            len,
+        };
+        Ok(Box::into_raw(Box::new(item)))
+    } else {
+        Ok(null_mut())
+    }
+}
+Unixcoder Score: -0.060383133590221405
+--------------------------------------------------

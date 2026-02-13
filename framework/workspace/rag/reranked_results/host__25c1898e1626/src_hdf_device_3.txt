@@ -1,0 +1,288 @@
+C_Code: 
+int32_t ISystemAbilityManagerMock::LoadSystemAbility(int32_t systemAbilityId, const std::string& deviceId,
+    const sptr<ISystemAbilityLoadCallback>& callback)
+{
+    return 0;
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.024240635335445404
+--------------------------------------------------
+C_Code: 
+struct PhysicalDevicePresentIdFeaturesKHR
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: 0.023091066628694534
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::LoadRemoteSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t systemAbilityId = -1;
+    bool ret = false;
+    std::string deviceId = "";
+    sptr<IRemoteObject> remoteObject = nullptr;
+    sptr<ISystemAbilityLoadCallback> callback = nullptr;
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_readData");
+        ret = data.ReadInt32(systemAbilityId);
+        if (!ret) {
+            HILOGW("LoadRemoteSystemAbilityInner read SAId invalid");
+            return ERR_INVALID_VALUE;
+        }
+        int32_t checkRet = LoadRemoteSACheck(systemAbilityId);
+        if (checkRet != ERR_OK) {
+            return checkRet;
+        }
+        deviceId = data.ReadString();
+        if (deviceId.empty()) {
+            HILOGW("LoadRemoteSystemAbilityInner read deviceId failed");
+            return ERR_INVALID_VALUE;
+        }
+        remoteObject = data.ReadRemoteObject();
+        if (remoteObject == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner read callback failed!");
+            return ERR_INVALID_VALUE;
+        }
+        callback = iface_cast<ISystemAbilityLoadCallback>(remoteObject);
+        if (callback == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner iface_cast failed!");
+            return ERR_INVALID_VALUE;
+        }
+    }
+
+    int32_t result = LoadSystemAbility(systemAbilityId, deviceId, callback);
+    HILOGD("LoadRemoteSystemAbilityInner result is %{public}d", result);
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_writeResult_" + ToString(systemAbilityId));
+        ret = reply.WriteInt32(result);
+    }
+    if (!ret) {
+        HILOGW("LoadRemoteSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        debug!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.017137560993433
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManager::NotifySystemAbilityChanged(int32_t systemAbilityId, const std::string& deviceId,
+    int32_t code, const sptr<ISystemAbilityStatusChange>& listener)
+{
+    HILOGD("NotifySystemAbilityChanged, SA:%{public}d", systemAbilityId);
+    if (listener == nullptr) {
+        HILOGE("%{public}s listener null pointer!", __func__);
+        return;
+    }
+
+    switch (code) {
+        case static_cast<uint32_t>(SamgrInterfaceCode::ADD_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnAddSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        case static_cast<uint32_t>(SamgrInterfaceCode::REMOVE_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnRemoveSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        default:
+            break;
+    }
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.011242149397730827
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::LoadSystemAbility(int32_t systemAbilityId, const std::string& deviceId,
+    const sptr<ISystemAbilityLoadCallback>& callback)
+{
+    std::string key = ToString(systemAbilityId) + "_" + deviceId;
+    {
+        lock_guard<samgr::mutex> autoLock(loadRemoteLock_);
+        auto& callbacks = remoteCallbacks_[key];
+        auto iter = std::find_if(callbacks.begin(), callbacks.end(), [callback](auto itemCallback) {
+            return callback->AsObject() == itemCallback->AsObject();
+        });
+        if (iter != callbacks.end()) {
+            HILOGI("LoadSystemAbility already existed callback object SA:%{public}d", systemAbilityId);
+            return ERR_OK;
+        }
+        if (remoteCallbackDeath_ != nullptr) {
+            bool ret = callback->AsObject()->AddDeathRecipient(remoteCallbackDeath_);
+            HILOGI("LoadSystemAbility SA:%{public}d AddDeathRecipient %{public}s",
+                systemAbilityId, ret ? "succeed" : "failed");
+        }
+        callbacks.emplace_back(callback);
+    }
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    auto task = [this, systemAbilityId, callingPid, callingUid, deviceId, callback] {
+        this->DoLoadRemoteSystemAbility(systemAbilityId, callingPid, callingUid, deviceId, callback);
+    };
+    std::thread thread(task);
+    thread.detach();
+    return ERR_OK;
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        info!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.001067622099071741
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManager::NotifySystemAbilityChanged(int32_t systemAbilityId, const std::string& deviceId,
+    int32_t code, const sptr<ISystemAbilityStatusChange>& listener)
+{
+    HILOGD("NotifySystemAbilityChanged, SA:%{public}d", systemAbilityId);
+    if (listener == nullptr) {
+        HILOGE("%{public}s listener null pointer!", __func__);
+        return;
+    }
+
+    switch (code) {
+        case static_cast<uint32_t>(SamgrInterfaceCode::ADD_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnAddSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        case static_cast<uint32_t>(SamgrInterfaceCode::REMOVE_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnRemoveSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        default:
+            break;
+    }
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.0003781465347856283
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManager::NotifySystemAbilityChanged(int32_t systemAbilityId, const std::string& deviceId,
+    int32_t code, const sptr<ISystemAbilityStatusChange>& listener)
+{
+    HILOGD("NotifySystemAbilityChanged, SA:%{public}d", systemAbilityId);
+    if (listener == nullptr) {
+        HILOGE("%{public}s listener null pointer!", __func__);
+        return;
+    }
+
+    switch (code) {
+        case static_cast<uint32_t>(SamgrInterfaceCode::ADD_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnAddSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        case static_cast<uint32_t>(SamgrInterfaceCode::REMOVE_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnRemoveSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        default:
+            break;
+    }
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.006358396261930466
+--------------------------------------------------
+C_Code: 
+void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override {}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.008199315518140793
+--------------------------------------------------
+C_Code: 
+int32_t ISystemAbilityManagerMock::LoadSystemAbility(int32_t systemAbilityId, const std::string& deviceId,
+    const sptr<ISystemAbilityLoadCallback>& callback)
+{
+    return 0;
+}
+Function: 
+pub fn load_system_ability_with_callback(said: i32, on_success: fn(), on_fail: fn()) -> i32 {
+        debug!("load system ability {}", said);
+        LoadSystemAbilityWithCallback(said, on_success, on_fail)
+    }
+Unixcoder Score: -0.010335221886634827
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        debug!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Unixcoder Score: -0.018526369705796242
+--------------------------------------------------

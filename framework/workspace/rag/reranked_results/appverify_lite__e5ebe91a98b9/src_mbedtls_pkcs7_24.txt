@@ -1,0 +1,414 @@
+C_Code: 
+bool LoadStringFromFd(int fd, string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    const off_t fileLength = lseek(fd, 0, SEEK_END);
+    if (fileLength > MAX_FILE_LENGTH) {
+        UTILS_LOGE("invalid file length(%{public}jd)!", static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    // lseek is not support the linux file node
+    if (fileLength < 0) {
+        return LoadStringFromFdToFile(fd, content);
+    }
+
+    if (fileLength == 0) {
+        return true;
+    }
+
+    content.resize(fileLength);
+    off_t loc = lseek(fd, 0, SEEK_SET);
+    if (loc == -1) {
+        UTILS_LOGE("lseek file to begin failed!");
+        return false;
+    }
+
+    const ssize_t len = read(fd, content.data(), fileLength);
+    if (len != fileLength) {
+        UTILS_LOGE("the length read from file is not equal to fileLength!len:%{public}zd,fileLen:%{public}jd",
+            len, static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_load_string_from_fd_004() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename = FILE_PATH.to_string() + ".010";
+    let content: String = "t".repeat(MAX_FILE_LENGTH);
+    create_test_file(&filename, &content);
+    let file = File::open(&filename).expect("Failed to open file");
+    let fd: RawFd = file.as_raw_fd();
+    assert!(file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, content);
+}
+Unixcoder Score: 0.0004912570584565401
+--------------------------------------------------
+C_Code: 
+bool LoadStringFromFd(int fd, string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    const off_t fileLength = lseek(fd, 0, SEEK_END);
+    if (fileLength > MAX_FILE_LENGTH) {
+        UTILS_LOGE("invalid file length(%{public}jd)!", static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    // lseek is not support the linux file node
+    if (fileLength < 0) {
+        return LoadStringFromFdToFile(fd, content);
+    }
+
+    if (fileLength == 0) {
+        return true;
+    }
+
+    content.resize(fileLength);
+    off_t loc = lseek(fd, 0, SEEK_SET);
+    if (loc == -1) {
+        UTILS_LOGE("lseek file to begin failed!");
+        return false;
+    }
+
+    const ssize_t len = read(fd, content.data(), fileLength);
+    if (len != fileLength) {
+        UTILS_LOGE("the length read from file is not equal to fileLength!len:%{public}zd,fileLen:%{public}jd",
+            len, static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_load_string_from_fd_002() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename =FILE_PATH.to_string() + ".008";
+    let content = NULL_STR.to_string();
+    create_test_file(&filename, &content);
+    let file = File::open(&filename).expect("Failed to open file");
+    let fd: RawFd = file.as_raw_fd();
+    assert!(file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, content);
+}
+Unixcoder Score: -0.018044373020529747
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_004() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = CONTENT_STR.to_string();
+    let filename = FILE_PATH.to_string() + ".021";
+    File::create(&filename).expect("Failed to create file");
+    let mut file = File::open(&filename).expect("Failed to open file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(!ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, "");
+}
+Unixcoder Score: -0.024933846667408943
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_004() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = CONTENT_STR.to_string();
+    let filename = FILE_PATH.to_string() + ".021";
+    File::create(&filename).expect("Failed to create file");
+    let mut file = File::open(&filename).expect("Failed to open file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(!ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, "");
+}
+Unixcoder Score: -0.028180772438645363
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_003() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = CONTENT_STR.to_string();
+    let filename = FILE_PATH.to_string() + ".020";
+    let mut file = File::create_new(&filename).expect("Failed to create file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, content);
+}
+Unixcoder Score: -0.03352847322821617
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_001() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut content = String::new();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(0, &content);
+    assert!(!ret);
+    ret = file_ex::ffi::RustSaveStringToFd(-1, &content);
+    assert!(!ret);
+
+    content = CONTENT_STR.to_string();
+    ret = file_ex::ffi::RustSaveStringToFd(0, &content);
+    assert!(!ret);
+    ret = file_ex::ffi::RustSaveStringToFd(-1, &content);
+    assert!(!ret);
+}
+Unixcoder Score: -0.0368688702583313
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_002() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = String::new();
+    let filename = FILE_PATH.to_string() + ".019";
+    let mut file = File::create_new(&filename).expect("Failed to create file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, "");
+}
+Unixcoder Score: -0.038278549909591675
+--------------------------------------------------
+C_Code: 
+static int
+toc_link(struct buf *ob, const struct buf *link, const struct buf *title, const struct buf *content, void *opaque)
+{
+	if (content && content->size)
+		bufput(ob, content->data, content->size);
+	return 1;
+}
+Function: 
+pub(crate) fn rewrite_links(db: &RootDatabase, markdown: &str, definition: Definition) -> String {
+    let mut cb = broken_link_clone_cb;
+    let doc = Parser::new_with_broken_link_callback(markdown, MARKDOWN_OPTIONS, Some(&mut cb));
+
+    let doc = map_links(doc, |target, title| {
+        // This check is imperfect, there's some overlap between valid intra-doc links
+        // and valid URLs so we choose to be too eager to try to resolve what might be
+        // a URL.
+        if target.contains("://") {
+            (Some(LinkType::Inline), target.to_string(), title.to_string())
+        } else {
+            // Two possibilities:
+            // * path-based links: `../../module/struct.MyStruct.html`
+            // * module-based links (AKA intra-doc links): `super::super::module::MyStruct`
+            if let Some((target, title)) = rewrite_intra_doc_link(db, definition, target, title) {
+                return (None, target, title);
+            }
+            if let Some(target) = rewrite_url_link(db, definition, target) {
+                return (Some(LinkType::Inline), target, title.to_string());
+            }
+
+            (None, target.to_string(), title.to_string())
+        }
+    });
+    let mut out = String::new();
+    cmark_resume_with_options(
+        doc,
+        &mut out,
+        None,
+        CMarkOptions { code_block_token_count: 3, ..Default::default() },
+    )
+    .ok();
+    out
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NormalContent__idx838_rank2.c", "source_rust_file": "API_Mapping__NormalContent__idx838_rank2.rs", "c_api": "normalContent->SetTitle(std::string(content.title))", "rust_api": "title: Some(parcel.read::<String>()?)", "mapping_type": "field_access", "description": "Setting title field with optional string value", "reasoning": "[Task Analysis] C function creates a NotificationNormalContent object and sets its title and text, then wraps it in a NotificationContent shared pointer. Rust function deserializes data from an IPC parcel into a NotificationConfig struct. [Similarity] Names do not refer to the same concept (NormalContent vs deserialize), and domains are different (creation vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and handling optional values, so API mappings can be extracted for field assignment and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NormalContent__idx838_rank2.c", "source_rust_file": "API_Mapping__NormalContent__idx838_rank2.rs", "c_api": "std::string(content.text)", "rust_api": "parcel.read::<String>()?", "mapping_type": "function", "description": "Converting C string to Rust string via deserialization", "reasoning": "[Task Analysis] C function creates a NotificationNormalContent object and sets its title and text, then wraps it in a NotificationContent shared pointer. Rust function deserializes data from an IPC parcel into a NotificationConfig struct. [Similarity] Names do not refer to the same concept (NormalContent vs deserialize), and domains are different (creation vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and handling optional values, so API mappings can be extracted for field assignment and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NormalContent__idx838_rank2.c", "source_rust_file": "API_Mapping__NormalContent__idx838_rank2.rs", "c_api": "std::string(content.title)", "rust_api": "parcel.read::<String>()?", "mapping_type": "function", "description": "Converting C string to Rust string via deserialization", "reasoning": "[Task Analysis] C function creates a NotificationNormalContent object and sets its title and text, then wraps it in a NotificationContent shared pointer. Rust function deserializes data from an IPC parcel into a NotificationConfig struct. [Similarity] Names do not refer to the same concept (NormalContent vs deserialize), and domains are different (creation vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and handling optional values, so API mappings can be extracted for field assignment and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NormalContent__idx838_rank2.c", "source_rust_file": "API_Mapping__NormalContent__idx838_rank2.rs", "c_api": "normalContent->SetText(std::string(content.text))", "rust_api": "text: Some(parcel.read::<String>()?)", "mapping_type": "field_access", "description": "Setting text field with optional string value", "reasoning": "[Task Analysis] C function creates a NotificationNormalContent object and sets its title and text, then wraps it in a NotificationContent shared pointer. Rust function deserializes data from an IPC parcel into a NotificationConfig struct. [Similarity] Names do not refer to the same concept (NormalContent vs deserialize), and domains are different (creation vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and handling optional values, so API mappings can be extracted for field assignment and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NormalContent__idx838_rank2.c", "source_rust_file": "API_Mapping__NormalContent__idx838_rank2.rs", "c_api": "std::make_shared<Notification::NotificationNormalContent>()", "rust_api": "NotificationConfig { ... }", "mapping_type": "type", "description": "Creating new notification config object", "reasoning": "[Task Analysis] C function creates a NotificationNormalContent object and sets its title and text, then wraps it in a NotificationContent shared pointer. Rust function deserializes data from an IPC parcel into a NotificationConfig struct. [Similarity] Names do not refer to the same concept (NormalContent vs deserialize), and domains are different (creation vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and handling optional values, so API mappings can be extracted for field assignment and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NormalContent__idx838_rank2.c", "source_rust_file": "API_Mapping__NormalContent__idx838_rank2.rs", "c_api": "return std::make_shared<Notification::NotificationContent>(normalContent)", "rust_api": "Ok(config)", "mapping_type": "function", "description": "Returning constructed object wrapped in result", "reasoning": "[Task Analysis] C function creates a NotificationNormalContent object and sets its title and text, then wraps it in a NotificationContent shared pointer. Rust function deserializes data from an IPC parcel into a NotificationConfig struct. [Similarity] Names do not refer to the same concept (NormalContent vs deserialize), and domains are different (creation vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and handling optional values, so API mappings can be extracted for field assignment and optional handling patterns."}]
+Unixcoder Score: -0.04231659322977066
+--------------------------------------------------
+C_Code: 
+DBValue CloudCursorImpl::GetExtend(OhCloudExtValueBucket *vb, const std::string &col)
+{
+    DBValue result;
+    int32_t status = ERRNO_SUCCESS;
+    auto keyStr = reinterpret_cast<const unsigned char *>(col.c_str());
+    OhCloudExtKeyName keyName = OhCloudExtKeyNameNew(keyStr, col.size());
+    OhCloudExtValueType type = OhCloudExtValueType::VALUEINNERTYPE_EMPTY;
+    void *content = nullptr;
+    size_t ctLen = 0;
+    status = OhCloudExtValueBucketGetValue(vb, keyName, &type, &content, reinterpret_cast<unsigned int *>(&ctLen));
+    if (status != ERRNO_SUCCESS || content == nullptr) {
+        return result;
+    }
+    if (col == OPERATION_KEY) {
+        auto flag = *reinterpret_cast<int *>(content);
+        result = (flag == DELETE) ? true : false;
+    } else if (col == GID_KEY) {
+        result = std::string(reinterpret_cast<char *>(content), ctLen);
+    } else if (col == CREATE_TIME_KEY) {
+        std::string createTime = std::string(reinterpret_cast<char *>(content), ctLen);
+        int64_t create = strtoll(createTime.c_str(), nullptr, 10);
+        result = create;
+    } else if (col == MODIFY_TIME_KEY) {
+        std::string modifyTime = std::string(reinterpret_cast<char *>(content), ctLen);
+        int64_t modify = strtoll(modifyTime.c_str(), nullptr, 10);
+        result = modify;
+    }
+    return result;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtValueBucketGetValue(
+    vb: *mut OhCloudExtValueBucket,
+    key_name: OhCloudExtKeyName,
+    typ: *mut OhCloudExtValueType,
+    content: *mut *const c_void,
+    len: *mut c_uint,
+) -> c_int {
+    let key = key_name.key;
+    let key_len = key_name.key_len;
+
+    if vb.is_null() || key.is_null() || typ.is_null() || content.is_null() || len.is_null() {
+        return ERRNO_NULLPTR;
+    }
+
+    let name = char_ptr_to_string(key, key_len);
+
+    let vb_struct = match OhCloudExtValueBucket::get_inner_ref(vb, SafetyCheckId::ValueBucket) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let value_struct = match vb_struct.0.get(&name) {
+        None => return ERRNO_INVALID_KEY,
+        Some(v) => v,
+    };
+
+    match value_struct {
+        ipc_conn::FieldRaw::Null => {
+            *typ = OhCloudExtValueType::EMPTY;
+            *content = null();
+            *len = 0;
+        }
+        ipc_conn::FieldRaw::Number(i) => {
+            *typ = OhCloudExtValueType::INT;
+            *content = i as *const i64 as *const c_void;
+        }
+        ipc_conn::FieldRaw::Real(f) => {
+            *typ = OhCloudExtValueType::FLOAT;
+            *content = f as *const f64 as *const c_void;
+        }
+        ipc_conn::FieldRaw::Text(s) => {
+            *typ = OhCloudExtValueType::STRING;
+            *content = s.as_ptr() as *const c_void;
+            *len = s.len() as c_uint;
+        }
+        ipc_conn::FieldRaw::Bool(b) => {
+            *typ = OhCloudExtValueType::BOOL;
+            *content = b as *const bool as *const c_void;
+        }
+        ipc_conn::FieldRaw::Blob(b) => {
+            *typ = OhCloudExtValueType::BYTES;
+            *content = b.as_ptr() as *const c_void;
+            *len = b.len() as c_uint;
+        }
+        ipc_conn::FieldRaw::Asset(a) => {
+            *typ = OhCloudExtValueType::ASSET;
+            *content = OhCloudExtCloudAsset::new(a.clone(), SafetyCheckId::CloudAsset).into_ptr()
+                as *mut c_void;
+        }
+        ipc_conn::FieldRaw::Assets(a) => {
+            *typ = OhCloudExtValueType::ASSETS;
+            let vec = VectorCffi::CloudAsset(a.0.to_vec());
+            *content = OhCloudExtVector::new(vec, SafetyCheckId::Vector).into_ptr() as *mut c_void;
+            *len = a.0.len() as c_uint;
+        }
+    }
+
+    ERRNO_SUCCESS
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.rs", "c_api": "ashmem->SetProtection(prot)", "rust_api": "ashmem.SetProtection(ashmem::PROT_READ)", "mapping_type": "method", "description": "Set protection flags on ashmem region", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to ashmem::ffi::CreateAshmemStd, ashmem::ffi::AsVoidPtr, ashmem::ffi::AsCharPtr, and other FFI functions, indicating this is an FFI wrapper. -> [Task Analysis] -> The C code performs ashmem operations like CreateAshmem, MapReadAndWriteAshmem, WriteToAshmem, ReadFromAshmem, SetProtection, UnmapAshmem, and CloseAshmem. The Rust code also performs similar operations but through FFI calls. -> [Similarity] -> While both perform similar ashmem operations, the Rust code is a test wrapper that calls FFI functions, not the actual implementation. The C code is a fuzzing test function. -> [Knowledge Extraction] -> This is a test vs test scenario with FFI wrappers, so it's marked as None due to Filter 6 (Definition vs Usage Asymmetry). However, we can extract API mappings between the FFI calls and the C operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.rs", "c_api": "ashmem->CloseAshmem()", "rust_api": "ashmem.CloseAshmem()", "mapping_type": "method", "description": "Close ashmem region", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to ashmem::ffi::CreateAshmemStd, ashmem::ffi::AsVoidPtr, ashmem::ffi::AsCharPtr, and other FFI functions, indicating this is an FFI wrapper. -> [Task Analysis] -> The C code performs ashmem operations like CreateAshmem, MapReadAndWriteAshmem, WriteToAshmem, ReadFromAshmem, SetProtection, UnmapAshmem, and CloseAshmem. The Rust code also performs similar operations but through FFI calls. -> [Similarity] -> While both perform similar ashmem operations, the Rust code is a test wrapper that calls FFI functions, not the actual implementation. The C code is a fuzzing test function. -> [Knowledge Extraction] -> This is a test vs test scenario with FFI wrappers, so it's marked as None due to Filter 6 (Definition vs Usage Asymmetry). However, we can extract API mappings between the FFI calls and the C operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.rs", "c_api": "Ashmem::CreateAshmem(name.c_str(), memorySize)", "rust_api": "ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE)", "mapping_type": "function", "description": "Create ashmem region", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to ashmem::ffi::CreateAshmemStd, ashmem::ffi::AsVoidPtr, ashmem::ffi::AsCharPtr, and other FFI functions, indicating this is an FFI wrapper. -> [Task Analysis] -> The C code performs ashmem operations like CreateAshmem, MapReadAndWriteAshmem, WriteToAshmem, ReadFromAshmem, SetProtection, UnmapAshmem, and CloseAshmem. The Rust code also performs similar operations but through FFI calls. -> [Similarity] -> While both perform similar ashmem operations, the Rust code is a test wrapper that calls FFI functions, not the actual implementation. The C code is a fuzzing test function. -> [Knowledge Extraction] -> This is a test vs test scenario with FFI wrappers, so it's marked as None due to Filter 6 (Definition vs Usage Asymmetry). However, we can extract API mappings between the FFI calls and the C operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.rs", "c_api": "ashmem->MapReadAndWriteAshmem()", "rust_api": "ashmem.MapReadAndWriteAshmem()", "mapping_type": "method", "description": "Map ashmem for read-write access", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to ashmem::ffi::CreateAshmemStd, ashmem::ffi::AsVoidPtr, ashmem::ffi::AsCharPtr, and other FFI functions, indicating this is an FFI wrapper. -> [Task Analysis] -> The C code performs ashmem operations like CreateAshmem, MapReadAndWriteAshmem, WriteToAshmem, ReadFromAshmem, SetProtection, UnmapAshmem, and CloseAshmem. The Rust code also performs similar operations but through FFI calls. -> [Similarity] -> While both perform similar ashmem operations, the Rust code is a test wrapper that calls FFI functions, not the actual implementation. The C code is a fuzzing test function. -> [Knowledge Extraction] -> This is a test vs test scenario with FFI wrappers, so it's marked as None due to Filter 6 (Definition vs Usage Asymmetry). However, we can extract API mappings between the FFI calls and the C operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.rs", "c_api": "ashmem->UnmapAshmem()", "rust_api": "ashmem.UnmapAshmem()", "mapping_type": "method", "description": "Unmap ashmem region", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to ashmem::ffi::CreateAshmemStd, ashmem::ffi::AsVoidPtr, ashmem::ffi::AsCharPtr, and other FFI functions, indicating this is an FFI wrapper. -> [Task Analysis] -> The C code performs ashmem operations like CreateAshmem, MapReadAndWriteAshmem, WriteToAshmem, ReadFromAshmem, SetProtection, UnmapAshmem, and CloseAshmem. The Rust code also performs similar operations but through FFI calls. -> [Similarity] -> While both perform similar ashmem operations, the Rust code is a test wrapper that calls FFI functions, not the actual implementation. The C code is a fuzzing test function. -> [Knowledge Extraction] -> This is a test vs test scenario with FFI wrappers, so it's marked as None due to Filter 6 (Definition vs Usage Asymmetry). However, we can extract API mappings between the FFI calls and the C operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.rs", "c_api": "ashmem->ReadFromAshmem(memoryContent.size(), 0)", "rust_api": "ashmem.ReadFromAshmem(MEMORY_CONTENT.len().try_into().expect(\"Invalid content size.\"), 0)", "mapping_type": "method", "description": "Read data from ashmem region", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to ashmem::ffi::CreateAshmemStd, ashmem::ffi::AsVoidPtr, ashmem::ffi::AsCharPtr, and other FFI functions, indicating this is an FFI wrapper. -> [Task Analysis] -> The C code performs ashmem operations like CreateAshmem, MapReadAndWriteAshmem, WriteToAshmem, ReadFromAshmem, SetProtection, UnmapAshmem, and CloseAshmem. The Rust code also performs similar operations but through FFI calls. -> [Similarity] -> While both perform similar ashmem operations, the Rust code is a test wrapper that calls FFI functions, not the actual implementation. The C code is a fuzzing test function. -> [Knowledge Extraction] -> This is a test vs test scenario with FFI wrappers, so it's marked as None due to Filter 6 (Definition vs Usage Asymmetry). However, we can extract API mappings between the FFI calls and the C operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5424_rank1.rs", "c_api": "ashmem->WriteToAshmem(memoryContent.c_str(), memoryContent.size(), 0)", "rust_api": "ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect(\"Invalid content size.\"), 0)", "mapping_type": "method", "description": "Write data to ashmem region", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to ashmem::ffi::CreateAshmemStd, ashmem::ffi::AsVoidPtr, ashmem::ffi::AsCharPtr, and other FFI functions, indicating this is an FFI wrapper. -> [Task Analysis] -> The C code performs ashmem operations like CreateAshmem, MapReadAndWriteAshmem, WriteToAshmem, ReadFromAshmem, SetProtection, UnmapAshmem, and CloseAshmem. The Rust code also performs similar operations but through FFI calls. -> [Similarity] -> While both perform similar ashmem operations, the Rust code is a test wrapper that calls FFI functions, not the actual implementation. The C code is a fuzzing test function. -> [Knowledge Extraction] -> This is a test vs test scenario with FFI wrappers, so it's marked as None due to Filter 6 (Definition vs Usage Asymmetry). However, we can extract API mappings between the FFI calls and the C operations."}]
+Unixcoder Score: -0.06343509256839752
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_003() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = CONTENT_STR.to_string();
+    let filename = FILE_PATH.to_string() + ".020";
+    let mut file = File::create_new(&filename).expect("Failed to create file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, content);
+}
+Unixcoder Score: -0.0670960545539856
+--------------------------------------------------

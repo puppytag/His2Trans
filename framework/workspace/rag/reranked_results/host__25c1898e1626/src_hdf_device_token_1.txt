@@ -1,0 +1,189 @@
+C_Code: 
+bool IsCalledByHAP(uint32_t tokenId)
+{
+    return AccessTokenKit::GetTokenTypeFlag(tokenId) == ATokenTypeEnum::TOKEN_HAP;
+}
+Function: 
+pub(crate) fn is_called_by_hap() -> bool {
+    let token_id = ipc::Skeleton::calling_token_id();
+    ffi::IsCalledByHAP(token_id)
+}
+Unixcoder Score: 0.041515350341796875
+--------------------------------------------------
+C_Code: 
+bool IsCalledByHAP(uint32_t tokenId)
+{
+    return AccessTokenKit::GetTokenTypeFlag(tokenId) == ATokenTypeEnum::TOKEN_HAP;
+}
+Function: 
+pub(crate) fn call_once<F: FnOnce()>(once: &Once, func: F) {
+    once.call_once(Box::new(func) as Box<dyn FnOnce()>)
+}
+Unixcoder Score: 0.039860282093286514
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        debug!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Unixcoder Score: 0.03748314455151558
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn self_token_id() -> u64 {
+        GetSelfTokenID()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__IsCalledByHAP__idx909_rank3.c", "source_rust_file": "API_Mapping__IsCalledByHAP__idx909_rank3.rs", "c_api": "AccessTokenKit::GetTokenTypeFlag", "rust_api": "once.call_once", "mapping_type": "function", "description": "Token type checking and once-only execution logic", "reasoning": "[Task Analysis] C function checks token type using AccessTokenKit, Rust function handles once-only execution. [Similarity] Names don't refer to same concept, no structural similarity. [Knowledge Extraction] No full/partial match. API mapping: C's AccessTokenKit::GetTokenTypeFlag vs Rust's call_once pattern (both handle token/type logic)."}]
+Unixcoder Score: 0.03677394986152649
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Unixcoder Score: 0.02901996672153473
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.017827987670898438
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.00695384806022048
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Unixcoder Score: 0.00386823620647192
+--------------------------------------------------
+C_Code: 
+bool CheckSystemHapPermission(void)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;
+}
+Function: 
+pub(crate) fn check_system_permission(attrs: &AssetMap) -> Result<()> {
+    if attrs.get(&Tag::UserId).is_some() {
+        if unsafe { !CheckSystemHapPermission() } {
+            return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
+        }
+
+        let permission = CString::new("ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS").unwrap();
+        if unsafe { !CheckPermission(permission.as_ptr()) } {
+            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+        }
+
+        let uid = Skeleton::calling_uid();
+        let user_id = get_user_id(uid)?;
+        if user_id > ROOT_USER_UPPERBOUND {
+            return log_throw_error!(
+                ErrCode::AccessDenied,
+                "[FATAL]The caller user_id is: {}. Not in range[0, 99]",
+                user_id
+            );
+        }
+    }
+    Ok(())
+}
+Unixcoder Score: 0.003603248158469796
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.0035341258626431227
+--------------------------------------------------

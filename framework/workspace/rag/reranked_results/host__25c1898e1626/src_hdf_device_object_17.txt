@@ -1,0 +1,228 @@
+C_Code: 
+void CesStateListener::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HILOGI("DeviceSwitchCollect OnRemoveSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.035668328404426575
+--------------------------------------------------
+C_Code: 
+inline void SystemAbilityWrapper::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
+{
+    ability_->OnRemoveSystemAbility(systemAbilityId, deviceId);
+}
+Function: 
+fn on_system_ability_remove_event(&self, said: i32, device_id: String) {}
+Unixcoder Score: 0.02918124571442604
+--------------------------------------------------
+C_Code: 
+inline void SystemAbilityWrapper::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
+{
+    ability_->OnRemoveSystemAbility(systemAbilityId, deviceId);
+}
+Function: 
+pub fn remove_system_ability_listen(&self, system_ability_id: i32) -> bool {
+        let system_ability = unsafe { Pin::new_unchecked(&mut *self.inner) };
+        system_ability.RemoveSystemAbilityListener(system_ability_id)
+    }
+Unixcoder Score: 0.028256146237254143
+--------------------------------------------------
+C_Code: 
+inline void SystemAbilityWrapper::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
+{
+    ability_->OnRemoveSystemAbility(systemAbilityId, deviceId);
+}
+Function: 
+fn on_system_ability_load_event(&self, said: i32, device_id: String) {}
+Unixcoder Score: 0.02500334195792675
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::LoadRemoteSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t systemAbilityId = -1;
+    bool ret = false;
+    std::string deviceId = "";
+    sptr<IRemoteObject> remoteObject = nullptr;
+    sptr<ISystemAbilityLoadCallback> callback = nullptr;
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_readData");
+        ret = data.ReadInt32(systemAbilityId);
+        if (!ret) {
+            HILOGW("LoadRemoteSystemAbilityInner read SAId invalid");
+            return ERR_INVALID_VALUE;
+        }
+        int32_t checkRet = LoadRemoteSACheck(systemAbilityId);
+        if (checkRet != ERR_OK) {
+            return checkRet;
+        }
+        deviceId = data.ReadString();
+        if (deviceId.empty()) {
+            HILOGW("LoadRemoteSystemAbilityInner read deviceId failed");
+            return ERR_INVALID_VALUE;
+        }
+        remoteObject = data.ReadRemoteObject();
+        if (remoteObject == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner read callback failed!");
+            return ERR_INVALID_VALUE;
+        }
+        callback = iface_cast<ISystemAbilityLoadCallback>(remoteObject);
+        if (callback == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner iface_cast failed!");
+            return ERR_INVALID_VALUE;
+        }
+    }
+
+    int32_t result = LoadSystemAbility(systemAbilityId, deviceId, callback);
+    HILOGD("LoadRemoteSystemAbilityInner result is %{public}d", result);
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_writeResult_" + ToString(systemAbilityId));
+        ret = reply.WriteInt32(result);
+    }
+    if (!ret) {
+        HILOGW("LoadRemoteSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        debug!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.022405914962291718
+--------------------------------------------------
+C_Code: 
+inline void SystemAbilityWrapper::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
+{
+    ability_->OnRemoveSystemAbility(systemAbilityId, deviceId);
+}
+Function: 
+pub fn remove_system_ability_listen(&self, system_ability_id: i32) -> bool {
+        let system_ability = unsafe { Pin::new_unchecked(&mut *self.inner) };
+        system_ability.RemoveSystemAbilityListener(system_ability_id)
+    }
+Unixcoder Score: 0.016508977860212326
+--------------------------------------------------
+C_Code: 
+void CesStateListener::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HILOGI("DeviceSwitchCollect OnRemoveSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.009565139189362526
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::LoadRemoteSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t systemAbilityId = -1;
+    bool ret = false;
+    std::string deviceId = "";
+    sptr<IRemoteObject> remoteObject = nullptr;
+    sptr<ISystemAbilityLoadCallback> callback = nullptr;
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_readData");
+        ret = data.ReadInt32(systemAbilityId);
+        if (!ret) {
+            HILOGW("LoadRemoteSystemAbilityInner read SAId invalid");
+            return ERR_INVALID_VALUE;
+        }
+        int32_t checkRet = LoadRemoteSACheck(systemAbilityId);
+        if (checkRet != ERR_OK) {
+            return checkRet;
+        }
+        deviceId = data.ReadString();
+        if (deviceId.empty()) {
+            HILOGW("LoadRemoteSystemAbilityInner read deviceId failed");
+            return ERR_INVALID_VALUE;
+        }
+        remoteObject = data.ReadRemoteObject();
+        if (remoteObject == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner read callback failed!");
+            return ERR_INVALID_VALUE;
+        }
+        callback = iface_cast<ISystemAbilityLoadCallback>(remoteObject);
+        if (callback == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner iface_cast failed!");
+            return ERR_INVALID_VALUE;
+        }
+    }
+
+    int32_t result = LoadSystemAbility(systemAbilityId, deviceId, callback);
+    HILOGD("LoadRemoteSystemAbilityInner result is %{public}d", result);
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_writeResult_" + ToString(systemAbilityId));
+        ret = reply.WriteInt32(result);
+    }
+    if (!ret) {
+        HILOGW("LoadRemoteSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        debug!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: -0.002813558327034116
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceShaderObjectPropertiesEXT
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134537_rank2.c", "source_rust_file": "Partial__ares__remove_from_list__idx134537_rank2.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "fn remove(nobe: dlist_node<T>) { self.unlink(nobe); }", "description": "Both code blocks perform the removal of a node from a doubly-linked list structure by updating adjacent node pointers and clearing the removed node's links.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by updating pointers to remove it from the list. Rust function takes a node and unlinks it using a method call. [Similarity] Names do not match ('node' vs 'nobe', 'remove_from_list' vs 'remove'), but both represent the same core operation: removing a node from a list structure. [Knowledge Extraction] Structural fragments match in intent (removing a node from a list), and API mapping exists for the unlinking operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134537_rank2.c", "source_rust_file": "Partial__ares__remove_from_list__idx134537_rank2.rs", "c_api": "node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL", "rust_api": "self.unlink(nobe)", "mapping_type": "function", "description": "Removal of a node from a doubly-linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by updating pointers to remove it from the list. Rust function takes a node and unlinks it using a method call. [Similarity] Names do not match ('node' vs 'nobe', 'remove_from_list' vs 'remove'), but both represent the same core operation: removing a node from a list structure. [Knowledge Extraction] Structural fragments match in intent (removing a node from a list), and API mapping exists for the unlinking operation."}]
+Unixcoder Score: -0.018996650353074074
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> CheckSystemAbilityWithDeviceId(int32_t systemAbilityId, const std::string &deviceId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    auto ability = sysm->CheckSystemAbility(systemAbilityId, deviceId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.02282191812992096
+--------------------------------------------------

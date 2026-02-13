@@ -1,0 +1,346 @@
+C_Code: 
+explicit Ability(int32_t data) : data_(data)
+    {
+        sid_ = (SvcIdentity *)malloc(sizeof(SvcIdentity));
+        objectStub_ = (IpcObjectStub *)malloc(sizeof(IpcObjectStub));
+        objectStub_->func = Ability::MsgHandleInner;
+        objectStub_->args = this;
+        sid_->handle = -1;
+        sid_->token  = 1;
+        sid_->cookie = (uintptr_t)objectStub_;
+    }
+Function: 
+pub fn get_service(said: i32) -> RemoteObj
+{
+    let samgr = get_samgr().expect("samgr is not null");
+    let mut data = MsgParcel::new().expect("MsgParcel is not null");
+    match data.write(&InterFaceToken::new("ohos.samgr.accessToken")) {
+        Ok(()) => { println!("write token success") }
+        Err(val) => { println!("write token fail: {}", val) }
+    }
+    match data.write(&said) {
+        Ok(()) => { println!("write said success") }
+        Err(val) => { println!("write said fail: {}", val) }
+    }
+    let reply = samgr.send_request(2, &data, false).expect("Failed to get service");
+    let remote: RemoteObj = reply.read().expect("Failed to read remote object");
+    println!("register service result");
+    return remote;
+}
+Unixcoder Score: 0.002982313511893153
+--------------------------------------------------
+C_Code: 
+static int32_t RemoteRequest(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
+{
+    int32_t result = ERR_NONE;
+    RPC_LOG_INFO("OnRemoteRequest called.... code = %u", code);
+    switch (code) {
+        case ADD_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity *sid = (SvcIdentity *)malloc(sizeof(SvcIdentity));
+            if (sid == NULL) {
+                return ERR_FAILED;
+            }
+            ReadRemoteObject(data, sid);
+            result = AddSystemAbility(saId, sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteInt32(reply, result);
+            break;
+        }
+        case GET_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity sid;
+            result = GetSystemAbility(saId, "", &sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteRemoteObject(reply, &sid);
+            break;
+        }
+        default:
+            RPC_LOG_ERROR("unknown code %u", code);
+            break;
+    }
+    return result;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+            0
+        }
+Unixcoder Score: -0.0002557995030656457
+--------------------------------------------------
+C_Code: 
+int32_t RequestManager::AttachGroup(const std::string &gid, const std::vector<std::string> &tids)
+{
+    return RequestManagerImpl::GetInstance()->AttachGroup(gid, tids);
+}
+Function: 
+pub(crate) fn attach_group(
+        uid: u64,
+        task_ids: Vec<u32>,
+        group_id: u32,
+    ) -> (Self, Recv<ErrorCode>) {
+        let (tx, rx) = channel::<ErrorCode>();
+        (
+            Self::Service(ServiceEvent::AttachGroup(uid, task_ids, group_id, tx)),
+            Recv::new(rx),
+        )
+    }
+Unixcoder Score: -0.003093454986810684
+--------------------------------------------------
+C_Code: 
+static int32_t RemoteRequest(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
+{
+    int32_t result = ERR_NONE;
+    RPC_LOG_INFO("OnRemoteRequest called.... code = %u", code);
+    switch (code) {
+        case ADD_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity *sid = (SvcIdentity *)malloc(sizeof(SvcIdentity));
+            if (sid == NULL) {
+                return ERR_FAILED;
+            }
+            ReadRemoteObject(data, sid);
+            result = AddSystemAbility(saId, sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteInt32(reply, result);
+            break;
+        }
+        case GET_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity sid;
+            result = GetSystemAbility(saId, "", &sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteRemoteObject(reply, &sid);
+            break;
+        }
+        default:
+            RPC_LOG_ERROR("unknown code %u", code);
+            break;
+    }
+    return result;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+        R::on_remote_request(self, code, data, reply)
+    }
+Unixcoder Score: -0.008395730517804623
+--------------------------------------------------
+C_Code: 
+int32_t RequestServiceProxy::AttachGroup(const std::string &gid, const std::vector<std::string> &tids)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(gid);
+    data.WriteStringVector(tids);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_ATTACH_GROUP), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request AttachGroup, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    int code = reply.ReadInt32();
+    if (code != E_OK) {
+        REQUEST_HILOGE("End Request AttachGroup, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+    }
+    return code;
+}
+Function: 
+pub(crate) fn delete_group(
+        &self,
+        data: &mut MsgParcel,
+        reply: &mut MsgParcel,
+    ) -> IpcResult<()> {
+        let Ok(group_id) = data.read::<String>()?.parse::<u32>() else {
+            reply.write(&(ErrorCode::GroupNotFound as i32))?;
+            return Ok(());
+        };
+        let mut ret = ErrorCode::ErrOk;
+        let uid = ipc::Skeleton::calling_uid();
+        if !NotificationDispatcher::get_instance().delete_group(group_id, uid) {
+            ret = ErrorCode::GroupNotFound;
+        }
+        reply.write(&(ret as i32))?;
+        Ok(())
+    }
+Unixcoder Score: -0.021292677149176598
+--------------------------------------------------
+C_Code: 
+static int32_t RemoteRequest(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option)
+{
+    int32_t result = ERR_NONE;
+    RPC_LOG_INFO("OnRemoteRequest called.... code = %u", code);
+    switch (code) {
+        case ADD_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity *sid = (SvcIdentity *)malloc(sizeof(SvcIdentity));
+            if (sid == NULL) {
+                return ERR_FAILED;
+            }
+            ReadRemoteObject(data, sid);
+            result = AddSystemAbility(saId, sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteInt32(reply, result);
+            break;
+        }
+        case GET_SYSTEM_ABILITY_TRANSACTION: {
+            int32_t saId;
+            ReadInt32(data, &saId);
+            SvcIdentity sid;
+            result = GetSystemAbility(saId, "", &sid);
+            if (result != ERR_NONE) {
+                return result;
+            }
+            WriteRemoteObject(reply, &sid);
+            break;
+        }
+        default:
+            RPC_LOG_ERROR("unknown code %u", code);
+            break;
+    }
+    return result;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+        match code {
+            0 => {
+                parcel_remote_primitive(data, reply);
+                parcel_remote_vec(data, reply);
+            }
+            _ => unreachable!(),
+        }
+        0
+    }
+Unixcoder Score: -0.021312648430466652
+--------------------------------------------------
+C_Code: 
+int32_t SubscribeRunningTaskCount(std::shared_ptr<IRunningTaskObserver> ob)
+{
+    if (!ob) {
+        REQUEST_HILOGE("Subscribe failed because of null observer");
+        return E_OTHER;
+    }
+    if (FwkRunningTaskCountManager::GetInstance()->HasObserver()) {
+        FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob);
+        ob->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+        return E_OK;
+    }
+
+    FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob);
+    auto listener = RunCountNotifyStub::GetInstance();
+    RequestManagerImpl::GetInstance()->SubscribeSA();
+    int32_t ret = RequestManagerImpl::GetInstance()->SubRunCount(listener);
+    if (ret != E_OK) {
+        // IPC is failed, but observer has attached.
+        REQUEST_HILOGE("Subscribe running task count failed, ret: %{public}d.", ret);
+        return ret;
+    }
+    if (!FwkRunningTaskCountManager::GetInstance()->SaIsOnline()) {
+        ob->OnRunningTaskCountUpdate(0);
+    }
+    return E_OK;
+}
+Function: 
+pub(crate) fn subscribe_run_count(&self, pid: u64, obj: RemoteObj) -> ErrorCode {
+        let (tx, rx) = oneshot::channel::<ErrorCode>();
+        let event = RunCountEvent::Subscribe(pid, obj, tx);
+        self.send_event(event);
+        ylong_runtime::block_on(rx).unwrap()
+    }
+Unixcoder Score: -0.024370476603507996
+--------------------------------------------------
+C_Code: 
+inline uint64_t ToHost64(uint64_t x) { return x; }
+Function: 
+fn convert_metrics(skrifa_metrics: &Metrics) -> ffi::Metrics {
+    ffi::Metrics {
+        top: skrifa_metrics.bounds.map_or(0.0, |b| b.y_max),
+        bottom: skrifa_metrics.bounds.map_or(0.0, |b| b.y_min),
+        x_min: skrifa_metrics.bounds.map_or(0.0, |b| b.x_min),
+        x_max: skrifa_metrics.bounds.map_or(0.0, |b| b.x_max),
+        ascent: skrifa_metrics.ascent,
+        descent: skrifa_metrics.descent,
+        leading: skrifa_metrics.leading,
+        avg_char_width: skrifa_metrics.average_width.unwrap_or(0.0),
+        max_char_width: skrifa_metrics.max_width.unwrap_or(0.0),
+        x_height: -skrifa_metrics.x_height.unwrap_or(0.0),
+        cap_height: -skrifa_metrics.cap_height.unwrap_or(0.0),
+        underline_position: skrifa_metrics.underline.map_or(f32::NAN, |u| u.offset),
+        underline_thickness: skrifa_metrics.underline.map_or(f32::NAN, |u| u.thickness),
+        strikeout_position: skrifa_metrics.strikeout.map_or(f32::NAN, |s| s.offset),
+        strikeout_thickness: skrifa_metrics.strikeout.map_or(f32::NAN, |s| s.thickness),
+    }
+}
+Unixcoder Score: -0.032355889678001404
+--------------------------------------------------
+C_Code: 
+inline uint64_t ToHost64(uint64_t x) { return x; }
+Function: 
+fn convert_metrics(skrifa_metrics: &Metrics) -> ffi::Metrics {
+    ffi::Metrics {
+        top: skrifa_metrics.bounds.map_or(0.0, |b| b.y_max),
+        bottom: skrifa_metrics.bounds.map_or(0.0, |b| b.y_min),
+        x_min: skrifa_metrics.bounds.map_or(0.0, |b| b.x_min),
+        x_max: skrifa_metrics.bounds.map_or(0.0, |b| b.x_max),
+        ascent: skrifa_metrics.ascent,
+        descent: skrifa_metrics.descent,
+        leading: skrifa_metrics.leading,
+        avg_char_width: skrifa_metrics.average_width.unwrap_or(0.0),
+        max_char_width: skrifa_metrics.max_width.unwrap_or(0.0),
+        x_height: -skrifa_metrics.x_height.unwrap_or(0.0),
+        cap_height: -skrifa_metrics.cap_height.unwrap_or(0.0),
+        underline_position: skrifa_metrics.underline.map_or(f32::NAN, |u| u.offset),
+        underline_thickness: skrifa_metrics.underline.map_or(f32::NAN, |u| u.thickness),
+        strikeout_position: skrifa_metrics.strikeout.map_or(f32::NAN, |s| s.offset),
+        strikeout_thickness: skrifa_metrics.strikeout.map_or(f32::NAN, |s| s.thickness),
+    }
+}
+Unixcoder Score: -0.035530395805835724
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceHostImageCopyProperties
+Function: 
+struct BitmapMetrics {
+        // Outer glyph bearings that affect the computed bounds. We distinguish
+        // those here from `inner_bearing_*` to account for CoreText behavior in
+        // SBIX placement. Where the sbix originOffsetX/Y are applied only
+        // within the bounds. Specified in font units.
+        // 0 for CBDT, CBLC.
+        bearing_x: f32,
+        bearing_y: f32,
+        // Scale factors to scale image to 1em.
+        ppem_x: f32,
+        ppem_y: f32,
+        // Account for the fact that Sbix and CBDT/CBLC have a different origin
+        // definition.
+        placement_origin_bottom_left: bool,
+        // Specified as a pixel value, to be scaled by `ppem_*` as an
+        // offset applied to placing the image within the bounds rectangle.
+        inner_bearing_x: f32,
+        inner_bearing_y: f32,
+        // Some, but not all, bitmap glyphs have a special bitmap advance
+        advance: f32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5326_rank2.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5326_rank2.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_PROXYTYPE, proxyType, context)", "rust_api": "reqwest::Proxy::http(url)", "mapping_type": "function", "description": "Setting proxy type", "reasoning": "[FFI Check] -> The Rust code uses reqwest::Proxy::http which is a high-level HTTP client API, not a direct FFI call. [Task Analysis] -> C code configures libcurl options for HTTP proxy settings; Rust code builds a proxy builder for an HTTP client. [Similarity] -> No full structural similarity due to different domains (low-level curl config vs high-level proxy builder), different control flow, and different APIs. [Knowledge Extraction] -> No full match, but there are API mappings related to proxy configuration and HTTP handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5326_rank2.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5326_rank2.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_PROXY, host.c_str(), context)", "rust_api": "reqwest::Proxy::http(url)", "mapping_type": "function", "description": "Setting HTTP proxy configuration", "reasoning": "[FFI Check] -> The Rust code uses reqwest::Proxy::http which is a high-level HTTP client API, not a direct FFI call. [Task Analysis] -> C code configures libcurl options for HTTP proxy settings; Rust code builds a proxy builder for an HTTP client. [Similarity] -> No full structural similarity due to different domains (low-level curl config vs high-level proxy builder), different control flow, and different APIs. [Knowledge Extraction] -> No full match, but there are API mappings related to proxy configuration and HTTP handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5326_rank2.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5326_rank2.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_PROXYPORT, port, context)", "rust_api": "reqwest::Proxy::http(url)", "mapping_type": "function", "description": "Setting proxy port", "reasoning": "[FFI Check] -> The Rust code uses reqwest::Proxy::http which is a high-level HTTP client API, not a direct FFI call. [Task Analysis] -> C code configures libcurl options for HTTP proxy settings; Rust code builds a proxy builder for an HTTP client. [Similarity] -> No full structural similarity due to different domains (low-level curl config vs high-level proxy builder), different control flow, and different APIs. [Knowledge Extraction] -> No full match, but there are API mappings related to proxy configuration and HTTP handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5326_rank2.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5326_rank2.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_HTTPPROXYTUNNEL, curlTunnelValue, context)", "rust_api": "reqwest::Proxy::http(url)", "mapping_type": "function", "description": "Enabling HTTP proxy tunnel", "reasoning": "[FFI Check] -> The Rust code uses reqwest::Proxy::http which is a high-level HTTP client API, not a direct FFI call. [Task Analysis] -> C code configures libcurl options for HTTP proxy settings; Rust code builds a proxy builder for an HTTP client. [Similarity] -> No full structural similarity due to different domains (low-level curl config vs high-level proxy builder), different control flow, and different APIs. [Knowledge Extraction] -> No full match, but there are API mappings related to proxy configuration and HTTP handling."}]
+Unixcoder Score: -0.03944460675120354
+--------------------------------------------------

@@ -1,0 +1,313 @@
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn utf8_snowman() {
+    let buf = singleton("snowman ☃︎");
+    assert_eq!(
+        &buf,
+        &[
+            14, // Byte length (besides extra null terminator).
+            b's',
+            b'n',
+            b'o',
+            b'w',
+            b'm',
+            b'a',
+            b'n',
+            b' ',
+            226,
+            152,
+            131, // snowman bytes
+            239,
+            184,
+            142,    // UTF Variation selector 15
+            0,      // extra null terminator.
+            15,     // Offset to string start.
+            5 << 2, // String, W8
+            1,      // Root bytes
+        ]
+    );
+    let r = Reader::get_root(buf.as_ref()).unwrap();
+    assert_eq!(r.get_str(), Ok("snowman ☃︎"));
+}
+Unixcoder Score: 0.10154084861278534
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn read_monsters(b: &mut Bencher) {
+    let mut builder = Builder::default();
+    let mut monsters = builder.start_vector();
+    for _ in 0..100 {
+        make_monster(monsters.start_map());
+    }
+    monsters.end_vector();
+    b.bytes = builder.view().len() as u64;
+    let go = || {
+        let r = Reader::get_root(builder.view()).unwrap().as_vector();
+        assert_eq!(r.len(), 100);
+        for i in 0..100 {
+            validate_monster(r.idx(i).as_map());
+        }
+    };
+    b.iter(go);
+}
+Unixcoder Score: 0.093913234770298
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn singleton_vector_uint_4_16bit() {
+    let mut builder = Builder::default();
+    let mut v = builder.start_vector();
+    v.push(2u8);
+    v.push(3u8);
+    v.push(5u8);
+    v.end_vector();
+    let buf1 = builder.view();
+    let buf2 = singleton(&[2u8, 3, 5]);
+    assert_eq!(buf1, buf2.as_slice());
+
+    let r = Reader::get_root(buf1).unwrap().as_vector();
+    assert_eq!(r.idx(0).get_u64(), Ok(2));
+    assert_eq!(r.idx(1).get_u64(), Ok(3));
+    assert_eq!(r.idx(2).get_u64(), Ok(5));
+    assert_eq!(r.index(3).unwrap_err(), ReaderError::IndexOutOfBounds);
+}
+Unixcoder Score: 0.0892304852604866
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn read_golden_flexbuffer() {
+    let s =
+        std::fs::read("../gold_flexbuffer_example.bin").expect("Unable to read golden flexbuffer.");
+    let r = Reader::get_root(s.as_ref()).unwrap();
+    let m = r.as_map();
+
+    let vec = m.idx("vec").as_vector();
+    assert_eq!(vec.idx(0).as_i8(), -100);
+    assert_eq!(vec.idx(1).as_str(), "Fred");
+    assert_eq!(vec.idx(2).as_f32(), 4.0);
+    assert_eq!(vec.idx(3).as_blob(), Blob([77].as_ref()));
+    assert_eq!(vec.idx(4).flexbuffer_type(), FlexBufferType::Bool);
+    assert_eq!(vec.idx(4).as_bool(), false);
+    assert_eq!(vec.idx(5).as_f64(), 4.0);
+
+    let bar = m.idx("bar").as_vector();
+    for (i, &x) in [1, 2, 3].iter().enumerate() {
+        assert_eq!(bar.idx(i).as_i8(), x);
+    }
+    let bar3 = m.idx("bar3").as_vector();
+    for (i, &x) in [1, 2, 3].iter().enumerate() {
+        assert_eq!(bar3.idx(i).as_i8(), x);
+    }
+    let bools = m.idx("bools").as_vector();
+    for (i, &b) in [true, false, true, false].iter().enumerate() {
+        assert_eq!(bools.idx(i).as_bool(), b)
+    }
+
+    assert_eq!(m.idx("bool").as_bool(), true);
+    assert_eq!(m.idx("foo").as_f64(), 100.0);
+    let mymap = m.idx("mymap").as_map();
+    assert_eq!(mymap.idx("foo").as_str(), "Fred");
+}
+Unixcoder Score: 0.08734842389822006
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn store_root(buffer: &mut Vec<u8>, root: Value) {
+    let root_width = root.width_in_vector(buffer.len(), 0);
+    align(buffer, root_width);
+    store_value(buffer, root, root_width);
+    buffer.push(root.packed_type(root_width));
+    buffer.push(root_width.n_bytes() as u8);
+}
+Unixcoder Score: 0.08076602220535278
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+pub fn get_root(buffer: B) -> Result<Self, Error> {
+        let end = buffer.len();
+        if end < 3 {
+            return Err(Error::FlexbufferOutOfBounds);
+        }
+        // Last byte is the root width.
+        let root_width = BitWidth::from_nbytes(buffer[end - 1]).ok_or(Error::InvalidRootWidth)?;
+        // Second last byte is root type.
+        let (fxb_type, width) = unpack_type(buffer[end - 2])?;
+        // Location of root data. (BitWidth bits before root type)
+        let address = safe_sub(end - 2, root_width.n_bytes())?;
+        Self::new(buffer, address, fxb_type, width, root_width)
+    }
+Unixcoder Score: 0.07375772297382355
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+pub fn from_buffer<'de, T: Deserialize<'de>, B: Buffer>(
+    buf: &'de B,
+) -> Result<T, DeserializationError> {
+    let r = Reader::get_root(buf as &'de [u8])?;
+    T::deserialize(r)
+}
+Unixcoder Score: 0.06949733197689056
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+pub fn get_root(buffer: B) -> Result<Self, Error> {
+        let end = buffer.len();
+        if end < 3 {
+            return Err(Error::FlexbufferOutOfBounds);
+        }
+        // Last byte is the root width.
+        let root_width = BitWidth::from_nbytes(buffer[end - 1]).ok_or(Error::InvalidRootWidth)?;
+        // Second last byte is root type.
+        let (fxb_type, width) = unpack_type(buffer[end - 2])?;
+        // Location of root data. (BitWidth bits before root type)
+        let address = safe_sub(end - 2, root_width.n_bytes())?;
+        Self::new(buffer, address, fxb_type, width, root_width)
+    }
+Unixcoder Score: 0.06536096334457397
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn qc_reader_no_crash() {
+    fn no_crash(xs: Vec<u8>) -> bool {
+        let r = Reader::get_root(xs.as_ref());
+        r.is_err() || r.is_ok()
+    }
+    QuickCheck::new()
+        .min_tests_passed(10_000_000)
+        .quicktest(no_crash as fn(Vec<u8>) -> bool)
+        .unwrap();
+
+    no_crash(vec![0, 10 << 2 | 2, 0]);
+}
+Unixcoder Score: 0.05747256800532341
+--------------------------------------------------
+C_Code: 
+static size_t
+parse_list(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t size, int flags)
+{
+	struct buf *work = 0;
+	size_t i = 0, j;
+
+	work = rndr_newbuf(rndr, BUFFER_BLOCK);
+
+	while (i < size) {
+		j = parse_listitem(work, rndr, data + i, size - i, &flags);
+		i += j;
+
+		if (!j || (flags & MKD_LI_END))
+			break;
+	}
+
+	if (rndr->cb.list)
+		rndr->cb.list(ob, work, flags, rndr->opaque);
+	rndr_popbuf(rndr, BUFFER_BLOCK);
+	return i;
+}
+Function: 
+fn new_inner<T: TokenList<'t, Span>>(
+        tokens: T,
+        buffers: &mut Vec<Box<[Entry<'t, Span>]>>,
+        next: Option<EntryPtr>,
+    ) -> usize {
+        let (children, mut entries) = tokens.entries();
+
+        entries.push(Entry::End(next));
+        let res = buffers.len();
+        buffers.push(entries.into_boxed_slice());
+
+        for (child_idx, (subtree, tt)) in children {
+            let idx = TokenBuffer::new_inner(
+                subtree.token_trees.as_slice(),
+                buffers,
+                Some(EntryPtr(EntryId(res), child_idx + 1)),
+            );
+            buffers[res].as_mut()[child_idx] = Entry::Subtree(tt, subtree, EntryId(idx));
+        }
+
+        res
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__bi_compare__idx79780_rank2.c", "source_rust_file": "Partial__bi_compare__idx79780_rank2.rs", "c_fragment": "for ( c = bia->num_comps - 1; c >= 0; --c )\n\t\t{\n\t\tif ( bia->comps[c] > bib->comps[c] )\n\t\t    { r = bia->sign; break; }\n\t\telse if ( bia->comps[c] < bib->comps[c] )\n\t\t    { r = -bia->sign; break; }\n\t\t}", "rust_fragment": "for vec::rev_eachi(self.data) |i, elm| {\n            match (*elm, other.data[i]) {\n                (l, r) if l < r => return -1,\n                (l, r) if l > r => return  1,\n                _               => loop\n            };\n        }", "description": "Component-wise digit comparison from high to low in both C and Rust implementations.", "reasoning": "[Task Analysis] C function `bi_compare` compares two big integers by checking signs and component values; Rust function `cmp` compares two `BigUint` values by length and then digit-by-digit. [Similarity] Names don't match (`bi_compare` vs `cmp`), but both perform comparison logic. [Knowledge Extraction] Found partial structural match in loop and conditional logic, and API mapping for comparison operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_compare__idx79780_rank2.c", "source_rust_file": "Partial__bi_compare__idx79780_rank2.rs", "c_api": "bia->sign", "rust_api": "self.data", "mapping_type": "field_access", "description": "Accessing sign or data field for comparison logic.", "reasoning": "[Task Analysis] C function `bi_compare` compares two big integers by checking signs and component values; Rust function `cmp` compares two `BigUint` values by length and then digit-by-digit. [Similarity] Names don't match (`bi_compare` vs `cmp`), but both perform comparison logic. [Knowledge Extraction] Found partial structural match in loop and conditional logic, and API mapping for comparison operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_compare__idx79780_rank2.c", "source_rust_file": "Partial__bi_compare__idx79780_rank2.rs", "c_api": "bi_free( bia );\n    bi_free( bib );", "rust_api": "fn cmp(other: &BigUint) -> int", "mapping_type": "function", "description": "Memory cleanup in C corresponds to function signature in Rust.", "reasoning": "[Task Analysis] C function `bi_compare` compares two big integers by checking signs and component values; Rust function `cmp` compares two `BigUint` values by length and then digit-by-digit. [Similarity] Names don't match (`bi_compare` vs `cmp`), but both perform comparison logic. [Knowledge Extraction] Found partial structural match in loop and conditional logic, and API mapping for comparison operation."}]
+Unixcoder Score: 0.047103434801101685
+--------------------------------------------------

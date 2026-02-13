@@ -1,0 +1,253 @@
+C_Code: 
+static int32_t IpcSetMaxWorkThread(int32_t maxThreadNum)
+{
+    if (g_connector == NULL) {
+        RPC_LOG_ERROR("ipc driver not init");
+        return ERR_FAILED;
+    }
+    int32_t ret = ioctl(g_connector->fd, BINDER_SET_MAX_THREADS, &maxThreadNum);
+    return ret;
+}
+Function: 
+pub fn set_max_work_thread_num(max_thread_num: i32) -> bool {
+        SetMaxWorkThreadNum(max_thread_num)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_fragment": "(*message.mutable_map_int32_bytes())[9] = \"hello\";", "rust_fragment": "msg.map_string_string_mut().insert(\"hello\", \"world\");", "description": "Inserting key-value pairs into a map field", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_fragment": "assert_that!(msg.map_string_string().len(), eq(2));", "rust_fragment": "assert_that!(msg.map_string_string().len(), eq(2));", "description": "Checking the length of a map", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_fragment": "msg.map_string_string_mut().clear();", "rust_fragment": "msg.map_string_string_mut().clear();", "description": "Clearing all entries from a map", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_api": "msg.map_string_string().get(\"not found\")", "rust_api": "msg.map_string_string().get(\"not found\")", "mapping_type": "method", "description": "Checking for absence of a key in a map", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_api": "(*message.mutable_map_int32_bytes())[9] = \"hello\";", "rust_api": "msg.map_string_string_mut().insert(\"hello\", \"world\");", "mapping_type": "pattern", "description": "Inserting key-value pairs into a map field", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_fragment": "msg.map_string_string_mut().insert(\"fizz\", \"buzz\");", "rust_fragment": "msg.map_string_string_mut().insert(\"fizz\", \"buzz\");", "description": "Inserting key-value pairs into a map field", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_api": "msg.map_string_string().get(\"fizz\").unwrap()", "rust_api": "msg.map_string_string().get(\"fizz\").unwrap()", "mapping_type": "method", "description": "Retrieving a value from a map by key", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_fragment": "assert_that!(msg.map_string_string().len(), eq(0));", "rust_fragment": "assert_that!(msg.map_string_string().len(), eq(0));", "description": "Checking that a map is empty after clearing", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_fragment": "assert_that!(msg.map_string_string().get(\"not found\"), eq(None));", "rust_fragment": "assert_that!(msg.map_string_string().get(\"not found\"), eq(None));", "description": "Checking for absence of a key in a map", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_api": "msg.map_string_string_mut().insert(\"fizz\", \"buzz\");", "rust_api": "msg.map_string_string_mut().insert(\"fizz\", \"buzz\");", "mapping_type": "pattern", "description": "Inserting key-value pairs into a map field", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_fragment": "assert_that!(msg.map_string_string().get(\"fizz\").unwrap(), eq(\"buzz\"));", "rust_fragment": "assert_that!(msg.map_string_string().get(\"fizz\").unwrap(), eq(\"buzz\"));", "description": "Retrieving a value from a map by key", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_api": "msg.map_string_string_mut().clear();", "rust_api": "msg.map_string_string_mut().clear();", "mapping_type": "method", "description": "Clearing all entries from a map", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx6461_rank3.c", "source_rust_file": "Partial__TEST__idx6461_rank3.rs", "c_api": "msg.map_string_string().len()", "rust_api": "msg.map_string_string().len()", "mapping_type": "method", "description": "Getting the number of elements in a map", "reasoning": "[Task Analysis] C code is a Google Test case for protobuf map field reflection, Rust code is a test for mutable string map operations. [Similarity] Names don't match but both test map functionality; C uses reflection-based field access while Rust uses direct map mutation. [Knowledge Extraction] Found partial structural match in map mutation logic and API mappings for map insertion, retrieval, and clearing operations."}]
+Unixcoder Score: 0.013776546344161034
+--------------------------------------------------
+C_Code: 
+struct FT_DriverRec_
+Function: 
+struct Reader {
+    reader: png::Reader<cxx::UniquePtr<ffi::ReadTrait>>,
+    last_interlace_info: Option<png::InterlaceInfo>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7666_rank1.c", "source_rust_file": "Partial__main__idx7666_rank1.rs", "c_api": "open(pagemapPath.c_str(), O_RDONLY)", "rust_api": "read_smaps", "mapping_type": "function", "description": "Opening memory mapping files for reading", "reasoning": "[Task Analysis] C code parses command-line arguments, validates PID, opens /proc/[pid]/maps and /proc/[pid]/pagemap, reads memory mappings, and prints page info. Rust code parses command-line arguments using `getopts`, validates PID/file, builds file path, reads smaps data, and prints results. [Similarity] Both handle argument parsing, PID validation, file operations, and output formatting, but with different libraries and structures. [Knowledge Extraction] Full match blocked due to different domains (low-level memory access vs high-level CLI parsing). Partial match found in argument handling and file path construction. API mappings found in file operations and argument parsing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7666_rank1.c", "source_rust_file": "Partial__main__idx7666_rank1.rs", "c_api": "PrintUsage(argv[0])", "rust_api": "print_usage", "mapping_type": "function", "description": "Printing usage instructions on invalid input", "reasoning": "[Task Analysis] C code parses command-line arguments, validates PID, opens /proc/[pid]/maps and /proc/[pid]/pagemap, reads memory mappings, and prints page info. Rust code parses command-line arguments using `getopts`, validates PID/file, builds file path, reads smaps data, and prints results. [Similarity] Both handle argument parsing, PID validation, file operations, and output formatting, but with different libraries and structures. [Knowledge Extraction] Full match blocked due to different domains (low-level memory access vs high-level CLI parsing). Partial match found in argument handling and file path construction. API mappings found in file operations and argument parsing patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__main__idx7666_rank1.c", "source_rust_file": "Partial__main__idx7666_rank1.rs", "c_fragment": "string pid_str = argv[1];\n    if (!IsValidPid(pid_str)) {\n        PrintUsage(argv[0]);\n        return -1;\n    }", "rust_fragment": "let pid = match matches.opt_str(\"p\") {\n        Some(s) => s.parse().unwrap_or(-1),\n        None => -1,\n    };", "description": "Both validate PID from command-line input", "reasoning": "[Task Analysis] C code parses command-line arguments, validates PID, opens /proc/[pid]/maps and /proc/[pid]/pagemap, reads memory mappings, and prints page info. Rust code parses command-line arguments using `getopts`, validates PID/file, builds file path, reads smaps data, and prints results. [Similarity] Both handle argument parsing, PID validation, file operations, and output formatting, but with different libraries and structures. [Knowledge Extraction] Full match blocked due to different domains (low-level memory access vs high-level CLI parsing). Partial match found in argument handling and file path construction. API mappings found in file operations and argument parsing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7666_rank1.c", "source_rust_file": "Partial__main__idx7666_rank1.rs", "c_api": "getline(maps_file, line)", "rust_api": "read_smaps", "mapping_type": "function", "description": "Reading lines from memory mapping files", "reasoning": "[Task Analysis] C code parses command-line arguments, validates PID, opens /proc/[pid]/maps and /proc/[pid]/pagemap, reads memory mappings, and prints page info. Rust code parses command-line arguments using `getopts`, validates PID/file, builds file path, reads smaps data, and prints results. [Similarity] Both handle argument parsing, PID validation, file operations, and output formatting, but with different libraries and structures. [Knowledge Extraction] Full match blocked due to different domains (low-level memory access vs high-level CLI parsing). Partial match found in argument handling and file path construction. API mappings found in file operations and argument parsing patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__main__idx7666_rank1.c", "source_rust_file": "Partial__main__idx7666_rank1.rs", "c_fragment": "string mapsPath = \"/proc/\" + to_string(pid) + \"/maps\";\n    ifstream maps_file(mapsPath, ios::binary);\n    if (!maps_file) {\n        cerr << \"Failed to open maps file\" << endl;\n        return -1;\n    }", "rust_fragment": "file_path = format!(\"/proc/{:?}/smaps\", pid);\n    let smaps_info = read_smaps(&file_path, need_combine);", "description": "Both construct file path and read memory mapping files", "reasoning": "[Task Analysis] C code parses command-line arguments, validates PID, opens /proc/[pid]/maps and /proc/[pid]/pagemap, reads memory mappings, and prints page info. Rust code parses command-line arguments using `getopts`, validates PID/file, builds file path, reads smaps data, and prints results. [Similarity] Both handle argument parsing, PID validation, file operations, and output formatting, but with different libraries and structures. [Knowledge Extraction] Full match blocked due to different domains (low-level memory access vs high-level CLI parsing). Partial match found in argument handling and file path construction. API mappings found in file operations and argument parsing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7666_rank1.c", "source_rust_file": "Partial__main__idx7666_rank1.rs", "c_api": "argv[1]", "rust_api": "matches.opt_str(\"p\")", "mapping_type": "function", "description": "Extracting PID from command-line arguments", "reasoning": "[Task Analysis] C code parses command-line arguments, validates PID, opens /proc/[pid]/maps and /proc/[pid]/pagemap, reads memory mappings, and prints page info. Rust code parses command-line arguments using `getopts`, validates PID/file, builds file path, reads smaps data, and prints results. [Similarity] Both handle argument parsing, PID validation, file operations, and output formatting, but with different libraries and structures. [Knowledge Extraction] Full match blocked due to different domains (low-level memory access vs high-level CLI parsing). Partial match found in argument handling and file path construction. API mappings found in file operations and argument parsing patterns."}]
+Unixcoder Score: -0.0034055497962981462
+--------------------------------------------------
+C_Code: 
+int countEntries() const {
+        int count = 0;
+        for (T* entry = fHead; entry; entry = entry->fNext) {
+            ++count;
+        }
+        return count;
+    }
+Function: 
+fn num_color_stops(color_stops: &BridgeColorStops) -> usize {
+    color_stops.num_stops
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__iter_module_map__idx15352_rank3.c", "source_rust_file": "Partial__iter_module_map__idx15352_rank3.rs", "c_fragment": "for (const mod_entry* cur = map; cur->name; cur++) {\n        fn(fptr, env, cur);\n    }", "rust_fragment": "for child_index in data.macros.decode(self) {\n                        yield self.get_mod_child(child_index, sess);\n                    }", "description": "Both use loops to iterate over a collection of items and perform an operation on each item.", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function returns an iterator over module children using a generator. [Similarity] Both involve iteration over structured data with conditional logic, but the domains are different (C: low-level module iteration, Rust: high-level AST traversal). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow patterns. However, partial matching exists in the loop constructs and API mappings can be extracted for the iteration and callback mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx15352_rank3.c", "source_rust_file": "Partial__iter_module_map__idx15352_rank3.rs", "c_api": "cur->name", "rust_api": "non_reexports.unwrap().decode(self)", "mapping_type": "pattern", "description": "C's null-terminated string check maps to Rust's decoding of non-reexports", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function returns an iterator over module children using a generator. [Similarity] Both involve iteration over structured data with conditional logic, but the domains are different (C: low-level module iteration, Rust: high-level AST traversal). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow patterns. However, partial matching exists in the loop constructs and API mappings can be extracted for the iteration and callback mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx15352_rank3.c", "source_rust_file": "Partial__iter_module_map__idx15352_rank3.rs", "c_api": "cur->name", "rust_api": "reexports.decode((self, sess))", "mapping_type": "pattern", "description": "C's null-terminated string check maps to Rust's decoding of reexports", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function returns an iterator over module children using a generator. [Similarity] Both involve iteration over structured data with conditional logic, but the domains are different (C: low-level module iteration, Rust: high-level AST traversal). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow patterns. However, partial matching exists in the loop constructs and API mappings can be extracted for the iteration and callback mechanisms."}, {"knowledge_type": "Partial", "source_c_file": "Partial__iter_module_map__idx15352_rank3.c", "source_rust_file": "Partial__iter_module_map__idx15352_rank3.rs", "c_fragment": "for (const mod_entry* cur = map; cur->name; cur++) {\n        fn(fptr, env, cur);\n    }", "rust_fragment": "for child_index in non_reexports.unwrap().decode(self) {\n                    yield self.get_mod_child(child_index, sess);\n                }", "description": "Both use loops to iterate over a collection of items and perform an operation on each item.", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function returns an iterator over module children using a generator. [Similarity] Both involve iteration over structured data with conditional logic, but the domains are different (C: low-level module iteration, Rust: high-level AST traversal). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow patterns. However, partial matching exists in the loop constructs and API mappings can be extracted for the iteration and callback mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx15352_rank3.c", "source_rust_file": "Partial__iter_module_map__idx15352_rank3.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "yield self.get_mod_child(child_index, sess)", "mapping_type": "function", "description": "Callback invocation in C maps to yielding values in Rust generator", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function returns an iterator over module children using a generator. [Similarity] Both involve iteration over structured data with conditional logic, but the domains are different (C: low-level module iteration, Rust: high-level AST traversal). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow patterns. However, partial matching exists in the loop constructs and API mappings can be extracted for the iteration and callback mechanisms."}, {"knowledge_type": "Partial", "source_c_file": "Partial__iter_module_map__idx15352_rank3.c", "source_rust_file": "Partial__iter_module_map__idx15352_rank3.rs", "c_fragment": "for (const mod_entry* cur = map; cur->name; cur++) {\n        fn(fptr, env, cur);\n    }", "rust_fragment": "for reexport in reexports.decode((self, sess)) {\n                        yield reexport;\n                    }", "description": "Both use loops to iterate over a collection of items and perform an operation on each item.", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function returns an iterator over module children using a generator. [Similarity] Both involve iteration over structured data with conditional logic, but the domains are different (C: low-level module iteration, Rust: high-level AST traversal). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow patterns. However, partial matching exists in the loop constructs and API mappings can be extracted for the iteration and callback mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx15352_rank3.c", "source_rust_file": "Partial__iter_module_map__idx15352_rank3.rs", "c_api": "cur->name", "rust_api": "data.macros.decode(self)", "mapping_type": "pattern", "description": "C's null-terminated string check maps to Rust's decoding of macro data", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function returns an iterator over module children using a generator. [Similarity] Both involve iteration over structured data with conditional logic, but the domains are different (C: low-level module iteration, Rust: high-level AST traversal). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow patterns. However, partial matching exists in the loop constructs and API mappings can be extracted for the iteration and callback mechanisms."}]
+Unixcoder Score: -0.025994746014475822
+--------------------------------------------------
+C_Code: 
+struct TT_DriverRec_
+Function: 
+struct CBufferContents {
+    length: u32,
+    info: *mut CGlyphInfo,
+    position: *mut CGlyphPosition,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__update_gc_entry__idx129204_rank3.c", "source_rust_file": "API_Mapping__update_gc_entry__idx129204_rank3.rs", "c_api": "args->safe_points->push_back(sp)", "rust_api": "result.push(i)", "mapping_type": "method", "description": "Appending elements to a dynamic container", "reasoning": "[Task Analysis] C function updates GC entry by parsing safe points from a linked list structure; Rust function builds a dynamic vector by pushing indices. [Similarity] No structural similarity: C manipulates raw pointers and memory layout, Rust uses high-level vector operations. [Knowledge Extraction] No full match, no partial match, but there are API mappings between vector push operations."}]
+Unixcoder Score: -0.03266684338450432
+--------------------------------------------------
+C_Code: 
+bool BinderInvoker::TriggerSystemIPCThreadReclaim()
+{
+    if ((binderConnector_ == nullptr) || (!binderConnector_->IsDriverAlive())) {
+        ZLOGE(LABEL, "died");
+        return false;
+    }
+
+    int defaultValue = 0;
+    int32_t result = binderConnector_->WriteBinder(BINDER_THREAD_RECLAIM, &defaultValue);
+    if (result != ERR_NONE) {
+        ZLOGE(LABEL, "fail, result:%{public}d", result);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn write_process<T>(
+        &mut self,
+        value: T,
+        f: fn(parcel: Pin<&mut MessageParcel>, value: T) -> bool,
+    ) -> IpcResult<()> {
+        match mem::replace(&mut self.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = f(p.pin_mut(), value);
+                self.inner = ParcelMem::Unique(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Borrow(p) => {
+                let w = unsafe { Pin::new_unchecked(&mut *p) };
+                let res = f(w, value);
+                self.inner = ParcelMem::Borrow(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Null => IpcResult::Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx5924_rank4.c", "source_rust_file": "Partial__TEST__idx5924_rank4.rs", "c_api": "(*message.mutable_map_int32_bytes())[9] = \"hello\";", "rust_api": "msg.map_string_string_mut().insert(\"hello\", \"world\");", "mapping_type": "pattern", "description": "Inserting a key-value pair into a map", "reasoning": "[Task Analysis] C code is a protobuf reflection test; Rust code is a map manipulation test. [Similarity] Names don't match but both involve map operations and assertions. [Knowledge Extraction] Found partial structural match in map entry handling and API mappings for map insertion, retrieval, and clearing."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx5924_rank4.c", "source_rust_file": "Partial__TEST__idx5924_rank4.rs", "c_api": "r->GetRepeatedMessage(message, field_map_int32_bytes, /*index=*/0)", "rust_api": "msg.map_string_string().get(\"fizz\").unwrap()", "mapping_type": "function", "description": "Retrieving a value from a map by key", "reasoning": "[Task Analysis] C code is a protobuf reflection test; Rust code is a map manipulation test. [Similarity] Names don't match but both involve map operations and assertions. [Knowledge Extraction] Found partial structural match in map entry handling and API mappings for map insertion, retrieval, and clearing."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx5924_rank4.c", "source_rust_file": "Partial__TEST__idx5924_rank4.rs", "c_api": "r->FieldSize(message, field_map_int32_bytes)", "rust_api": "msg.map_string_string().len()", "mapping_type": "function", "description": "Getting the size/length of a map", "reasoning": "[Task Analysis] C code is a protobuf reflection test; Rust code is a map manipulation test. [Similarity] Names don't match but both involve map operations and assertions. [Knowledge Extraction] Found partial structural match in map entry handling and API mappings for map insertion, retrieval, and clearing."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx5924_rank4.c", "source_rust_file": "Partial__TEST__idx5924_rank4.rs", "c_fragment": "EXPECT_EQ(1, r->FieldSize(message, field_map_int32_bytes));", "rust_fragment": "assert_that!(msg.map_string_string().len(), eq(2));", "description": "Checking the size/length of a map", "reasoning": "[Task Analysis] C code is a protobuf reflection test; Rust code is a map manipulation test. [Similarity] Names don't match but both involve map operations and assertions. [Knowledge Extraction] Found partial structural match in map entry handling and API mappings for map insertion, retrieval, and clearing."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__TEST__idx5924_rank4.c", "source_rust_file": "Partial__TEST__idx5924_rank4.rs", "c_api": "msg.map_string_string_mut().clear();", "rust_api": "msg.map_string_string_mut().clear();", "mapping_type": "method", "description": "Clearing all entries from a map", "reasoning": "[Task Analysis] C code is a protobuf reflection test; Rust code is a map manipulation test. [Similarity] Names don't match but both involve map operations and assertions. [Knowledge Extraction] Found partial structural match in map entry handling and API mappings for map insertion, retrieval, and clearing."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx5924_rank4.c", "source_rust_file": "Partial__TEST__idx5924_rank4.rs", "c_fragment": "msg.map_string_string_mut().clear();", "rust_fragment": "msg.map_string_string_mut().clear();", "description": "Clearing all entries from a map", "reasoning": "[Task Analysis] C code is a protobuf reflection test; Rust code is a map manipulation test. [Similarity] Names don't match but both involve map operations and assertions. [Knowledge Extraction] Found partial structural match in map entry handling and API mappings for map insertion, retrieval, and clearing."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx5924_rank4.c", "source_rust_file": "Partial__TEST__idx5924_rank4.rs", "c_fragment": "(*message.mutable_map_int32_bytes())[9] = \"hello\";", "rust_fragment": "msg.map_string_string_mut().insert(\"hello\", \"world\");", "description": "Inserting key-value pairs into a map", "reasoning": "[Task Analysis] C code is a protobuf reflection test; Rust code is a map manipulation test. [Similarity] Names don't match but both involve map operations and assertions. [Knowledge Extraction] Found partial structural match in map entry handling and API mappings for map insertion, retrieval, and clearing."}, {"knowledge_type": "Partial", "source_c_file": "Partial__TEST__idx5924_rank4.c", "source_rust_file": "Partial__TEST__idx5924_rank4.rs", "c_fragment": "EXPECT_THAT(bytes_map_entry, MapEntryHasKey());\n  EXPECT_THAT(bytes_map_entry, MapEntryHasValue());", "rust_fragment": "assert_that!(msg.map_string_string().get(\"fizz\").unwrap(), eq(\"buzz\"));", "description": "Verifying presence and value of map entries", "reasoning": "[Task Analysis] C code is a protobuf reflection test; Rust code is a map manipulation test. [Similarity] Names don't match but both involve map operations and assertions. [Knowledge Extraction] Found partial structural match in map entry handling and API mappings for map insertion, retrieval, and clearing."}]
+Unixcoder Score: -0.03338472545146942
+--------------------------------------------------
+C_Code: 
+size_t num_entries() const { return entries_.size(); }
+Function: 
+pub fn len(&self) -> usize {
+        self.0.len()
+    }
+Unixcoder Score: -0.03662944957613945
+--------------------------------------------------
+C_Code: 
+std::string TextFormatDecodeData::Data() const {
+  std::ostringstream data_stringstream;
+
+  if (num_entries() > 0) {
+    io::OstreamOutputStream data_outputstream(&data_stringstream);
+    io::CodedOutputStream output_stream(&data_outputstream);
+
+    output_stream.WriteVarint32(num_entries());
+    for (std::vector<DataEntry>::const_iterator i = entries_.begin();
+         i != entries_.end(); ++i) {
+      output_stream.WriteVarint32(i->first);
+      output_stream.WriteString(i->second);
+    }
+  }
+
+  data_stringstream.flush();
+  return data_stringstream.str();
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.037872564047575
+--------------------------------------------------
+C_Code: 
+struct FT_DriverRec_
+Function: 
+struct BitmapMetrics {
+        // Outer glyph bearings that affect the computed bounds. We distinguish
+        // those here from `inner_bearing_*` to account for CoreText behavior in
+        // SBIX placement. Where the sbix originOffsetX/Y are applied only
+        // within the bounds. Specified in font units.
+        // 0 for CBDT, CBLC.
+        bearing_x: f32,
+        bearing_y: f32,
+        // Scale factors to scale image to 1em.
+        ppem_x: f32,
+        ppem_y: f32,
+        // Account for the fact that Sbix and CBDT/CBLC have a different origin
+        // definition.
+        placement_origin_bottom_left: bool,
+        // Specified as a pixel value, to be scaled by `ppem_*` as an
+        // offset applied to placing the image within the bounds rectangle.
+        inner_bearing_x: f32,
+        inner_bearing_y: f32,
+        // Some, but not all, bitmap glyphs have a special bitmap advance
+        advance: f32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__update_gc_entry__idx129203_rank3.c", "source_rust_file": "API_Mapping__update_gc_entry__idx129203_rank3.rs", "c_api": "args->safe_points->push_back(sp)", "rust_api": "result += [i]", "mapping_type": "method", "description": "Appending elements to a collection", "reasoning": "[Task Analysis] C function updates GC entry by parsing safe points from a state pointer, while Rust function collects a range of numbers into a vector. [Similarity] No structural similarity at the function level due to different domains (memory parsing vs range collection). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's `push_back` and Rust's `+=` for vector operations."}]
+Unixcoder Score: -0.037994734942913055
+--------------------------------------------------
+C_Code: 
+static void
+update_gc_entry(const mod_entry *entry, void *cookie) {
+    update_gc_entry_args *args = (update_gc_entry_args *)cookie;
+    if (!strcmp(entry->name, "_gc_module_metadata")) {
+        uintptr_t *next = (uintptr_t *)entry->state;
+        uint32_t num_safe_points = *(uint32_t *)next;
+        next++;
+
+        for (uint32_t i = 0; i < num_safe_points; i++) {
+            safe_point sp = { next[0], next[1], next[2] };
+            next += 3;
+
+            args->safe_points->push_back(sp);
+        }
+    }
+}
+Function: 
+fn collect_dvec(num: uint) -> [mut uint] {
+    let result = dvec();
+    uint::range(0u, num) { |i|
+        result.push(i);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx92527_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx92527_rank4.rs", "c_api": "for (const mod_entry* cur = map; cur->name; cur++)", "rust_api": "for &(_, item) in data.items.iter()", "mapping_type": "pattern", "description": "Iterating over a collection with a loop", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function performs complex trait and inherent method iteration with callbacks. [Similarity] Names refer to different concepts (iter_module_map vs iterate_inherent_methods), and domains are different (low-level module iteration vs high-level Rust type inference). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different semantic purposes. However, both use callback patterns and iteration, so API mappings can be extracted for the callback invocation and iteration constructs."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx92527_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx92527_rank4.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "callback(receiver_adjustments.clone().unwrap_or_default(), item, visible)?", "mapping_type": "function", "description": "Callback invocation pattern", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function performs complex trait and inherent method iteration with callbacks. [Similarity] Names refer to different concepts (iter_module_map vs iterate_inherent_methods), and domains are different (low-level module iteration vs high-level Rust type inference). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different semantic purposes. However, both use callback patterns and iteration, so API mappings can be extracted for the callback invocation and iteration constructs."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx92527_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx92527_rank4.rs", "c_api": "for (const mod_entry* cur = map; cur->name; cur++)", "rust_api": "for &impl_def in impls_for_self_ty", "mapping_type": "pattern", "description": "Iterating over a collection with a loop", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function performs complex trait and inherent method iteration with callbacks. [Similarity] Names refer to different concepts (iter_module_map vs iterate_inherent_methods), and domains are different (low-level module iteration vs high-level Rust type inference). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different semantic purposes. However, both use callback patterns and iteration, so API mappings can be extracted for the callback invocation and iteration constructs."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx92527_rank4.c", "source_rust_file": "API_Mapping__iter_module_map__idx92527_rank4.rs", "c_api": "for (const mod_entry* cur = map; cur->name; cur++)", "rust_api": "for t in traits", "mapping_type": "pattern", "description": "Iterating over a collection with a loop", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function performs complex trait and inherent method iteration with callbacks. [Similarity] Names refer to different concepts (iter_module_map vs iterate_inherent_methods), and domains are different (low-level module iteration vs high-level Rust type inference). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different semantic purposes. However, both use callback patterns and iteration, so API mappings can be extracted for the callback invocation and iteration constructs."}]
+Unixcoder Score: -0.039841167628765106
+--------------------------------------------------
+C_Code: 
+std::string TextFormatDecodeData::Data() const {
+  std::ostringstream data_stringstream;
+
+  if (num_entries() > 0) {
+    io::OstreamOutputStream data_outputstream(&data_stringstream);
+    io::CodedOutputStream output_stream(&data_outputstream);
+
+    output_stream.WriteVarint32(num_entries());
+    for (std::vector<DataEntry>::const_iterator i = entries_.begin();
+         i != entries_.end(); ++i) {
+      output_stream.WriteVarint32(i->first);
+      output_stream.WriteString(i->second);
+    }
+  }
+
+  data_stringstream.flush();
+  return data_stringstream.str();
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.04158405587077141
+--------------------------------------------------

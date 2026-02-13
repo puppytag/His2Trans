@@ -1,0 +1,257 @@
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_ident_common(&mut self, recover: bool) -> PResult<'a, Ident> {
+        let (ident, is_raw) = self.ident_or_err(recover)?;
+
+        if !is_raw && ident.is_reserved() {
+            let mut err = self.expected_ident_found_err();
+            if recover {
+                err.emit();
+            } else {
+                return Err(err);
+            }
+        }
+        self.bump();
+        Ok(ident)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76956_rank2.c", "source_rust_file": "API_Mapping__main__idx76956_rank2.rs", "c_api": "free((void*)tmp->name)", "rust_api": "self.ecx.expr_call_global(sp, rtpath(\"String\"), ~[self.ecx.expr_str(sp, s.to_managed())])", "mapping_type": "function", "description": "Memory deallocation and string creation", "reasoning": "[Task Analysis] C code is a C main function handling command-line args, parsing, and memory cleanup; Rust code is a complex Rust function for translating parsing pieces into AST expressions. [Similarity] No structural similarity at the function level due to different domains (C memory management vs Rust AST generation). [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. However, some API mappings can be extracted based on similar operations like string handling and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76956_rank2.c", "source_rust_file": "API_Mapping__main__idx76956_rank2.rs", "c_api": "free(tmp)", "rust_api": "self.ecx.expr_call_global(sp, rtpath(\"Argument\"), ~[s])", "mapping_type": "function", "description": "Memory deallocation and AST node creation", "reasoning": "[Task Analysis] C code is a C main function handling command-line args, parsing, and memory cleanup; Rust code is a complex Rust function for translating parsing pieces into AST expressions. [Similarity] No structural similarity at the function level due to different domains (C memory management vs Rust AST generation). [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. However, some API mappings can be extracted based on similar operations like string handling and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76956_rank2.c", "source_rust_file": "API_Mapping__main__idx76956_rank2.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "self.ecx.expr_call_global(sp, rtpath(\"CurrentArgument\"), ~[nil])", "mapping_type": "function", "description": "Memory initialization and argument handling", "reasoning": "[Task Analysis] C code is a C main function handling command-line args, parsing, and memory cleanup; Rust code is a complex Rust function for translating parsing pieces into AST expressions. [Similarity] No structural similarity at the function level due to different domains (C memory management vs Rust AST generation). [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. However, some API mappings can be extracted based on similar operations like string handling and memory management patterns."}]
+Unixcoder Score: 0.006112898234277964
+--------------------------------------------------
+C_Code: 
+void name##_SPLAY_MINMAX(struct name *head, int __comp)                       \
+{                                                                             \
+  struct type __node, *__left, *__right, *__tmp;                              \
+                                                                              \
+  SPLAY_LEFT(&__node, field) = SPLAY_RIGHT(&__node, field) = NULL;            \
+  __left = __right = &__node;                                                 \
+                                                                              \
+  while (1) {                                                                 \
+    if (__comp < 0) {                                                         \
+      __tmp = SPLAY_LEFT((head)->sph_root, field);                            \
+      if (__tmp == NULL)                                                      \
+        break;                                                                \
+      if (__comp < 0){                                                        \
+        SPLAY_ROTATE_RIGHT(head, __tmp, field);                               \
+        if (SPLAY_LEFT((head)->sph_root, field) == NULL)                      \
+          break;                                                              \
+      }                                                                       \
+      SPLAY_LINKLEFT(head, __right, field);                                   \
+    } else if (__comp > 0) {                                                  \
+      __tmp = SPLAY_RIGHT((head)->sph_root, field);                           \
+      if (__tmp == NULL)                                                      \
+        break;                                                                \
+      if (__comp > 0) {                                                       \
+        SPLAY_ROTATE_LEFT(head, __tmp, field);                                \
+        if (SPLAY_RIGHT((head)->sph_root, field) == NULL)                     \
+          break;                                                              \
+      }                                                                       \
+      SPLAY_LINKRIGHT(head, __left, field);                                   \
+    }                                                                         \
+  }                                                                           \
+  SPLAY_ASSEMBLE(head, &__node, __left, __right, field);                      \
+}
+Function: 
+pub fn choose_parent_kv(self) -> Result<LeftOrRight<BalancingContext<'a, K, V>>, Self> {
+        match unsafe { ptr::read(&self) }.ascend() {
+            Ok(parent_edge) => match parent_edge.left_kv() {
+                Ok(left_parent_kv) => Ok(LeftOrRight::Left(BalancingContext {
+                    parent: unsafe { ptr::read(&left_parent_kv) },
+                    left_child: left_parent_kv.left_edge().descend(),
+                    right_child: self,
+                })),
+                Err(parent_edge) => match parent_edge.right_kv() {
+                    Ok(right_parent_kv) => Ok(LeftOrRight::Right(BalancingContext {
+                        parent: unsafe { ptr::read(&right_parent_kv) },
+                        left_child: self,
+                        right_child: right_parent_kv.right_edge().descend(),
+                    })),
+                    Err(_) => unreachable!("empty internal node"),
+                },
+            },
+            Err(root) => Err(root),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx125923_rank3.c", "source_rust_file": "Partial__ares__init_list_node__idx125923_rank3.rs", "c_api": "node->data = d", "rust_api": "unsafe { (*entry.as_ptr()).value.as_ref() }.unwrap()", "mapping_type": "field_access", "description": "Assigning data to a node in C corresponds to accessing data from a node in Rust.", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function manipulates a doubly-linked list by inserting a new entry between existing nodes. [Similarity] Names do not match but both involve list node management. [Knowledge Extraction] No full structural match due to domain mismatch (C: low-level pointer setup vs Rust: high-level list manipulation). Partial match in list node initialization pattern. API mappings found for list node setup and list insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx125923_rank3.c", "source_rust_file": "Partial__ares__init_list_node__idx125923_rank3.rs", "c_api": "node->next = NULL", "rust_api": "unsafe { entry.as_mut() }.next = self.head_tail", "mapping_type": "field_access", "description": "Setting a node's next pointer to null in C corresponds to setting the next pointer in Rust.", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function manipulates a doubly-linked list by inserting a new entry between existing nodes. [Similarity] Names do not match but both involve list node management. [Knowledge Extraction] No full structural match due to domain mismatch (C: low-level pointer setup vs Rust: high-level list manipulation). Partial match in list node initialization pattern. API mappings found for list node setup and list insertion operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__init_list_node__idx125923_rank3.c", "source_rust_file": "Partial__ares__init_list_node__idx125923_rank3.rs", "c_fragment": "node->prev = NULL;\n  node->next = NULL;\n  node->data = d;", "rust_fragment": "let mut entry = unsafe { NonNull::new_unchecked(entry) };\n        let mut prev_tail = mem::replace(&mut unsafe { self.head_tail.as_mut() }.prev, entry);\n        // SAFETY: `entry` must meet all requirements for a mutable reference.\n        unsafe { entry.as_mut() }.prev = prev_tail;\n        unsafe { entry.as_mut() }.next = self.head_tail;\n        // SAFETY: `prev_tail` must meet all requirements for a mutable reference.\n        unsafe { prev_tail.as_mut() }.next = entry;", "description": "Both code blocks perform list node initialization and linking operations, though in different contexts and with different levels of abstraction.", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function manipulates a doubly-linked list by inserting a new entry between existing nodes. [Similarity] Names do not match but both involve list node management. [Knowledge Extraction] No full structural match due to domain mismatch (C: low-level pointer setup vs Rust: high-level list manipulation). Partial match in list node initialization pattern. API mappings found for list node setup and list insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx125923_rank3.c", "source_rust_file": "Partial__ares__init_list_node__idx125923_rank3.rs", "c_api": "node->prev = NULL", "rust_api": "unsafe { entry.as_mut() }.prev = prev_tail", "mapping_type": "field_access", "description": "Setting a node's previous pointer to null in C corresponds to setting the previous pointer in Rust.", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function manipulates a doubly-linked list by inserting a new entry between existing nodes. [Similarity] Names do not match but both involve list node management. [Knowledge Extraction] No full structural match due to domain mismatch (C: low-level pointer setup vs Rust: high-level list manipulation). Partial match in list node initialization pattern. API mappings found for list node setup and list insertion operations."}]
+Unixcoder Score: -0.0064838039688766
+--------------------------------------------------
+C_Code: 
+void ares__init_list_node(struct list_node* node, void* d) {
+  node->prev = NULL;
+  node->next = NULL;
+  node->data = d;
+}
+Function: 
+fn insert_n_after(nobe: dlist_node<T>, neighbour: dlist_node<T>) {
+        self.make_mine(nobe);
+        self.insert_right(neighbour, some(nobe));
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__init_list_node__idx55578_rank3.c", "source_rust_file": "API_Mapping__ares__init_list_node__idx55578_rank3.rs", "c_api": "node->prev = NULL", "rust_api": "cur = cur.prev", "mapping_type": "pattern", "description": "Setting previous pointer to null and traversing backwards in linked list", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust code traverses a linked list in both directions using loops and vector pushes. [Similarity] Names do not refer to the same concept (ares__init_list_node vs main), and domains are mismatched (memory management vs traversal logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to list traversal and data access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__init_list_node__idx55578_rank3.c", "source_rust_file": "API_Mapping__ares__init_list_node__idx55578_rank3.rs", "c_api": "node->next = NULL", "rust_api": "cur = cur.next", "mapping_type": "pattern", "description": "Setting next pointer to null and traversing forward in linked list", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust code traverses a linked list in both directions using loops and vector pushes. [Similarity] Names do not refer to the same concept (ares__init_list_node vs main), and domains are mismatched (memory management vs traversal logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to list traversal and data access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__init_list_node__idx55578_rank3.c", "source_rust_file": "API_Mapping__ares__init_list_node__idx55578_rank3.rs", "c_api": "node->data = d", "rust_api": "test_vec.push(cur.data)", "mapping_type": "pattern", "description": "Assigning data to node and pushing data to vector during traversal", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust code traverses a linked list in both directions using loops and vector pushes. [Similarity] Names do not refer to the same concept (ares__init_list_node vs main), and domains are mismatched (memory management vs traversal logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to list traversal and data access patterns."}]
+Unixcoder Score: -0.014811929315328598
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn spec_extend(&mut self, ref mut other: LinkedList<T>) {
+        self.append(other);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134528_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134528_rank2.rs", "c_api": "new_node->next = old_node;", "rust_api": "self.insert_right(neighbour, self.new_link(data));", "mapping_type": "pattern", "description": "Inserting a node after a specified neighbor in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node after an existing node; Rust function inserts a new node after a given neighbor in a doubly-linked list. [Similarity] Both perform list insertion logic, but C uses raw pointer manipulation while Rust uses higher-level abstractions. [Knowledge Extraction] Structural fragments match in the concept of inserting nodes in a list, but full structural similarity is blocked due to domain mismatch (low-level pointer manipulation vs high-level abstraction). API mappings are extracted for the core insertion operation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx134528_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134528_rank2.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "self.insert_right(neighbour, self.new_link(data));", "description": "Inserting a new node into a doubly-linked list structure.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node after an existing node; Rust function inserts a new node after a given neighbor in a doubly-linked list. [Similarity] Both perform list insertion logic, but C uses raw pointer manipulation while Rust uses higher-level abstractions. [Knowledge Extraction] Structural fragments match in the concept of inserting nodes in a list, but full structural similarity is blocked due to domain mismatch (low-level pointer manipulation vs high-level abstraction). API mappings are extracted for the core insertion operation."}]
+Unixcoder Score: -0.029419369995594025
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_left(nobe: dlist_link<T>, neighbour: dlist_node<T>) {
+        self.assert_mine(neighbour);
+        assert self.size > 0;
+        self.link(neighbour.prev, nobe);
+        self.link(nobe, some(neighbour));
+        self.size += 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx134512_rank4.c", "source_rust_file": "Partial__ares__insert_in_list__idx134512_rank4.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "alt before {\n            some(neighbour) { neighbour.next = after; }\n            none            { self.hd        = after; }", "description": "Both code blocks perform insertion of a node/link into a doubly-linked list structure, updating next/prev pointers to maintain list integrity.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes. Rust function links two nodes in a similar dlist structure. [Similarity] Names don't match but both perform list node insertion logic. [Knowledge Extraction] Found partial structural match in list manipulation, but not full structural similarity due to different control flow and data structures. No API mappings due to domain mismatch (C uses raw pointers, Rust uses Option-based links)."}]
+Unixcoder Score: -0.030825592577457428
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn run(self) -> anyhow::Result<()> {
+        let _p = profile::span("parsing");
+        let text = read_stdin()?;
+        let file = SourceFile::parse(&text).tree();
+        if !self.no_dump {
+            println!("{:#?}", file.syntax());
+        }
+        std::mem::forget(file);
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76949_rank2.c", "source_rust_file": "API_Mapping__main__idx76949_rank2.rs", "c_api": "if (argc == 2 && strcmp(argv[1], \"-v\") == 0)", "rust_api": "match *p", "mapping_type": "pattern", "description": "Conditional logic for argument handling", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing verification function with pattern matching and error handling. [Similarity] No structural similarity at the function level due to different domains (CLI parsing vs format string verification). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to conditional logic and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76949_rank2.c", "source_rust_file": "API_Mapping__main__idx76949_rank2.rs", "c_api": "free(tmp)", "rust_api": "self.verify_method(pos, *method)", "mapping_type": "function", "description": "Memory deallocation vs method verification", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing verification function with pattern matching and error handling. [Similarity] No structural similarity at the function level due to different domains (CLI parsing vs format string verification). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to conditional logic and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76949_rank2.c", "source_rust_file": "API_Mapping__main__idx76949_rank2.rs", "c_api": "free((void*)tmp->name)", "rust_api": "self.verify_arg_type(pos, ty)", "mapping_type": "function", "description": "Memory deallocation vs argument type verification", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing verification function with pattern matching and error handling. [Similarity] No structural similarity at the function level due to different domains (CLI parsing vs format string verification). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to conditional logic and memory management patterns."}]
+Unixcoder Score: -0.03183450549840927
+--------------------------------------------------
+C_Code: 
+void ares__init_list_node(struct list_node* node, void* d) {
+  node->prev = NULL;
+  node->next = NULL;
+  node->data = d;
+}
+Function: 
+fn link(+before: dlist_link<T>, +after: dlist_link<T>) {
+        alt before {
+            some(neighbour) { neighbour.next = after; }
+            none            { self.hd        = after; }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__insert_in_list__idx134530_rank4.c", "source_rust_file": "API_Mapping__ares__insert_in_list__idx134530_rank4.rs", "c_api": "new_node->prev = old_node->prev", "rust_api": "self.insert_right(neighbour, nobe)", "mapping_type": "method", "description": "Setting previous pointer during node insertion in doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function inserts a node after a given neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Both perform insertion logic in a doubly-linked list structure, but Rust uses a different API pattern with explicit node creation and insertion. The core operation of inserting a node between existing nodes is present in both, but the Rust version abstracts the process with helper methods like `new_link` and `insert_right`. No exact structural match due to different control flow and abstraction levels, but API mapping exists for list node insertion logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__insert_in_list__idx134530_rank4.c", "source_rust_file": "API_Mapping__ares__insert_in_list__idx134530_rank4.rs", "c_api": "old_node->prev->next = new_node", "rust_api": "self.insert_right(neighbour, nobe)", "mapping_type": "method", "description": "Updating next pointer of previous node during insertion", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function inserts a node after a given neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Both perform insertion logic in a doubly-linked list structure, but Rust uses a different API pattern with explicit node creation and insertion. The core operation of inserting a node between existing nodes is present in both, but the Rust version abstracts the process with helper methods like `new_link` and `insert_right`. No exact structural match due to different control flow and abstraction levels, but API mapping exists for list node insertion logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__insert_in_list__idx134530_rank4.c", "source_rust_file": "API_Mapping__ares__insert_in_list__idx134530_rank4.rs", "c_api": "new_node->next = old_node", "rust_api": "self.insert_right(neighbour, nobe)", "mapping_type": "method", "description": "Inserting a node into a doubly-linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function inserts a node after a given neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Both perform insertion logic in a doubly-linked list structure, but Rust uses a different API pattern with explicit node creation and insertion. The core operation of inserting a node between existing nodes is present in both, but the Rust version abstracts the process with helper methods like `new_link` and `insert_right`. No exact structural match due to different control flow and abstraction levels, but API mapping exists for list node insertion logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__insert_in_list__idx134530_rank4.c", "source_rust_file": "API_Mapping__ares__insert_in_list__idx134530_rank4.rs", "c_api": "old_node->prev = new_node", "rust_api": "self.insert_right(neighbour, nobe)", "mapping_type": "method", "description": "Updating previous pointer of the target node during insertion", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node between two existing nodes; Rust function inserts a node after a given neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Both perform insertion logic in a doubly-linked list structure, but Rust uses a different API pattern with explicit node creation and insertion. The core operation of inserting a node between existing nodes is present in both, but the Rust version abstracts the process with helper methods like `new_link` and `insert_right`. No exact structural match due to different control flow and abstraction levels, but API mapping exists for list node insertion logic."}]
+Unixcoder Score: -0.03212037310004234
+--------------------------------------------------
+C_Code: 
+void ares__init_list_node(struct list_node* node, void* d) {
+  node->prev = NULL;
+  node->next = NULL;
+  node->data = d;
+}
+Function: 
+fn insert_n_before(nobe: dlist_node<T>, neighbour: dlist_node<T>) {
+        self.make_mine(nobe);
+        self.insert_left(some(nobe), neighbour);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__init_list_node__idx134525_rank4.c", "source_rust_file": "Partial__ares__init_list_node__idx134525_rank4.rs", "c_fragment": "node->prev = NULL;\n  node->next = NULL;\n  node->data = d;", "rust_fragment": "self.insert_left(self.new_link(data), neighbour);", "description": "Both set up a node with null/empty links and associate data, though Rust uses a more complex insertion pattern.", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function inserts a new node before a given neighbor in a doubly-linked list. [Similarity] Names and domains differ (C struct init vs Rust dlist manipulation), but both involve linked list node setup and insertion logic. [Knowledge Extraction] No full structural match due to domain mismatch (C: memory setup, Rust: list manipulation), but partial fragment found in node initialization pattern. No API mappings due to semantic domain mismatch (pointer setup vs list node insertion)."}]
+Unixcoder Score: -0.03233995661139488
+--------------------------------------------------
+C_Code: 
+void ares__init_list_node(struct list_node* node, void* d) {
+  node->prev = NULL;
+  node->next = NULL;
+  node->data = d;
+}
+Function: 
+fn insert_before_n(+data: T, neighbour: dlist_node<T>) -> dlist_node<T> {
+        let mut nobe = self.new_link(data);
+        self.insert_left(nobe, neighbour);
+        option::get(nobe)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx134526_rank5.c", "source_rust_file": "Partial__ares__init_list_node__idx134526_rank5.rs", "c_api": "node->data = d", "rust_api": "self.insert_left(some(nobe), neighbour)", "mapping_type": "pattern", "description": "Assigning data to a node in C corresponds to inserting the node into a list in Rust", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function inserts a node before another in a doubly-linked list. [Similarity] Names and domains differ (C: list_node init, Rust: dlist_node insertion), but both involve linked list manipulation. [Knowledge Extraction] No full structural match due to domain mismatch (C: node initialization, Rust: node insertion), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__init_list_node__idx134526_rank5.c", "source_rust_file": "Partial__ares__init_list_node__idx134526_rank5.rs", "c_fragment": "node->prev = NULL;\n  node->next = NULL;\n  node->data = d;", "rust_fragment": "self.make_mine(nobe);\n        self.insert_left(some(nobe), neighbour);", "description": "Both perform initialization of a node's links and data, though in different contexts (C: setting up a node, Rust: inserting a node into a list)", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function inserts a node before another in a doubly-linked list. [Similarity] Names and domains differ (C: list_node init, Rust: dlist_node insertion), but both involve linked list manipulation. [Knowledge Extraction] No full structural match due to domain mismatch (C: node initialization, Rust: node insertion), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx134526_rank5.c", "source_rust_file": "Partial__ares__init_list_node__idx134526_rank5.rs", "c_api": "node->next = NULL", "rust_api": "self.make_mine(nobe)", "mapping_type": "pattern", "description": "Setting up a node's next link to null in C corresponds to preparing a node for insertion in Rust", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function inserts a node before another in a doubly-linked list. [Similarity] Names and domains differ (C: list_node init, Rust: dlist_node insertion), but both involve linked list manipulation. [Knowledge Extraction] No full structural match due to domain mismatch (C: node initialization, Rust: node insertion), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx134526_rank5.c", "source_rust_file": "Partial__ares__init_list_node__idx134526_rank5.rs", "c_api": "node->prev = NULL", "rust_api": "self.make_mine(nobe)", "mapping_type": "pattern", "description": "Setting up a node's previous link to null in C corresponds to preparing a node for insertion in Rust", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function inserts a node before another in a doubly-linked list. [Similarity] Names and domains differ (C: list_node init, Rust: dlist_node insertion), but both involve linked list manipulation. [Knowledge Extraction] No full structural match due to domain mismatch (C: node initialization, Rust: node insertion), but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.03247455134987831
+--------------------------------------------------
+C_Code: 
+void ares__init_list_node(struct list_node* node, void* d) {
+  node->prev = NULL;
+  node->next = NULL;
+  node->data = d;
+}
+Function: 
+fn insert_left(nobe: dlist_link<T>, neighbour: dlist_node<T>) {
+        self.assert_mine(neighbour);
+        assert self.size > 0;
+        self.link(neighbour.prev, nobe);
+        self.link(nobe, some(neighbour));
+        self.size += 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx134505_rank1.c", "source_rust_file": "Partial__ares__init_list_node__idx134505_rank1.rs", "c_api": "node->prev = NULL", "rust_api": "mut prev: none", "mapping_type": "field_access", "description": "Setting previous pointer to null in C node to initializing optional field in Rust node", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function creates a doubly-linked list node with similar fields but different structure. [Similarity] Names don't match, but both operate on list node structures. [Knowledge Extraction] No full structural match due to different data structures (C uses raw pointers, Rust uses owned structs). However, both perform node initialization logic. API mappings found for field assignment and node creation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx134505_rank1.c", "source_rust_file": "Partial__ares__init_list_node__idx134505_rank1.rs", "c_api": "node->next = NULL", "rust_api": "mut next: none", "mapping_type": "field_access", "description": "Setting next pointer to null in C node to initializing optional field in Rust node", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function creates a doubly-linked list node with similar fields but different structure. [Similarity] Names don't match, but both operate on list node structures. [Knowledge Extraction] No full structural match due to different data structures (C uses raw pointers, Rust uses owned structs). However, both perform node initialization logic. API mappings found for field assignment and node creation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx134505_rank1.c", "source_rust_file": "Partial__ares__init_list_node__idx134505_rank1.rs", "c_api": "node->data = d", "rust_api": "data: data", "mapping_type": "field_access", "description": "Assigning data to node in C to assigning data to node in Rust", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function creates a doubly-linked list node with similar fields but different structure. [Similarity] Names don't match, but both operate on list node structures. [Knowledge Extraction] No full structural match due to different data structures (C uses raw pointers, Rust uses owned structs). However, both perform node initialization logic. API mappings found for field assignment and node creation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__init_list_node__idx134505_rank1.c", "source_rust_file": "Partial__ares__init_list_node__idx134505_rank1.rs", "c_api": "ares__init_list_node", "rust_api": "create_node", "mapping_type": "function", "description": "Function that initializes list node in C to function that creates list node in Rust", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function creates a doubly-linked list node with similar fields but different structure. [Similarity] Names don't match, but both operate on list node structures. [Knowledge Extraction] No full structural match due to different data structures (C uses raw pointers, Rust uses owned structs). However, both perform node initialization logic. API mappings found for field assignment and node creation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__init_list_node__idx134505_rank1.c", "source_rust_file": "Partial__ares__init_list_node__idx134505_rank1.rs", "c_fragment": "node->prev = NULL;\n  node->next = NULL;\n  node->data = d;", "rust_fragment": "data: data, mut root: none, mut prev: none, mut next: none", "description": "Initialization of node fields with null/empty values and data assignment", "reasoning": "[Task Analysis] C function initializes a linked list node with null pointers and data; Rust function creates a doubly-linked list node with similar fields but different structure. [Similarity] Names don't match, but both operate on list node structures. [Knowledge Extraction] No full structural match due to different data structures (C uses raw pointers, Rust uses owned structs). However, both perform node initialization logic. API mappings found for field assignment and node creation patterns."}]
+Unixcoder Score: -0.03289021551609039
+--------------------------------------------------

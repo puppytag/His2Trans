@@ -1,0 +1,870 @@
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateTasks__idx884_rank3.c", "source_rust_file": "API_Mapping__CreateTasks__idx884_rank3.rs", "c_api": "data.WriteUint32(len)", "rust_api": "data.read()", "mapping_type": "method", "description": "Reading data from IPC message parcel", "reasoning": "[Task Analysis] The C function 'CreateTasks' handles IPC communication to create tasks, while the Rust function 'get_task' handles retrieving and validating a task via IPC. [Similarity] The functions are in different domains (creation vs retrieval) and have different control flows, so no full or partial structural match. [Knowledge Extraction] However, both involve IPC message handling, reading/writing data, error checking, and system event logging, which allows for API mapping extraction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateTasks__idx884_rank3.c", "source_rust_file": "API_Mapping__CreateTasks__idx884_rank3.rs", "c_api": "SysEventLog::SendSysEventLog(...)", "rust_api": "sys_event!(...)", "mapping_type": "function", "description": "Sending system event logs", "reasoning": "[Task Analysis] The C function 'CreateTasks' handles IPC communication to create tasks, while the Rust function 'get_task' handles retrieving and validating a task via IPC. [Similarity] The functions are in different domains (creation vs retrieval) and have different control flows, so no full or partial structural match. [Knowledge Extraction] However, both involve IPC message handling, reading/writing data, error checking, and system event logging, which allows for API mapping extraction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateTasks__idx884_rank3.c", "source_rust_file": "API_Mapping__CreateTasks__idx884_rank3.rs", "c_api": "data.WriteInterfaceToken(GetDescriptor())", "rust_api": "data.read()", "mapping_type": "method", "description": "Reading data from IPC message parcel", "reasoning": "[Task Analysis] The C function 'CreateTasks' handles IPC communication to create tasks, while the Rust function 'get_task' handles retrieving and validating a task via IPC. [Similarity] The functions are in different domains (creation vs retrieval) and have different control flows, so no full or partial structural match. [Knowledge Extraction] However, both involve IPC message handling, reading/writing data, error checking, and system event logging, which allows for API mapping extraction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateTasks__idx884_rank3.c", "source_rust_file": "API_Mapping__CreateTasks__idx884_rank3.rs", "c_api": "Remote()->SendRequest(...)", "rust_api": "reply.write(&(ErrorCode::ErrOk as i32))?", "mapping_type": "function", "description": "Sending IPC response", "reasoning": "[Task Analysis] The C function 'CreateTasks' handles IPC communication to create tasks, while the Rust function 'get_task' handles retrieving and validating a task via IPC. [Similarity] The functions are in different domains (creation vs retrieval) and have different control flows, so no full or partial structural match. [Knowledge Extraction] However, both involve IPC message handling, reading/writing data, error checking, and system event logging, which allows for API mapping extraction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateTasks__idx884_rank3.c", "source_rust_file": "API_Mapping__CreateTasks__idx884_rank3.rs", "c_api": "reply.ReadInt32()", "rust_api": "reply.write(&(ErrorCode::ErrOk as i32))?", "mapping_type": "method", "description": "Writing data to IPC message parcel", "reasoning": "[Task Analysis] The C function 'CreateTasks' handles IPC communication to create tasks, while the Rust function 'get_task' handles retrieving and validating a task via IPC. [Similarity] The functions are in different domains (creation vs retrieval) and have different control flows, so no full or partial structural match. [Knowledge Extraction] However, both involve IPC message handling, reading/writing data, error checking, and system event logging, which allows for API mapping extraction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateTasks__idx884_rank3.c", "source_rust_file": "API_Mapping__CreateTasks__idx884_rank3.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "error!(...)", "mapping_type": "function", "description": "Logging error messages", "reasoning": "[Task Analysis] The C function 'CreateTasks' handles IPC communication to create tasks, while the Rust function 'get_task' handles retrieving and validating a task via IPC. [Similarity] The functions are in different domains (creation vs retrieval) and have different control flows, so no full or partial structural match. [Knowledge Extraction] However, both involve IPC message handling, reading/writing data, error checking, and system event logging, which allows for API mapping extraction."}]
+Unixcoder Score: -0.00654602749273181
+--------------------------------------------------
+C_Code: 
+int utf8_naive(const unsigned char *data, int len)
+{
+    int err_pos = 1;
+
+    while (len) {
+        int bytes;
+        const unsigned char byte1 = data[0];
+
+        /* 00..7F */
+        if (byte1 <= 0x7F) {
+            bytes = 1;
+        /* C2..DF, 80..BF */
+        } else if (len >= 2 && byte1 >= 0xC2 && byte1 <= 0xDF &&
+                (signed char)data[1] <= (signed char)0xBF) {
+            bytes = 2;
+        } else if (len >= 3) {
+            const unsigned char byte2 = data[1];
+
+            /* Is byte2, byte3 between 0x80 ~ 0xBF */
+            const int byte2_ok = (signed char)byte2 <= (signed char)0xBF;
+            const int byte3_ok = (signed char)data[2] <= (signed char)0xBF;
+
+            if (byte2_ok && byte3_ok &&
+                     /* E0, A0..BF, 80..BF */
+                    ((byte1 == 0xE0 && byte2 >= 0xA0) ||
+                     /* E1..EC, 80..BF, 80..BF */
+                     (byte1 >= 0xE1 && byte1 <= 0xEC) ||
+                     /* ED, 80..9F, 80..BF */
+                     (byte1 == 0xED && byte2 <= 0x9F) ||
+                     /* EE..EF, 80..BF, 80..BF */
+                     (byte1 >= 0xEE && byte1 <= 0xEF))) {
+                bytes = 3;
+            } else if (len >= 4) {
+                /* Is byte4 between 0x80 ~ 0xBF */
+                const int byte4_ok = (signed char)data[3] <= (signed char)0xBF;
+
+                if (byte2_ok && byte3_ok && byte4_ok &&
+                         /* F0, 90..BF, 80..BF, 80..BF */
+                        ((byte1 == 0xF0 && byte2 >= 0x90) ||
+                         /* F1..F3, 80..BF, 80..BF, 80..BF */
+                         (byte1 >= 0xF1 && byte1 <= 0xF3) ||
+                         /* F4, 80..8F, 80..BF, 80..BF */
+                         (byte1 == 0xF4 && byte2 <= 0x8F))) {
+                    bytes = 4;
+                } else {
+                    return err_pos;
+                }
+            } else {
+                return err_pos;
+            }
+        } else {
+            return err_pos;
+        }
+
+        len -= bytes;
+        err_pos += bytes;
+        data += bytes;
+    }
+
+    return 0;
+}
+Function: 
+fn next(&mut self) -> Option<Utf8Chunk<'a>> {
+        if self.source.is_empty() {
+            return None;
+        }
+
+        const TAG_CONT_U8: u8 = 128;
+        fn safe_get(xs: &[u8], i: usize) -> u8 {
+            *xs.get(i).unwrap_or(&0)
+        }
+
+        let mut i = 0;
+        let mut valid_up_to = 0;
+        while i < self.source.len() {
+            // SAFETY: `i < self.source.len()` per previous line.
+            // For some reason the following are both significantly slower:
+            // while let Some(&byte) = self.source.get(i) {
+            // while let Some(byte) = self.source.get(i).copied() {
+            let byte = unsafe { *self.source.get_unchecked(i) };
+            i += 1;
+
+            if byte < 128 {
+                // This could be a `1 => ...` case in the match below, but for
+                // the common case of all-ASCII inputs, we bypass loading the
+                // sizeable UTF8_CHAR_WIDTH table into cache.
+            } else {
+                let w = utf8_char_width(byte);
+
+                match w {
+                    2 => {
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    3 => {
+                        match (byte, safe_get(self.source, i)) {
+                            (0xE0, 0xA0..=0xBF) => (),
+                            (0xE1..=0xEC, 0x80..=0xBF) => (),
+                            (0xED, 0x80..=0x9F) => (),
+                            (0xEE..=0xEF, 0x80..=0xBF) => (),
+                            _ => break,
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    4 => {
+                        match (byte, safe_get(self.source, i)) {
+                            (0xF0, 0x90..=0xBF) => (),
+                            (0xF1..=0xF3, 0x80..=0xBF) => (),
+                            (0xF4, 0x80..=0x8F) => (),
+                            _ => break,
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    _ => break,
+                }
+            }
+
+            valid_up_to = i;
+        }
+
+        /// # Safety
+        /// `index` must be in-bounds for `x`
+        unsafe fn split_at_unchecked(x: &[u8], index: usize) -> (&[u8], &[u8]) {
+            // SAFETY: in-bounds as promised by the caller
+            unsafe { (x.get_unchecked(..index), x.get_unchecked(index..)) }
+        }
+
+        // SAFETY: `i <= self.source.len()` because it is only ever incremented
+        // via `i += 1` and in between every single one of those increments, `i`
+        // is compared against `self.source.len()`. That happens either
+        // literally by `i < self.source.len()` in the while-loop's condition,
+        // or indirectly by `safe_get(self.source, i) & 192 != TAG_CONT_U8`. The
+        // loop is terminated as soon as the latest `i += 1` has made `i` no
+        // longer less than `self.source.len()`, which means it'll be at most
+        // equal to `self.source.len()`.
+        let (inspected, remaining) = unsafe { split_at_unchecked(self.source, i) };
+        self.source = remaining;
+
+        // SAFETY: `valid_up_to <= i` because it is only ever assigned via
+        // `valid_up_to = i` and `i` only increases.
+        let (valid, invalid) = unsafe { split_at_unchecked(inspected, valid_up_to) };
+
+        Some(Utf8Chunk {
+            // SAFETY: All bytes up to `valid_up_to` are valid UTF-8.
+            valid: unsafe { from_utf8_unchecked(valid) },
+            invalid,
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__AshmemCreate__idx5520_rank3.c", "source_rust_file": "Partial__AshmemCreate__idx5520_rank3.rs", "c_fragment": "if (fd < 0) {\n        UTILS_LOGE(\"%{public}s: Failed to exec AshmemOpen fd = %{public}d\", __func__, fd);\n        return fd;\n    }", "rust_fragment": "if c_ashmem_ptr.is_null() {\n        None\n    } else {\n        Some(Ashmem::new(c_ashmem_ptr))\n    }", "description": "Error handling for failed resource allocation - C returns on failure, Rust returns None.", "reasoning": "[Task Analysis] C function creates ashmem region with name and size; Rust function wraps FFI call to create ashmem. [Similarity] Names don't match but both perform ashmem creation. [Knowledge Extraction] Found API mapping for ashmem creation via FFI, and partial structural match in error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AshmemCreate__idx5520_rank3.c", "source_rust_file": "Partial__AshmemCreate__idx5520_rank3.rs", "c_api": "close(fd)", "rust_api": "None", "mapping_type": "function", "description": "Resource cleanup after failure", "reasoning": "[Task Analysis] C function creates ashmem region with name and size; Rust function wraps FFI call to create ashmem. [Similarity] Names don't match but both perform ashmem creation. [Knowledge Extraction] Found API mapping for ashmem creation via FFI, and partial structural match in error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AshmemCreate__idx5520_rank3.c", "source_rust_file": "Partial__AshmemCreate__idx5520_rank3.rs", "c_api": "AshmemOpen()", "rust_api": "ffi::CreateAshmemStd", "mapping_type": "function", "description": "Ashmem region creation via system call", "reasoning": "[Task Analysis] C function creates ashmem region with name and size; Rust function wraps FFI call to create ashmem. [Similarity] Names don't match but both perform ashmem creation. [Knowledge Extraction] Found API mapping for ashmem creation via FFI, and partial structural match in error handling pattern."}]
+Unixcoder Score: -0.0328139029443264
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::RemoveTasks(
+    const std::vector<std::string> &tids, const Version version, std::vector<ExceptionErrorCode> &rets)
+{
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, ExceptionErrorCode::E_OTHER);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteUint32(static_cast<uint32_t>(version));
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_REMOVE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request RemoveTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request RemoveTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i] = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn remove(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let permission = PermissionChecker::check_down_permission();
+
+        let version: u32 = data.read()?;
+        if Version::from(version as u8) == Version::API9
+            && !PermissionChecker::check_internet()
+            && !permission
+        {
+            error!("Service remove: no INTERNET permission");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A09,
+                "Service pause: no INTERNET permission"
+            );
+            reply.write(&(ErrorCode::Permission as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > CONTROL_MAX {
+            info!("Service remove: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![ErrorCode::Other; len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service remove tid {}", task_id);
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service remove, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A10,
+                    &format!("Service remove, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service remove, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A10,
+                    &format!(
+                        "Service remove, failed: check task uid. tid: {}, uid: {}",
+                        task_id, ipc_uid
+                    )
+                );
+                continue;
+            }
+
+            let (event, rx) = TaskManagerEvent::remove(task_uid, task_id);
+            if !self.task_manager.lock().unwrap().send_event(event) {
+                error!("Service remove, failed: task_manager err: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A10,
+                    &format!("Service remove, failed: task_manager err: {}", task_id)
+                );
+                set_code_with_index(&mut vec, i, ErrorCode::Other);
+                continue;
+            }
+            let ret = match rx.get() {
+                Some(ret) => ret,
+                None => {
+                    error!(
+                        "Service remove, tid: {}, failed: receives ret failed",
+                        task_id
+                    );
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A10,
+                        &format!(
+                            "Service remove, tid: {}, failed: receives ret failed",
+                            task_id
+                        )
+                    );
+                    set_code_with_index(&mut vec, i, ErrorCode::Other);
+                    continue;
+                }
+            };
+            set_code_with_index(&mut vec, i, ret);
+            if ret != ErrorCode::ErrOk {
+                error!("Service remove, tid: {}, failed: {}", task_id, ret as i32);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A10,
+                    &format!("Service remove, tid: {}, failed: {}", task_id, ret as i32)
+                );
+            }
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for ret in vec {
+            reply.write(&(ret as i32))?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx112913_rank2.c", "source_rust_file": "Partial__insert_char__idx112913_rank2.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "self.reserve(lower_bound); iterator.for_each(move |c| self.push(c))", "mapping_type": "pattern", "description": "Buffer shifting and character insertion pattern", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function extends a collection with characters. [Similarity] No full structural match due to different domains (buffer manipulation vs collection extension). [Knowledge Extraction] Extract partial structural fragment and API mappings based on shared logic of character insertion and buffer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx112913_rank2.c", "source_rust_file": "Partial__insert_char__idx112913_rank2.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "iterator.for_each(move |c| self.push(c))", "mapping_type": "pattern", "description": "Character copying/insertion pattern", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function extends a collection with characters. [Similarity] No full structural match due to different domains (buffer manipulation vs collection extension). [Knowledge Extraction] Extract partial structural fragment and API mappings based on shared logic of character insertion and buffer management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx112913_rank2.c", "source_rust_file": "Partial__insert_char__idx112913_rank2.rs", "c_api": "current->chars++", "rust_api": "self.push(c)", "mapping_type": "pattern", "description": "Character count increment pattern", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function extends a collection with characters. [Similarity] No full structural match due to different domains (buffer manipulation vs collection extension). [Knowledge Extraction] Extract partial structural fragment and API mappings based on shared logic of character insertion and buffer management."}, {"knowledge_type": "Partial", "source_c_file": "Partial__insert_char__idx112913_rank2.c", "source_rust_file": "Partial__insert_char__idx112913_rank2.rs", "c_fragment": "int n = utf8_getchars(buf, ch);\n\n    if (has_room(current, n) && pos >= 0 && pos <= current->chars) {\n        int p1, p2;\n        int ret = 1;\n        p1 = utf8_index(current->buf, pos);\n        p2 = p1 + n;\n\n#ifdef USE_TERMIOS\n        /* optimise the case where adding a single char to the end and no scrolling is needed */\n        if (current->pos == pos && current->chars == pos) {\n            if (ch >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {\n                IGNORE_RC(write(current->fd, buf, n));\n                ret = 2;\n            }\n        }\n#endif\n\n        memmove(current->buf + p2, current->buf + p1, current->len - p1);\n        memcpy(current->buf + p1, buf, n);\n        current->len += n;\n\n        current->chars++;\n        if (current->pos >= pos) {\n            current->pos++;\n        }\n        return ret;\n    }\n    return 0;", "rust_fragment": "let iterator = iter.into_iter();\n        let (lower_bound, _) = iterator.size_hint();\n        self.reserve(lower_bound);\n        iterator.for_each(move |c| self.push(c));", "description": "Both functions handle character insertion logic, with C doing manual buffer manipulation and Rust using iterator-based extension.", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function extends a collection with characters. [Similarity] No full structural match due to different domains (buffer manipulation vs collection extension). [Knowledge Extraction] Extract partial structural fragment and API mappings based on shared logic of character insertion and buffer management."}]
+Unixcoder Score: -0.0369454063475132
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::RemoveTasks(
+    const std::vector<std::string> &tids, const Version version, std::vector<ExceptionErrorCode> &rets)
+{
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, ExceptionErrorCode::E_OTHER);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteUint32(static_cast<uint32_t>(version));
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_REMOVE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request RemoveTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request RemoveTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i] = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn pause(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let permission = PermissionChecker::check_down_permission();
+        let version: u32 = data.read()?;
+        if Version::from(version as u8) == Version::API9 && !PermissionChecker::check_internet() {
+            error!("Service pause: no INTERNET permission");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A03,
+                "Service pause: no INTERNET permission"
+            );
+            reply.write(&(ErrorCode::Permission as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let len: u32 = data.read()?;
+        let len = len as usize;
+        if len > CONTROL_MAX {
+            info!("Service pause: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![ErrorCode::Other; len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service pause tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service pause, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A04,
+                    &format!("Service pause, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service pause, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A04,
+                    &format!(
+                        "Service pause, failed: check task uid. tid: {}, uid: {}",
+                        task_id, ipc_uid
+                    )
+                );
+                continue;
+            }
+
+            let (event, rx) = TaskManagerEvent::pause(task_uid, task_id);
+            if !self.task_manager.lock().unwrap().send_event(event) {
+                error!("Service pause, failed: task_manager err: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A04,
+                    &format!("Service pause, failed: task_manager err: {}", task_id)
+                );
+                set_code_with_index(&mut vec, i, ErrorCode::Other);
+                continue;
+            }
+
+            let ret = match rx.get() {
+                Some(ret) => ret,
+                None => {
+                    error!(
+                        "Service pause, tid: {}, failed: receives ret failed",
+                        task_id
+                    );
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A04,
+                        &format!(
+                            "Service pause, tid: {}, failed: receives ret failed",
+                            task_id
+                        )
+                    );
+                    set_code_with_index(&mut vec, i, ErrorCode::Other);
+                    continue;
+                }
+            };
+            set_code_with_index(&mut vec, i, ret);
+            if ret != ErrorCode::ErrOk {
+                error!("Service start, tid: {}, failed: {}", task_id, ret as i32);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A04,
+                    &format!("Service start, tid: {}, failed: {}", task_id, ret as i32)
+                );
+            }
+        }
+
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for ret in vec {
+            reply.write(&(ret as i32))?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx78455_rank4.c", "source_rust_file": "Partial__insert_char__idx78455_rank4.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "push_byte(s, byte)", "mapping_type": "function", "description": "Inserting bytes into a string buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function pushes bytes to a string. [Similarity] No full structural match due to different domains (buffer manipulation vs byte pushing). [Knowledge Extraction] Found partial matching logic in byte handling and string mutation patterns, and API mapping for byte insertion."}, {"knowledge_type": "Partial", "source_c_file": "Partial__insert_char__idx78455_rank4.c", "source_rust_file": "Partial__insert_char__idx78455_rank4.rs", "c_fragment": "memcpy(current->buf + p1, buf, n);", "rust_fragment": "push_byte(s, byte);", "description": "Both perform insertion of data into a buffer/string at a specific position.", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function pushes bytes to a string. [Similarity] No full structural match due to different domains (buffer manipulation vs byte pushing). [Knowledge Extraction] Found partial matching logic in byte handling and string mutation patterns, and API mapping for byte insertion."}]
+Unixcoder Score: -0.037080734968185425
+--------------------------------------------------
+C_Code: 
+static int insert_char(struct current *current, int pos, int ch)
+{
+    char buf[3];
+    int n = utf8_getchars(buf, ch);
+
+    if (has_room(current, n) && pos >= 0 && pos <= current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + n;
+
+#ifdef USE_TERMIOS
+        /* optimise the case where adding a single char to the end and no scrolling is needed */
+        if (current->pos == pos && current->chars == pos) {
+            if (ch >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                IGNORE_RC(write(current->fd, buf, n));
+                ret = 2;
+            }
+        }
+#endif
+
+        memmove(current->buf + p2, current->buf + p1, current->len - p1);
+        memcpy(current->buf + p1, buf, n);
+        current->len += n;
+
+        current->chars++;
+        if (current->pos >= pos) {
+            current->pos++;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+pub fn push_str(&mut self, string: &str) {
+        self.vec.extend_from_slice(string.as_bytes())
+    }
+Unixcoder Score: -0.038978397846221924
+--------------------------------------------------
+C_Code: 
+static int insert_char(struct current *current, int pos, int ch)
+{
+    char buf[3];
+    int n = utf8_getchars(buf, ch);
+
+    if (has_room(current, n) && pos >= 0 && pos <= current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + n;
+
+#ifdef USE_TERMIOS
+        /* optimise the case where adding a single char to the end and no scrolling is needed */
+        if (current->pos == pos && current->chars == pos) {
+            if (ch >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                IGNORE_RC(write(current->fd, buf, n));
+                ret = 2;
+            }
+        }
+#endif
+
+        memmove(current->buf + p2, current->buf + p1, current->len - p1);
+        memcpy(current->buf + p1, buf, n);
+        current->len += n;
+
+        current->chars++;
+        if (current->pos >= pos) {
+            current->pos++;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+pub fn push(&mut self, ch: char) {
+        match ch.len_utf8() {
+            1 => self.vec.push(ch as u8),
+            _ => self.vec.extend_from_slice(ch.encode_utf8(&mut [0; 4]).as_bytes()),
+        }
+    }
+Unixcoder Score: -0.04431973397731781
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx861_rank4.c", "source_rust_file": "Partial__CreateTasks__idx861_rank4.rs", "c_api": "Remote()->SendRequest", "rust_api": "let (event, rx) = TaskManagerEvent::pause(task_uid, task_id);\n            if !self.task_manager.lock().unwrap().send_event(event) {", "mapping_type": "function", "description": "Sending IPC request and handling response", "reasoning": "[Task Analysis] C function handles IPC task creation with config writing and reply parsing; Rust function handles IPC pause with permission checks and task management. [Similarity] Names don't match but both handle IPC communication with data serialization and error handling. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx861_rank4.c", "source_rust_file": "Partial__CreateTasks__idx861_rank4.rs", "c_api": "reply.ReadInt32()", "rust_api": "reply.write(&(ret as i32))?;", "mapping_type": "function", "description": "Reading/writing integer values in IPC communication", "reasoning": "[Task Analysis] C function handles IPC task creation with config writing and reply parsing; Rust function handles IPC pause with permission checks and task management. [Similarity] Names don't match but both handle IPC communication with data serialization and error handling. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CreateTasks__idx861_rank4.c", "source_rust_file": "Partial__CreateTasks__idx861_rank4.rs", "c_fragment": "for (auto &config : configs) {\n        WriteConfigData(config, data);\n    }", "rust_fragment": "for i in 0..len {\n            let task_id: String = data.read()?;\n            info!(\"Service pause tid {}\", task_id);\n\n            let Ok(task_id) = task_id.parse::<u32>() else {\n                error!(\"Service pause, failed: tid not valid: {}\", task_id);\n                sys_event!(\n                    ExecError,\n                    DfxCode::INVALID_IPC_MESSAGE_A04,\n                    &format!(\"Service pause, failed: tid not valid: {}\", task_id)\n                );\n                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);\n                continue;\n            };", "description": "Both process input data sequentially using loops", "reasoning": "[Task Analysis] C function handles IPC task creation with config writing and reply parsing; Rust function handles IPC pause with permission checks and task management. [Similarity] Names don't match but both handle IPC communication with data serialization and error handling. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx861_rank4.c", "source_rust_file": "Partial__CreateTasks__idx861_rank4.rs", "c_api": "SysEventLog::SendSysEventLog", "rust_api": "sys_event!(\n                ExecError,\n                DfxCode::INVALID_IPC_MESSAGE_A03,\n                \"Service pause: no INTERNET permission\"\n            );", "mapping_type": "function", "description": "System event logging for IPC errors", "reasoning": "[Task Analysis] C function handles IPC task creation with config writing and reply parsing; Rust function handles IPC pause with permission checks and task management. [Similarity] Names don't match but both handle IPC communication with data serialization and error handling. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx861_rank4.c", "source_rust_file": "Partial__CreateTasks__idx861_rank4.rs", "c_api": "REQUEST_HILOGE", "rust_api": "error!(\"Service pause: no INTERNET permission\");", "mapping_type": "function", "description": "Error logging in IPC communication", "reasoning": "[Task Analysis] C function handles IPC task creation with config writing and reply parsing; Rust function handles IPC pause with permission checks and task management. [Similarity] Names don't match but both handle IPC communication with data serialization and error handling. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CreateTasks__idx861_rank4.c", "source_rust_file": "Partial__CreateTasks__idx861_rank4.rs", "c_api": "data.WriteUint32(len)", "rust_api": "let len: u32 = data.read()?;\n        let len = len as usize;", "mapping_type": "function", "description": "Writing/reading length parameter for data serialization", "reasoning": "[Task Analysis] C function handles IPC task creation with config writing and reply parsing; Rust function handles IPC pause with permission checks and task management. [Similarity] Names don't match but both handle IPC communication with data serialization and error handling. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for IPC data handling and error reporting."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CreateTasks__idx861_rank4.c", "source_rust_file": "Partial__CreateTasks__idx861_rank4.rs", "c_fragment": "for (uint32_t i = 0; i < len; i++) {\n        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());\n        rets[i].tid = std::to_string(reply.ReadInt32());\n    }", "rust_fragment": "reply.write(&(ErrorCode::ErrOk as i32))?;\n        for ret in vec {\n            reply.write(&(ret as i32))?;\n        }", "description": "Both write output data sequentially to reply buffer", "reasoning": "[Task Analysis] C function handles IPC task creation with config writing and reply parsing; Rust function handles IPC pause with permission checks and task management. [Similarity] Names don't match but both handle IPC communication with data serialization and error handling. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for IPC data handling and error reporting."}]
+Unixcoder Score: -0.04438048228621483
+--------------------------------------------------
+C_Code: 
+static int insert_char(struct current *current, int pos, int ch)
+{
+    char buf[3];
+    int n = utf8_getchars(buf, ch);
+
+    if (has_room(current, n) && pos >= 0 && pos <= current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + n;
+
+#ifdef USE_TERMIOS
+        /* optimise the case where adding a single char to the end and no scrolling is needed */
+        if (current->pos == pos && current->chars == pos) {
+            if (ch >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                IGNORE_RC(write(current->fd, buf, n));
+                ret = 2;
+            }
+        }
+#endif
+
+        memmove(current->buf + p2, current->buf + p1, current->len - p1);
+        memcpy(current->buf + p1, buf, n);
+        current->len += n;
+
+        current->chars++;
+        if (current->pos >= pos) {
+            current->pos++;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+pub fn insert(&mut self, idx: usize, ch: char) {
+        assert!(self.is_char_boundary(idx));
+        let mut bits = [0; 4];
+        let bits = ch.encode_utf8(&mut bits).as_bytes();
+
+        unsafe {
+            self.insert_bytes(idx, bits);
+        }
+    }
+Unixcoder Score: -0.0488312654197216
+--------------------------------------------------
+C_Code: 
+static int insert_char(struct current *current, int pos, int ch)
+{
+    char buf[3];
+    int n = utf8_getchars(buf, ch);
+
+    if (has_room(current, n) && pos >= 0 && pos <= current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + n;
+
+#ifdef USE_TERMIOS
+        /* optimise the case where adding a single char to the end and no scrolling is needed */
+        if (current->pos == pos && current->chars == pos) {
+            if (ch >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                IGNORE_RC(write(current->fd, buf, n));
+                ret = 2;
+            }
+        }
+#endif
+
+        memmove(current->buf + p2, current->buf + p1, current->len - p1);
+        memcpy(current->buf + p1, buf, n);
+        current->len += n;
+
+        current->chars++;
+        if (current->pos >= pos) {
+            current->pos++;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn extend<I: IntoIterator<Item = &'a char>>(&mut self, iter: I) {
+        self.extend(iter.into_iter().cloned());
+    }
+Unixcoder Score: -0.04913739487528801
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::PauseTasks(
+    const std::vector<std::string> &tids, const Version version, std::vector<ExceptionErrorCode> &rets)
+{
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, ExceptionErrorCode::E_OTHER);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteUint32(static_cast<uint32_t>(version));
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_PAUSE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request PauseTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request PauseTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i] = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn resume(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let permission = PermissionChecker::check_down_permission();
+        if !PermissionChecker::check_internet() && !permission {
+            error!("Service resume: no INTERNET permission");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A11,
+                "Service resume: no INTERNET permission"
+            );
+            reply.write(&(ErrorCode::Permission as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > CONTROL_MAX {
+            info!("Service resume: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![ErrorCode::Other; len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service resume tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service resume, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A12,
+                    &format!("Service resume, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service resume, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A12,
+                    &format!("Service resume, failed: check task uid. tid: {}, uid: {}", task_id, ipc_uid)
+                );
+                continue;
+            }
+
+            let (event, rx) = TaskManagerEvent::resume(task_uid, task_id);
+            if !self.task_manager.lock().unwrap().send_event(event) {
+                error!("Service resume, failed: task_manager err: {}", task_id);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A12,
+                        &format!("Service resume, failed: task_manager err: {}", task_id)
+                    );
+                set_code_with_index(&mut vec, i, ErrorCode::Other);
+                continue;
+            }
+
+            let ret = match rx.get() {
+                Some(ret) => ret,
+                None => {
+                    error!(
+                        "Service resume, tid: {}, failed: receives ret failed",
+                        task_id
+                    );
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A12,
+                        &format!("Service resume, tid: {}, failed: receives ret failed", task_id)
+                    );
+                    set_code_with_index(&mut vec, i, ErrorCode::Other);
+                    continue;
+                }
+            };
+            set_code_with_index(&mut vec, i, ret);
+            if ret != ErrorCode::ErrOk {
+                error!("Service resume, tid: {}, failed: {}", task_id, ret as i32);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A12,
+                    &format!("Service resume, tid: {}, failed: {}", task_id, ret as i32)
+                );
+            }
+        }
+
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for ret in vec {
+            reply.write(&(ret as i32))?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__remove_char__idx112894_rank5.c", "source_rust_file": "API_Mapping__remove_char__idx112894_rank5.rs", "c_api": "current->chars--", "rust_api": "chars_iter", "mapping_type": "field_access", "description": "Character count decrement", "reasoning": "[Task Analysis] C function removes a character from a UTF-8 buffer at a given position, handling terminal optimizations and updating string metadata. Rust function provides a method to drain a range of characters from a String, returning a Drain iterator. [Similarity] No full structural similarity due to different domains (low-level buffer manipulation vs high-level string draining). [Knowledge Extraction] No full match, but both involve character-level string manipulation and metadata updates. Extract API mappings for character removal and string metadata handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__remove_char__idx112894_rank5.c", "source_rust_file": "API_Mapping__remove_char__idx112894_rank5.rs", "c_api": "current->len -= (p2 - p1)", "rust_api": "start, end", "mapping_type": "field_access", "description": "String length adjustment", "reasoning": "[Task Analysis] C function removes a character from a UTF-8 buffer at a given position, handling terminal optimizations and updating string metadata. Rust function provides a method to drain a range of characters from a String, returning a Drain iterator. [Similarity] No full structural similarity due to different domains (low-level buffer manipulation vs high-level string draining). [Knowledge Extraction] No full match, but both involve character-level string manipulation and metadata updates. Extract API mappings for character removal and string metadata handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__remove_char__idx112894_rank5.c", "source_rust_file": "API_Mapping__remove_char__idx112894_rank5.rs", "c_api": "memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1)", "rust_api": "self.get_unchecked(start..end).chars()", "mapping_type": "pattern", "description": "Character data movement and iteration", "reasoning": "[Task Analysis] C function removes a character from a UTF-8 buffer at a given position, handling terminal optimizations and updating string metadata. Rust function provides a method to drain a range of characters from a String, returning a Drain iterator. [Similarity] No full structural similarity due to different domains (low-level buffer manipulation vs high-level string draining). [Knowledge Extraction] No full match, but both involve character-level string manipulation and metadata updates. Extract API mappings for character removal and string metadata handling."}]
+Unixcoder Score: -0.0532710999250412
+--------------------------------------------------

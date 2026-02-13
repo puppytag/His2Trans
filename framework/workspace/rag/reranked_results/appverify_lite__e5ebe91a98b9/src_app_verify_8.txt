@@ -1,0 +1,217 @@
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn sha256_old(message: &[u8]) -> Vec<u8> {
+    let processed_msg = pre_process_msg(message);
+    into_vec_u8(&compress(&processed_msg))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustDIBuilderCreatePointerType__idx17597_rank3.c", "source_rust_file": "API_Mapping__LLVMRustDIBuilderCreatePointerType__idx17597_rank3.rs", "c_api": "Builder->createPointerType", "rust_api": "llvm::LLVMConstPointerCast", "mapping_type": "function", "description": "Pointer type creation in debug info vs constant pointer casting in LLVM", "reasoning": "[Task Analysis] C function is a wrapper for creating a pointer type in LLVM's debug info builder; Rust function is a low-level LLVM FFI call for pointer casting. [Similarity] Names do not refer to the same concept (LLVMRustDIBuilderCreatePointerType vs ptrcast), and domains are different (debug info creation vs constant pointer casting). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve LLVM operations and pointer handling, so API mappings can be extracted for LLVM-level pointer operations."}]
+Unixcoder Score: 0.13776960968971252
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn compress(input_bytes: &[u8]) -> [u32; 8] {
+    let mut compress = SHA256_H;
+    let chunk_num = input_bytes.len() / BYTES_PER_CHUNK;
+    for i in 0..chunk_num {
+        // the try_into of array cannot be failed, for the length of plain_chunk is sure to be 64 as expected
+        let expanded_chunk =
+            expand_chunk(input_bytes[i * BYTES_PER_CHUNK..(i + 1) * BYTES_PER_CHUNK].try_into().unwrap());
+        let compressed_chunk: [u32; 8] = compress_chunk(expanded_chunk);
+        for j in 0..8 {
+            compress[j] = compress[j].wrapping_add(compressed_chunk[j]);
+        }
+    }
+    compress
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustDIBuilderCreatePointerType__idx17910_rank1.c", "source_rust_file": "API_Mapping__LLVMRustDIBuilderCreatePointerType__idx17910_rank1.rs", "c_api": "LLVMRustDIBuilderCreatePointerType", "rust_api": "ty.ptr_to", "mapping_type": "function", "description": "Create a pointer type from a given type and address space", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}]
+Unixcoder Score: 0.11847403645515442
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+pub fn sha256(standard: bool, message: &[u8]) -> Vec<u8> {
+    if standard {
+        return sha256_new(message);
+    }
+
+    sha256_old(message)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustDIBuilderCreatePointerType__idx17920_rank1.c", "source_rust_file": "API_Mapping__LLVMRustDIBuilderCreatePointerType__idx17920_rank1.rs", "c_api": "Builder->createPointerType", "rust_api": "llvm::LLVMPointerType", "mapping_type": "function", "description": "Creation of a pointer type in LLVM IR", "reasoning": "[Task Analysis] C function is a wrapper for creating a pointer type in LLVM's Debug Info Builder; Rust function is a method that creates an LLVM pointer type from a type reference. [Similarity] Names do not refer to the same concept (LLVMRustDIBuilderCreatePointerType vs ptr_to), and the domains are different: C is about Debug Info metadata creation, Rust is about LLVM IR type manipulation. [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve creating pointer types in LLVM, so there is a potential API mapping between the underlying LLVM operations."}]
+Unixcoder Score: 0.10396995395421982
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn sha256_new(message: &[u8]) -> Vec<u8> {
+    let mut res = vec![0; SHA256_OUTPUT_LEN];
+    unsafe { Sha256(message.as_ptr(), message.len() as u32, res.as_mut_ptr()) }
+    res
+}
+Unixcoder Score: 0.09405119717121124
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn sha256_old(message: &[u8]) -> Vec<u8> {
+    let processed_msg = pre_process_msg(message);
+    into_vec_u8(&compress(&processed_msg))
+}
+Unixcoder Score: 0.08547846972942352
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn into_vec_u8(hash: &[u32; 8]) -> Vec<u8> {
+    let mut ret = [0; SHA256_LEN];
+    for i in 0..hash.len() {
+        ret[i * U8_PER_U32] = ((hash[i] >> 24) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 1] = ((hash[i] >> 16) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 2] = ((hash[i] >> 8) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 3] = (hash[i] & LOWER_BYTES_MASK) as u8;
+    }
+
+    ret.to_vec()
+}
+Unixcoder Score: 0.08040555566549301
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+pub fn sha256(standard: bool, message: &[u8]) -> Vec<u8> {
+    if standard {
+        return sha256_new(message);
+    }
+
+    sha256_old(message)
+}
+Unixcoder Score: 0.07981695979833603
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn sha256_new(message: &[u8]) -> Vec<u8> {
+    let mut res = vec![0; SHA256_OUTPUT_LEN];
+    unsafe { Sha256(message.as_ptr(), message.len() as u32, res.as_mut_ptr()) }
+    res
+}
+Unixcoder Score: 0.07914294302463531
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn compress(input_bytes: &[u8]) -> [u32; 8] {
+    let mut compress = SHA256_H;
+    let chunk_num = input_bytes.len() / BYTES_PER_CHUNK;
+    for i in 0..chunk_num {
+        // the try_into of array cannot be failed, for the length of plain_chunk is sure to be 64 as expected
+        let expanded_chunk =
+            expand_chunk(input_bytes[i * BYTES_PER_CHUNK..(i + 1) * BYTES_PER_CHUNK].try_into().unwrap());
+        let compressed_chunk: [u32; 8] = compress_chunk(expanded_chunk);
+        for j in 0..8 {
+            compress[j] = compress[j].wrapping_add(compressed_chunk[j]);
+        }
+    }
+    compress
+}
+Unixcoder Score: 0.07882139831781387
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn sha256(input: &str) -> String {
+    SHA256(input)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__SHA256__idx1574_rank1.c", "source_rust_file": "Full__SHA256__idx1574_rank1.rs", "reasoning": "[Task Analysis] C function computes SHA256 hash of input string; Rust function delegates to a SHA256 utility. [Similarity] Names don't match but the task is semantically identical: hashing a string. [Knowledge Extraction] Full structural match on logic and purpose, but naming differs. No API mappings due to definition vs usage asymmetry (Rust calls a utility, C implements it).", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__SHA256__idx1574_rank1.c", "source_rust_file": "Full__SHA256__idx1574_rank1.rs", "c_fragment": "rust::string SHA256(rust::str input)\n{\n    unsigned char hash[SHA256_DIGEST_LENGTH];\n    SHA256_CTX sha256;\n    SHA256_Init(&sha256);\n    SHA256_Update(&sha256, input.data(), input.length());\n    SHA256_Final(hash, &sha256);\n    std::stringstream ss;\n    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {\n        // 2 means setting hte width of the output.\n        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);\n    }\n    return ss.str();\n}", "rust_fragment": "pub fn url_hash(url: &str) -> String {\n    super::sha256::sha256(url)\n}", "description": "Both functions perform SHA256 hashing of a string input and return a hex-encoded string representation.", "reasoning": "[Task Analysis] C function computes SHA256 hash of input string; Rust function delegates to a SHA256 utility. [Similarity] Names don't match but the task is semantically identical: hashing a string. [Knowledge Extraction] Full structural match on logic and purpose, but naming differs. No API mappings due to definition vs usage asymmetry (Rust calls a utility, C implements it)."}]
+Unixcoder Score: 0.010860424488782883
+--------------------------------------------------

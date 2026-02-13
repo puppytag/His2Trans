@@ -1,0 +1,198 @@
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: 0.14376868307590485
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: 0.13351093232631683
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: 0.11042570322751999
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: 0.100962333381176
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.c", "source_rust_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.rs", "c_api": "set->GetBlob", "rust_api": "self.task_count.entry", "mapping_type": "function", "description": "Retrieving data from a data source and assigning it to a configuration field.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function processes database result set to extract blobs and convert them into structured config fields. Rust function creates a task with validation and insertion logic. -> [Similarity] -> No full structural similarity due to different domains (data extraction vs task creation/validation). -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.c", "source_rust_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.rs", "c_api": "BlobToStringVec", "rust_api": "BlobToStringVec", "mapping_type": "function", "description": "Conversion of blob data to string vector.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function processes database result set to extract blobs and convert them into structured config fields. Rust function creates a task with validation and insertion logic. -> [Similarity] -> No full structural similarity due to different domains (data extraction vs task creation/validation). -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.c", "source_rust_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.rs", "c_api": "BlobToCFormItem", "rust_api": "VecToFormItem", "mapping_type": "function", "description": "Conversion of blob data to form item structure.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function processes database result set to extract blobs and convert them into structured config fields. Rust function creates a task with validation and insertion logic. -> [Similarity] -> No full structural similarity due to different domains (data extraction vs task creation/validation). -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.c", "source_rust_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.rs", "c_fragment": "set->GetBlob(28, formItemsBlob); // Line 28 is 'form_items'\nconfig.formItems = VecToFormItem(BlobToCFormItem(formItemsBlob));", "rust_fragment": "let (frontend, background) = self.task_count.entry(config.common_data.uid).or_insert((0, 0));", "description": "Both involve data retrieval and assignment to a configuration field, though in different contexts.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function processes database result set to extract blobs and convert them into structured config fields. Rust function creates a task with validation and insertion logic. -> [Similarity] -> No full structural similarity due to different domains (data extraction vs task creation/validation). -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.c", "source_rust_file": "Partial__BuildRequestTaskConfigWithBlob__idx536_rank3.rs", "c_api": "BlobToCFileSpec", "rust_api": "VecToFileSpec", "mapping_type": "function", "description": "Conversion of blob data to file specification structure.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function processes database result set to extract blobs and convert them into structured config fields. Rust function creates a task with validation and insertion logic. -> [Similarity] -> No full structural similarity due to different domains (data extraction vs task creation/validation). -> [Knowledge Extraction] -> No full match, but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: 0.07426851242780685
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts
+Function: 
+pub(crate) struct SystemConfigManager {
+    cert: CertManager,
+    proxy: SystemProxyManager,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutBlob(\"body_file_names\", CStringToBlob(taskConfig->bodyFileNamesPtr, taskConfig->bodyFileNamesLen))", "rust_api": "if *task_count >= limit { error!(...) } else { *task_count += 1 }", "mapping_type": "method", "description": "Checking and incrementing task count", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "return true;", "rust_api": "Ok(task_id)", "mapping_type": "pattern", "description": "Successful completion return", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutInt(\"reason\", taskInfo->commonData.reason)", "rust_api": "config.common_data.uid = uid", "mapping_type": "method", "description": "Setting user ID in configuration data", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutBlob(\"form_items\", CFormItemToBlob(taskConfig->formItemsPtr, taskConfig->formItemsLen))", "rust_api": "let (frontend, background) = self.task_count.entry(config.common_data.uid).or_insert((0, 0))", "mapping_type": "method", "description": "Managing task count per user", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutLong(\"tries\", taskInfo->commonData.tries)", "rust_api": "config.version = version", "mapping_type": "method", "description": "Setting version in configuration data", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutBlob(\"certs_paths\", CStringToBlob(taskConfig->certsPathPtr, taskConfig->certsPathLen))", "rust_api": "let (files, client) = check_config(...)", "mapping_type": "method", "description": "Validating configuration and retrieving files/client", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutLong(\"mtime\", taskInfo->commonData.mtime)", "rust_api": "config.common_data.task_id = task_id", "mapping_type": "method", "description": "Setting task ID in configuration data", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutBlob(\"file_specs\", CFileSpecToBlob(taskConfig->fileSpecsPtr, taskConfig->fileSpecsLen))", "rust_api": "let (task_count, limit) = match config.common_data.mode { Mode::FrontEnd => (frontend, MAX_FRONTEND_TASK), _ => (background, MAX_BACKGROUND_TASK) }", "mapping_type": "method", "description": "Determining task limits based on mode", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "if (!WriteUpdateData(insertValues, taskInfo)) { return false; }", "rust_api": "if *task_count >= limit { return Err(ErrorCode::TaskEnqueueErr); }", "mapping_type": "pattern", "description": "Conditional early return on validation failure", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}]
+Unixcoder Score: 0.07280691713094711
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGE(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Error logging during certificate handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGI(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Logging certificate verification status", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error_depth(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Certificate chain depth information", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error(ctx)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Certificate validation result handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGD(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Debug logging for root CA verification", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "VerifyCertPubkey(cert, requestContext->GetPinnedPubkey())", "rust_api": "self.0.add_root_certificate(cert)", "mapping_type": "function", "description": "Public key verification for certificate", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_current_cert(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Extract certificate from SSL context", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}]
+Unixcoder Score: 0.06893040239810944
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "calloc(len, sizeof(char))", "rust_api": "Vec::new()", "mapping_type": "function", "description": "Memory allocation for string buffer", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "strlen(path)", "rust_api": "path.as_vec().len()", "mapping_type": "function", "description": "String length calculation", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "free(path)", "rust_api": "drop()", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "memcpy(str, path, strlen(path))", "rust_api": "path.clone()", "mapping_type": "function", "description": "String copy operation", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path_array__idx134731_rank2.c", "source_rust_file": "API_Mapping__rust_get_path_array__idx134731_rank2.rs", "c_api": "strsep(&str, \":\")", "rust_api": "split(':')", "mapping_type": "function", "description": "String splitting by delimiter", "reasoning": "[Task Analysis] C function handles PATH string parsing and buffer management; Rust function filters and joins paths. [Similarity] No structural similarity due to different domains (memory management vs path manipulation). [Knowledge Extraction] No full match, no partial match, but API mappings can be extracted for similar operations like string parsing and buffer handling."}]
+Unixcoder Score: 0.0673370361328125
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx361_rank1.c", "source_rust_file": "Partial__WriteMutableData__idx361_rank1.rs", "c_api": "return false;", "rust_api": "return Err(TaskError::Failed(Reason::OthersError));", "mapping_type": "pattern", "description": "Early return on failure in C vs returning an error in Rust", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function handles async upload logic with file processing and error handling. [Similarity] Names don't match (WriteMutableData vs upload_inner), and domains are different (data insertion vs file upload). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and control flow, and some API mappings related to data insertion and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx361_rank1.c", "source_rust_file": "Partial__WriteMutableData__idx361_rank1.rs", "c_api": "insertValues.PutInt", "rust_api": "task.conf.common_data.multipart", "mapping_type": "function", "description": "Data insertion into a container (C) vs checking a boolean flag (Rust)", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function handles async upload logic with file processing and error handling. [Similarity] Names don't match (WriteMutableData vs upload_inner), and domains are different (data insertion vs file upload). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and control flow, and some API mappings related to data insertion and error handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__WriteMutableData__idx361_rank1.c", "source_rust_file": "Partial__WriteMutableData__idx361_rank1.rs", "c_fragment": "return true;", "rust_fragment": "Ok(())", "description": "Both represent successful completion of a function.", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function handles async upload logic with file processing and error handling. [Similarity] Names don't match (WriteMutableData vs upload_inner), and domains are different (data insertion vs file upload). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and control flow, and some API mappings related to data insertion and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx361_rank1.c", "source_rust_file": "Partial__WriteMutableData__idx361_rank1.rs", "c_api": "insertValues.PutLong", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Data insertion into a container (C) vs accessing length of a collection (Rust)", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function handles async upload logic with file processing and error handling. [Similarity] Names don't match (WriteMutableData vs upload_inner), and domains are different (data insertion vs file upload). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and control flow, and some API mappings related to data insertion and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx361_rank1.c", "source_rust_file": "Partial__WriteMutableData__idx361_rank1.rs", "c_api": "WriteUpdateData", "rust_api": "task.prepare_batch_upload", "mapping_type": "function", "description": "Updating data in a database-like structure (C) vs preparing batch upload (Rust)", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function handles async upload logic with file processing and error handling. [Similarity] Names don't match (WriteMutableData vs upload_inner), and domains are different (data insertion vs file upload). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and control flow, and some API mappings related to data insertion and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx361_rank1.c", "source_rust_file": "Partial__WriteMutableData__idx361_rank1.rs", "c_api": "insertValues.PutBlob", "rust_api": "task.prepare_batch_upload", "mapping_type": "function", "description": "Adding binary data to a container (C) vs preparing batch upload (Rust)", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function handles async upload logic with file processing and error handling. [Similarity] Names don't match (WriteMutableData vs upload_inner), and domains are different (data insertion vs file upload). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and control flow, and some API mappings related to data insertion and error handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__WriteMutableData__idx361_rank1.c", "source_rust_file": "Partial__WriteMutableData__idx361_rank1.rs", "c_fragment": "if (!WriteUpdateData(insertValues, taskInfo)) {\n        return false;\n    }", "rust_fragment": "if !task.prepare_batch_upload(start, size).await {\n            return Err(TaskError::Failed(Reason::OthersError));\n        }", "description": "Both blocks check a condition and return an error if it fails.", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function handles async upload logic with file processing and error handling. [Similarity] Names don't match (WriteMutableData vs upload_inner), and domains are different (data insertion vs file upload). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and control flow, and some API mappings related to data insertion and error handling."}]
+Unixcoder Score: 0.059199657291173935
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.c", "source_rust_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.rs", "c_api": "config.formItems = VecToFormItem(BlobToCFormItem(formItemsBlob))", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Converting blob data to structured form items and accessing file specs length", "reasoning": "[Task Analysis] C function processes database result set to extract blobs and convert them into structured config data. Rust function handles async task upload logic with multipart handling and file iteration. [Similarity] Names do not refer to the same concept (BuildRequestTaskConfigWithBlob vs upload_inner), and domains are different (data extraction vs task execution). [Knowledge Extraction] No full structural match, but there are API mappings related to blob handling and data conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.c", "source_rust_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.rs", "c_api": "set->GetBlob(30, bodyFileNamesBlob)", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Retrieving blob data from result set and accessing length of file specs", "reasoning": "[Task Analysis] C function processes database result set to extract blobs and convert them into structured config data. Rust function handles async task upload logic with multipart handling and file iteration. [Similarity] Names do not refer to the same concept (BuildRequestTaskConfigWithBlob vs upload_inner), and domains are different (data extraction vs task execution). [Knowledge Extraction] No full structural match, but there are API mappings related to blob handling and data conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.c", "source_rust_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.rs", "c_api": "config.bodyFileNames = BlobToStringVec(bodyFileNamesBlob)", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Converting blob data to string vector and accessing file specs length", "reasoning": "[Task Analysis] C function processes database result set to extract blobs and convert them into structured config data. Rust function handles async task upload logic with multipart handling and file iteration. [Similarity] Names do not refer to the same concept (BuildRequestTaskConfigWithBlob vs upload_inner), and domains are different (data extraction vs task execution). [Knowledge Extraction] No full structural match, but there are API mappings related to blob handling and data conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.c", "source_rust_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.rs", "c_api": "set->GetBlob(29, formSpecsBlob)", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Retrieving blob data from result set and accessing length of file specs", "reasoning": "[Task Analysis] C function processes database result set to extract blobs and convert them into structured config data. Rust function handles async task upload logic with multipart handling and file iteration. [Similarity] Names do not refer to the same concept (BuildRequestTaskConfigWithBlob vs upload_inner), and domains are different (data extraction vs task execution). [Knowledge Extraction] No full structural match, but there are API mappings related to blob handling and data conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.c", "source_rust_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.rs", "c_api": "set->GetBlob(31, certsPathsBlob)", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Retrieving blob data from result set and accessing length of file specs", "reasoning": "[Task Analysis] C function processes database result set to extract blobs and convert them into structured config data. Rust function handles async task upload logic with multipart handling and file iteration. [Similarity] Names do not refer to the same concept (BuildRequestTaskConfigWithBlob vs upload_inner), and domains are different (data extraction vs task execution). [Knowledge Extraction] No full structural match, but there are API mappings related to blob handling and data conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.c", "source_rust_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.rs", "c_api": "config.fileSpecs = VecToFileSpec(BlobToCFileSpec(formSpecsBlob))", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Converting blob data to structured file specs and accessing file specs length", "reasoning": "[Task Analysis] C function processes database result set to extract blobs and convert them into structured config data. Rust function handles async task upload logic with multipart handling and file iteration. [Similarity] Names do not refer to the same concept (BuildRequestTaskConfigWithBlob vs upload_inner), and domains are different (data extraction vs task execution). [Knowledge Extraction] No full structural match, but there are API mappings related to blob handling and data conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.c", "source_rust_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.rs", "c_api": "config.certsPath = BlobToStringVec(certsPathsBlob)", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Converting blob data to string vector and accessing file specs length", "reasoning": "[Task Analysis] C function processes database result set to extract blobs and convert them into structured config data. Rust function handles async task upload logic with multipart handling and file iteration. [Similarity] Names do not refer to the same concept (BuildRequestTaskConfigWithBlob vs upload_inner), and domains are different (data extraction vs task execution). [Knowledge Extraction] No full structural match, but there are API mappings related to blob handling and data conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.c", "source_rust_file": "API_Mapping__BuildRequestTaskConfigWithBlob__idx361_rank2.rs", "c_api": "set->GetBlob(28, formItemsBlob)", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Retrieving blob data from result set and accessing length of file specs", "reasoning": "[Task Analysis] C function processes database result set to extract blobs and convert them into structured config data. Rust function handles async task upload logic with multipart handling and file iteration. [Similarity] Names do not refer to the same concept (BuildRequestTaskConfigWithBlob vs upload_inner), and domains are different (data extraction vs task execution). [Knowledge Extraction] No full structural match, but there are API mappings related to blob handling and data conversion."}]
+Unixcoder Score: 0.05474932864308357
+--------------------------------------------------

@@ -1,0 +1,117 @@
+C_Code: 
+struct RemoteServiceStub
+Function: 
+pub struct SystemAbility {
+    inner: UniquePtr<SystemAbilityWrapper>,
+}
+Unixcoder Score: 0.05229390040040016
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+struct FfiPredownloadOptions<'a> {
+        headers: Vec<&'a str>,
+        ssl_type: &'a str,
+        ca_path: &'a str,
+    }
+Unixcoder Score: 0.05005509778857231
+--------------------------------------------------
+C_Code: 
+struct RemoteServiceStub
+Function: 
+pub struct AbilityStub {
+    remote: RemoteStubWrapper,
+}
+Unixcoder Score: 0.039261557161808014
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub(crate) struct PrimeCallback {
+    task_id: TaskId,
+    finish: Arc<AtomicBool>,
+    state: Arc<AtomicUsize>,
+    cache_handle: Updater,
+    callbacks: Arc<Mutex<VecDeque<Box<dyn PreloadCallback>>>>,
+    progress_restriction: ProgressRestriction,
+    seq: usize,
+}
+Unixcoder Score: 0.03818336874246597
+--------------------------------------------------
+C_Code: 
+struct RemoteServiceStub
+Function: 
+pub struct AbilityStub {
+    inner: Box<dyn RemoteStub>,
+}
+Unixcoder Score: 0.03610442578792572
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub struct RustData {
+    data: Arc<RamCache>,
+}
+Unixcoder Score: 0.0327913798391819
+--------------------------------------------------
+C_Code: 
+void DownloadServiceAbility::OnStop()
+{
+    DOWNLOAD_HILOGI("OnStop started.");
+    if (state_ != ServiceRunningState::STATE_RUNNING) {
+        return;
+    }
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return;
+    }
+    instance->Destroy();
+    serviceHandler_ = nullptr;
+    instance_ = nullptr;
+    state_ = ServiceRunningState::STATE_NOT_START;
+    DOWNLOAD_HILOGI("OnStop end.");
+}
+Function: 
+pub fn stop(&mut self) {
+        debug!(LOG_LABEL, "stop");
+        if ServerRunState::NoStart == self.server_state {
+            return;
+        }
+        self.server_state = ServerRunState::NoStart;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__add_services__idx3098_rank4.h", "source_rust_file": "Full__add_services__idx3098_rank4.rs", "c_api": "Schema::VT_SERVICES", "rust_api": "MoreDefaults::VT_FLOATS", "mapping_type": "field_access", "description": "Accessing a field ID in FlatBuffers schema.", "reasoning": "[Task Analysis] C function adds services to a FlatBuffers schema offset, Rust function adds floats to a FlatBuffers vector offset. Both operate on FlatBuffers builder patterns. [Similarity] Names don't match but logic is semantically equivalent: adding a collection of offsets to a schema field. [Knowledge Extraction] Full structural match on the core pattern of adding offsets to a FlatBuffers schema field; API mappings identified for FlatBuffers builder operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__add_services__idx3098_rank4.h", "source_rust_file": "Full__add_services__idx3098_rank4.rs", "c_api": "fbb_.AddOffset", "rust_api": "self.fbb_.push_slot_always", "mapping_type": "function", "description": "Adding an offset to a FlatBuffers builder field.", "reasoning": "[Task Analysis] C function adds services to a FlatBuffers schema offset, Rust function adds floats to a FlatBuffers vector offset. Both operate on FlatBuffers builder patterns. [Similarity] Names don't match but logic is semantically equivalent: adding a collection of offsets to a schema field. [Knowledge Extraction] Full structural match on the core pattern of adding offsets to a FlatBuffers schema field; API mappings identified for FlatBuffers builder operations."}, {"knowledge_type": "Partial", "source_c_file": "Full__add_services__idx3098_rank4.h", "source_rust_file": "Full__add_services__idx3098_rank4.rs", "c_fragment": "fbb_.AddOffset(Schema::VT_SERVICES, services);", "rust_fragment": "self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(MoreDefaults::VT_FLOATS, floats);", "description": "Adding an offset to a FlatBuffers schema field.", "reasoning": "[Task Analysis] C function adds services to a FlatBuffers schema offset, Rust function adds floats to a FlatBuffers vector offset. Both operate on FlatBuffers builder patterns. [Similarity] Names don't match but logic is semantically equivalent: adding a collection of offsets to a schema field. [Knowledge Extraction] Full structural match on the core pattern of adding offsets to a FlatBuffers schema field; API mappings identified for FlatBuffers builder operations."}, {"knowledge_type": "Full", "source_c_file": "Full__add_services__idx3098_rank4.h", "source_rust_file": "Full__add_services__idx3098_rank4.rs", "reasoning": "[Task Analysis] C function adds services to a FlatBuffers schema offset, Rust function adds floats to a FlatBuffers vector offset. Both operate on FlatBuffers builder patterns. [Similarity] Names don't match but logic is semantically equivalent: adding a collection of offsets to a schema field. [Knowledge Extraction] Full structural match on the core pattern of adding offsets to a FlatBuffers schema field; API mappings identified for FlatBuffers builder operations.", "description": "Full structural translation"}]
+Unixcoder Score: 0.027324093505740166
+--------------------------------------------------
+C_Code: 
+struct RemoteServiceStub
+Function: 
+pub struct UnsubscribeHandler {
+    inner: Unsubscribe,
+}
+Unixcoder Score: 0.02253888174891472
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub struct CacheDownloadService {
+    running_tasks: Mutex<HashMap<TaskId, Arc<Mutex<DownloadTask>>>>,
+    cache_manager: CacheManager,
+    info_mgr: Arc<DownloadInfoMgr>,
+    net_registrar: NetRegistrar,
+}
+Unixcoder Score: 0.02227170206606388
+--------------------------------------------------
+C_Code: 
+struct CacheDownloadService
+Function: 
+pub struct TaskHandle {
+    task_id: TaskId,
+    handle: Option<Arc<dyn CommonHandle>>,
+    state: Arc<AtomicUsize>,
+    finish: Arc<AtomicBool>,
+    callbacks: Arc<Mutex<VecDeque<Box<dyn PreloadCallback>>>>,
+}
+Unixcoder Score: 0.018417945131659508
+--------------------------------------------------

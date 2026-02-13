@@ -1,0 +1,475 @@
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+pub(crate) fn open_channel(&self, pid: u64) -> Result<Arc<UnixDatagram>, ErrorCode> {
+        let (tx, rx) = channel::<Result<Arc<UnixDatagram>, ErrorCode>>();
+        let event = ClientEvent::OpenChannel(pid, tx);
+        if !self.send_event(event) {
+            return Err(ErrorCode::Other);
+        }
+        let rx = Recv::new(rx);
+        match rx.get() {
+            Some(ret) => ret,
+            None => {
+                error!("open channel fail, recv none");
+                sys_event!(
+                    ExecFault,
+                    DfxCode::UDS_FAULT_03,
+                    "open channel fail, recv none"
+                );
+                Err(ErrorCode::Other)
+            }
+        }
+    }
+Unixcoder Score: -0.004773045890033245
+--------------------------------------------------
+C_Code: 
+FsResult<size_t> FsStream::Write(const ArrayBuffer &buf, const optional<WriteOptions> &options)
+{
+    auto fp = GetFilePtr();
+    if (!fp) {
+        HILOGE("Failed to get file ptr");
+        return FsResult<size_t>::Error(EIO);
+    }
+
+    auto [succ, retLen, offset] = ValidWriteArg(buf.length, options);
+    if (!succ) {
+        HILOGE("Invalid options");
+        return FsResult<size_t>::Error(EINVAL);
+    }
+
+    if (offset >= 0) {
+        int ret = fseek(fp.get(), static_cast<long>(offset), SEEK_SET);
+        if (ret < 0) {
+            HILOGE("Failed to set the offset location of the file stream pointer, ret: %{public}d", ret);
+            return FsResult<size_t>::Error(errno);
+        }
+    }
+
+    size_t writeLen = fwrite(buf.buf, 1, retLen, fp.get());
+    if ((writeLen == 0) && (writeLen != retLen)) {
+        HILOGE("Failed to fwrite stream");
+        return FsResult<size_t>::Error(EIO);
+    }
+    return FsResult<size_t>::Success(writeLen);
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Unixcoder Score: -0.0303465835750103
+--------------------------------------------------
+C_Code: 
+UPB_INLINE void upb_MdDecoder_ErrorJmp(upb_MdDecoder* d,
+                                                    const char* fmt, ...) {
+  if (d->status) {
+    va_list argp;
+    upb_Status_SetErrorMessage(d->status, "Error building mini table: ");
+    va_start(argp, fmt);
+    upb_Status_VAppendErrorFormat(d->status, fmt, argp);
+    va_end(argp);
+  }
+  UPB_LONGJMP(d->err, 1);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx103814_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx103814_rank1.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "elements.insert(0, ws.into())", "mapping_type": "pattern", "description": "Buffer shifting operation in C vs inserting an element at index in Rust", "reasoning": "[Filter 1: Entity Name Check] -> Names 'insert_char' vs 'insert_all' refer to different concepts (character insertion vs element insertion), so not Full/Partial. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code manipulates UTF-8 character buffers and positions, while Rust code handles syntax elements and whitespace insertion; domains are different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function inserts a character into a buffer at a given position, handling UTF-8 encoding and buffer shifting. Rust function inserts elements with surrounding whitespace into a syntax tree. [Similarity] -> No high-level structural or semantic similarity. [Knowledge Extraction] -> No full match, no partial match, but there are some low-level API patterns that could be mapped (e.g., buffer manipulation in C vs vector manipulation in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx103814_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx103814_rank1.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "elements.push(ws.into())", "mapping_type": "pattern", "description": "Memory copy in C vs pushing an element to the end in Rust", "reasoning": "[Filter 1: Entity Name Check] -> Names 'insert_char' vs 'insert_all' refer to different concepts (character insertion vs element insertion), so not Full/Partial. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code manipulates UTF-8 character buffers and positions, while Rust code handles syntax elements and whitespace insertion; domains are different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function inserts a character into a buffer at a given position, handling UTF-8 encoding and buffer shifting. Rust function inserts elements with surrounding whitespace into a syntax tree. [Similarity] -> No high-level structural or semantic similarity. [Knowledge Extraction] -> No full match, no partial match, but there are some low-level API patterns that could be mapped (e.g., buffer manipulation in C vs vector manipulation in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx103814_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx103814_rank1.rs", "c_api": "current->len += n", "rust_api": "insert_all_raw(position, elements)", "mapping_type": "function", "description": "Length update in C buffer vs invoking raw insertion function in Rust", "reasoning": "[Filter 1: Entity Name Check] -> Names 'insert_char' vs 'insert_all' refer to different concepts (character insertion vs element insertion), so not Full/Partial. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code manipulates UTF-8 character buffers and positions, while Rust code handles syntax elements and whitespace insertion; domains are different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function inserts a character into a buffer at a given position, handling UTF-8 encoding and buffer shifting. Rust function inserts elements with surrounding whitespace into a syntax tree. [Similarity] -> No high-level structural or semantic similarity. [Knowledge Extraction] -> No full match, no partial match, but there are some low-level API patterns that could be mapped (e.g., buffer manipulation in C vs vector manipulation in Rust)."}]
+Unixcoder Score: -0.03266836702823639
+--------------------------------------------------
+C_Code: 
+static int remove_char(struct current *current, int pos)
+{
+    if (pos >= 0 && pos < current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + utf8_index(current->buf + p1, 1);
+
+#ifdef USE_TERMIOS
+        /* optimise remove char in the case of removing the last char */
+        if (current->pos == pos + 1 && current->pos == current->chars) {
+            if (current->buf[pos] >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                ret = 2;
+                fd_printf(current->fd, "\b \b");
+            }
+        }
+#endif
+
+        /* Move the null char too */
+        memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1);
+        current->len -= (p2 - p1);
+        current->chars--;
+
+        if (current->pos > pos) {
+            current->pos--;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn main() {
+    let s = "abc";
+
+    if s.starts_with("ab") {
+        str::to_string(&s["ab".len()..]);
+        s["ab".len()..].to_string();
+
+        str::to_string(&s[2..]);
+        s[2..].to_string();
+    }
+
+    if s.ends_with("bc") {
+        str::to_string(&s[..s.len() - "bc".len()]);
+        s[..s.len() - "bc".len()].to_string();
+
+        str::to_string(&s[..s.len() - 2]);
+        s[..s.len() - 2].to_string();
+    }
+
+    // Character patterns
+    if s.starts_with('a') {
+        str::to_string(&s[1..]);
+        s[1..].to_string();
+    }
+
+    // Variable prefix
+    let prefix = "ab";
+    if s.starts_with(prefix) {
+        str::to_string(&s[prefix.len()..]);
+    }
+
+    // Constant prefix
+    const PREFIX: &str = "ab";
+    if s.starts_with(PREFIX) {
+        str::to_string(&s[PREFIX.len()..]);
+        str::to_string(&s[2..]);
+    }
+
+    // Constant target
+    const TARGET: &str = "abc";
+    if TARGET.starts_with(prefix) {
+        str::to_string(&TARGET[prefix.len()..]);
+    }
+
+    // String target - not mutated.
+    let s1: String = "abc".into();
+    if s1.starts_with("ab") {
+        s1[2..].to_uppercase();
+    }
+
+    // String target - mutated. (Don't lint.)
+    let mut s2: String = "abc".into();
+    if s2.starts_with("ab") {
+        s2.push('d');
+        s2[2..].to_uppercase();
+    }
+
+    // Target not stripped. (Don't lint.)
+    let s3 = String::from("abcd");
+    let s4 = String::from("efgh");
+    if s3.starts_with("ab") {
+        s4[2..].to_string();
+    }
+}
+Unixcoder Score: -0.035072535276412964
+--------------------------------------------------
+C_Code: 
+TEST(Cpp, JsonNull) {
+  upb::DefPool defpool;
+  upb::MessageDefPtr md(upb_test_TestMessage_getmsgdef(defpool.ptr()));
+  upb::FieldDefPtr i32_f = md.FindFieldByName("i32");
+  upb::FieldDefPtr str_f = md.FindFieldByName("str");
+  ASSERT_TRUE(i32_f);
+  ASSERT_TRUE(str_f);
+  EXPECT_EQ(5, i32_f.default_value().int32_val);
+  EXPECT_EQ(0, strcmp(str_f.default_value().str_val.data, "abc"));
+  EXPECT_EQ(3, str_f.default_value().str_val.size);
+}
+Function: 
+fn array_ffi_test() {
+        // SAFETY: FFI unit test uses C API under expected patterns.
+        unsafe {
+            let arena = Arena::new();
+            let raw_arena = arena.raw();
+            let array = upb_Array_New(raw_arena, CType::Float);
+
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 7.0 }, raw_arena));
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 42.0 }, raw_arena));
+            assert_eq!(upb_Array_Size(array), 2);
+            assert!(matches!(upb_Array_Get(array, 1), upb_MessageValue { float_val: 42.0 }));
+
+            assert!(upb_Array_Resize(array, 3, raw_arena));
+            assert_eq!(upb_Array_Size(array), 3);
+            assert!(matches!(upb_Array_Get(array, 2), upb_MessageValue { float_val: 0.0 }));
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx8007_rank4.c", "source_rust_file": "API_Mapping__insert_char__idx8007_rank4.rs", "c_api": "current->chars++", "rust_api": "sb.append(\"World!\")", "mapping_type": "function", "description": "String buffer length increment", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function builds string using StringBuffer. [Similarity] No structural similarity at function level due to different domains (buffer manipulation vs string building). [Knowledge Extraction] No full/partial match. API mappings found: StringBuffer::append() ↔ C string insertion, to_str() ↔ C buffer to string conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx8007_rank4.c", "source_rust_file": "API_Mapping__insert_char__idx8007_rank4.rs", "c_api": "current->len += n", "rust_api": "let str = to_str(sb)", "mapping_type": "function", "description": "Buffer to string conversion", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function builds string using StringBuffer. [Similarity] No structural similarity at function level due to different domains (buffer manipulation vs string building). [Knowledge Extraction] No full/partial match. API mappings found: StringBuffer::append() ↔ C string insertion, to_str() ↔ C buffer to string conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx8007_rank4.c", "source_rust_file": "API_Mapping__insert_char__idx8007_rank4.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "sb.append(\"Hello, \")", "mapping_type": "function", "description": "String buffer insertion", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function builds string using StringBuffer. [Similarity] No structural similarity at function level due to different domains (buffer manipulation vs string building). [Knowledge Extraction] No full/partial match. API mappings found: StringBuffer::append() ↔ C string insertion, to_str() ↔ C buffer to string conversion."}]
+Unixcoder Score: -0.03547670692205429
+--------------------------------------------------
+C_Code: 
+static int remove_char(struct current *current, int pos)
+{
+    if (pos >= 0 && pos < current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + utf8_index(current->buf + p1, 1);
+
+#ifdef USE_TERMIOS
+        /* optimise remove char in the case of removing the last char */
+        if (current->pos == pos + 1 && current->pos == current->chars) {
+            if (current->buf[pos] >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                ret = 2;
+                fd_printf(current->fd, "\b \b");
+            }
+        }
+#endif
+
+        /* Move the null char too */
+        memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1);
+        current->len -= (p2 - p1);
+        current->chars--;
+
+        if (current->pos > pos) {
+            current->pos--;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            // Use Vec::drain. "Reaffirm" the bounds checks to avoid
+            // panic code being inserted again.
+            let self_vec = (*self.string).as_mut_vec();
+            if self.start <= self.end && self.end <= self_vec.len() {
+                self_vec.drain(self.start..self.end);
+            }
+        }
+    }
+Unixcoder Score: -0.05945965647697449
+--------------------------------------------------
+C_Code: 
+static int remove_char(struct current *current, int pos)
+{
+    if (pos >= 0 && pos < current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + utf8_index(current->buf + p1, 1);
+
+#ifdef USE_TERMIOS
+        /* optimise remove char in the case of removing the last char */
+        if (current->pos == pos + 1 && current->pos == current->chars) {
+            if (current->buf[pos] >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                ret = 2;
+                fd_printf(current->fd, "\b \b");
+            }
+        }
+#endif
+
+        /* Move the null char too */
+        memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1);
+        current->len -= (p2 - p1);
+        current->chars--;
+
+        if (current->pos > pos) {
+            current->pos--;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn pop_byte(s: &mutable istr) -> u8 {
+    let len = byte_len(s);
+    assert (len > 0u);
+    let b = s[len - 1u];
+    s = substr(s, 0u, len - 1u);
+    ret b;
+}
+Unixcoder Score: -0.06293375045061111
+--------------------------------------------------
+C_Code: 
+static int remove_char(struct current *current, int pos)
+{
+    if (pos >= 0 && pos < current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + utf8_index(current->buf + p1, 1);
+
+#ifdef USE_TERMIOS
+        /* optimise remove char in the case of removing the last char */
+        if (current->pos == pos + 1 && current->pos == current->chars) {
+            if (current->buf[pos] >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                ret = 2;
+                fd_printf(current->fd, "\b \b");
+            }
+        }
+#endif
+
+        /* Move the null char too */
+        memmove(current->buf + p1, current->buf + p2, current->len - p2 + 1);
+        current->len -= (p2 - p1);
+        current->chars--;
+
+        if (current->pos > pos) {
+            current->pos--;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+pub fn remove(&mut self, idx: usize) -> char {
+        let ch = match self[idx..].chars().next() {
+            Some(ch) => ch,
+            None => panic!("cannot remove a char from the end of a string"),
+        };
+
+        let next = idx + ch.len_utf8();
+        let len = self.len();
+        unsafe {
+            ptr::copy(self.vec.as_ptr().add(next), self.vec.as_mut_ptr().add(idx), len - next);
+            self.vec.set_len(len - (next - idx));
+        }
+        ch
+    }
+Unixcoder Score: -0.06550781428813934
+--------------------------------------------------
+C_Code: 
+static int insert_char(struct current *current, int pos, int ch)
+{
+    char buf[3];
+    int n = utf8_getchars(buf, ch);
+
+    if (has_room(current, n) && pos >= 0 && pos <= current->chars) {
+        int p1, p2;
+        int ret = 1;
+        p1 = utf8_index(current->buf, pos);
+        p2 = p1 + n;
+
+#ifdef USE_TERMIOS
+        /* optimise the case where adding a single char to the end and no scrolling is needed */
+        if (current->pos == pos && current->chars == pos) {
+            if (ch >= ' ' && utf8_strlen(current->prompt, -1) + utf8_strlen(current->buf, current->len) < current->cols - 1) {
+                IGNORE_RC(write(current->fd, buf, n));
+                ret = 2;
+            }
+        }
+#endif
+
+        memmove(current->buf + p2, current->buf + p1, current->len - p1);
+        memcpy(current->buf + p1, buf, n);
+        current->len += n;
+
+        current->chars++;
+        if (current->pos >= pos) {
+            current->pos++;
+        }
+        return ret;
+    }
+    return 0;
+}
+Function: 
+fn extend<I: IntoIterator<Item = Box<str>>>(&mut self, iter: I) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx43568_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx43568_rank5.rs", "c_api": "utf8_getchars(buf, ch)", "rust_api": "ch.encode_utf8(&mut bytes).into()", "mapping_type": "function", "description": "Convert character to UTF-8 byte sequence", "reasoning": "[Task Analysis] C function manipulates UTF-8 buffer and character insertion logic; Rust function converts char to UTF-8 string. [Similarity] No full structural match due to different domains (buffer manipulation vs string conversion). [Knowledge Extraction] Extract API mappings for UTF-8 encoding operations."}]
+Unixcoder Score: -0.06712719053030014
+--------------------------------------------------
+C_Code: 
+UPB_INLINE void upb_MdDecoder_ErrorJmp(upb_MdDecoder* d,
+                                                    const char* fmt, ...) {
+  if (d->status) {
+    va_list argp;
+    upb_Status_SetErrorMessage(d->status, "Error building mini table: ");
+    va_start(argp, fmt);
+    upb_Status_VAppendErrorFormat(d->status, fmt, argp);
+    va_end(argp);
+  }
+  UPB_LONGJMP(d->err, 1);
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112869_rank4.c", "source_rust_file": "API_Mapping__insert_char__idx112869_rank4.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "self.vec.extend_from_slice(string.as_bytes())", "mapping_type": "function", "description": "Copy bytes into a buffer/vector", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function appends bytes to a vector. [Similarity] No structural similarity at function level due to different domains (buffer manipulation vs string append). [Knowledge Extraction] No full/partial match. However, both involve appending data to a container, so API mapping is extracted."}]
+Unixcoder Score: -0.06902371346950531
+--------------------------------------------------

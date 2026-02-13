@@ -1,0 +1,226 @@
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn url_hash(url: &str) -> String {
+    super::sha256::sha256(url)
+}
+Unixcoder Score: 0.02139100804924965
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn url_hash(url: &str) -> String {
+    let mut hasher = DefaultHasher::new();
+    url.hash(&mut hasher);
+    hasher.finish().to_string()
+}
+Unixcoder Score: 0.011790836229920387
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn sha256(input: &str) -> String {
+    SHA256(input)
+}
+Unixcoder Score: 0.007111808750778437
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn url_hash(url: &str) -> String {
+    super::sha256::sha256(url)
+}
+Unixcoder Score: 0.005756210535764694
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn sha256(input: &str) -> String {
+            let mut hasher = Sha256::new();
+            hasher.update(input);
+            let result = hasher.finalize();
+            encode(result)
+        }
+Unixcoder Score: -0.0003160097694490105
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn sha256(input: &str) -> String {
+    SHA256(input)
+}
+Unixcoder Score: -0.0012543699704110622
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn url_hash(url: &str) -> String {
+    let mut hasher = DefaultHasher::new();
+    url.hash(&mut hasher);
+    hasher.finish().to_string()
+}
+Unixcoder Score: -0.0014343125512823462
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn sha256(input: &str) -> String {
+            let mut hasher = Sha256::new();
+            hasher.update(input);
+            let result = hasher.finalize();
+            encode(result)
+        }
+Unixcoder Score: -0.003270757617428899
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+fn ut_wrapper_sha256_long_input() {
+        let long_input = "a".repeat(10000);
+        let result = SHA256(&long_input);
+        assert!(!result.is_empty());
+        assert_eq!(result.len(), 64); // SHA256 should always return 64-character hex string
+    }
+Unixcoder Score: -0.004992808680981398
+--------------------------------------------------
+C_Code: 
+rust::string SHA256(rust::str input)
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, input.data(), input.length());
+    SHA256_Final(hash, &sha256);
+    std::stringstream ss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        // 2 means setting hte width of the output.
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+    }
+    return ss.str();
+}
+Function: 
+pub fn sha256(input: &str) -> String {
+            let mut hasher = Sha256::new();
+            hasher.update(input);
+            let result = hasher.finalize();
+            encode(result)
+        }
+Unixcoder Score: -0.0066801030188798904
+--------------------------------------------------

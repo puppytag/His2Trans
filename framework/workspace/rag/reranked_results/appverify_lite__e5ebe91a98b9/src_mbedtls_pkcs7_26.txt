@@ -1,0 +1,128 @@
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct ConstBytes<const T: &'static [u8]>;
+Unixcoder Score: 0.07764136046171188
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct PkgId {
+    /// Remote path: for example, github.com/mozilla/quux-whatever
+    remote_path: RemotePath,
+    /// Local path: for example, /home/quux/github.com/mozilla/quux_whatever
+    /// Note that '-' normalizes to '_' when mapping a remote path
+    /// onto a local path
+    /// Also, this will change when we implement #6407, though we'll still
+    /// need to keep track of separate local and remote paths
+    local_path: LocalPath,
+    /// Short name. This is the local path's filestem, but we store it
+    /// redundantly so as to not call get() everywhere (filestem() returns an
+    /// option)
+    short_name: ~str,
+    version: Version
+}
+Unixcoder Score: 0.07317402958869934
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct Slice(&'static [i32]);
+Unixcoder Score: 0.06600970774888992
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct OwnedSlice {
+    /// This is conceptually a `&'self.owner [u8]`.
+    bytes: *const [u8],
+
+    // +---------------------------------------+
+    // | We expect `dead_code` lint here,      |
+    // | because we don't want to accidentally |
+    // | touch the owner — otherwise the owner |
+    // | could invalidate out `bytes` pointer  |
+    // |                                       |
+    // | so be quiet                           |
+    // +----+  +-------------------------------+
+    //       \/
+    //      ⊂(´･◡･⊂ )∘˚˳° (I am the phantom remnant of #97770)
+    #[expect(dead_code)]
+    owner: Lrc<dyn Send + Sync>,
+}
+Unixcoder Score: 0.060065899044275284
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice { slice: [u8] }
+Unixcoder Score: 0.05615352466702461
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Test<T: ?Sized>(T);
+Unixcoder Score: 0.055586427450180054
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct MultiplePointers<T: ?Sized>{
+    ptr1: *const T,
+    ptr2: *const T,
+}
+Unixcoder Score: 0.05523781105875969
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+pub struct Slice {
+    pub inner: [u8]
+}
+Unixcoder Score: 0.05326300114393234
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct Slice<T> {
+    data: *const T,
+    len: usize,
+}
+Unixcoder Score: 0.05296032875776291
+--------------------------------------------------
+C_Code: 
+struct slice {
+  char const *p;
+  size_t len;
+}
+Function: 
+struct ConstString<const T: &'static str>;
+Unixcoder Score: 0.04751132056117058
+--------------------------------------------------

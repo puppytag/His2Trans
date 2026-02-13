@@ -1,0 +1,91 @@
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Unixcoder Score: 0.07416786253452301
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Unixcoder Score: 0.07411027699708939
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Unixcoder Score: 0.07406576722860336
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Unixcoder Score: 0.07375579327344894
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Unixcoder Score: 0.07352643460035324
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Unixcoder Score: 0.07243227958679199
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Unixcoder Score: 0.07185278832912445
+--------------------------------------------------
+C_Code: 
+struct CertList
+Function: 
+pub(crate) struct SystemConfig {
+    pub(crate) proxy_host: String,
+    pub(crate) proxy_port: String,
+    pub(crate) proxy_exlist: String,
+    pub(crate) certs: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__InitCloudInfo__idx5103_rank2.c", "source_rust_file": "API_Mapping__InitCloudInfo__idx5103_rank2.rs", "c_api": "appInfo.appId = TEST_CLOUD_APPID;", "rust_api": "self.total_space = msg_parcel.read::<u64>().map_err(|_| Error::ReadMsgParcelFailed)?;", "mapping_type": "field_access", "description": "Setting app ID field in app info struct", "reasoning": "[Task Analysis] C function initializes cloud info with account and app data; Rust function reads cloud data from a parcel. [Similarity] Names refer to different concepts ('InitCloudInfo' vs 'read'), and domains are different (initialization vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and reading from a source with error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__InitCloudInfo__idx5103_rank2.c", "source_rust_file": "API_Mapping__InitCloudInfo__idx5103_rank2.rs", "c_api": "cloudInfo_.user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());", "rust_api": "self.user = msg_parcel.read::<i32>().map_err(|_| Error::ReadMsgParcelFailed)?;", "mapping_type": "field_access", "description": "Assigning user ID from external source to struct field", "reasoning": "[Task Analysis] C function initializes cloud info with account and app data; Rust function reads cloud data from a parcel. [Similarity] Names refer to different concepts ('InitCloudInfo' vs 'read'), and domains are different (initialization vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and reading from a source with error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__InitCloudInfo__idx5103_rank2.c", "source_rust_file": "API_Mapping__InitCloudInfo__idx5103_rank2.rs", "c_api": "appInfo.bundleName = TEST_CLOUD_BUNDLE;", "rust_api": "self.remain_space = msg_parcel.read::<u64>().map_err(|_| Error::ReadMsgParcelFailed)?;", "mapping_type": "field_access", "description": "Setting bundle name field in app info struct", "reasoning": "[Task Analysis] C function initializes cloud info with account and app data; Rust function reads cloud data from a parcel. [Similarity] Names refer to different concepts ('InitCloudInfo' vs 'read'), and domains are different (initialization vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and reading from a source with error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__InitCloudInfo__idx5103_rank2.c", "source_rust_file": "API_Mapping__InitCloudInfo__idx5103_rank2.rs", "c_api": "appInfo.version = 1;", "rust_api": "self.remain_space = msg_parcel.read::<u64>().map_err(|_| Error::ReadMsgParcelFailed)?;", "mapping_type": "field_access", "description": "Setting version field in app info struct", "reasoning": "[Task Analysis] C function initializes cloud info with account and app data; Rust function reads cloud data from a parcel. [Similarity] Names refer to different concepts ('InitCloudInfo' vs 'read'), and domains are different (initialization vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and reading from a source with error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__InitCloudInfo__idx5103_rank2.c", "source_rust_file": "API_Mapping__InitCloudInfo__idx5103_rank2.rs", "c_api": "cloudInfo_.enableCloud = true;", "rust_api": "self.enable_cloud = msg_parcel.read::<bool>().map_err(|_| Error::ReadMsgParcelFailed)?;", "mapping_type": "field_access", "description": "Assigning boolean flag from parcel to struct field", "reasoning": "[Task Analysis] C function initializes cloud info with account and app data; Rust function reads cloud data from a parcel. [Similarity] Names refer to different concepts ('InitCloudInfo' vs 'read'), and domains are different (initialization vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and reading from a source with error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__InitCloudInfo__idx5103_rank2.c", "source_rust_file": "API_Mapping__InitCloudInfo__idx5103_rank2.rs", "c_api": "cloudInfo_.id = TEST_CLOUD_ID;", "rust_api": "self.account_id = msg_parcel.read_string16().map_err(|_| Error::ReadMsgParcelFailed)?;", "mapping_type": "field_access", "description": "Assigning account ID from parcel to struct field", "reasoning": "[Task Analysis] C function initializes cloud info with account and app data; Rust function reads cloud data from a parcel. [Similarity] Names refer to different concepts ('InitCloudInfo' vs 'read'), and domains are different (initialization vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and reading from a source with error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__InitCloudInfo__idx5103_rank2.c", "source_rust_file": "API_Mapping__InitCloudInfo__idx5103_rank2.rs", "c_api": "appInfo.cloudSwitch = true;", "rust_api": "self.enable_cloud = msg_parcel.read::<bool>().map_err(|_| Error::ReadMsgParcelFailed)?;", "mapping_type": "field_access", "description": "Setting cloud switch flag in app info struct", "reasoning": "[Task Analysis] C function initializes cloud info with account and app data; Rust function reads cloud data from a parcel. [Similarity] Names refer to different concepts ('InitCloudInfo' vs 'read'), and domains are different (initialization vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and reading from a source with error handling, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__InitCloudInfo__idx5103_rank2.c", "source_rust_file": "API_Mapping__InitCloudInfo__idx5103_rank2.rs", "c_api": "cloudInfo_.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);", "rust_api": "self.total_space = msg_parcel.read::<u64>().map_err(|_| Error::ReadMsgParcelFailed)?;", "mapping_type": "field_access", "description": "Assigning app info struct to map entry via parcel read", "reasoning": "[Task Analysis] C function initializes cloud info with account and app data; Rust function reads cloud data from a parcel. [Similarity] Names refer to different concepts ('InitCloudInfo' vs 'read'), and domains are different (initialization vs deserialization). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic purposes. However, both involve setting fields on a data structure and reading from a source with error handling, so API mappings can be extracted."}]
+Unixcoder Score: 0.06645253300666809
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Unixcoder Score: 0.057332828640937805
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts {
+    struct CRequestCert **certDataList;
+    uint32_t len;
+}
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__IsAppsEqual__idx5215_rank2.c", "source_rust_file": "API_Mapping__IsAppsEqual__idx5215_rank2.rs", "c_api": "appInfos.begin()", "rust_api": "appInfos.iter()", "mapping_type": "method", "description": "Iterate over hashmap", "reasoning": "[Task Analysis] C function checks equality of two maps; Rust function retrieves a reference to a map. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there is a data access pattern mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__IsAppsEqual__idx5215_rank2.c", "source_rust_file": "API_Mapping__IsAppsEqual__idx5215_rank2.rs", "c_api": "apps.size()", "rust_api": "self.apps.len()", "mapping_type": "method", "description": "Get size of hashmap", "reasoning": "[Task Analysis] C function checks equality of two maps; Rust function retrieves a reference to a map. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there is a data access pattern mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__IsAppsEqual__idx5215_rank2.c", "source_rust_file": "API_Mapping__IsAppsEqual__idx5215_rank2.rs", "c_api": "apps.begin()", "rust_api": "self.apps.iter()", "mapping_type": "method", "description": "Iterate over hashmap", "reasoning": "[Task Analysis] C function checks equality of two maps; Rust function retrieves a reference to a map. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there is a data access pattern mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__IsAppsEqual__idx5215_rank2.c", "source_rust_file": "API_Mapping__IsAppsEqual__idx5215_rank2.rs", "c_api": "appInfos.size()", "rust_api": "appInfos.len()", "mapping_type": "method", "description": "Get size of hashmap", "reasoning": "[Task Analysis] C function checks equality of two maps; Rust function retrieves a reference to a map. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there is a data access pattern mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__IsAppsEqual__idx5215_rank2.c", "source_rust_file": "API_Mapping__IsAppsEqual__idx5215_rank2.rs", "c_api": "it->second", "rust_api": "it.1", "mapping_type": "field_access", "description": "Access value in hashmap entry", "reasoning": "[Task Analysis] C function checks equality of two maps; Rust function retrieves a reference to a map. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there is a data access pattern mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__IsAppsEqual__idx5215_rank2.c", "source_rust_file": "API_Mapping__IsAppsEqual__idx5215_rank2.rs", "c_api": "rIt->second", "rust_api": "rIt.1", "mapping_type": "field_access", "description": "Access value in hashmap entry", "reasoning": "[Task Analysis] C function checks equality of two maps; Rust function retrieves a reference to a map. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there is a data access pattern mapping."}]
+Unixcoder Score: 0.029045740142464638
+--------------------------------------------------

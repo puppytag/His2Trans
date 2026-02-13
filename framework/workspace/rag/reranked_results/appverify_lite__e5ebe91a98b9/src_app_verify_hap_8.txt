@@ -1,0 +1,266 @@
+C_Code: 
+struct update_entry_args {
+    log_directive* dirs;
+    size_t n_dirs;
+    size_t *n_matches;
+}
+Function: 
+struct CrateMap {
+    version: i32,
+    annihilate_fn: *c_void,
+    entries: *ModEntry,
+    /// a dynamically sized struct, where all pointers to children are listed adjacent
+    /// to the struct, terminated with NULL
+    children: [*CrateMap, ..1]
+}
+
+unsafe fn version(crate_map: *CrateMap) -> i32 {
+    match (*crate_map).version {
+        1 => return 1,
+        _ => return 0
+    }
+}
+
+/// Returns a pointer to the annihilate function of the CrateMap
+pub unsafe fn annihilate_fn(crate_map: *CrateMap) -> *c_void {
+    match version(crate_map) {
+        0 => return ptr::null(),
+        1 => return (*crate_map).annihilate_fn,
+        _ => fail!("Unknown crate map version!")
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__SetPathPermission__idx349_rank4.c", "source_rust_file": "Partial__SetPathPermission__idx349_rank4.rs", "c_api": "AclSetAccess", "rust_api": "AclSetAccess", "mapping_type": "function", "description": "Setting access control lists", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code handles path permission checks and ACL setting, while Rust code checks file existence and handles file system metadata. -> [Similarity] -> No full structural similarity due to different domains (permission management vs file existence checking). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and file system operations can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SetPathPermission__idx349_rank4.c", "source_rust_file": "Partial__SetPathPermission__idx349_rank4.rs", "c_api": "REQUEST_HILOGE", "rust_api": "error!", "mapping_type": "function", "description": "Logging error messages", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code handles path permission checks and ACL setting, while Rust code checks file existence and handles file system metadata. -> [Similarity] -> No full structural similarity due to different domains (permission management vs file existence checking). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and file system operations can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SetPathPermission__idx349_rank4.c", "source_rust_file": "Partial__SetPathPermission__idx349_rank4.rs", "c_api": "std::fs::metadata", "rust_api": "std::fs::metadata", "mapping_type": "function", "description": "Accessing file system metadata", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code handles path permission checks and ACL setting, while Rust code checks file existence and handles file system metadata. -> [Similarity] -> No full structural similarity due to different domains (permission management vs file existence checking). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and file system operations can be mapped."}, {"knowledge_type": "Partial", "source_c_file": "Partial__SetPathPermission__idx349_rank4.c", "source_rust_file": "Partial__SetPathPermission__idx349_rank4.rs", "c_fragment": "if (AclSetAccess(filepath, SA_PERMISSION_RWX) != ACL_SUCC) {\n        REQUEST_HILOGE(\"AclSetAccess Child Dir Failed.\");\n        return false;\n    }", "rust_fragment": "if e.kind() == std::io::ErrorKind::NotFound {\n                error!(\"task {} check local not exist\", task.task_id());\n                sys_event!(\n                    ExecFault,\n                    DfxCode::TASK_FAULT_04,\n                    &format!(\"task {} check local not exist\", task.task_id())\n                );\n                return Err(TaskError::Failed(Reason::IoError));\n            }", "description": "Both handle failure cases with logging and returning an error.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code handles path permission checks and ACL setting, while Rust code checks file existence and handles file system metadata. -> [Similarity] -> No full structural similarity due to different domains (permission management vs file existence checking). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and file system operations can be mapped."}]
+Unixcoder Score: 0.04047388210892677
+--------------------------------------------------
+C_Code: 
+static int MakeDir(const std::string &path)
+{
+    std::filesystem::path destDir(path);
+    std::error_code errCode;
+    if (!std::filesystem::create_directory(destDir, errCode)) {
+        LOGE("Failed to create directory, error code: %{public}d", errCode.value());
+        return errCode.value();
+    }
+    return OHOS::FileManagement::LibN::ERRNO_NOERR;
+}
+Function: 
+pub(crate) fn create_dir(path: *const c_char, mode: MakeDirectionMode) -> Result<(), Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = unsafe { CStr::from_ptr(path) };
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    match mode {
+        MakeDirectionMode::Single => fs::create_dir(path),
+        MakeDirectionMode::Multiple => fs::create_dir_all(path),
+    }
+}
+Unixcoder Score: 0.025110308080911636
+--------------------------------------------------
+C_Code: 
+static int MakeDir(const string &path)
+{
+    filesystem::path destDir(path);
+    std::error_code errCode;
+    if (!filesystem::create_directory(destDir, errCode)) {
+        HILOGE("Failed to create directory, error code: %{public}d", errCode.value());
+        return errCode.value();
+    }
+    return ERRNO_NOERR;
+}
+Function: 
+pub(crate) fn create_dir(path: *const c_char, mode: MakeDirectionMode) -> Result<(), Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = unsafe { CStr::from_ptr(path) };
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    match mode {
+        MakeDirectionMode::Single => fs::create_dir(path),
+        MakeDirectionMode::Multiple => fs::create_dir_all(path),
+    }
+}
+Unixcoder Score: 0.022525334730744362
+--------------------------------------------------
+C_Code: 
+int Copy::MakeDir(const string &path)
+{
+    filesystem::path destDir(path);
+    std::error_code errCode;
+    if (!filesystem::create_directory(destDir, errCode)) {
+        HILOGE("Failed to create directory, error code: %{public}d", errCode.value());
+        return errCode.value();
+    }
+    return ERRNO_NOERR;
+}
+Function: 
+pub(crate) fn create_dir(path: *const c_char, mode: MakeDirectionMode) -> Result<(), Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = unsafe { CStr::from_ptr(path) };
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    match mode {
+        MakeDirectionMode::Single => fs::create_dir(path),
+        MakeDirectionMode::Multiple => fs::create_dir_all(path),
+    }
+}
+Unixcoder Score: 0.006593417841941118
+--------------------------------------------------
+C_Code: 
+static int MakeDir(const string &path)
+{
+    filesystem::path destDir(path);
+    error_code errCode;
+    if (!filesystem::create_directory(destDir, errCode)) {
+        HILOGE("Failed to create directory, error code: %{public}d", errCode.value());
+        return errCode.value();
+    }
+    return ERRNO_NOERR;
+}
+Function: 
+pub(crate) fn create_dir(path: *const c_char, mode: MakeDirectionMode) -> Result<(), Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = unsafe { CStr::from_ptr(path) };
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    match mode {
+        MakeDirectionMode::Single => fs::create_dir(path),
+        MakeDirectionMode::Multiple => fs::create_dir_all(path),
+    }
+}
+Unixcoder Score: 0.002732735127210617
+--------------------------------------------------
+C_Code: 
+bool IsDirExist(const std::string &path)
+{
+    return is_dir_exist(rust::str(path));
+}
+Function: 
+pub(crate) fn is_dir_exist(path: &str) -> bool {
+    let path = PathBuf::from(path);
+    path.is_dir()
+}
+Unixcoder Score: 0.002125942148268223
+--------------------------------------------------
+C_Code: 
+bool IsDirExist(const std::string &path)
+{
+    return is_dir_exist(rust::str(path));
+}
+Function: 
+pub(crate) fn is_dir_exist(path: &str) -> bool {
+    let path = PathBuf::from(path);
+    path.is_dir()
+}
+Unixcoder Score: -0.0004254911036696285
+--------------------------------------------------
+C_Code: 
+std::string GetCacheDir()
+{
+    auto context = Context::GetApplicationContext();
+    std::string filePath;
+    if (context == nullptr) {
+        REQUEST_HILOGI("Get context nullptr, use default cache dir.");
+        filePath = DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE;
+    } else {
+        std::string contextPath = context->GetCacheDir();
+        if (contextPath.empty()) {
+            REQUEST_HILOGI("Get context cache dir fail, use default cache dir.");
+            filePath = DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE;
+        } else {
+            filePath = contextPath + SLASH + PRELOAD_CACHE;
+        }
+    }
+    return filePath;
+}
+Function: 
+fn ut_cache_manager_get() {
+    init();
+    let task_id = TaskId::new(fast_random().to_string());
+    static CACHE_MANAGER: LazyLock<CacheManager> = LazyLock::new(CacheManager::new);
+
+    let mut cache = RamCache::new(task_id.clone(), &CACHE_MANAGER, Some(TEST_STRING_SIZE));
+
+    cache.write_all(TEST_STRING.as_bytes()).unwrap();
+    cache.finish_write();
+
+    let cache = CACHE_MANAGER.get_cache(&task_id).unwrap();
+    let mut buf = String::new();
+    cache.cursor().read_to_string(&mut buf).unwrap();
+    assert_eq!(buf, TEST_STRING);
+}
+Unixcoder Score: -0.036402150988578796
+--------------------------------------------------
+C_Code: 
+std::string GetCacheDir()
+{
+    auto context = Context::GetApplicationContext();
+    std::string filePath;
+    if (context == nullptr) {
+        REQUEST_HILOGI("Get context nullptr, use default cache dir.");
+        filePath = DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE;
+    } else {
+        std::string contextPath = context->GetCacheDir();
+        if (contextPath.empty()) {
+            REQUEST_HILOGI("Get context cache dir fail, use default cache dir.");
+            filePath = DEFAULT_CACHE_PATH + SLASH + PRELOAD_CACHE;
+        } else {
+            filePath = contextPath + SLASH + PRELOAD_CACHE;
+        }
+    }
+    return filePath;
+}
+Function: 
+pub fn get_curr_store_dir() -> PathBuf {
+    #[cfg(feature = "ohos")]
+    let mut path = match request_utils::context::get_cache_dir() {
+        Some(dir) => PathBuf::from_str(&dir).unwrap(),
+        None => {
+            error!("get cache dir failed");
+            PathBuf::from_str("/data/storage/el2/base/cache").unwrap()
+        }
+    };
+    #[cfg(not(feature = "ohos"))]
+    let mut path = PathBuf::from_str("./").unwrap();
+
+    path.push("preload_caches");
+    if let Err(e) = fs::create_dir_all(path.as_path()) {
+        error!("create cache dir error {}", e);
+    }
+    path
+}
+Unixcoder Score: -0.03763732314109802
+--------------------------------------------------
+C_Code: 
+bool RemoveDir(const std::string &path)
+{
+    return remove_dir(rust::str(path));
+}
+Function: 
+pub(crate) fn remove_dir(path: &str) -> bool {
+    fs::remove_dir_all(path).is_ok()
+}
+Unixcoder Score: -0.038847967982292175
+--------------------------------------------------

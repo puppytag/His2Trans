@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_device_info_4",
+  "function_name": "HdfDeviceInfoDelete",
+  "source_c_file": "src/hdf_device_info.c",
+  "c_code": "void HdfDeviceInfoDelete(struct HdfSListNode * listEntry)\n{\n    struct HdfDeviceInfo *deviceInfo = (struct HdfDeviceInfo *)listEntry;\n    HdfDeviceInfoFreeInstance(deviceInfo);\n}",
+  "rust_signature": "pub extern \"C\" fn HdfDeviceInfoDelete(listEntry: *mut crate::types::HdfSListNode)",
+  "rust_code": "pub extern \\\"C\\\" fn HdfDeviceInfoDelete(listEntry: *mut HdfSListNode) {\n    let deviceInfo = listEntry as *mut HdfDeviceInfo;\n    HdfDeviceInfoFreeInstance(deviceInfo);\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "return foo(...);",
+      "rust_fragment": "return foo(...);",
+      "description": "Direct call/return pattern is preserved in Rust",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

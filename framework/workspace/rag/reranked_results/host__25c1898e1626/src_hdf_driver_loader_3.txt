@@ -1,0 +1,219 @@
+C_Code: 
+void operator delete(void *ptr) {
+        ((T *)ptr)->kernel->free(ptr);
+    }
+Function: 
+unsafe fn free<T>(ptr: *mut T) {
+    Box::from_raw(ptr); //~ WARNING unused return value
+}
+Unixcoder Score: 0.1256827414035797
+--------------------------------------------------
+C_Code: 
+void operator delete(void *ptr) {
+        ((T *)ptr)->kernel->free(ptr);
+    }
+Function: 
+unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {}
+Unixcoder Score: 0.10737448930740356
+--------------------------------------------------
+C_Code: 
+void AssetLoader::Download(const std::string &tableName, std::vector<AssetsRecord> &assetsRecords)
+{
+    (void)assetsRecords;
+    return;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudAssetLoaderDownload(
+    loader: *mut OhCloudExtCloudAssetLoader,
+    info: *const OhCloudExtUpDownloadInfo,
+    assets: *mut OhCloudExtVector,
+) -> c_int {
+    if loader.is_null() || info.is_null() || assets.is_null() {
+        return ERRNO_NULLPTR;
+    }
+    let info = &*info;
+    let loader =
+        match OhCloudExtCloudAssetLoader::get_inner_mut(loader, SafetyCheckId::CloudAssetLoader) {
+            None => return ERRNO_WRONG_TYPE,
+            Some(v) => v,
+        };
+    let table_name_bytes = &*slice_from_raw_parts(info.table_name, info.table_name_len as usize);
+    let table_name = std::str::from_utf8_unchecked(table_name_bytes);
+
+    let gid_bytes = &*slice_from_raw_parts(info.gid, info.gid_len as usize);
+    let gid = std::str::from_utf8_unchecked(gid_bytes);
+
+    let prefix_bytes = &*slice_from_raw_parts(info.prefix, info.prefix_len as usize);
+    let prefix = std::str::from_utf8_unchecked(prefix_bytes);
+
+    let assets = match OhCloudExtVector::get_inner_ref(assets, SafetyCheckId::Vector) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let assets = match assets {
+        VectorCffi::CloudAsset(re) => re,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match loader.download(table_name, gid, prefix, assets) {
+        Ok(_) => ERRNO_SUCCESS,
+        Err(e) => map_single_sync_err(&e),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__backtrace_release_view__idx90422_rank4.c", "source_rust_file": "Partial__backtrace_release_view__idx90422_rank4.rs", "c_fragment": "if (munmap (const_cast.v, view->len) < 0)\n    error_callback (data, \"munmap\", errno);", "rust_fragment": "libc::munmap(ptr, 4096);", "description": "Both perform a munmap operation on a memory region, with error handling in C and direct call in Rust.", "reasoning": "[Task Analysis] C function releases a memory view using munmap; Rust function maps and unmaps memory using libc::mmap and libc::munmap. [Similarity] Both involve memory mapping/unmapping via FFI calls, but the C code is a release function while Rust code is a standalone example. [Knowledge Extraction] The memory management pattern (mmap/munmap) is present in both, but the control flow and intent differ significantly. No full structural match due to different domains (C: resource cleanup, Rust: memory allocation example). Partial match in the munmap usage pattern. API mapping identified for munmap operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__backtrace_release_view__idx90422_rank4.c", "source_rust_file": "Partial__backtrace_release_view__idx90422_rank4.rs", "c_api": "munmap (const_cast.v, view->len)", "rust_api": "libc::munmap(ptr, 4096)", "mapping_type": "function", "description": "Memory unmap operation using FFI", "reasoning": "[Task Analysis] C function releases a memory view using munmap; Rust function maps and unmaps memory using libc::mmap and libc::munmap. [Similarity] Both involve memory mapping/unmapping via FFI calls, but the C code is a release function while Rust code is a standalone example. [Knowledge Extraction] The memory management pattern (mmap/munmap) is present in both, but the control flow and intent differ significantly. No full structural match due to different domains (C: resource cleanup, Rust: memory allocation example). Partial match in the munmap usage pattern. API mapping identified for munmap operation."}]
+Unixcoder Score: 0.09149426966905594
+--------------------------------------------------
+C_Code: 
+void operator delete(void *ptr) {
+        ((T *)ptr)->kernel->free(ptr);
+    }
+Function: 
+pub unsafe fn deallocate(ptr: *mut u8, _old_size: usize, _align: usize) {
+        libc::free(ptr as *mut libc::c_void)
+    }
+Unixcoder Score: 0.09096505492925644
+--------------------------------------------------
+C_Code: 
+void AssetLoader::Download(const std::string &tableName, std::vector<AssetsRecord> &assetsRecords)
+{
+    (void)assetsRecords;
+    return;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudAssetLoaderDownload(
+    loader: *mut OhCloudExtCloudAssetLoader,
+    info: *const OhCloudExtUpDownloadInfo,
+    assets: *mut OhCloudExtVector,
+) -> c_int {
+    if loader.is_null() || info.is_null() || assets.is_null() {
+        return ERRNO_NULLPTR;
+    }
+    let info = &*info;
+    let loader =
+        match OhCloudExtCloudAssetLoader::get_inner_mut(loader, SafetyCheckId::CloudAssetLoader) {
+            None => return ERRNO_WRONG_TYPE,
+            Some(v) => v,
+        };
+    let table_name_bytes = &*slice_from_raw_parts(info.table_name, info.table_name_len as usize);
+    let table_name = std::str::from_utf8_unchecked(table_name_bytes);
+
+    let gid_bytes = &*slice_from_raw_parts(info.gid, info.gid_len as usize);
+    let gid = std::str::from_utf8_unchecked(gid_bytes);
+
+    let prefix_bytes = &*slice_from_raw_parts(info.prefix, info.prefix_len as usize);
+    let prefix = std::str::from_utf8_unchecked(prefix_bytes);
+
+    let assets = match OhCloudExtVector::get_inner_ref(assets, SafetyCheckId::Vector) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let assets = match assets {
+        VectorCffi::CloudAsset(re) => re,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match loader.download(table_name, gid, prefix, assets) {
+        Ok(_) => ERRNO_SUCCESS,
+        Err(e) => map_single_sync_err(&e),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CancelDownload__idx4988_rank4.c", "source_rust_file": "API_Mapping__CancelDownload__idx4988_rank4.rs", "c_api": "return E_NOT_SUPPORT;", "rust_api": "return ERRNO_NULLPTR;", "mapping_type": "function", "description": "Return error code for null pointer", "reasoning": "[Task Analysis] C function returns a constant error code; Rust function performs FFI-style validation and error handling. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and FFI interaction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CancelDownload__idx4988_rank4.c", "source_rust_file": "API_Mapping__CancelDownload__idx4988_rank4.rs", "c_api": "return E_NOT_SUPPORT;", "rust_api": "return ERRNO_WRONG_TYPE;", "mapping_type": "function", "description": "Return error code for wrong type", "reasoning": "[Task Analysis] C function returns a constant error code; Rust function performs FFI-style validation and error handling. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and FFI interaction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CancelDownload__idx4988_rank4.c", "source_rust_file": "API_Mapping__CancelDownload__idx4988_rank4.rs", "c_api": "return E_NOT_SUPPORT;", "rust_api": "map_single_sync_err(&e);", "mapping_type": "function", "description": "Map internal error to external error code", "reasoning": "[Task Analysis] C function returns a constant error code; Rust function performs FFI-style validation and error handling. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and FFI interaction."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CancelDownload__idx4988_rank4.c", "source_rust_file": "API_Mapping__CancelDownload__idx4988_rank4.rs", "c_api": "return E_NOT_SUPPORT;", "rust_api": "return ERRNO_SUCCESS;", "mapping_type": "function", "description": "Return error code indicating unsupported operation", "reasoning": "[Task Analysis] C function returns a constant error code; Rust function performs FFI-style validation and error handling. [Similarity] No structural similarity in logic or control flow. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and FFI interaction."}]
+Unixcoder Score: 0.08939903974533081
+--------------------------------------------------
+C_Code: 
+void operator delete(void *ptr) {
+        ((T *)ptr)->kernel->free(ptr);
+    }
+Function: 
+unsafe fn global_data_modify_<T: Owned>(
+    key: uint, op: &fn(Option<~T>) -> Option<~T>) {
+
+    let mut old_dtor = None;
+    do get_global_state().with |gs| unsafe {
+        let (maybe_new_value, maybe_dtor) = match gs.map.pop(&key) {
+            Some((ptr, dtor)) => {
+                let value: ~T = transmute(ptr);
+                (op(Some(value)), Some(dtor))
+            }
+            None => {
+                (op(None), None)
+            }
+        };
+        match maybe_new_value {
+            Some(value) => {
+                let data: *c_void = transmute(value);
+                let dtor: ~fn() = match maybe_dtor {
+                    Some(dtor) => dtor,
+                    None => {
+                        let dtor: ~fn() = || unsafe {
+                            let _destroy_value: ~T = transmute(data);
+                        };
+                        dtor
+                    }
+                };
+                let value = (data, dtor);
+                gs.map.insert(key, value);
+            }
+            None => {
+                match maybe_dtor {
+                    Some(dtor) => old_dtor = Some(dtor),
+                    None => ()
+                }
+            }
+        }
+    }
+}
+Unixcoder Score: 0.08826147019863129
+--------------------------------------------------
+C_Code: 
+void operator delete(void *ptr) {
+        ((T *)ptr)->kernel->free(ptr);
+    }
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        libc::free(ptr as *mut libc::c_void)
+    }
+Unixcoder Score: 0.0872092992067337
+--------------------------------------------------
+C_Code: 
+void operator delete(void *ptr) {
+        ((T *)ptr)->kernel->free(ptr);
+    }
+Function: 
+fn global_to_box() {
+    type T = [i32; 4];
+    let l = Layout::new::<T>();
+    // allocate manually with global allocator, then turn into Box and free there
+    unsafe {
+        let ptr = Global.allocate(l).unwrap().as_non_null_ptr().as_ptr() as *mut T;
+        let b = Box::from_raw(ptr);
+        drop(b);
+    }
+}
+Unixcoder Score: 0.0844278410077095
+--------------------------------------------------
+C_Code: 
+void operator delete(void *ptr) {
+        ((T *)ptr)->kernel->free(ptr);
+    }
+Function: 
+unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+            unsafe { Global.deallocate(ptr, layout) }
+        }
+Unixcoder Score: 0.08418380469083786
+--------------------------------------------------
+C_Code: 
+void operator delete(void *ptr) {
+        ((T *)ptr)->kernel->free(ptr);
+    }
+Function: 
+unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+            // Safety: Invariants passed to caller.
+            unsafe { System.deallocate(ptr, layout) }
+        }
+Unixcoder Score: 0.08203385025262833
+--------------------------------------------------

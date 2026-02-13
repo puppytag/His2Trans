@@ -1,0 +1,283 @@
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx692_rank3.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx692_rank3.rs", "c_api": "REQUEST_HILOGE(\"failed to get hap info, ret: %{public}d\", ret)", "rust_api": "info!(\"update active accounts {:?}\", active_accounts)", "mapping_type": "function", "description": "Logging with error context", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function handles token validation and bundle name retrieval; Rust function updates account state and returns SQL list. -> [Similarity] -> No structural similarity at function level due to different domains (token management vs account state). -> [Knowledge Extraction] -> No full match, no partial match, but API mappings can be extracted for logging and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx692_rank3.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx692_rank3.rs", "c_api": "REQUEST_HILOGE(\"invalid token\")", "rust_api": "info!(\"update active accounts {:?}\", active_accounts)", "mapping_type": "function", "description": "Logging with error context", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function handles token validation and bundle name retrieval; Rust function updates account state and returns SQL list. -> [Similarity] -> No structural similarity at function level due to different domains (token management vs account state). -> [Knowledge Extraction] -> No full match, no partial match, but API mappings can be extracted for logging and error handling patterns."}]
+Unixcoder Score: 0.1496727019548416
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertData(struct CRequestCert *cert)
+{
+    if (cert == nullptr) {
+        return;
+    }
+
+    if (cert->data != nullptr) {
+        free(cert->data);
+        cert->data = nullptr;
+    }
+    cert->size = 0;
+    free(cert);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.12042786926031113
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn blah2() {
+    let a = &A { a: Box::new(1) };
+    match a.a { //~ ERROR cannot move out of
+        n => {
+            free(n)
+        }
+    }
+    free(a)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "proxy", "rust_api": "proxy", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "headers", "rust_api": "headers", "mapping_type": "field_access", "description": "HashMap field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "extras", "rust_api": "extras", "mapping_type": "field_access", "description": "HashMap field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "token", "rust_api": "token", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "fileSpecsPtr", "rust_api": "file_specs", "mapping_type": "field_access", "description": "Vector of FileSpec mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "data", "rust_api": "data", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "commonData", "rust_api": "common_data", "mapping_type": "field_access", "description": "CommonTaskConfig field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "title", "rust_api": "title", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "version", "rust_api": "version", "mapping_type": "field_access", "description": "Version enum field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "formItemsLen", "rust_api": "form_items", "mapping_type": "field_access", "description": "Vector length mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "fileSpecsLen", "rust_api": "file_specs", "mapping_type": "field_access", "description": "Vector length mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "bodyFileNamesLen", "rust_api": "body_file_paths", "mapping_type": "field_access", "description": "Vector length mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "formItemsPtr", "rust_api": "form_items", "mapping_type": "field_access", "description": "Vector of FormItem mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "Full", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "certsPathLen", "rust_api": "certs_path", "mapping_type": "field_access", "description": "Vector length mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "bundle", "rust_api": "bundle", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "url", "rust_api": "url", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "atomicAccount", "rust_api": "atomic_account", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "bundleType", "rust_api": "bundle_type", "mapping_type": "field_access", "description": "Integer field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "method", "rust_api": "method", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "certificatePins", "rust_api": "certificate_pins", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "bodyFileNamesPtr", "rust_api": "body_file_paths", "mapping_type": "field_access", "description": "Vector of String mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "certsPathPtr", "rust_api": "certs_path", "mapping_type": "field_access", "description": "Vector of String mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CTaskConfig__idx14_rank2.h", "source_rust_file": "Full__CTaskConfig__idx14_rank2.rs", "c_api": "description", "rust_api": "description", "mapping_type": "field_access", "description": "String field mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to same concept (TaskConfig/CTaskConfig). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are data structure definitions with equivalent fields. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Classification] -> High structural similarity in field mapping. [Partial Classification] -> No partial blocks found. [API Mappings] -> Extract field-to-field mappings based on semantic equivalence."}]
+Unixcoder Score: 0.0858149304986
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn build_task_certificate_pins(
+    config: &TaskConfig,
+) -> Result<Option<PubKeyPins>, Box<dyn Error + Send + Sync>> {
+    if config.certificate_pins.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(cvt_res_error!(
+        PubKeyPins::builder()
+            .add(&config.url, &config.certificate_pins)
+            .build()
+            .map_err(Box::new),
+        "Create task certificate pinned_key failed",
+    )))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx339_rank1.c", "source_rust_file": "API_Mapping__FileToWhole__idx339_rank1.rs", "c_api": "path.erase(0, bundleName.size());", "rust_api": "ret_name = format!(\"+clone-{}+{}\", index, bundle_name);", "mapping_type": "pattern", "description": "String modification based on conditions", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function validates bundle name against stored data and returns modified name or error. [Similarity] Names do not refer to same concept (FileToWhole vs check_app_clone_bundle_name), and domains differ (path parsing/validation vs app bundle name handling). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both perform validation logic with conditional returns and string operations, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx339_rank1.c", "source_rust_file": "API_Mapping__FileToWhole__idx339_rank1.rs", "c_api": "return false;", "rust_api": "Err(ServiceError::ErrorCode(ErrorCode::Other))", "mapping_type": "pattern", "description": "Early return on validation failure", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function validates bundle name against stored data and returns modified name or error. [Similarity] Names do not refer to same concept (FileToWhole vs check_app_clone_bundle_name), and domains differ (path parsing/validation vs app bundle name handling). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both perform validation logic with conditional returns and string operations, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx339_rank1.c", "source_rust_file": "API_Mapping__FileToWhole__idx339_rank1.rs", "c_api": "if (bundleName != config.bundleName)", "rust_api": "if bundle_name != name", "mapping_type": "pattern", "description": "Conditional validation of bundle name", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function validates bundle name against stored data and returns modified name or error. [Similarity] Names do not refer to same concept (FileToWhole vs check_app_clone_bundle_name), and domains differ (path parsing/validation vs app bundle name handling). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both perform validation logic with conditional returns and string operations, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx339_rank1.c", "source_rust_file": "API_Mapping__FileToWhole__idx339_rank1.rs", "c_api": "return true;", "rust_api": "return Ok(ret_name);", "mapping_type": "pattern", "description": "Successful return with result", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function validates bundle name against stored data and returns modified name or error. [Similarity] Names do not refer to same concept (FileToWhole vs check_app_clone_bundle_name), and domains differ (path parsing/validation vs app bundle name handling). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both perform validation logic with conditional returns and string operations, so API mappings are extracted."}]
+Unixcoder Score: 0.05136747658252716
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            LLVMRustFreeOperandBundleDef(&mut *(self.raw as *mut _));
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx332_rank3.c", "source_rust_file": "API_Mapping__FileToWhole__idx332_rank3.rs", "c_api": "REQUEST_HILOGE(\"path bundleName error.\")", "rust_api": "cvt_res_error!(... \"open_file_readonly failed\")", "mapping_type": "function", "description": "Error reporting with logging", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function opens a file with read permissions using UID and bundle name. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve file/path operations and validation logic. However, domains are different: C manipulates string paths and validates config, while Rust handles file I/O with error handling. [API Mappings] C uses REQUEST_HILOGE for logging, Rust uses cvt_res_error! macro for error handling with logging. Both perform validation and error reporting, but with different APIs and contexts."}]
+Unixcoder Score: 0.04802970588207245
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn write_operand_repeatedly(&mut self, cg_elem: OperandRef<'tcx, RValue<'gcc>>, count: u64, dest: PlaceRef<'tcx, RValue<'gcc>>) {
+        let zero = self.const_usize(0);
+        let count = self.const_usize(count);
+        let start = dest.project_index(self, zero).llval;
+        let end = dest.project_index(self, count).llval;
+
+        let header_bb = self.append_sibling_block("repeat_loop_header");
+        let body_bb = self.append_sibling_block("repeat_loop_body");
+        let next_bb = self.append_sibling_block("repeat_loop_next");
+
+        let ptr_type = start.get_type();
+        let current = self.llbb().get_function().new_local(None, ptr_type, "loop_var");
+        let current_val = current.to_rvalue();
+        self.assign(current, start);
+
+        self.br(header_bb);
+
+        self.switch_to_block(header_bb);
+        let keep_going = self.icmp(IntPredicate::IntNE, current_val, end);
+        self.cond_br(keep_going, body_bb, next_bb);
+
+        self.switch_to_block(body_bb);
+        let align = dest.align.restrict_for_offset(dest.layout.field(self.cx(), 0).size);
+        cg_elem.val.store(self, PlaceRef::new_sized_aligned(current_val, cg_elem.layout, align));
+
+        let next = self.inbounds_gep(self.backend_type(cg_elem.layout), current.to_rvalue(), &[self.const_usize(1)]);
+        self.llbb().add_assignment(None, current, next);
+        self.br(header_bb);
+
+        self.switch_to_block(next_bb);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx375_rank2.c", "source_rust_file": "API_Mapping__FileToWhole__idx375_rank2.rs", "c_api": "path.erase(0, bundleName.size())", "rust_api": "convert_path(uid, &bundle_name, path)", "mapping_type": "function", "description": "Path manipulation for further processing", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function builds certificates from paths using config. [Similarity] No structural similarity at the function level due to different domains (path parsing vs cert building). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to string operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx375_rank2.c", "source_rust_file": "API_Mapping__FileToWhole__idx375_rank2.rs", "c_api": "REQUEST_HILOGE(\"path bundleName error.\")", "rust_api": "cvt_res_error!(...)", "mapping_type": "function", "description": "Error logging and propagation", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function builds certificates from paths using config. [Similarity] No structural similarity at the function level due to different domains (path parsing vs cert building). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to string operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx375_rank2.c", "source_rust_file": "API_Mapping__FileToWhole__idx375_rank2.rs", "c_api": "path.substr(0, path.find(\"/\"))", "rust_api": "bundle_cache.get_value()", "mapping_type": "function", "description": "Extracting bundle name from path", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function builds certificates from paths using config. [Similarity] No structural similarity at the function level due to different domains (path parsing vs cert building). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to string operations and error handling patterns."}]
+Unixcoder Score: 0.0336422324180603
+--------------------------------------------------
+C_Code: 
+void SysEventLog::SendSysEventLog(const std::string &eventName, const uint32_t dCode, const std::string bundleName,
+    const std::string moduleName, const std::string extraInfo)
+{
+    auto iter = sysEventMap_.find(eventName);
+    if (iter == sysEventMap_.end()) {
+        return;
+    }
+
+    SysEventInfo info = { .dCode = dCode, .bundleName = bundleName, .moduleName = moduleName, .extraInfo = extraInfo };
+    iter->second(info);
+}
+Function: 
+pub(crate) fn isys_fault(dfx_code: DfxCode, extra_info: &str) {
+    SysEvent::exec_fault()
+        .param(build_number_param!(PARAM_DFX_CODE, dfx_code as u32))
+        .param(build_str_param!(PARAM_BUNDLE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_MODULE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_EXTRA_INFO, extra_info))
+        .write();
+}
+Unixcoder Score: 0.03260721638798714
+--------------------------------------------------
+C_Code: 
+void SysEventLog::SendSysEventLog(const std::string &eventName, const uint32_t dCode, const std::string bundleName,
+    const std::string moduleName, const std::string extraInfo)
+{
+    auto iter = sysEventMap_.find(eventName);
+    if (iter == sysEventMap_.end()) {
+        return;
+    }
+
+    SysEventInfo info = { .dCode = dCode, .bundleName = bundleName, .moduleName = moduleName, .extraInfo = extraInfo };
+    iter->second(info);
+}
+Function: 
+pub(crate) fn isys_fault(dfx_code: DfxCode, extra_info: &str) {
+    SysEvent::exec_fault()
+        .param(build_number_param!(PARAM_DFX_CODE, dfx_code as u32))
+        .param(build_str_param!(PARAM_BUNDLE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_MODULE_NAME, DONWLOAD_SA))
+        .param(build_str_param!(PARAM_EXTRA_INFO, extra_info))
+        .write();
+}
+Unixcoder Score: 0.031625136733055115
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn drop(&mut self) {}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx330_rank5.c", "source_rust_file": "API_Mapping__FileToWhole__idx330_rank5.rs", "c_api": "return false;", "rust_api": "ServiceError::IoError(e)", "mapping_type": "function", "description": "Error return with context", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function opens body files using config data and error handling. [Similarity] No full structural similarity due to different domains (string parsing vs file I/O), different control flow, and different logic scopes. [Knowledge Extraction] No full match, but both involve configuration-based processing and error handling patterns. Extract API mappings for error reporting and file operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx330_rank5.c", "source_rust_file": "API_Mapping__FileToWhole__idx330_rank5.rs", "c_api": "REQUEST_HILOGE(\"path bundleName error.\")", "rust_api": "error!(\"Open body_file failed - task_id: {}, idx: {}\", tid, idx)", "mapping_type": "function", "description": "Error logging with context", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function opens body files using config data and error handling. [Similarity] No full structural similarity due to different domains (string parsing vs file I/O), different control flow, and different logic scopes. [Knowledge Extraction] No full match, but both involve configuration-based processing and error handling patterns. Extract API mappings for error reporting and file operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx330_rank5.c", "source_rust_file": "API_Mapping__FileToWhole__idx330_rank5.rs", "c_api": "path.erase(0, bundleName.size());", "rust_api": "let file = open_file_readwrite(uid, &bundle_name, path)", "mapping_type": "function", "description": "File opening with path manipulation", "reasoning": "[Task Analysis] C function processes a path string to extract bundle name and validate against config; Rust function opens body files using config data and error handling. [Similarity] No full structural similarity due to different domains (string parsing vs file I/O), different control flow, and different logic scopes. [Knowledge Extraction] No full match, but both involve configuration-based processing and error handling patterns. Extract API mappings for error reporting and file operations."}]
+Unixcoder Score: 0.026073019951581955
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            LLVMRustFreeOperandBundleDef(&mut *(self.raw as *mut _));
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx333_rank1.c", "source_rust_file": "API_Mapping__FileToWhole__idx333_rank1.rs", "c_api": "path.substr(0, path.find(\"/\"))", "rust_api": "path.replacen(\"storage\", \"app\", 1)", "mapping_type": "pattern", "description": "String substring extraction and replacement for path processing", "reasoning": "[Task Analysis] C function processes a path string to validate bundle name and modify path; Rust function transforms a path string using UUID and bundle name. [Similarity] Names don't match but both involve string manipulation and path processing. [Knowledge Extraction] No full structural match due to different logic and domains (validation vs transformation). However, both perform string operations like substring extraction and replacement. [API Mappings] Extracted string manipulation patterns: C's `path.substr` and `path.erase` map to Rust's `path.replacen` and `format!` for path transformation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FileToWhole__idx333_rank1.c", "source_rust_file": "API_Mapping__FileToWhole__idx333_rank1.rs", "c_api": "path.erase(0, bundleName.size())", "rust_api": "path.replacen(\"base\", &base_replace, 1)", "mapping_type": "pattern", "description": "String replacement and modification for path transformation", "reasoning": "[Task Analysis] C function processes a path string to validate bundle name and modify path; Rust function transforms a path string using UUID and bundle name. [Similarity] Names don't match but both involve string manipulation and path processing. [Knowledge Extraction] No full structural match due to different logic and domains (validation vs transformation). However, both perform string operations like substring extraction and replacement. [API Mappings] Extracted string manipulation patterns: C's `path.substr` and `path.erase` map to Rust's `path.replacen` and `format!` for path transformation."}]
+Unixcoder Score: 0.02468906342983246
+--------------------------------------------------

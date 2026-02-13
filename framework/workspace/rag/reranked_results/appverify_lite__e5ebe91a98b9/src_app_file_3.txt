@@ -1,0 +1,461 @@
+C_Code: 
+bool
+chunk_dealloc_mmap(void *chunk, size_t size)
+{
+
+	if (config_munmap)
+		pages_unmap(chunk, size);
+
+	return (config_munmap == false);
+}
+Function: 
+pub fn err(self) -> Option<E> {
+        match self {
+            Ok(_) => None,
+            Err(x) => Some(x),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx30702_rank4.c", "source_rust_file": "API_Mapping__backtrace_free__idx30702_rank4.rs", "c_api": "munmap (addr, size)", "rust_api": "memmap2::Mmap::map(&file)", "mapping_type": "function", "description": "Memory deallocation vs memory mapping (low-level system calls)", "reasoning": "[FFI Check] -> The Rust code uses `memmap2::Mmap::map` which is a safe wrapper around mmap syscall, not a direct FFI call. The C code uses `munmap` which is a direct system call. -> [Task Analysis] -> C function `backtrace_free` manages memory by either munmapping large blocks or adding them to a freelist, with thread safety. Rust function `map` maps a file into memory using memmap2. -> [Similarity] -> No structural similarity at the function level; C manages memory deallocation while Rust manages memory mapping. -> [Knowledge Extraction] -> No full match, no partial match, but there is a memory management API mapping between C's `munmap` and Rust's `memmap2::Mmap::map` (both are low-level memory operations, though in opposite directions)."}]
+Unixcoder Score: 0.06557858735322952
+--------------------------------------------------
+C_Code: 
+void Ashmem::UnmapAshmem()
+#endif
+{
+    if (startAddr_ != nullptr) {
+        ::munmap(startAddr_, memorySize_);
+        startAddr_ = nullptr;
+    }
+    flag_ = 0;
+}
+Function: 
+pub fn unmap_ashmem(&self) {
+        self.c_ashmem.UnmapAshmem()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteRawData__idx4677_rank2.c", "source_rust_file": "API_Mapping__WriteRawData__idx4677_rank2.rs", "c_api": "WriteFileDescriptor", "rust_api": "WriteFileDescriptor", "mapping_type": "function", "description": "Writing a file descriptor to a parcel", "reasoning": "[Task Analysis] C function writes raw data to a parcel with memory mapping and file descriptor handling; Rust function writes a file to an IPC parcel using a file descriptor. [Similarity] Names don't match but both involve writing file descriptors to parcels. [Knowledge Extraction] No full structural match due to different logic scope and domain (C: raw data + mmap, Rust: file descriptor only). However, both involve writing file descriptors to parcels, which is a shared operation. [API Mappings] Extracted mapping between C's WriteFileDescriptor and Rust's WriteFileDescriptor."}]
+Unixcoder Score: 0.06088286638259888
+--------------------------------------------------
+C_Code: 
+void
+backtrace_free (struct backtrace_state *state, void *addr, size_t size,
+		backtrace_error_callback error_callback ATTRIBUTE_UNUSED,
+		void *data ATTRIBUTE_UNUSED)
+{
+  int locked;
+
+  /* If we are freeing a large aligned block, just release it back to
+     the system.  This case arises when growing a vector for a large
+     binary with lots of debug info.  Calling munmap here may cause us
+     to call mmap again if there is also a large shared library; we
+     just live with that.  */
+  if (size >= 16 * 4096)
+    {
+      size_t pagesize;
+
+      pagesize = getpagesize ();
+      if (((uintptr_t) addr & (pagesize - 1)) == 0
+	  && (size & (pagesize - 1)) == 0)
+	{
+	  /* If munmap fails for some reason, just add the block to
+	     the freelist.  */
+	  if (munmap (addr, size) == 0)
+	    return;
+	}
+    }
+
+  /* If we can acquire the lock, add the new space to the free list.
+     If we can't acquire the lock, just leak the memory.
+     __sync_lock_test_and_set returns the old state of the lock, so we
+     have acquired it if it returns 0.  */
+
+  if (!state->threaded)
+    locked = 1;
+  else
+    locked = __sync_lock_test_and_set (&state->lock_alloc, 1) == 0;
+
+  if (locked)
+    {
+      backtrace_free_locked (state, addr, size);
+
+      if (state->threaded)
+	__sync_lock_release (&state->lock_alloc);
+    }
+}
+Function: 
+pub unsafe fn map(file: File) -> io::Result<Self> {
+        // Safety: this is in fact not safe.
+        unsafe { memmap2::Mmap::map(&file).map(Mmap) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90129_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90129_rank3.rs", "c_api": "mmap(...)", "rust_api": "libc::mmap(...)", "mapping_type": "function", "description": "Memory mapping system call", "reasoning": "[Task Analysis] C function handles memory deallocation with munmap for large blocks, while Rust function tests mmap/munmap behavior. [Similarity] Both involve memory mapping operations (mmap/munmap), but C is freeing memory and Rust is testing allocation. [Knowledge Extraction] No full structural match due to different domains (freeing vs testing). However, there are API mappings for mmap/munmap operations and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90129_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90129_rank3.rs", "c_api": "munmap (addr, size)", "rust_api": "libc::munmap(just_an_address, page_size)", "mapping_type": "function", "description": "Memory deallocation via system call", "reasoning": "[Task Analysis] C function handles memory deallocation with munmap for large blocks, while Rust function tests mmap/munmap behavior. [Similarity] Both involve memory mapping operations (mmap/munmap), but C is freeing memory and Rust is testing allocation. [Knowledge Extraction] No full structural match due to different domains (freeing vs testing). However, there are API mappings for mmap/munmap operations and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90129_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90129_rank3.rs", "c_api": "getpagesize ()", "rust_api": "page_size::get()", "mapping_type": "function", "description": "Get system page size", "reasoning": "[Task Analysis] C function handles memory deallocation with munmap for large blocks, while Rust function tests mmap/munmap behavior. [Similarity] Both involve memory mapping operations (mmap/munmap), but C is freeing memory and Rust is testing allocation. [Knowledge Extraction] No full structural match due to different domains (freeing vs testing). However, there are API mappings for mmap/munmap operations and memory management patterns."}]
+Unixcoder Score: 0.04075752943754196
+--------------------------------------------------
+C_Code: 
+void Ashmem::UnmapAshmem()
+#endif
+{
+    if (startAddr_ != nullptr) {
+        ::munmap(startAddr_, memorySize_);
+        startAddr_ = nullptr;
+    }
+    flag_ = 0;
+}
+Function: 
+pub fn close_ashmem(&self) {
+        self.c_ashmem.CloseAshmem()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteRawData__idx4680_rank5.c", "source_rust_file": "API_Mapping__WriteRawData__idx4680_rank5.rs", "c_api": "WriteRawData", "rust_api": "write_buffer", "mapping_type": "function", "description": "Buffer writing operation", "reasoning": "[Task Analysis] C function writes raw data to a parcel with size validation and memory mapping; Rust function writes a buffer using a helper function with error handling. [Similarity] Names don't match but both perform buffer writing operations; C has complex logic for handling raw data with file descriptor and memory mapping, while Rust uses a simple wrapper. [Knowledge Extraction] No full structural match due to different domains (low-level memory management vs high-level IPC abstraction), but API mapping found for buffer writing operation."}]
+Unixcoder Score: 0.037698276340961456
+--------------------------------------------------
+C_Code: 
+void Ashmem::UnmapAshmem()
+#endif
+{
+    if (startAddr_ != nullptr) {
+        ::munmap(startAddr_, memorySize_);
+        startAddr_ = nullptr;
+    }
+    flag_ = 0;
+}
+Function: 
+pub fn unmap_ashmem(&self) {
+        self.c_ashmem.UnmapAshmem()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteRawData__idx4697_rank1.c", "source_rust_file": "API_Mapping__WriteRawData__idx4697_rank1.rs", "c_api": "WriteInt32(size)", "rust_api": "SetDataSize(size)", "mapping_type": "function", "description": "Data size setting operation", "reasoning": "[Task Analysis] C function writes raw data to a parcel with size validation and memory mapping; Rust function sets parcel size with error handling. [Similarity] No structural similarity at the block level; C has complex logic involving file descriptors, memory mapping, and validation, while Rust has a simple size-setting call. [Knowledge Extraction] No full or partial match due to domain mismatch (memory management vs size setting). However, both involve data size operations and error handling patterns. [API Mappings] C's WriteInt32 and WriteFileDescriptor correspond to Rust's SetDataSize in terms of data size manipulation and error propagation, though they operate at different abstraction levels."}]
+Unixcoder Score: 0.02034197933971882
+--------------------------------------------------
+C_Code: 
+bool
+chunk_dealloc_mmap(void *chunk, size_t size)
+{
+
+	if (config_munmap)
+		pages_unmap(chunk, size);
+
+	return (config_munmap == false);
+}
+Function: 
+fn munmap(
+        &mut self,
+        addr: &OpTy<'tcx, Provenance>,
+        length: &OpTy<'tcx, Provenance>,
+    ) -> InterpResult<'tcx, Scalar<Provenance>> {
+        let this = self.eval_context_mut();
+
+        let addr = this.read_target_usize(addr)?;
+        let length = this.read_target_usize(length)?;
+
+        // addr must be a multiple of the page size
+        #[allow(clippy::arithmetic_side_effects)] // PAGE_SIZE is nonzero
+        if addr % this.machine.page_size != 0 {
+            this.set_last_error(Scalar::from_i32(this.eval_libc_i32("EINVAL")))?;
+            return Ok(Scalar::from_i32(-1));
+        }
+
+        let length = this.machine.round_up_to_multiple_of_page_size(length).unwrap_or(u64::MAX);
+
+        let ptr = Machine::ptr_from_addr_cast(this, addr)?;
+
+        let Ok(ptr) = ptr.into_pointer_or_addr() else {
+            throw_unsup_format!("Miri only supports munmap on memory allocated directly by mmap");
+        };
+        let Some((alloc_id, offset, _prov)) = Machine::ptr_get_alloc(this, ptr) else {
+            throw_unsup_format!("Miri only supports munmap on memory allocated directly by mmap");
+        };
+
+        // Elsewhere in this function we are careful to check what we can and throw an unsupported
+        // error instead of Undefined Behavior when use of this function falls outside of the
+        // narrow scope we support. We deliberately do not check the MemoryKind of this allocation,
+        // because we want to report UB on attempting to unmap memory that Rust "understands", such
+        // the stack, heap, or statics.
+        let (_kind, alloc) = this.memory.alloc_map().get(alloc_id).unwrap();
+        if offset != Size::ZERO || alloc.len() as u64 != length {
+            throw_unsup_format!(
+                "Miri only supports munmap calls that exactly unmap a region previously returned by mmap"
+            );
+        }
+
+        let len = Size::from_bytes(alloc.len() as u64);
+        this.deallocate_ptr(
+            ptr.into(),
+            Some((len, this.machine.page_align())),
+            MemoryKind::Machine(MiriMemoryKind::Mmap),
+        )?;
+
+        Ok(Scalar::from_i32(0))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx91026_rank2.c", "source_rust_file": "API_Mapping__backtrace_free__idx91026_rank2.rs", "c_api": "munmap (addr, size)", "rust_api": "this.deallocate_ptr(...)", "mapping_type": "function", "description": "Memory deallocation - freeing a memory region", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Names do not refer to same concept (backtrace_free vs munmap)] -> [Filter 2: Neither code is empty/trivial] -> [Filter 3: Not an FFI wrapper] -> [Filter 4: Domain mismatch - C is memory management (backtrace allocator) vs Rust is interpreter-level memory deallocation (Miri)] -> [Filter 5: Both are functions, not structs] -> [Filter 6: Definition vs Usage Asymmetry - C function is implementation, Rust function is part of interpreter logic] -> [Full BLOCKERS: Domain mismatch, semantic mismatch, and implementation vs test mismatch] -> [Partial: No matching structural fragments due to domain mismatch] -> [API Mappings: C uses munmap for memory deallocation, Rust also uses munmap for memory deallocation but in a different context (Miri interpreter)] -> [Extract API mapping based on same operation type and purpose]"}]
+Unixcoder Score: 0.012936932034790516
+--------------------------------------------------
+C_Code: 
+struct MapInfo {
+    uint64_t startAddr; // 起始地址
+    uint64_t endAddr;   // 结束地址
+    char read;
+    char write;
+    char execute;
+    char shared;
+    uint64_t offset;    // 文件偏移量
+    string dev;       // 设备号
+    string inode;     // inode 号
+    std::string pathname;  // 文件路径
+}
+Function: 
+struct VmStruct {
+    name:   String,
+    start:  u64,
+    end:    u64,
+    off:    u64,
+    perm:   String,
+    dev:    String,
+    inode:  u64,
+    counts: usize,
+    value:  HashMap<String, u64>
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteToAshmem__idx5422_rank3.c", "source_rust_file": "API_Mapping__WriteToAshmem__idx5422_rank3.rs", "c_api": "Ashmem::WriteToAshmem", "rust_api": "ashmem::ffi::WriteToAshmem", "mapping_type": "function", "description": "Write data to ashmem region", "reasoning": "[FFI Check] -> The Rust code contains FFI calls like `ashmem::ffi::CreateAshmemStd`, `ashmem::ffi::AsVoidPtr`, and `ashmem::ffi::AsCharPtr`. The C code has a function `Ashmem::WriteToAshmem` which is called from Rust via FFI. -> [Task Analysis] -> The C function performs validation and memory copying into ashmem, while the Rust code tests this functionality through FFI calls. -> [Similarity] -> The C function is an implementation, and the Rust code is a test that uses the FFI to call it. This is a test vs implementation mismatch, so not Full. However, there are API mappings between the C and Rust FFI functions. -> [Knowledge Extraction] -> Extract API mappings between the FFI functions, but do not extract structural fragments since this is a test vs implementation scenario."}]
+Unixcoder Score: 0.011970782652497292
+--------------------------------------------------
+C_Code: 
+bool MessageParcel::WriteRawData(const void *data, size_t size)
+{
+    if (data == nullptr || size > MAX_RAWDATA_SIZE || size == 0) {
+        uint64_t curTime = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count());
+        ZLOGE(LOG_LABEL, "data is null or size:%{public}zu not ok, time:%{public}" PRIu64, size, curTime);
+        return false;
+    }
+    if (kernelMappedWrite_ != nullptr) {
+        return false;
+    }
+    if (!WriteInt32(size)) {
+        return false;
+    }
+    if (size <= MIN_RAWDATA_SIZE) {
+        rawDataSize_ = size;
+        return WriteUnpadBuffer(data, size);
+    }
+    int fd = AshmemCreate("Parcel RawData", size);
+    if (fd < 0) {
+        return false;
+    }
+    fdsan_exchange_owner_tag(fd, 0, IPC_FD_TAG);
+    writeRawDataFd_ = fd;
+
+    int result = AshmemSetProt(fd, PROT_READ | PROT_WRITE);
+    if (result < 0) {
+        // Do not close fd here, which will be closed in MessageParcel's destructor.
+        return false;
+    }
+    void *ptr = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (ptr == MAP_FAILED) {
+        // Do not close fd here, which will be closed in MessageParcel's destructor.
+        return false;
+    }
+    if (!WriteFileDescriptor(fd)) {
+        // Do not close fd here, which will be closed in MessageParcel's destructor.
+        ::munmap(ptr, size);
+        return false;
+    }
+    if (memcpy_s(ptr, size, data, size) != EOK) {
+        // Do not close fd here, which will be closed in MessageParcel's destructor.
+        ::munmap(ptr, size);
+        return false;
+    }
+    kernelMappedWrite_ = ptr;
+    rawDataSize_ = size;
+    return true;
+}
+Function: 
+pub fn write<T: Serialize + ?Sized>(&mut self, value: &T) -> IpcResult<()> {
+        value.serialize(self)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteToAshmem__idx5433_rank3.c", "source_rust_file": "API_Mapping__WriteToAshmem__idx5433_rank3.rs", "c_api": "memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size)", "rust_api": "ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect(\"Invalid content size.\"), 0)", "mapping_type": "function", "description": "Memory copy to ashmem region", "reasoning": "[Task Analysis] C function writes to ashmem with validation; Rust test calls ashmem write method and asserts success/failure. [Similarity] Names don't match but both involve ashmem write operations; C has validation and memcpy, Rust calls write method. [Knowledge Extraction] Found API mapping for ashmem write operation, but no full structural match due to test vs implementation and domain mismatch (C: implementation, Rust: test)."}]
+Unixcoder Score: 0.006102436222136021
+--------------------------------------------------
+C_Code: 
+void
+backtrace_free (struct backtrace_state *state, void *addr, size_t size,
+		backtrace_error_callback error_callback ATTRIBUTE_UNUSED,
+		void *data ATTRIBUTE_UNUSED)
+{
+  int locked;
+
+  /* If we are freeing a large aligned block, just release it back to
+     the system.  This case arises when growing a vector for a large
+     binary with lots of debug info.  Calling munmap here may cause us
+     to call mmap again if there is also a large shared library; we
+     just live with that.  */
+  if (size >= 16 * 4096)
+    {
+      size_t pagesize;
+
+      pagesize = getpagesize ();
+      if (((uintptr_t) addr & (pagesize - 1)) == 0
+	  && (size & (pagesize - 1)) == 0)
+	{
+	  /* If munmap fails for some reason, just add the block to
+	     the freelist.  */
+	  if (munmap (addr, size) == 0)
+	    return;
+	}
+    }
+
+  /* If we can acquire the lock, add the new space to the free list.
+     If we can't acquire the lock, just leak the memory.
+     __sync_lock_test_and_set returns the old state of the lock, so we
+     have acquired it if it returns 0.  */
+
+  if (!state->threaded)
+    locked = 1;
+  else
+    locked = __sync_lock_test_and_set (&state->lock_alloc, 1) == 0;
+
+  if (locked)
+    {
+      backtrace_free_locked (state, addr, size);
+
+      if (state->threaded)
+	__sync_lock_release (&state->lock_alloc);
+    }
+}
+Function: 
+fn munmap(
+        &mut self,
+        addr: &OpTy<'tcx, Provenance>,
+        length: &OpTy<'tcx, Provenance>,
+    ) -> InterpResult<'tcx, Scalar<Provenance>> {
+        let this = self.eval_context_mut();
+
+        let addr = this.read_target_usize(addr)?;
+        let length = this.read_target_usize(length)?;
+
+        // addr must be a multiple of the page size
+        #[allow(clippy::arithmetic_side_effects)] // PAGE_SIZE is nonzero
+        if addr % this.machine.page_size != 0 {
+            this.set_last_error(Scalar::from_i32(this.eval_libc_i32("EINVAL")))?;
+            return Ok(Scalar::from_i32(-1));
+        }
+
+        let length = this.machine.round_up_to_multiple_of_page_size(length).unwrap_or(u64::MAX);
+
+        let ptr = Machine::ptr_from_addr_cast(this, addr)?;
+
+        let Ok(ptr) = ptr.into_pointer_or_addr() else {
+            throw_unsup_format!("Miri only supports munmap on memory allocated directly by mmap");
+        };
+        let Some((alloc_id, offset, _prov)) = Machine::ptr_get_alloc(this, ptr) else {
+            throw_unsup_format!("Miri only supports munmap on memory allocated directly by mmap");
+        };
+
+        // Elsewhere in this function we are careful to check what we can and throw an unsupported
+        // error instead of Undefined Behavior when use of this function falls outside of the
+        // narrow scope we support. We deliberately do not check the MemoryKind of this allocation,
+        // because we want to report UB on attempting to unmap memory that Rust "understands", such
+        // the stack, heap, or statics.
+        let (_kind, alloc) = this.memory.alloc_map().get(alloc_id).unwrap();
+        if offset != Size::ZERO || alloc.len() as u64 != length {
+            throw_unsup_format!(
+                "Miri only supports munmap calls that exactly unmap a region previously returned by mmap"
+            );
+        }
+
+        let len = Size::from_bytes(alloc.len() as u64);
+        this.deallocate_ptr(
+            ptr.into(),
+            Some((len, this.machine.page_align())),
+            MemoryKind::Machine(MiriMemoryKind::Mmap),
+        )?;
+
+        Ok(Scalar::from_i32(0))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90423_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90423_rank3.rs", "c_api": "__sync_lock_test_and_set (&state->lock_alloc, 1) == 0", "rust_api": "unsafe { libc::mmap(...) }", "mapping_type": "pattern", "description": "Atomic lock acquisition for thread safety", "reasoning": "[Task Analysis] C function manages memory deallocation with munmap for large blocks and uses atomic locking for thread safety. Rust code uses mmap/munmap for memory mapping but has a compile-time error in the munmap call. [Similarity] The core memory management patterns (munmap usage) are present in both, but the Rust code is syntactically incorrect and lacks the locking logic. [Knowledge Extraction] Extract API mappings for memory deallocation and locking mechanisms despite structural mismatch due to different control flow and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90423_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90423_rank3.rs", "c_api": "munmap (addr, size)", "rust_api": "libc::munmap(ptr, 1)", "mapping_type": "function", "description": "Memory deallocation via system call", "reasoning": "[Task Analysis] C function manages memory deallocation with munmap for large blocks and uses atomic locking for thread safety. Rust code uses mmap/munmap for memory mapping but has a compile-time error in the munmap call. [Similarity] The core memory management patterns (munmap usage) are present in both, but the Rust code is syntactically incorrect and lacks the locking logic. [Knowledge Extraction] Extract API mappings for memory deallocation and locking mechanisms despite structural mismatch due to different control flow and error handling."}]
+Unixcoder Score: 0.005684081930667162
+--------------------------------------------------
+C_Code: 
+void
+backtrace_free (struct backtrace_state *state, void *addr, size_t size,
+		backtrace_error_callback error_callback ATTRIBUTE_UNUSED,
+		void *data ATTRIBUTE_UNUSED)
+{
+  int locked;
+
+  /* If we are freeing a large aligned block, just release it back to
+     the system.  This case arises when growing a vector for a large
+     binary with lots of debug info.  Calling munmap here may cause us
+     to call mmap again if there is also a large shared library; we
+     just live with that.  */
+  if (size >= 16 * 4096)
+    {
+      size_t pagesize;
+
+      pagesize = getpagesize ();
+      if (((uintptr_t) addr & (pagesize - 1)) == 0
+	  && (size & (pagesize - 1)) == 0)
+	{
+	  /* If munmap fails for some reason, just add the block to
+	     the freelist.  */
+	  if (munmap (addr, size) == 0)
+	    return;
+	}
+    }
+
+  /* If we can acquire the lock, add the new space to the free list.
+     If we can't acquire the lock, just leak the memory.
+     __sync_lock_test_and_set returns the old state of the lock, so we
+     have acquired it if it returns 0.  */
+
+  if (!state->threaded)
+    locked = 1;
+  else
+    locked = __sync_lock_test_and_set (&state->lock_alloc, 1) == 0;
+
+  if (locked)
+    {
+      backtrace_free_locked (state, addr, size);
+
+      if (state->threaded)
+	__sync_lock_release (&state->lock_alloc);
+    }
+}
+Function: 
+fn test_mmap() {
+    let page_size = page_size::get();
+    let ptr = unsafe {
+        libc::mmap(
+            ptr::null_mut(),
+            page_size,
+            libc::PROT_READ | libc::PROT_WRITE,
+            libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+            -1,
+            0,
+        )
+    };
+    assert!(!ptr.is_null());
+
+    // Ensure that freshly mapped allocations are zeroed
+    let slice = unsafe { slice::from_raw_parts_mut(ptr as *mut u8, page_size) };
+    assert!(slice.iter().all(|b| *b == 0));
+
+    // Do some writes, make sure they worked
+    for b in slice.iter_mut() {
+        *b = 1;
+    }
+    assert!(slice.iter().all(|b| *b == 1));
+
+    // Ensure that we can munmap with just an integer
+    let just_an_address = ptr::invalid_mut(ptr.addr());
+    let res = unsafe { libc::munmap(just_an_address, page_size) };
+    assert_eq!(res, 0i32);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90130_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90130_rank3.rs", "c_api": "getpagesize ()", "rust_api": "page_size::get()", "mapping_type": "function", "description": "Get system page size", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to libc functions (mmap, mremap, munmap), which are typical system calls. The C code also uses FFI-like system calls (munmap, getpagesize). [Task Analysis] -> Both code snippets involve memory management operations (allocating, remapping, freeing memory). However, the C code is a function for freeing memory blocks, while the Rust code is a test function that allocates and remaps memory. [Similarity] -> The domains are related (memory management) but the specific tasks differ: C frees memory based on size and locking, while Rust allocates and remaps memory for testing. [Knowledge Extraction] -> There are no full or partial structural matches due to domain mismatch and different control flow. However, there are API mappings between memory management functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90130_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90130_rank3.rs", "c_api": "mmap(...)", "rust_api": "libc::mmap(...)", "mapping_type": "function", "description": "Memory mapping", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to libc functions (mmap, mremap, munmap), which are typical system calls. The C code also uses FFI-like system calls (munmap, getpagesize). [Task Analysis] -> Both code snippets involve memory management operations (allocating, remapping, freeing memory). However, the C code is a function for freeing memory blocks, while the Rust code is a test function that allocates and remaps memory. [Similarity] -> The domains are related (memory management) but the specific tasks differ: C frees memory based on size and locking, while Rust allocates and remaps memory for testing. [Knowledge Extraction] -> There are no full or partial structural matches due to domain mismatch and different control flow. However, there are API mappings between memory management functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90130_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90130_rank3.rs", "c_api": "munmap (addr, size)", "rust_api": "libc::munmap(ptr, page_size * 2)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to libc functions (mmap, mremap, munmap), which are typical system calls. The C code also uses FFI-like system calls (munmap, getpagesize). [Task Analysis] -> Both code snippets involve memory management operations (allocating, remapping, freeing memory). However, the C code is a function for freeing memory blocks, while the Rust code is a test function that allocates and remaps memory. [Similarity] -> The domains are related (memory management) but the specific tasks differ: C frees memory based on size and locking, while Rust allocates and remaps memory for testing. [Knowledge Extraction] -> There are no full or partial structural matches due to domain mismatch and different control flow. However, there are API mappings between memory management functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__backtrace_free__idx90130_rank3.c", "source_rust_file": "API_Mapping__backtrace_free__idx90130_rank3.rs", "c_api": "mremap(...)", "rust_api": "libc::mremap(...)", "mapping_type": "function", "description": "Memory remapping", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to libc functions (mmap, mremap, munmap), which are typical system calls. The C code also uses FFI-like system calls (munmap, getpagesize). [Task Analysis] -> Both code snippets involve memory management operations (allocating, remapping, freeing memory). However, the C code is a function for freeing memory blocks, while the Rust code is a test function that allocates and remaps memory. [Similarity] -> The domains are related (memory management) but the specific tasks differ: C frees memory based on size and locking, while Rust allocates and remaps memory for testing. [Knowledge Extraction] -> There are no full or partial structural matches due to domain mismatch and different control flow. However, there are API mappings between memory management functions."}]
+Unixcoder Score: -0.012299026362597942
+--------------------------------------------------

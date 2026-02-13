@@ -1,0 +1,482 @@
+C_Code: 
+CDECL void aio_init() {
+  rust_task *task = rust_scheduler::get_task();
+  LOG_UPCALL_ENTRY(task);
+  iotask = task;
+  uv_idle_init(uv_default_loop(), &idle_handler);
+  uv_idle_start(&idle_handler, idle_callback);
+}
+Function: 
+fn declare_upcalls(type_names tn, ModuleRef llmod) -> upcalls {
+    fn decl(type_names tn, ModuleRef llmod, str name, vec[TypeRef] tys)
+            -> ValueRef {
+        let vec[TypeRef] arg_tys = vec(T_taskptr(tn));
+        for (TypeRef t in tys) { arg_tys += vec(t); }
+        auto fn_ty = T_fn(arg_tys, T_void());
+        ret trans.decl_cdecl_fn(llmod, "upcall_" + name, fn_ty);
+    }
+
+    auto d = bind decl(tn, llmod, _, _);
+
+    // FIXME: Sigh... remove this when I fix the typechecker pushdown.
+    // --pcwalton
+    let vec[TypeRef] empty_vec = vec();
+
+    ret rec(
+        grow_task=d("grow_task", vec(T_size_t())),
+        log_int=d("log_int", vec(T_i32(), T_i32())),
+        log_float=d("log_float", vec(T_i32(), T_f32())),
+        log_double=d("log_double", vec(T_i32(), T_ptr(T_f64()))),
+        log_str=d("log_str", vec(T_i32(), T_ptr(T_str()))),
+        trace_word=d("trace_word", vec(T_int())),
+        trace_str=d("trace_str", vec(T_ptr(T_i8()))),
+        new_port=d("new_port", vec(T_size_t())),
+        del_port=d("del_port", vec(T_opaque_port_ptr(tn))),
+        new_chan=d("new_chan", vec(T_opaque_port_ptr(tn))),
+        flush_chan=d("flush_chan", vec(T_opaque_chan_ptr(tn))),
+        del_chan=d("del_chan", vec(T_opaque_chan_ptr(tn))),
+        clone_chan=d("clone_chan", vec(T_taskptr(tn), T_opaque_chan_ptr(tn))),
+        _yield=d("yield", empty_vec),
+        sleep=d("sleep", vec(T_size_t())),
+        _join=d("join", vec(T_taskptr(tn))),
+        send=d("send", vec(T_opaque_chan_ptr(tn), T_ptr(T_i8()))),
+        recv=d("recv", vec(T_ptr(T_int()), T_opaque_port_ptr(tn))),
+        _fail=d("fail", vec(T_ptr(T_i8()), T_ptr(T_i8()), T_size_t())),
+        kill=d("kill", vec(T_taskptr(tn))),
+        exit=d("exit", empty_vec),
+        malloc=d("malloc", vec(T_size_t(), T_ptr(T_tydesc(tn)))),
+        free=d("free", vec(T_ptr(T_i8()), T_int())),
+        mark=d("mark", vec(T_ptr(T_i8()))),
+        new_str=d("new_str", vec(T_ptr(T_i8()), T_size_t())),
+        new_vec=d("new_vec", vec(T_size_t(), T_ptr(T_tydesc(tn)))),
+        vec_grow=d("vec_grow", vec(T_opaque_vec_ptr(), T_size_t(),
+                                   T_ptr(T_int()), T_ptr(T_tydesc(tn)))),
+        require_rust_sym=d("require_rust_sym",
+                           vec(T_ptr(T_crate(tn)), T_size_t(), T_size_t(),
+                               T_size_t(), T_ptr(T_i8()),
+                               T_ptr(T_ptr(T_i8())))),
+        require_c_sym=d("require_c_sym",
+                        vec(T_ptr(T_crate(tn)), T_size_t(), T_size_t(),
+                            T_ptr(T_i8()), T_ptr(T_i8()))),
+        get_type_desc=d("get_type_desc",
+                        vec(T_ptr(T_crate(tn)), T_size_t(), T_size_t(),
+                            T_size_t(), T_ptr(T_ptr(T_tydesc(tn))))),
+        new_task=d("new_task", vec(T_ptr(T_i8()))),
+        start_task=d("start_task", vec(T_taskptr(tn), T_int(), T_int(),
+                                       T_int(), T_size_t())),
+        new_thread=d("new_thread", vec(T_ptr(T_i8()))),
+        start_thread=d("start_thread", vec(T_taskptr(tn), T_int(), T_int(),
+                                           T_int(), T_size_t()))
+    );
+}
+Unixcoder Score: 0.01036318764090538
+--------------------------------------------------
+C_Code: 
+TaskConfig BuildRequestTaskConfig(std::shared_ptr<OHOS::NativeRdb::ResultSet> resultSet)
+{
+    TaskConfig taskConfig;
+    BuildRequestTaskConfigWithLong(resultSet, taskConfig);
+    BuildRequestTaskConfigWithInt(resultSet, taskConfig);
+    BuildRequestTaskConfigWithString(resultSet, taskConfig);
+    BuildRequestTaskConfigWithBlob(resultSet, taskConfig);
+    return taskConfig;
+}
+Function: 
+pub(crate) fn get_task_config(&self, task_id: u32) -> Option<TaskConfig> {
+        debug!("query single task config in database");
+        let c_task_config = unsafe { QueryTaskConfig(task_id) };
+        if c_task_config.is_null() {
+            error!("can not find task in database, task id: {}", task_id);
+            sys_event!(
+                ExecFault,
+                DfxCode::RDB_FAULT_06,
+                &format!("can not find task in database, task id: {}", task_id)
+            );
+            None
+        } else {
+            let task_config = TaskConfig::from_c_struct(unsafe { &*c_task_config });
+            unsafe { DeleteCTaskConfig(c_task_config) };
+            Some(task_config)
+        }
+    }
+Unixcoder Score: -0.0150797413662076
+--------------------------------------------------
+C_Code: 
+Queue() = default;
+Function: 
+fn new(verbs: &'a mut Vec<u8>, points: &'a mut Vec<FfiPoint>) -> Self {
+        verbs.clear();
+        points.clear();
+        verbs.reserve(PATH_EXTRACTION_RESERVE);
+        points.reserve(PATH_EXTRACTION_RESERVE);
+        Self {
+            verbs,
+            points,
+            started: false,
+            current: FfiPoint::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTask__idx638_rank5.c", "source_rust_file": "API_Mapping__GetTask__idx638_rank5.rs", "c_api": "tasks_.emplace(taskId, std::make_shared<Request>(taskId))", "rust_api": "HashMap::new()", "mapping_type": "function", "description": "Insertion and creation of a new element in a map-like structure in C++ vs initialization of a new HashMap in Rust", "reasoning": "[Task Analysis] C code is a method that retrieves or creates a task using a mutex-protected map lookup, while Rust code is a constructor/factory function that initializes a struct with several HashMaps and other fields. [Similarity] No structural similarity at the function level due to different domains (task retrieval vs struct initialization). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data structure creation and initialization patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTask__idx638_rank5.c", "source_rust_file": "API_Mapping__GetTask__idx638_rank5.rs", "c_api": "tasks_.erase(taskId)", "rust_api": "HashMap::new()", "mapping_type": "function", "description": "Removal of an element from a map-like structure in C++ vs initialization of a new HashMap in Rust", "reasoning": "[Task Analysis] C code is a method that retrieves or creates a task using a mutex-protected map lookup, while Rust code is a constructor/factory function that initializes a struct with several HashMaps and other fields. [Similarity] No structural similarity at the function level due to different domains (task retrieval vs struct initialization). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data structure creation and initialization patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTask__idx638_rank5.c", "source_rust_file": "API_Mapping__GetTask__idx638_rank5.rs", "c_api": "std::make_shared<Request>(taskId)", "rust_api": "HashMap::new()", "mapping_type": "function", "description": "Creation of a new shared pointer object in C++ vs initialization of a new HashMap in Rust", "reasoning": "[Task Analysis] C code is a method that retrieves or creates a task using a mutex-protected map lookup, while Rust code is a constructor/factory function that initializes a struct with several HashMaps and other fields. [Similarity] No structural similarity at the function level due to different domains (task retrieval vs struct initialization). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data structure creation and initialization patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTask__idx638_rank5.c", "source_rust_file": "API_Mapping__GetTask__idx638_rank5.rs", "c_api": "tasks_.find(taskId)", "rust_api": "HashMap::new()", "mapping_type": "function", "description": "Lookup operation in a map-like structure in C++ vs initialization of a new HashMap in Rust", "reasoning": "[Task Analysis] C code is a method that retrieves or creates a task using a mutex-protected map lookup, while Rust code is a constructor/factory function that initializes a struct with several HashMaps and other fields. [Similarity] No structural similarity at the function level due to different domains (task retrieval vs struct initialization). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data structure creation and initialization patterns."}]
+Unixcoder Score: -0.01682860776782036
+--------------------------------------------------
+C_Code: 
+void print_tests(FILE* stream) {
+  const task_entry_t* helpers[1024];
+  const task_entry_t* task;
+  int n_helpers;
+  int n_tasks;
+  int i;
+
+  for (n_tasks = 0, task = TASKS; task->main; n_tasks++, task++);
+  qsort(TASKS, n_tasks, sizeof(TASKS[0]), compare_task);
+
+  for (task = TASKS; task->main; task++) {
+    if (task->is_helper) {
+      continue;
+    }
+
+    n_helpers = find_helpers(task, helpers);
+    if (n_helpers) {
+      printf("%-25s (helpers:", task->task_name);
+      for (i = 0; i < n_helpers; i++) {
+        printf(" %s", helpers[i]->process_name);
+      }
+      printf(")\n");
+    } else {
+      printf("%s\n", task->task_name);
+    }
+  }
+}
+Function: 
+pub fn list_tests_console(opts: &TestOpts, tests: Vec<TestDescAndFn>) -> io::Result<()> {
+    let output = match term::stdout() {
+        None => OutputLocation::Raw(io::stdout().lock()),
+        Some(t) => OutputLocation::Pretty(t),
+    };
+
+    let mut out: Box<dyn OutputFormatter> = match opts.format {
+        OutputFormat::Pretty | OutputFormat::Junit => {
+            Box::new(PrettyFormatter::new(output, false, 0, false, None))
+        }
+        OutputFormat::Terse => Box::new(TerseFormatter::new(output, false, 0, false)),
+        OutputFormat::Json => Box::new(JsonFormatter::new(output)),
+    };
+    let mut st = ConsoleTestDiscoveryState::new(opts)?;
+
+    out.write_discovery_start()?;
+    for test in filter_tests(opts, tests).into_iter() {
+        use crate::TestFn::*;
+
+        let TestDescAndFn { desc, testfn } = test;
+
+        let fntype = match testfn {
+            StaticTestFn(..) | DynTestFn(..) | StaticBenchAsTestFn(..) | DynBenchAsTestFn(..) => {
+                st.tests += 1;
+                "test"
+            }
+            StaticBenchFn(..) | DynBenchFn(..) => {
+                st.benchmarks += 1;
+                "benchmark"
+            }
+        };
+
+        st.ignored += if desc.ignore { 1 } else { 0 };
+
+        out.write_test_discovered(&desc, fntype)?;
+        st.write_log(|| format!("{fntype} {}\n", desc.name))?;
+    }
+
+    out.write_discovery_finish(&st)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__aio_init__idx129895_rank3.c", "source_rust_file": "Partial__aio_init__idx129895_rank3.rs", "c_api": "uv_idle_start", "rust_api": "rec(", "mapping_type": "pattern", "description": "Both represent starting or registering a handler for an event loop or idle task.", "reasoning": "[FFI Check] -> C code has no FFI calls, Rust code has no FFI calls -> Not FFI. [Task Analysis] -> C function initializes aio and sets up a UV idle handler; Rust function declares upcalls for a module. [Similarity] -> No full structural similarity due to different domains (low-level I/O vs high-level upcall declaration). [Knowledge Extraction] -> Extract partial structural fragments and API mappings based on shared patterns and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__aio_init__idx129895_rank3.c", "source_rust_file": "Partial__aio_init__idx129895_rank3.rs", "c_api": "uv_idle_init", "rust_api": "trans.decl_cdecl_fn", "mapping_type": "function", "description": "Both are used to set up function declarations or handlers for event loops or idle tasks.", "reasoning": "[FFI Check] -> C code has no FFI calls, Rust code has no FFI calls -> Not FFI. [Task Analysis] -> C function initializes aio and sets up a UV idle handler; Rust function declares upcalls for a module. [Similarity] -> No full structural similarity due to different domains (low-level I/O vs high-level upcall declaration). [Knowledge Extraction] -> Extract partial structural fragments and API mappings based on shared patterns and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__aio_init__idx129895_rank3.c", "source_rust_file": "Partial__aio_init__idx129895_rank3.rs", "c_api": "rust_scheduler::get_task()", "rust_api": "bind decl(tn, llmod, _, _)", "mapping_type": "function", "description": "Both retrieve or bind a task context for further processing.", "reasoning": "[FFI Check] -> C code has no FFI calls, Rust code has no FFI calls -> Not FFI. [Task Analysis] -> C function initializes aio and sets up a UV idle handler; Rust function declares upcalls for a module. [Similarity] -> No full structural similarity due to different domains (low-level I/O vs high-level upcall declaration). [Knowledge Extraction] -> Extract partial structural fragments and API mappings based on shared patterns and logic flow."}, {"knowledge_type": "Partial", "source_c_file": "Partial__aio_init__idx129895_rank3.c", "source_rust_file": "Partial__aio_init__idx129895_rank3.rs", "c_fragment": "rust_task *task = rust_scheduler::get_task();\n  LOG_UPCALL_ENTRY(task);\n  iotask = task;", "rust_fragment": "let vec[TypeRef] empty_vec = vec();", "description": "Both sides handle task initialization and setup, though in different contexts (C: getting task from scheduler, Rust: preparing empty vector for function arguments).", "reasoning": "[FFI Check] -> C code has no FFI calls, Rust code has no FFI calls -> Not FFI. [Task Analysis] -> C function initializes aio and sets up a UV idle handler; Rust function declares upcalls for a module. [Similarity] -> No full structural similarity due to different domains (low-level I/O vs high-level upcall declaration). [Knowledge Extraction] -> Extract partial structural fragments and API mappings based on shared patterns and logic flow."}]
+Unixcoder Score: -0.018123891204595566
+--------------------------------------------------
+C_Code: 
+TaskConfig BuildRequestTaskConfig(std::shared_ptr<OHOS::NativeRdb::ResultSet> resultSet)
+{
+    TaskConfig taskConfig;
+    BuildRequestTaskConfigWithLong(resultSet, taskConfig);
+    BuildRequestTaskConfigWithInt(resultSet, taskConfig);
+    BuildRequestTaskConfigWithString(resultSet, taskConfig);
+    BuildRequestTaskConfigWithBlob(resultSet, taskConfig);
+    return taskConfig;
+}
+Function: 
+pub(crate) fn get_task_config(&self, task_id: u32) -> Option<TaskConfig> {
+        debug!("query single task config in database");
+        let c_task_config = unsafe { QueryTaskConfig(task_id) };
+        if c_task_config.is_null() {
+            error!("can not find task in database, task id: {}", task_id);
+            sys_event!(
+                ExecFault,
+                DfxCode::RDB_FAULT_06,
+                &format!("can not find task in database, task id: {}", task_id)
+            );
+            None
+        } else {
+            let task_config = TaskConfig::from_c_struct(unsafe { &*c_task_config });
+            unsafe { DeleteCTaskConfig(c_task_config) };
+            Some(task_config)
+        }
+    }
+Unixcoder Score: -0.0314403660595417
+--------------------------------------------------
+C_Code: 
+int run_test_part(const char* test, const char* part) {
+  task_entry_t* task;
+
+  for (task = TASKS; task->main; task++) {
+    if (strcmp(test, task->task_name) == 0
+        && strcmp(part, task->process_name) == 0) {
+      return task->main();
+    }
+  }
+
+  LOGF("No test part with that name: %s:%s\n", test, part);
+  return 255;
+}
+Function: 
+pub(crate) fn run(&self, compiler: &Compiler, dirs: &Dirs) -> Command {
+        self.build_cmd("run", compiler, dirs)
+    }
+Unixcoder Score: -0.033769115805625916
+--------------------------------------------------
+C_Code: 
+struct DeviceQueueCreateInfo
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_init__idx140306_rank2.c", "source_rust_file": "API_Mapping__etp_init__idx140306_rank2.rs", "c_api": "X_MUTEX_CREATE (wrklock)", "rust_api": "self.inner.get_or_init(AllocatedMutex::new).0.get()", "mapping_type": "function", "description": "Mutex initialization and access", "reasoning": "[Task Analysis] C code initializes a thread-safe data structure with mutexes and queues; Rust code retrieves a raw pointer to a mutex from an initialized structure. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there is a potential API mapping related to mutex initialization and access patterns."}]
+Unixcoder Score: -0.0343383364379406
+--------------------------------------------------
+C_Code: 
+void
+rust_sched_loop::activate(rust_task *task) {
+    lock.must_have_lock();
+    task->ctx.next = &c_context;
+    DLOG(this, task, "descheduling...");
+    lock.unlock();
+    prepare_c_stack(task);
+    task->ctx.swap(c_context);
+    task->cleanup_after_turn();
+    unprepare_c_stack();
+    lock.lock();
+    DLOG(this, task, "task has returned");
+}
+Function: 
+fn deschedule(mut ~self, times: uint, mut cur_task: ~Task,
+                  f: |BlockedTask| -> Result<(), BlockedTask>) {
+        let my_lock: *mut Mutex = &mut self.lock as *mut Mutex;
+        cur_task.put_runtime(self as ~rt::Runtime);
+
+        unsafe {
+            let cur_task_dupe = *cast::transmute::<&~Task, &uint>(&cur_task);
+            let task = BlockedTask::block(cur_task);
+
+            if times == 1 {
+                (*my_lock).lock();
+                match f(task) {
+                    Ok(()) => (*my_lock).wait(),
+                    Err(task) => { cast::forget(task.wake()); }
+                }
+                (*my_lock).unlock();
+            } else {
+                let mut iter = task.make_selectable(times);
+                (*my_lock).lock();
+                let success = iter.all(|task| {
+                    match f(task) {
+                        Ok(()) => true,
+                        Err(task) => {
+                            cast::forget(task.wake());
+                            false
+                        }
+                    }
+                });
+                if success {
+                    (*my_lock).wait();
+                }
+                (*my_lock).unlock();
+            }
+            // re-acquire ownership of the task
+            cur_task = cast::transmute::<uint, ~Task>(cur_task_dupe);
+        }
+
+        // put the task back in TLS, and everything is as it once was.
+        Local::put(cur_task);
+    }
+Unixcoder Score: -0.03480736166238785
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTaskTime(uint32_t taskId, uint64_t taskTime)
+{
+    REQUEST_HILOGD("update request task time");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("task_time", taskTime);
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update request task time failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn update_task_time(&self, task_id: u32, task_time: u64) {
+        let ret = unsafe { UpdateRequestTaskTime(task_id, task_time) };
+        debug!("Update task time in database, ret is {}", ret);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx78817_rank1.c", "source_rust_file": "API_Mapping__cleanup_task__idx78817_rank1.rs", "c_api": "task->fail_sched_loop()", "rust_api": "rustrt::rust_task_local_data_atexit(task, cleanup_task_local_map)", "mapping_type": "function", "description": "Task scheduling loop failure handling", "reasoning": "[Task Analysis] The C function 'cleanup_task' is a teardown routine handling task lifecycle, TLS cleanup, and calling Rust functions via FFI. The Rust function 'get_task_local_map' retrieves or initializes a TLS-based task-local map. [Similarity] Names do not match ('cleanup_task' vs 'get_task_local_map'), and domains differ (teardown vs initialization). No full structural match. [Knowledge Extraction] There are no matching structural fragments. However, both involve task-local data and FFI interactions. The C code calls 'task->task_local_data_cleanup' and 'task->fail_sched_loop()', while Rust calls 'rustrt::rust_set_task_local_data' and 'rustrt::rust_task_local_data_atexit'. These are semantically related operations in the same domain (task-local storage management)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx78817_rank1.c", "source_rust_file": "API_Mapping__cleanup_task__idx78817_rank1.rs", "c_api": "task->task_local_data_cleanup(task->task_local_data)", "rust_api": "rustrt::rust_set_task_local_data(task, cast::reinterpret_cast(&map))", "mapping_type": "function", "description": "Task-local data cleanup and initialization", "reasoning": "[Task Analysis] The C function 'cleanup_task' is a teardown routine handling task lifecycle, TLS cleanup, and calling Rust functions via FFI. The Rust function 'get_task_local_map' retrieves or initializes a TLS-based task-local map. [Similarity] Names do not match ('cleanup_task' vs 'get_task_local_map'), and domains differ (teardown vs initialization). No full structural match. [Knowledge Extraction] There are no matching structural fragments. However, both involve task-local data and FFI interactions. The C code calls 'task->task_local_data_cleanup' and 'task->fail_sched_loop()', while Rust calls 'rustrt::rust_set_task_local_data' and 'rustrt::rust_task_local_data_atexit'. These are semantically related operations in the same domain (task-local storage management)."}]
+Unixcoder Score: -0.03745310381054878
+--------------------------------------------------
+C_Code: 
+napi_value JsInitialize::Initialize(napi_env env, napi_callback_info info, Version version, bool firstInit)
+{
+    REQUEST_HILOGD("constructor request task!");
+    bool withErrCode = version != Version::API8;
+    napi_value self = nullptr;
+    size_t argc = NapiUtils::MAX_ARGC;
+    napi_value argv[NapiUtils::MAX_ARGC] = { nullptr };
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &self, nullptr));
+    int32_t number = version == Version::API8 ? NapiUtils::ONE_ARG : NapiUtils::TWO_ARG;
+    if (static_cast<int32_t>(argc) < number) {
+        NapiUtils::ThrowError(
+            env, E_PARAMETER_CHECK, "Missing mandatory parameters, invalid parameter count", withErrCode);
+        return nullptr;
+    }
+
+    Config config;
+    config.version = version;
+    config.withErrCode = withErrCode;
+    config.firstInit = firstInit;
+    std::shared_ptr<OHOS::AbilityRuntime::Context> context = nullptr;
+    ExceptionError err = InitParam(env, argv, context, config);
+    if (err.code != E_OK) {
+        REQUEST_HILOGE("err.code : %{public}d, err.errInfo :  %{public}s", err.code, err.errInfo.c_str());
+        NapiUtils::ThrowError(env, err.code, err.errInfo, withErrCode);
+        return nullptr;
+    }
+
+    auto *task = new (std::nothrow) JsTask();
+    if (task == nullptr) {
+        REQUEST_HILOGE("Create task object failed");
+        return nullptr;
+    }
+    task->config_ = config;
+    task->isGetPermission = true;
+    RequestManager::GetInstance()->RestoreListener(JsTask::ReloadListener);
+    // `finalize` executes on the JS thread
+    auto finalize = [](napi_env env, void *data, void *hint) {
+        REQUEST_HILOGD("destructed task");
+        JsTask *task = reinterpret_cast<JsTask *>(data);
+        JsTask::ClearTaskMap(task->GetTid());
+        RequestManager::GetInstance()->RemoveAllListeners(task->GetTid());
+        delete task;
+    };
+    if (napi_wrap(env, self, task, finalize, nullptr, nullptr) != napi_ok) {
+        finalize(env, task, nullptr);
+        return nullptr;
+    }
+    return self;
+}
+Function: 
+pub(crate) fn new_by_info(
+        config: TaskConfig,
+        #[cfg(feature = "oh")] system: SystemConfig,
+        info: TaskInfo,
+        client_manager: ClientManagerEntry,
+        upload_resume: bool,
+    ) -> Result<RequestTask, ErrorCode> {
+        let rest_time = get_rest_time(&config, info.task_time);
+        #[cfg(feature = "oh")]
+        let (files, client) = check_config(&config, rest_time, system)?;
+        #[cfg(not(feature = "oh"))]
+        let (files, client) = check_config(&config, rest_time)?;
+
+        let file_len = files.files.len();
+        let action = config.common_data.action;
+        let time = get_current_timestamp();
+
+        let file_total_size = match action {
+            Action::Upload => {
+                let mut file_total_size = 0i64;
+                // If the total size overflows, ignore it.
+                for size in files.sizes.iter() {
+                    file_total_size += *size;
+                }
+                file_total_size
+            }
+            Action::Download => *info.progress.sizes.first().unwrap_or(&-1),
+            _ => unreachable!("Action::Any in RequestTask::new never reach"),
+        };
+
+        // If `TaskInfo` is provided, use data of it.
+        let ctime = info.common_data.ctime;
+        let mime_type = info.mime_type.clone();
+        let tries = info.common_data.tries;
+        let status = TaskStatus {
+            mtime: time,
+            state: State::from(info.progress.common_data.state),
+            reason: Reason::from(info.common_data.reason),
+        };
+        let progress = info.progress;
+        let mode = AtomicU8::new(config.common_data.mode.repr);
+
+        let mut task = RequestTask {
+            conf: config,
+            client: ylong_runtime::sync::Mutex::new(client),
+            files: files.files,
+            body_files: files.body_files,
+            ctime,
+            mime_type: Mutex::new(mime_type),
+            progress: Mutex::new(progress),
+            tries: AtomicU32::new(tries),
+            status: Mutex::new(status),
+            code: Mutex::new(vec![Reason::Default; file_len]),
+            background_notify_time: AtomicU64::new(time),
+            background_notify: Arc::new(AtomicBool::new(false)),
+            file_total_size: AtomicI64::new(file_total_size),
+            rate_limiting: AtomicU64::new(0),
+            max_speed: AtomicI64::new(info.max_speed),
+            last_notify: AtomicU64::new(time),
+            client_manager,
+            running_result: Mutex::new(None),
+            timeout_tries: AtomicU32::new(0),
+            upload_resume: AtomicBool::new(upload_resume),
+            mode,
+            start_time: AtomicU64::new(get_current_duration().as_secs()),
+            task_time: AtomicU64::new(info.task_time),
+            rest_time: AtomicU64::new(rest_time),
+        };
+        let background_notify = NotificationDispatcher::get_instance().register_task(&task);
+        task.background_notify = background_notify;
+        Ok(task)
+    }
+Unixcoder Score: -0.03889895975589752
+--------------------------------------------------

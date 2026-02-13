@@ -1,0 +1,363 @@
+C_Code: 
+bool DownloadServiceAbility::Remove(uint32_t taskId)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility Remove started.");
+    return instance->Remove(taskId, IPCSkeleton::GetCallingUid());
+}
+Function: 
+pub fn remove(&mut self, uid: u64, task_id: u32) -> ErrorCode {
+        log_debug!("Remove a task");
+        let task = {
+            let task_map_guard = self.task_map.lock().unwrap();
+            let task = self.get_task(uid, task_id, &task_map_guard);
+            if let None = task {
+                log_error!("Remove failed");
+                return ErrorCode::TaskNotFound;
+            }
+            let task = task.unwrap();
+            task.set_status(State::REMOVED, Reason::UserOperation);
+            task
+        };
+        self.after_task_processed(task);
+        log_info!("remove success");
+        ErrorCode::ErrOk
+    }
+Unixcoder Score: 0.00025332297082059085
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::QueryMimeType(uint32_t taskId, std::string &mimeType)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility QueryMimeType started.");
+    return instance->QueryMimeType(taskId, IPCSkeleton::GetCallingUid(), mimeType);
+}
+Function: 
+pub fn query_mime_type(&self, task_id: u32, mime: &mut String) -> ErrorCode {
+        *mime = TaskManager::get_instance().query_mime_type(get_calling_uid(), task_id);
+        if mime.is_empty() {
+            return ErrorCode::MimeType_not_found;
+        }
+        ErrorCode::ErrOk
+    }
+Unixcoder Score: -0.0005949801416136324
+--------------------------------------------------
+C_Code: 
+void OnDemandHelper::LoadRemoteAbilityMuti(int32_t systemAbilityId, const std::string& deviceId)
+{
+    std::thread thread1([systemAbilityId, deviceId, this]() {
+        cout << "LoadRemoteAbilityMuti thread1" << endl;
+        LoadRemoteAbility(systemAbilityId, deviceId, loadCallback_);
+    });
+    std::thread thread2([systemAbilityId, deviceId, this]() {
+        cout << "LoadRemoteAbilityMuti thread2" << endl;
+        LoadRemoteAbility(systemAbilityId, deviceId, loadCallback_);
+    });
+    std::thread thread3([systemAbilityId, deviceId, this]() {
+        cout << "LoadRemoteAbilityMuti thread3" << endl;
+        LoadRemoteAbility(systemAbilityId, deviceId, loadCallback_);
+    });
+    thread1.detach();
+    thread2.detach();
+    thread3.detach();
+}
+Function: 
+fn basic_test() {
+    init();
+    let audio = SystemAbilityManager::load_system_ability(3706, 100000).unwrap();
+
+    let mut data = MsgParcel::new();
+    for i in 0..10 {
+        thread::sleep(std::time::Duration::from_secs(1));
+        let mut reply = audio.send_request(2, &mut data).unwrap();
+    }
+}
+Unixcoder Score: -0.00898481160402298
+--------------------------------------------------
+C_Code: 
+void clear_dbg_line_insts() { dbg_line_insts_.clear(); }
+Function: 
+fn new(verbs: &'a mut Vec<u8>, points: &'a mut Vec<FfiPoint>) -> Self {
+        verbs.clear();
+        points.clear();
+        verbs.reserve(PATH_EXTRACTION_RESERVE);
+        points.reserve(PATH_EXTRACTION_RESERVE);
+        Self {
+            verbs,
+            points,
+            started: false,
+            current: FfiPoint::default(),
+        }
+    }
+Unixcoder Score: -0.018051043152809143
+--------------------------------------------------
+C_Code: 
+SkPngEncoderMgr(png_structp pngPtr, png_infop infoPtr)
+        : fPngPtr(pngPtr)
+        , fInfoPtr(infoPtr)
+    {}
+Function: 
+fn new(
+        output: cxx::UniquePtr<ffi::WriteTrait>,
+        width: u32,
+        height: u32,
+        color: ffi::ColorType,
+        bits_per_component: u8,
+        compression: ffi::Compression,
+    ) -> Result<Self, png::EncodingError> {
+        let mut encoder = png::Encoder::new(output, width, height);
+        encoder.set_color(color.into());
+        encoder.set_depth(match bits_per_component {
+            8 => png::BitDepth::Eight,
+            16 => png::BitDepth::Sixteen,
+
+            // `SkPngRustEncoderImpl` only encodes 8-bit or 16-bit images.
+            _ => unreachable!(),
+        });
+        encoder.set_compression(compression.into());
+        encoder.set_adaptive_filter(match compression {
+            ffi::Compression::Fast => png::AdaptiveFilterType::NonAdaptive,
+            ffi::Compression::Default | ffi::Compression::Best => png::AdaptiveFilterType::Adaptive,
+            _ => unreachable!(),
+        });
+
+        let writer = encoder.write_header()?;
+        Ok(Self(writer))
+    }
+Unixcoder Score: -0.03274587169289589
+--------------------------------------------------
+C_Code: 
+void OnDemandHelper::LoadRemoteAbilityMutiCb(int32_t systemAbilityId, const std::string& deviceId)
+{
+    std::thread thread1([systemAbilityId, deviceId, this]() {
+        cout << "LoadRemoteAbilityMuti thread1" << endl;
+        LoadRemoteAbility(systemAbilityId, deviceId, loadCallback_);
+    });
+    std::thread thread2([systemAbilityId, deviceId, this]() {
+        cout << "LoadRemoteAbilityMuti thread2" << endl;
+        LoadRemoteAbility(systemAbilityId, deviceId, loadCallback2_);
+    });
+    std::thread thread3([systemAbilityId, deviceId, this]() {
+        cout << "LoadRemoteAbilityMuti thread3" << endl;
+        LoadRemoteAbility(systemAbilityId, deviceId, loadCallback3_);
+    });
+    thread1.detach();
+    thread2.detach();
+    thread3.detach();
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Unixcoder Score: -0.03531073406338692
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::QueryMimeType(uint32_t taskId, std::string &mimeType)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility QueryMimeType started.");
+    return instance->QueryMimeType(taskId, IPCSkeleton::GetCallingUid(), mimeType);
+}
+Function: 
+pub fn query_mime_type(&self, uid: u64, task_id: u32) -> String {
+        log_debug!("Query a task mime type");
+        let task_map_guard = self.task_map.lock().unwrap();
+        let task = self.get_task(uid, task_id, &task_map_guard);
+        match task {
+            Some(value) => {
+                log_debug!("Query task mime type by memory");
+                let mimt_type = value.query_mime_type();
+                return mimt_type;
+            }
+            None => {
+                // API10 query in database
+                return "".into();
+            }
+        }
+    }
+Unixcoder Score: -0.037632327526807785
+--------------------------------------------------
+C_Code: 
+bool AppProcessState::RegisterAppStateChanged(RegCallBack &&callback)
+{
+    REQUEST_HILOGI("RegisterAppState In");
+    sptr<AppProcessState> appProcessState = AppProcessState::GetInstance();
+    if (appProcessState == nullptr) {
+        REQUEST_HILOGE("create AppProcessState fail");
+        return false;
+    }
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        REQUEST_HILOGE("get SystemAbilityManager failed.");
+        SysEventLog::SendSysEventLog(FAULT_EVENT, SAMGR_FAULT_00, "Get SAM failed");
+        return false;
+    }
+    auto systemAbility = systemAbilityManager->GetSystemAbility(APP_MGR_SERVICE_ID);
+    if (systemAbility == nullptr) {
+        REQUEST_HILOGE("get SystemAbility failed.");
+        return false;
+    }
+    sptr<AppExecFwk::IAppMgr> appObject = iface_cast<AppExecFwk::IAppMgr>(systemAbility);
+    if (appObject) {
+        int ret = appObject->RegisterApplicationStateObserver(appProcessState);
+        if (ret == ERR_OK) {
+            {
+                std::lock_guard<std::mutex> lockApp(appStateMutex);
+                REQUEST_HILOGI("register success");
+                appStateCallback_ = callback;
+            }
+            return true;
+        }
+        REQUEST_HILOGE("register fail, ret = %{public}d", ret);
+        return false;
+    }
+    REQUEST_HILOGI("RegisterAppState Out");
+    return false;
+}
+Function: 
+fn init(&self, handler: Handler) {
+        info!("ability init");
+
+        // Use a structure to handle panic.
+        std::panic::set_hook(Box::new(|info| unsafe {
+            let info = info.to_string();
+            error!("{}", info);
+            PANIC_INFO = Some(info);
+        }));
+
+        ylong_runtime::builder::RuntimeBuilder::new_multi_thread()
+            .worker_num(4)
+            .build_global()
+            .unwrap();
+        info!("ylong_runtime init ok");
+
+        let runcount_manager = RunCountManager::init();
+        info!("runcount_manager init ok");
+
+        let client_manger = ClientManager::init();
+        info!("client_manger init ok");
+
+        // Use methods to handle rather than directly accessing members.
+        unsafe { SYSTEM_CONFIG_MANAGER.write(SystemConfigManager::init()) };
+        info!("system_config_manager init ok");
+
+        let task_manager = TaskManager::init(runcount_manager.clone(), client_manger.clone(), self.active_counter.clone());
+        *self.task_manager.lock().unwrap() = Some(task_manager.clone());
+        info!("task_manager init ok");
+
+        AppStateListener::init(client_manger.clone(), task_manager.clone());
+
+        SystemAbilityManager::subscribe_system_ability(
+            APP_MGR_SERVICE_ID,
+            |_, _| {
+                info!("app manager service init");
+                AppStateListener::register();
+            },
+            |_, _| {
+                error!("app manager service died");
+            },
+        );
+
+        let stub = RequestServiceStub::new(
+            handler.clone(),
+            task_manager,
+            client_manger,
+            runcount_manager,
+            self.active_counter.clone(),
+        );
+
+        info!("ability init succeed");
+        if !handler.publish(stub) {
+            service_start_fault();
+        }
+    }
+Unixcoder Score: -0.040312450379133224
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::Pause(uint32_t taskId)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility Pause started.");
+    return instance->Pause(taskId, IPCSkeleton::GetCallingUid());
+}
+Function: 
+pub fn pause(&self, task_id: u32) -> ErrorCode {
+        debug!(LOG_LABEL, "pause");
+        TaskManager::get_instance().pause(get_calling_uid(), task_id)
+    }
+Unixcoder Score: -0.04120241850614548
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::Resume(uint32_t taskId)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility Resume started.");
+    return instance->Resume(taskId, IPCSkeleton::GetCallingUid());
+}
+Function: 
+pub fn resume(&self, uid: u64, task_id: u32) -> ErrorCode {
+        log_debug!("Resume a task");
+        let task_map_guard = self.task_map.lock().unwrap();
+        let task = self.get_task(uid, task_id, &task_map_guard);
+        if let None = task {
+            log_error!("Resume failed");
+            return ErrorCode::TaskNotFound;
+        }
+        let task = task.unwrap();
+        if task.conf.common_data.mode == Mode::FRONTEND {
+            log_error!("Front task is not support resume action");
+            return ErrorCode::TaskModeErr;
+        }
+        let state = task.status.lock().unwrap().state;
+        if state != State::PAUSED {
+            log_error!("Can not resume a task which state is not paused");
+            return ErrorCode::TaskStateErr;
+        }
+        log_info!("Resume the task success");
+        self.start_inner(uid, task, &task_map_guard);
+        ErrorCode::ErrOk
+    }
+Unixcoder Score: -0.04373777657747269
+--------------------------------------------------

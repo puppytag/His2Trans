@@ -1,0 +1,280 @@
+C_Code: 
+bool ProcessSkeleton::IsValidObject(IRemoteObject *object, std::u16string &desc)
+{
+    CHECK_INSTANCE_EXIT_WITH_RETVAL(exitFlag_, false);
+    if (object == nullptr) {
+        return false;
+    }
+    std::shared_lock<std::shared_mutex> lockGuard(validObjectMutex_);
+    auto it = validObjectRecord_.find(object);
+    if (it != validObjectRecord_.end()) {
+        desc = it->second;
+        return true;
+    }
+    return false;
+}
+Function: 
+pub fn check_legalit(&self) -> bool {
+        self.inner.CheckObjectLegality()
+    }
+Unixcoder Score: 0.1302674114704132
+--------------------------------------------------
+C_Code: 
+bool DBinderService::CheckInvokeListenThreadIllegal(IPCObjectProxy *proxy, MessageParcel &data, MessageParcel &reply)
+{
+    int err = proxy->InvokeListenThread(data, reply);
+    if (err != ERR_NONE) {
+        DBINDER_LOGE(LOG_LABEL, "start service listen error:%{public}d handle:%{public}d", err, proxy->GetHandle());
+        return true;
+    }
+    return false;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: 0.0866648480296135
+--------------------------------------------------
+C_Code: 
+int32_t ListenAbilityStub::OnRemoteRequest(uint32_t code,
+    MessageParcel& data, MessageParcel &reply, MessageOption &option)
+{
+    std::u16string interfaceToken = data.ReadInterfaceToken();
+    if (interfaceToken != GetDescriptor()) {
+        return ERR_PERMISSION_DENIED;
+    }
+    switch (code) {
+        case ADD_VOLUME: {
+            int32_t volume = data.ReadInt32();
+            bool ret = reply.WriteInt32(AddVolume(volume));
+            return (ret ? ERR_OK : ERR_FLATTEN_OBJECT);
+        }
+        default:
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+}
+Function: 
+fn on_remote_request(
+        &self,
+        code: u32,
+        data: &mut ipc::parcel::MsgParcel,
+        reply: &mut ipc::parcel::MsgParcel,
+    ) -> i32 {
+        match code {
+            _ if code == AudioInterfaceCode::Unload as u32 => {
+                self.unload(data, reply);
+            }
+            _ if code == AudioInterfaceCode::RequestExample as u32 => {
+                self.request_example(data, reply);
+            }
+            _ if code == AudioInterfaceCode::CheckResult as u32 => {
+                self.check_result(data, reply);
+            }
+            _ => return IpcStatusCode::Failed as i32,
+        }
+        0
+    }
+Unixcoder Score: 0.07557403296232224
+--------------------------------------------------
+C_Code: 
+std::string IPCObjectProxy::GetDescriptor(MessageParcel &data)
+{
+    std::unique_lock<std::shared_mutex> lockGuard(descMutex_);
+    if (remoteDescriptor_.empty()) {
+#ifdef ENABLE_IPC_TRACE
+        fullRemoteDescriptor_ = Str16ToStr8(data.GetInterfaceToken());
+        remoteDescriptor_ = ProcessSkeleton::ConvertToSecureDesc(fullRemoteDescriptor_);
+        StartLifeCycleTrace();
+#else
+        remoteDescriptor_ = ProcessSkeleton::ConvertToSecureDesc(Str16ToStr8(data.GetInterfaceToken()));
+#endif
+    }
+    return remoteDescriptor_;
+}
+Function: 
+pub fn object_descriptor(&self) -> IpcResult<String> {
+        Ok(self.inner.GetObjectDescriptor())
+    }
+Unixcoder Score: 0.07034335285425186
+--------------------------------------------------
+C_Code: 
+int32_t ListenAbilityStub::OnRemoteRequest(uint32_t code,
+    MessageParcel& data, MessageParcel &reply, MessageOption &option)
+{
+    std::u16string interfaceToken = data.ReadInterfaceToken();
+    if (interfaceToken != GetDescriptor()) {
+        return ERR_PERMISSION_DENIED;
+    }
+    switch (code) {
+        case ADD_VOLUME: {
+            int32_t volume = data.ReadInt32();
+            bool ret = reply.WriteInt32(AddVolume(volume));
+            return (ret ? ERR_OK : ERR_FLATTEN_OBJECT);
+        }
+        default:
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+}
+Function: 
+pub fn on_remote_request(
+        &mut self,
+        code: u32,
+        data: Pin<&mut MessageParcel>,
+        reply: Pin<&mut MessageParcel>,
+    ) -> i32 {
+        unsafe {
+            let mut data = MsgParcel::from_ptr(data.get_unchecked_mut() as *mut MessageParcel);
+            let mut reply = MsgParcel::from_ptr(reply.get_unchecked_mut() as *mut MessageParcel);
+            self.inner.on_remote_request(code, &mut data, &mut reply)
+        }
+    }
+Unixcoder Score: 0.06942684203386307
+--------------------------------------------------
+C_Code: 
+bool Parcel::WriteString(const std::string &value)
+{
+    if (g_interface == nullptr) {
+        return true;
+    }
+    return GetIPCObjectProxyInterfaceMock()->WriteString(value);
+}
+Function: 
+fn serialize(&self, parcel: &mut MsgParcel) -> crate::IpcResult<()> {
+        fn write(parcel: Pin<&mut MessageParcel>, value: &str) -> bool {
+            unsafe {
+                let parcel = AsParcelMut(parcel);
+                WriteString(Pin::new_unchecked(&mut *parcel), value)
+            }
+        }
+        parcel.write_process(self, write)
+    }
+Unixcoder Score: 0.06345216184854507
+--------------------------------------------------
+C_Code: 
+bool Parcel::WriteString(const std::string &value)
+{
+    if (g_interface == nullptr) {
+        return true;
+    }
+    return GetIPCObjectProxyInterfaceMock()->WriteString(value);
+}
+Function: 
+fn write(parcel: Pin<&mut MessageParcel>, value: &str) -> bool {
+            unsafe {
+                let parcel = AsParcelMut(parcel);
+                WriteString(Pin::new_unchecked(&mut *parcel), value)
+            }
+        }
+Unixcoder Score: 0.06324787437915802
+--------------------------------------------------
+C_Code: 
+bool SetReceiveBufferReadCursorTest(const uint8_t* data, size_t size)
+{
+    if (data == nullptr || size < sizeof(ssize_t)) {
+        return false;
+    }
+    BufferObject object;
+    ssize_t cursor =  *(reinterpret_cast<const ssize_t*>(data));
+    object.SetReceiveBufferReadCursor(cursor);
+    return true;
+}
+Function: 
+pub fn set_read_position(&mut self, size: usize) -> Result<(), ParcelSetError> {
+        if self.as_parcel_mut().RewindRead(size) {
+            Ok(())
+        } else {
+            Err(ParcelSetError)
+        }
+    }
+Unixcoder Score: 0.06185527518391609
+--------------------------------------------------
+C_Code: 
+std::u16string IPCObjectProxy::GetInterfaceDescriptor()
+{
+    if (!interfaceDesc_.empty()) {
+        return interfaceDesc_;
+    }
+    if (handle_ == 0) {
+        ZLOGD(LABEL, "handle == 0, do nothing");
+        return std::u16string();
+    }
+
+    MessageParcel data, reply;
+    MessageOption option;
+    std::string desc;
+    {
+        std::shared_lock<std::shared_mutex> lockGuard(descMutex_);
+        desc = remoteDescriptor_;
+    }
+
+    int err = SendRequestInner(false, INTERFACE_TRANSACTION, data, reply, option);
+    if (err != ERR_NONE) {
+        PRINT_SEND_REQUEST_FAIL_INFO(handle_, err, desc, ProcessSkeleton::ConvertAddr(this));
+        return std::u16string();
+    }
+    interfaceDesc_ = reply.ReadString16();
+
+    return interfaceDesc_;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__GetSystemAbility__idx4882_rank3.c", "source_rust_file": "Full__GetSystemAbility__idx4882_rank3.rs", "c_fragment": "sptr<IRemoteObject> SystemAbilityManager::GetSystemAbility(int32_t systemAbilityId, const std::string& deviceId)\n{\n    return CheckSystemAbility(systemAbilityId, deviceId);\n}", "rust_fragment": "pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {\n        info!(\"get system ability {} with device id\", said);\n        let_cxx_string!(id = device_id);\n        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))\n    }", "description": "Both functions retrieve a system ability using a system ability ID and device ID, with Rust returning an Option and C returning a smart pointer.", "reasoning": "[Task Analysis] C function calls another C function; Rust function calls an FFI function and logs. [Similarity] Names don't match but concept is same: retrieving a system ability with device ID. [Knowledge Extraction] Full match on logic and intent, despite naming differences and different error handling (Option vs direct return). API mappings found for system ability retrieval and logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__GetSystemAbility__idx4882_rank3.c", "source_rust_file": "Full__GetSystemAbility__idx4882_rank3.rs", "c_api": "CheckSystemAbility", "rust_api": "GetSystemAbilityWithDeviceId", "mapping_type": "function", "description": "System ability retrieval with device ID", "reasoning": "[Task Analysis] C function calls another C function; Rust function calls an FFI function and logs. [Similarity] Names don't match but concept is same: retrieving a system ability with device ID. [Knowledge Extraction] Full match on logic and intent, despite naming differences and different error handling (Option vs direct return). API mappings found for system ability retrieval and logging."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__GetSystemAbility__idx4882_rank3.c", "source_rust_file": "Full__GetSystemAbility__idx4882_rank3.rs", "c_api": "info!(\"get system ability {} with device id\", said)", "rust_api": "info!(\"get system ability {} with device id\", said)", "mapping_type": "function", "description": "Logging of system ability retrieval", "reasoning": "[Task Analysis] C function calls another C function; Rust function calls an FFI function and logs. [Similarity] Names don't match but concept is same: retrieving a system ability with device ID. [Knowledge Extraction] Full match on logic and intent, despite naming differences and different error handling (Option vs direct return). API mappings found for system ability retrieval and logging."}, {"knowledge_type": "Full", "source_c_file": "Full__GetSystemAbility__idx4882_rank3.c", "source_rust_file": "Full__GetSystemAbility__idx4882_rank3.rs", "reasoning": "[Task Analysis] C function calls another C function; Rust function calls an FFI function and logs. [Similarity] Names don't match but concept is same: retrieving a system ability with device ID. [Knowledge Extraction] Full match on logic and intent, despite naming differences and different error handling (Option vs direct return). API mappings found for system ability retrieval and logging.", "description": "Full structural translation"}]
+Unixcoder Score: 0.057197339832782745
+--------------------------------------------------
+C_Code: 
+sptr<IRemoteObject> SystemAbilityManager::CheckSystemAbility(int32_t systemAbilityId,
+    const std::string& deviceId)
+{
+    if (!IsDistributedSystemAbility(systemAbilityId)) {
+        HILOGE("CheckSystemAbilityFromRpc SA:%{public}d not distributed!", systemAbilityId);
+        return nullptr;
+    }
+    return DoMakeRemoteBinder(systemAbilityId, IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(), deviceId);
+}
+Function: 
+pub fn check_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("check system ability {}", said);
+
+        RemoteObj::from_sptr(CheckSystemAbility(said))
+    }
+Unixcoder Score: 0.04499799385666847
+--------------------------------------------------

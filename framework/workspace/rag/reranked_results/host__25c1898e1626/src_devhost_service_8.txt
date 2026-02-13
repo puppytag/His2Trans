@@ -1,0 +1,284 @@
+C_Code: 
+void DownloadServiceAbility::NotifyHandler(const std::string &type, uint32_t taskId, int64_t argv1, int64_t argv2,
+    bool isNotify)
+{
+    if (!isNotify) {
+        DOWNLOAD_HILOGE("isNotify false");
+        return;
+    }
+    std::string combineType = type + "-" + std::to_string(taskId);
+    DOWNLOAD_HILOGD(
+        "combineType=%{public}s argv1=%{public}" PRId64 "argv2=%{public}" PRId64, combineType.c_str(), argv1, argv2);
+    {
+        std::lock_guard<std::mutex> lck(DownloadServiceAbility::GetInstance()->listenerMapMutex_);
+        auto iter = DownloadServiceAbility::GetInstance()->registeredListeners_.find(combineType);
+        if (iter != DownloadServiceAbility::GetInstance()->registeredListeners_.end()) {
+            DOWNLOAD_HILOGD(
+                "DownloadServiceAbility::NotifyHandler type=%{public}s object message.", combineType.c_str());
+            std::vector<int64_t> params;
+            params.push_back(argv1);
+            params.push_back(argv2);
+            iter->second->CallBack(params);
+            return;
+        }
+    }
+    DownloadServiceAbility::GetInstance()->AddUnregisteredNotify(taskId, type);
+}
+Function: 
+pub fn on(&self, task_id: u32, on_type: String, obj: RemoteObj) -> ErrorCode {
+        let key = on_type.clone() + &String::from("-") + &task_id.to_string();
+        debug!(LOG_LABEL, "on key {}", @public(key));
+        RequestAbility::get_ability_instance().do_unregistered_notify(task_id, on_type);
+        self.reg_remote_obj.lock().unwrap().insert(key, obj);
+        ErrorCode::ErrOk
+    }
+Unixcoder Score: 0.031896546483039856
+--------------------------------------------------
+C_Code: 
+inline uint64_t ToHost64(uint64_t x) { return x; }
+Function: 
+fn convert_metrics(skrifa_metrics: &Metrics) -> ffi::Metrics {
+    ffi::Metrics {
+        top: skrifa_metrics.bounds.map_or(0.0, |b| b.y_max),
+        bottom: skrifa_metrics.bounds.map_or(0.0, |b| b.y_min),
+        x_min: skrifa_metrics.bounds.map_or(0.0, |b| b.x_min),
+        x_max: skrifa_metrics.bounds.map_or(0.0, |b| b.x_max),
+        ascent: skrifa_metrics.ascent,
+        descent: skrifa_metrics.descent,
+        leading: skrifa_metrics.leading,
+        avg_char_width: skrifa_metrics.average_width.unwrap_or(0.0),
+        max_char_width: skrifa_metrics.max_width.unwrap_or(0.0),
+        x_height: -skrifa_metrics.x_height.unwrap_or(0.0),
+        cap_height: -skrifa_metrics.cap_height.unwrap_or(0.0),
+        underline_position: skrifa_metrics.underline.map_or(f32::NAN, |u| u.offset),
+        underline_thickness: skrifa_metrics.underline.map_or(f32::NAN, |u| u.thickness),
+        strikeout_position: skrifa_metrics.strikeout.map_or(f32::NAN, |s| s.offset),
+        strikeout_thickness: skrifa_metrics.strikeout.map_or(f32::NAN, |s| s.thickness),
+    }
+}
+Unixcoder Score: 0.008217882364988327
+--------------------------------------------------
+C_Code: 
+inline uint64_t ToHost64(uint64_t x) { return x; }
+Function: 
+fn convert_metrics(skrifa_metrics: &Metrics) -> ffi::Metrics {
+    ffi::Metrics {
+        top: skrifa_metrics.bounds.map_or(0.0, |b| b.y_max),
+        bottom: skrifa_metrics.bounds.map_or(0.0, |b| b.y_min),
+        x_min: skrifa_metrics.bounds.map_or(0.0, |b| b.x_min),
+        x_max: skrifa_metrics.bounds.map_or(0.0, |b| b.x_max),
+        ascent: skrifa_metrics.ascent,
+        descent: skrifa_metrics.descent,
+        leading: skrifa_metrics.leading,
+        avg_char_width: skrifa_metrics.average_width.unwrap_or(0.0),
+        max_char_width: skrifa_metrics.max_width.unwrap_or(0.0),
+        x_height: -skrifa_metrics.x_height.unwrap_or(0.0),
+        cap_height: -skrifa_metrics.cap_height.unwrap_or(0.0),
+        underline_position: skrifa_metrics.underline.map_or(f32::NAN, |u| u.offset),
+        underline_thickness: skrifa_metrics.underline.map_or(f32::NAN, |u| u.thickness),
+        strikeout_position: skrifa_metrics.strikeout.map_or(f32::NAN, |s| s.offset),
+        strikeout_thickness: skrifa_metrics.strikeout.map_or(f32::NAN, |s| s.thickness),
+    }
+}
+Unixcoder Score: -0.00880970899015665
+--------------------------------------------------
+C_Code: 
+struct VkBufferCopy {
+    VkDeviceSize    srcOffset;
+    VkDeviceSize    dstOffset;
+    VkDeviceSize    size;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: -0.014730227179825306
+--------------------------------------------------
+C_Code: 
+int DBinderServiceStub::DBinderClearServiceState(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    if (!IPCSkeleton::IsLocalCalling()) {
+        DBINDER_LOGE(LOG_LABEL, "invalid request in dbinder mode");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    SetNegoStatusAndTime(NegotiationStatus::NEGO_INIT, 0);
+    isInited_ = false;
+    DBINDER_LOGI(LOG_LABEL, "succ");
+    return ERR_NONE;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.022830680012702942
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceHostImageCopyProperties
+Function: 
+struct FfiPoint {
+        x: f32,
+        y: f32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5328_rank3.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5328_rank3.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_PROXY, host.c_str(), context)", "rust_api": "reqwest::Proxy::all(url)", "mapping_type": "function", "description": "Configure HTTP proxy settings", "reasoning": "[Task Analysis] C function configures HTTP client proxy settings using libcurl macros; Rust function builds a proxy using reqwest. [Similarity] Names don't match but both configure proxy behavior. [Knowledge Extraction] No full structural match due to different domains (curl vs reqwest), but API mapping exists for proxy configuration."}]
+Unixcoder Score: -0.026424067094922066
+--------------------------------------------------
+C_Code: 
+struct HostImageCopyDevicePerformanceQuery
+Function: 
+struct BridgeScalerMetrics {
+        has_overlaps: bool,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnChannelBroken__idx411_rank1.h", "source_rust_file": "API_Mapping__OnChannelBroken__idx411_rank1.rs", "c_api": "response.status().reason()", "rust_api": "response.status().reason()", "mapping_type": "method", "description": "Accessing reason from response status", "reasoning": "[Task Analysis] C code defines a class with virtual methods and member variables, while Rust code implements a function that handles response notifications. [Similarity] No direct structural similarity due to different object-oriented approaches and domains (C++ class vs Rust function). [Knowledge Extraction] No full or partial match due to domain mismatch (C++ interface vs Rust handler logic). However, there are API mappings related to response handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnChannelBroken__idx411_rank1.h", "source_rust_file": "API_Mapping__OnChannelBroken__idx411_rank1.rs", "c_api": "error!(...)", "rust_api": "error!(...)", "mapping_type": "function", "description": "Logging error message", "reasoning": "[Task Analysis] C code defines a class with virtual methods and member variables, while Rust code implements a function that handles response notifications. [Similarity] No direct structural similarity due to different object-oriented approaches and domains (C++ class vs Rust function). [Knowledge Extraction] No full or partial match due to domain mismatch (C++ interface vs Rust handler logic). However, there are API mappings related to response handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnChannelBroken__idx411_rank1.h", "source_rust_file": "API_Mapping__OnChannelBroken__idx411_rank1.rs", "c_api": "self.client_manager.send_response(...)", "rust_api": "self.client_manager.send_response(...)", "mapping_type": "method", "description": "Sending response data to client manager", "reasoning": "[Task Analysis] C code defines a class with virtual methods and member variables, while Rust code implements a function that handles response notifications. [Similarity] No direct structural similarity due to different object-oriented approaches and domains (C++ class vs Rust function). [Knowledge Extraction] No full or partial match due to domain mismatch (C++ interface vs Rust handler logic). However, there are API mappings related to response handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnChannelBroken__idx411_rank1.h", "source_rust_file": "API_Mapping__OnChannelBroken__idx411_rank1.rs", "c_api": "response.status().as_u16()", "rust_api": "response.status().as_u16()", "mapping_type": "method", "description": "Converting status to unsigned short", "reasoning": "[Task Analysis] C code defines a class with virtual methods and member variables, while Rust code implements a function that handles response notifications. [Similarity] No direct structural similarity due to different object-oriented approaches and domains (C++ class vs Rust function). [Knowledge Extraction] No full or partial match due to domain mismatch (C++ interface vs Rust handler logic). However, there are API mappings related to response handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnChannelBroken__idx411_rank1.h", "source_rust_file": "API_Mapping__OnChannelBroken__idx411_rank1.rs", "c_api": "sys_event!(...)", "rust_api": "sys_event!(...)", "mapping_type": "function", "description": "System event logging with fault code", "reasoning": "[Task Analysis] C code defines a class with virtual methods and member variables, while Rust code implements a function that handles response notifications. [Similarity] No direct structural similarity due to different object-oriented approaches and domains (C++ class vs Rust function). [Knowledge Extraction] No full or partial match due to domain mismatch (C++ interface vs Rust handler logic). However, there are API mappings related to response handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnChannelBroken__idx411_rank1.h", "source_rust_file": "API_Mapping__OnChannelBroken__idx411_rank1.rs", "c_api": "response.version().as_str()", "rust_api": "response.version().as_str()", "mapping_type": "method", "description": "Extracting version string from response", "reasoning": "[Task Analysis] C code defines a class with virtual methods and member variables, while Rust code implements a function that handles response notifications. [Similarity] No direct structural similarity due to different object-oriented approaches and domains (C++ class vs Rust function). [Knowledge Extraction] No full or partial match due to domain mismatch (C++ interface vs Rust handler logic). However, there are API mappings related to response handling and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__OnChannelBroken__idx411_rank1.h", "source_rust_file": "API_Mapping__OnChannelBroken__idx411_rank1.rs", "c_api": "response.headers().clone()", "rust_api": "response.headers().clone()", "mapping_type": "method", "description": "Cloning response headers", "reasoning": "[Task Analysis] C code defines a class with virtual methods and member variables, while Rust code implements a function that handles response notifications. [Similarity] No direct structural similarity due to different object-oriented approaches and domains (C++ class vs Rust function). [Knowledge Extraction] No full or partial match due to domain mismatch (C++ interface vs Rust handler logic). However, there are API mappings related to response handling and error reporting."}]
+Unixcoder Score: -0.0275842547416687
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceProxy::Pause(uint32_t taskId)
+{
+    MessageParcel data, reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteUint32(taskId);
+    DOWNLOAD_HILOGD("DownloadServiceProxy Pause started.");
+    bool ret = Remote()->SendRequest(CMD_PAUSE, data, reply, option);
+    if (ret != ERR_NONE) {
+        DOWNLOAD_HILOGE("Pause, ret = %{public}d", ret);
+        return false;
+    }
+    DOWNLOAD_HILOGD("DownloadServiceProxy Pause succeeded.");
+    return true;
+}
+Function: 
+fn on_remote_request(
+    stub: &dyn RequestServiceInterface,
+    code: u32,
+    data: &BorrowedMsgParcel,
+    reply: &mut BorrowedMsgParcel,
+) -> IpcResult<()> {
+    info!(LOG_LABEL, "on_remote_request code {}", @public(code));
+    let service_token: InterfaceToken =
+        InterfaceToken::new("OHOS.Download.RequestServiceInterface");
+    let token: InterfaceToken = match data.read::<InterfaceToken>() {
+        Ok(i) => i,
+        _ => InterfaceToken::new("token error"),
+    };
+    if service_token.get_token() != token.get_token() {
+        error!(LOG_LABEL, "token error");
+        return Err(IpcStatusCode::Failed);
+    }
+    match code.try_into()? {
+        RequestCode::Construct => stub.construct(data, reply),
+        RequestCode::Pause => stub.pause(data, reply),
+        RequestCode::Query => stub.show(data, reply),
+        RequestCode::QueryMimeType => stub.query_mime_type(data, reply),
+        RequestCode::Remove => stub.remove(data, reply),
+        RequestCode::Resume => stub.resume(data, reply),
+        RequestCode::On => stub.on(data, reply),
+        RequestCode::Off => stub.off(data, reply),
+        RequestCode::Start => stub.start(data, reply),
+        RequestCode::Stop => stub.stop(data, reply),
+        RequestCode::Show => stub.show(data, reply),
+        RequestCode::Touch => stub.touch(data, reply),
+        RequestCode::Search => stub.search(data, reply),
+        RequestCode::Clear => stub.clear(data, reply),
+    }
+}
+Unixcoder Score: -0.029626667499542236
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::Pause(uint32_t taskId)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility Pause started.");
+    return instance->Pause(taskId, IPCSkeleton::GetCallingUid());
+}
+Function: 
+pub fn pause(&self, task_id: u32) -> ErrorCode {
+        debug!(LOG_LABEL, "pause");
+        TaskManager::get_instance().pause(get_calling_uid(), task_id)
+    }
+Unixcoder Score: -0.03093617781996727
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceHostQueryResetFeatures
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5326_rank2.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5326_rank2.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_PROXYTYPE, proxyType, context)", "rust_api": "reqwest::Proxy::http(url)", "mapping_type": "function", "description": "Setting proxy type", "reasoning": "[FFI Check] -> The Rust code uses reqwest::Proxy::http which is a high-level HTTP client API, not a direct FFI call. [Task Analysis] -> C code configures libcurl options for HTTP proxy settings; Rust code builds a proxy builder for an HTTP client. [Similarity] -> No full structural similarity due to different domains (low-level curl config vs high-level proxy builder), different control flow, and different APIs. [Knowledge Extraction] -> No full match, but there are API mappings related to proxy configuration and HTTP handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5326_rank2.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5326_rank2.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_PROXY, host.c_str(), context)", "rust_api": "reqwest::Proxy::http(url)", "mapping_type": "function", "description": "Setting HTTP proxy configuration", "reasoning": "[FFI Check] -> The Rust code uses reqwest::Proxy::http which is a high-level HTTP client API, not a direct FFI call. [Task Analysis] -> C code configures libcurl options for HTTP proxy settings; Rust code builds a proxy builder for an HTTP client. [Similarity] -> No full structural similarity due to different domains (low-level curl config vs high-level proxy builder), different control flow, and different APIs. [Knowledge Extraction] -> No full match, but there are API mappings related to proxy configuration and HTTP handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5326_rank2.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5326_rank2.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_PROXYPORT, port, context)", "rust_api": "reqwest::Proxy::http(url)", "mapping_type": "function", "description": "Setting proxy port", "reasoning": "[FFI Check] -> The Rust code uses reqwest::Proxy::http which is a high-level HTTP client API, not a direct FFI call. [Task Analysis] -> C code configures libcurl options for HTTP proxy settings; Rust code builds a proxy builder for an HTTP client. [Similarity] -> No full structural similarity due to different domains (low-level curl config vs high-level proxy builder), different control flow, and different APIs. [Knowledge Extraction] -> No full match, but there are API mappings related to proxy configuration and HTTP handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetOtherOption__idx5326_rank2.c", "source_rust_file": "API_Mapping__SetOtherOption__idx5326_rank2.rs", "c_api": "NETSTACK_CURL_EASY_SET_OPTION(curl, CURLOPT_HTTPPROXYTUNNEL, curlTunnelValue, context)", "rust_api": "reqwest::Proxy::http(url)", "mapping_type": "function", "description": "Enabling HTTP proxy tunnel", "reasoning": "[FFI Check] -> The Rust code uses reqwest::Proxy::http which is a high-level HTTP client API, not a direct FFI call. [Task Analysis] -> C code configures libcurl options for HTTP proxy settings; Rust code builds a proxy builder for an HTTP client. [Similarity] -> No full structural similarity due to different domains (low-level curl config vs high-level proxy builder), different control flow, and different APIs. [Knowledge Extraction] -> No full match, but there are API mappings related to proxy configuration and HTTP handling."}]
+Unixcoder Score: -0.03104853443801403
+--------------------------------------------------

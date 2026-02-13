@@ -1,0 +1,333 @@
+C_Code: 
+bool ReadBuffer(MessageParcel &msgParcel, size_t len, rust::vec<uint8_t> &buffer)
+{
+    if (len == 0) {
+        return true;
+    }
+    const uint8_t *data = msgParcel.ReadBuffer(len);
+    if (data == nullptr) {
+        return false;
+    }
+    if (memcpy_s(buffer.data(), len, data, len) != EOK) {
+        return false;
+    }
+    return true;
+}
+Function: 
+fn read_to_end() {
+        let mut msg = MsgParcel::new();
+        msg.write(&true).unwrap();
+        msg.read::<bool>().unwrap();
+
+        msg.write(&vec![1, 2, 3]).unwrap();
+        assert_eq!(
+            vec![3, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0],
+            msg.read_buffer(msg.readable()).unwrap()
+        );
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ReadBuffer__idx4681_rank1.c", "source_rust_file": "Partial__ReadBuffer__idx4681_rank1.rs", "c_api": "msgParcel.ReadBuffer(len)", "rust_api": "ReadBuffer(self.as_msg_parcel_mut(), len + pad_size, &mut vec)", "mapping_type": "function", "description": "Buffer reading from message parcel", "reasoning": "[Task Analysis] C function reads a buffer from a parcel and copies it into a rust::vec, with error handling. Rust function wraps this with padding logic and error conversion. [Similarity] Names don't match exactly but both perform buffer reading with error handling. [Knowledge Extraction] Found partial structural match in buffer reading logic and API mapping for error handling conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ReadBuffer__idx4681_rank1.c", "source_rust_file": "Partial__ReadBuffer__idx4681_rank1.rs", "c_api": "memcpy_s(buffer.data(), len, data, len)", "rust_api": "unsafe { vec.set_len(len) }", "mapping_type": "function", "description": "Copying data into buffer and setting length", "reasoning": "[Task Analysis] C function reads a buffer from a parcel and copies it into a rust::vec, with error handling. Rust function wraps this with padding logic and error conversion. [Similarity] Names don't match exactly but both perform buffer reading with error handling. [Knowledge Extraction] Found partial structural match in buffer reading logic and API mapping for error handling conversion."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ReadBuffer__idx4681_rank1.c", "source_rust_file": "Partial__ReadBuffer__idx4681_rank1.rs", "c_fragment": "const uint8_t *data = msgParcel.ReadBuffer(len);\n    if (data == nullptr) {\n        return false;\n    }\n    if (memcpy_s(buffer.data(), len, data, len) != EOK) {\n        return false;\n    }", "rust_fragment": "match ReadBuffer(self.as_msg_parcel_mut(), len + pad_size, &mut vec) {\n            true => Ok({\n                unsafe { vec.set_len(len) };\n                vec\n            }),\n            false => Err(IpcStatusCode::Failed),\n        }", "description": "Both read a buffer from a parcel and handle failure cases, with C using memcpy_s and Rust using a direct read function with error conversion.", "reasoning": "[Task Analysis] C function reads a buffer from a parcel and copies it into a rust::vec, with error handling. Rust function wraps this with padding logic and error conversion. [Similarity] Names don't match exactly but both perform buffer reading with error handling. [Knowledge Extraction] Found partial structural match in buffer reading logic and API mapping for error handling conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ReadBuffer__idx4681_rank1.c", "source_rust_file": "Partial__ReadBuffer__idx4681_rank1.rs", "c_api": "return false;", "rust_api": "Err(IpcStatusCode::Failed)", "mapping_type": "pattern", "description": "Error handling pattern for failed operations", "reasoning": "[Task Analysis] C function reads a buffer from a parcel and copies it into a rust::vec, with error handling. Rust function wraps this with padding logic and error conversion. [Similarity] Names don't match exactly but both perform buffer reading with error handling. [Knowledge Extraction] Found partial structural match in buffer reading logic and API mapping for error handling conversion."}]
+Unixcoder Score: 0.058745402842760086
+--------------------------------------------------
+C_Code: 
+static bool CParcelBytesAllocatorErr(void *stringData, char **buffer, int32_t len)
+{
+    (void)stringData;
+    (void)buffer;
+    (void)len;
+    return false;
+}
+Function: 
+fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> Result<Self> {
+        let mut vec: Option<Vec<u8>> = None;
+        let ok_status = unsafe {
+            // SAFETY: `parcel` always contains a valid pointer to a  `CParcel`
+            ipc_binding::CParcelReadInterfaceToken(
+                parcel.as_raw(), 
+                &mut vec as *mut _ as *mut c_void,
+                allocate_vec_with_buffer::<u8>
+            )
+        };
+
+        if ok_status {
+            let result = vec.map(|s| {
+                println!("read interface token from native success, s: {:?}", s);
+                match String::from_utf8(s) {
+                    Ok(val) => val,
+                    Err(_) => String::from("")
+                }
+            });
+            if let Some(val) = result {
+                Ok(Self(val))
+            } else {
+                println!("convert interface token to String fail");
+                Err(-1)
+            }
+        }else{
+            println!("read interface token from native fail");
+            Err(-1)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__qrcodegen_encodeText__idx144464_rank4.c", "source_rust_file": "API_Mapping__qrcodegen_encodeText__idx144464_rank4.rs", "c_api": "qrcodegen_Mode_ALPHANUMERIC", "rust_api": "Alphanumeric", "mapping_type": "field_access", "description": "Mode identifier for alphanumeric data in QR code segments", "reasoning": "[Task Analysis] C function encodes text into QR code segments, handling numeric/alphanumeric/byte modes with buffer management and error handling. Rust function computes mode-specific bit values for QR segment modes. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping between mode handling in both functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__qrcodegen_encodeText__idx144464_rank4.c", "source_rust_file": "API_Mapping__qrcodegen_encodeText__idx144464_rank4.rs", "c_api": "qrcodegen_Mode_NUMERIC", "rust_api": "Numeric", "mapping_type": "field_access", "description": "Mode identifier for numeric data in QR code segments", "reasoning": "[Task Analysis] C function encodes text into QR code segments, handling numeric/alphanumeric/byte modes with buffer management and error handling. Rust function computes mode-specific bit values for QR segment modes. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping between mode handling in both functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__qrcodegen_encodeText__idx144464_rank4.c", "source_rust_file": "API_Mapping__qrcodegen_encodeText__idx144464_rank4.rs", "c_api": "qrcodegen_Mode_BYTE", "rust_api": "Byte", "mapping_type": "field_access", "description": "Mode identifier for byte data in QR code segments", "reasoning": "[Task Analysis] C function encodes text into QR code segments, handling numeric/alphanumeric/byte modes with buffer management and error handling. Rust function computes mode-specific bit values for QR segment modes. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping between mode handling in both functions."}]
+Unixcoder Score: 0.02316005527973175
+--------------------------------------------------
+C_Code: 
+bool ReadBuffer(MessageParcel &msgParcel, size_t len, rust::vec<uint8_t> &buffer)
+{
+    if (len == 0) {
+        return true;
+    }
+    const uint8_t *data = msgParcel.ReadBuffer(len);
+    if (data == nullptr) {
+        return false;
+    }
+    if (memcpy_s(buffer.data(), len, data, len) != EOK) {
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn read_buffer(&mut self, len: usize) -> IpcResult<Vec<u8>> {
+        let pad_size = Self::get_pad_size(len);
+        let mut vec = Vec::with_capacity(len + pad_size);
+        match ReadBuffer(self.as_msg_parcel_mut(), len + pad_size, &mut vec) {
+            true => Ok({
+                unsafe { vec.set_len(len) };
+                vec
+            }),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ReadBuffer__idx4636_rank5.c", "source_rust_file": "API_Mapping__ReadBuffer__idx4636_rank5.rs", "c_api": "msgParcel.ReadBuffer(len)", "rust_api": "reply.read_buffer(TEST_LEN)", "mapping_type": "method", "description": "Reading buffer data from a parcel", "reasoning": "[Task Analysis] C function reads a buffer from a parcel, checks for null data, and copies it using memcpy_s. Rust function reads from a parcel and asserts buffer content. [Similarity] Names do not refer to the same concept (ReadBuffer vs parcel_read), and domains are different (low-level buffer management vs high-level IPC testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve reading from a parcel and handling buffer data, so API mappings can be extracted for the buffer reading operation."}]
+Unixcoder Score: -0.00018128966621588916
+--------------------------------------------------
+C_Code: 
+bool CParcelReadBuffer(const CParcel *parcel, uint8_t *value, uint32_t len)
+{
+    if (!IsValidParcel(parcel, __func__) || value == nullptr) {
+        return false;
+    }
+    const uint8_t *data = parcel->parcel_->ReadBuffer(len);
+    if (data == nullptr) {
+        ZLOGE(LOG_LABEL, "%{public}s: read buffer failed\n", __func__);
+        return false;
+    }
+    if (len > 0 && memcpy_s(value, len, data, len) != EOK) {
+        ZLOGE(LOG_LABEL, "%{public}s: copy buffer failed\n", __func__);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn read_buffer(&mut self, len: usize) -> IpcResult<Vec<u8>> {
+        let pad_size = Self::get_pad_size(len);
+        let mut vec = Vec::with_capacity(len + pad_size);
+        match ReadBuffer(self.as_msg_parcel_mut(), len + pad_size, &mut vec) {
+            true => Ok({
+                unsafe { vec.set_len(len) };
+                vec
+            }),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__qrcodegen_makeAlphanumeric__idx144391_rank5.c", "source_rust_file": "Partial__qrcodegen_makeAlphanumeric__idx144391_rank5.rs", "c_api": "appendBitsToBuffer", "rust_api": "bb.append_bits", "mapping_type": "function", "description": "Appending bits to a buffer", "reasoning": "[Task Analysis] C function builds a QR code segment with alphanumeric data, Rust function does the same for numeric data. [Similarity] Names don't match but logic is semantically similar: both process character data in chunks and append bits to a buffer. [Knowledge Extraction] Found partial structural match in loop processing and bit appending logic, and API mappings for buffer operations and character processing."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__qrcodegen_makeAlphanumeric__idx144391_rank5.c", "source_rust_file": "Partial__qrcodegen_makeAlphanumeric__idx144391_rank5.rs", "c_api": "strchr", "rust_api": "text.bytes", "mapping_type": "function", "description": "Character lookup and iteration", "reasoning": "[Task Analysis] C function builds a QR code segment with alphanumeric data, Rust function does the same for numeric data. [Similarity] Names don't match but logic is semantically similar: both process character data in chunks and append bits to a buffer. [Knowledge Extraction] Found partial structural match in loop processing and bit appending logic, and API mappings for buffer operations and character processing."}, {"knowledge_type": "Partial", "source_c_file": "Partial__qrcodegen_makeAlphanumeric__idx144391_rank5.c", "source_rust_file": "Partial__qrcodegen_makeAlphanumeric__idx144391_rank5.rs", "c_fragment": "for (; *text != '\\0'; text++) {\n\t\tconst char *temp = (char *)strchr(ALPHANUMERIC_CHARSET, *text);\n\t\taccumData = accumData * 45 + (unsigned int)(temp - ALPHANUMERIC_CHARSET);\n\t\taccumCount++;\n\t\tif (accumCount == 2) {\n\t\t\tappendBitsToBuffer(accumData, 11, buf, &result.bitLength);\n\t\t\taccumData = 0;\n\t\t\taccumCount = 0;\n\t\t}\n\t}", "rust_fragment": "for b in text.bytes() {\n\t\tassert!((b'0' ..= b'9').contains(&b), \"String contains non-numeric characters\");\n\t\taccumdata = accumdata * 10 + u32::from(b - b'0');\n\t\taccumcount += 1;\n\t\tif accumcount == 3 {\n\t\t\tbb.append_bits(accumdata, 10);\n\t\t\taccumdata = 0;\n\t\t\taccumcount = 0;\n\t\t}\n\t}", "description": "Both process character data in groups and append bits to a buffer.", "reasoning": "[Task Analysis] C function builds a QR code segment with alphanumeric data, Rust function does the same for numeric data. [Similarity] Names don't match but logic is semantically similar: both process character data in chunks and append bits to a buffer. [Knowledge Extraction] Found partial structural match in loop processing and bit appending logic, and API mappings for buffer operations and character processing."}]
+Unixcoder Score: -0.004334940109401941
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+pub fn get_app_schema(&mut self, bundle_name: &str) -> SyncResult<SchemaMeta> {
+        let schema_ipc = self.connect.get_app_schema(self.user_id, bundle_name)?;
+        Ok(SchemaMeta::from(schema_ipc.deref()))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "return { ERROR, schemaMeta };", "rust_api": "Err(IpcStatusCode::Failed)", "mapping_type": "function", "description": "Error return in case of failed deserialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "for (auto &schema : schemas)", "rust_api": "match index", "mapping_type": "pattern", "description": "Iterating over data to process based on type or index", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "return { SUCCESS, schemaMeta };", "rust_api": "Ok(FieldRaw::...)", "mapping_type": "function", "description": "Successful return of deserialized data", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "parcel.read::<...>()", "mapping_type": "function", "description": "Data deserialization from a source into structured data", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "GetSchemaHelper::GetInstance().GetSchemaFromHap(...)", "rust_api": "parcel.read_string16()", "mapping_type": "function", "description": "Retrieving data from a source for deserialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}]
+Unixcoder Score: -0.011102772317826748
+--------------------------------------------------
+C_Code: 
+int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
+{
+    if (strategy >= Strategy::STRATEGY_BUTT) {
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto hapInfo = GetHapInfo(tokenId);
+    if (hapInfo.bundleName.empty() || hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
+        ZLOGE("invalid, user:%{public}d, bundleName:%{public}s, strategy:%{public}d, values size:%{public}zu",
+            hapInfo.user, hapInfo.bundleName.c_str(), strategy, values.size());
+        return ERROR;
+    }
+    return STRATEGY_SAVERS[strategy](values, hapInfo);
+}
+Function: 
+fn from(value: ipc_conn::CloudData) -> Self {
+        let mut vec = vec![];
+        for v in value.values.0 {
+            vec.push(v);
+        }
+        CloudDbData {
+            next_cursor: value.next_cursor,
+            has_more: value.has_more,
+            values: vec,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetSharingHandle__idx5113_rank5.c", "source_rust_file": "Partial__GetSharingHandle__idx5113_rank5.rs", "c_fragment": "auto handle = instance->ConnectSharingCenter(hapInfo.user, hapInfo.bundleName);\n    return handle;", "rust_fragment": "let subscription = Subscription::default();\n        subscription.subscribe(&self.remote_obj, expiration, bundle_name, databases)", "description": "Both retrieve or create a handle/object and return it, though with different logic and domains.", "reasoning": "[Task Analysis] C function returns a shared_ptr from a method call, Rust function performs subscription logic with similar intent. [Similarity] Names don't match but both involve retrieving/creating a handle/object. [Knowledge Extraction] No full structural match due to different domains (connection vs subscription), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSharingHandle__idx5113_rank5.c", "source_rust_file": "Partial__GetSharingHandle__idx5113_rank5.rs", "c_api": "std::shared_ptr<SharingCenter>", "rust_api": "SubscriptionResult", "mapping_type": "type", "description": "Both represent a handle to a resource or object", "reasoning": "[Task Analysis] C function returns a shared_ptr from a method call, Rust function performs subscription logic with similar intent. [Similarity] Names don't match but both involve retrieving/creating a handle/object. [Knowledge Extraction] No full structural match due to different domains (connection vs subscription), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSharingHandle__idx5113_rank5.c", "source_rust_file": "Partial__GetSharingHandle__idx5113_rank5.rs", "c_api": "instance->ConnectSharingCenter", "rust_api": "subscription.subscribe", "mapping_type": "function", "description": "Handle/connection creation and subscription logic", "reasoning": "[Task Analysis] C function returns a shared_ptr from a method call, Rust function performs subscription logic with similar intent. [Similarity] Names don't match but both involve retrieving/creating a handle/object. [Knowledge Extraction] No full structural match due to different domains (connection vs subscription), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.012939011678099632
+--------------------------------------------------
+C_Code: 
+bool ReadBuffer(MessageParcel &msgParcel, size_t len, rust::vec<uint8_t> &buffer)
+{
+    if (len == 0) {
+        return true;
+    }
+    const uint8_t *data = msgParcel.ReadBuffer(len);
+    if (data == nullptr) {
+        return false;
+    }
+    if (memcpy_s(buffer.data(), len, data, len) != EOK) {
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn read_buffer(&mut self, len: usize) -> IpcResult<Vec<u8>> {
+        let pad_size = Self::get_pad_size(len);
+        let mut vec = Vec::with_capacity(len + pad_size);
+        match ReadBuffer(self.as_msg_parcel_mut(), len + pad_size, &mut vec) {
+            true => Ok({
+                unsafe { vec.set_len(len) };
+                vec
+            }),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ReadBuffer__idx4637_rank4.c", "source_rust_file": "API_Mapping__ReadBuffer__idx4637_rank4.rs", "c_api": "memcpy_s(buffer.data(), len, data, len)", "rust_api": "file.read_to_end(&mut res)", "mapping_type": "function", "description": "Copying data into a buffer", "reasoning": "[Task Analysis] C function reads a buffer from a parcel, handles length checks and memory copy; Rust function reads from a parcel and validates buffer content, then reads a raw file descriptor. [Similarity] No structural similarity at the function level due to different domains (buffer reading vs file descriptor handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings between buffer read operations in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ReadBuffer__idx4637_rank4.c", "source_rust_file": "API_Mapping__ReadBuffer__idx4637_rank4.rs", "c_api": "msgParcel.ReadBuffer(len)", "rust_api": "reply.read_buffer(TEST_LEN)", "mapping_type": "function", "description": "Reading buffer data from a parcel", "reasoning": "[Task Analysis] C function reads a buffer from a parcel, handles length checks and memory copy; Rust function reads from a parcel and validates buffer content, then reads a raw file descriptor. [Similarity] No structural similarity at the function level due to different domains (buffer reading vs file descriptor handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings between buffer read operations in both languages."}]
+Unixcoder Score: -0.013580176047980785
+--------------------------------------------------
+C_Code: 
+bool ReadBuffer(MessageParcel &msgParcel, size_t len, rust::vec<uint8_t> &buffer)
+{
+    if (len == 0) {
+        return true;
+    }
+    const uint8_t *data = msgParcel.ReadBuffer(len);
+    if (data == nullptr) {
+        return false;
+    }
+    if (memcpy_s(buffer.data(), len, data, len) != EOK) {
+        return false;
+    }
+    return true;
+}
+Function: 
+fn parcel_read_from_raw_fd() {
+    
+    let mut reply = parcel_write();
+
+    assert_eq!(reply.read_interface_token().unwrap(), "hello ipc");
+
+    assert_eq!(
+        reply.read_buffer(TEST_LEN).unwrap(),
+        vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    );
+    let raw_fd = unsafe { reply.read_raw_fd() };
+    let mut file = unsafe { File::from_raw_fd(raw_fd) };
+    file.rewind();
+    let mut res = vec![];
+    file.read_to_end(&mut res);
+    let s = String::from_utf8(res).unwrap();
+    assert_eq!(s, "hello ipc");
+
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_fragment": "for (const auto &[bundle, key] : keys) {", "rust_fragment": "let mut msg_parcel = MsgParcel::new();", "description": "Both iterate over collections of data, though C iterates over key-value pairs while Rust initializes a message parcel.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_fragment": "auto appInfoOpt = cloudInfo.GetAppInfo(bundle);", "rust_fragment": "msg_parcel.write_string16(bundle_name).map_err(|_| Error::WriteMsgParcelFailed)?;", "description": "Both access or prepare data related to a specific bundle/app, though C checks for optional info and Rust writes to a parcel.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_api": "MetaDataManager::GetInstance().LoadMeta(key, oldMeta, true)", "rust_api": "lock.read(&mut receive)?", "mapping_type": "function", "description": "Loading metadata in C corresponds to reading from a received message in Rust.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_api": "cloudInfo.GetSchemaKey()", "rust_api": "msg_parcel.write_string16(bundle_name)", "mapping_type": "method", "description": "Retrieving schema keys in C corresponds to writing bundle name to parcel in Rust.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_api": "MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true)", "rust_api": "lock.read(&mut receive)?", "mapping_type": "function", "description": "Deleting metadata in C corresponds to reading from a received message in Rust.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_api": "cloudInfo.GetAppInfo(bundle)", "rust_api": "msg_parcel.write_string16(bundle_name)", "mapping_type": "method", "description": "Accessing app info in C corresponds to writing bundle name to parcel in Rust.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_api": "MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true)", "rust_api": "lock.read(&mut receive)?", "mapping_type": "function", "description": "Saving metadata in C corresponds to reading from a received message in Rust.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_fragment": "auto [status, cloudInfo] = GetCloudInfo(user);", "rust_fragment": "let mut msg_parcel = MsgParcel::new();", "description": "Both retrieve initial data for processing, though C uses a tuple while Rust initializes a parcel.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UpdateSchema__idx5112_rank3.c", "source_rust_file": "Partial__UpdateSchema__idx5112_rank3.rs", "c_fragment": "if (status != SUCCESS) { continue; }", "rust_fragment": "let function_number = GetAppSchema as u32;", "description": "Both handle error conditions and proceed accordingly, though C continues loop and Rust sets up a function call.", "reasoning": "[Task Analysis] C function updates cloud schema by fetching info, iterating keys, and managing metadata; Rust function fetches app schema via IPC call. [Similarity] Names don't match but both involve schema retrieval and data handling. [Knowledge Extraction] No full structural match due to different domains (cloud sync vs IPC communication), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.025806905701756477
+--------------------------------------------------
+C_Code: 
+bool ReadBuffer(MessageParcel &msgParcel, size_t len, rust::vec<uint8_t> &buffer)
+{
+    if (len == 0) {
+        return true;
+    }
+    const uint8_t *data = msgParcel.ReadBuffer(len);
+    if (data == nullptr) {
+        return false;
+    }
+    if (memcpy_s(buffer.data(), len, data, len) != EOK) {
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn read_buffer(&mut self, len: usize) -> IpcResult<Vec<u8>> {
+        let pad_size = Self::get_pad_size(len);
+        let mut vec = Vec::with_capacity(len + pad_size);
+        match ReadBuffer(self.as_msg_parcel_mut(), len + pad_size, &mut vec) {
+            true => Ok({
+                unsafe { vec.set_len(len) };
+                vec
+            }),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx692_rank3.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx692_rank3.rs", "c_api": "REQUEST_HILOGE(\"failed to get hap info, ret: %{public}d\", ret)", "rust_api": "info!(\"update active accounts {:?}\", active_accounts)", "mapping_type": "function", "description": "Logging with error context", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function handles token validation and bundle name retrieval; Rust function updates account state and returns SQL list. -> [Similarity] -> No structural similarity at function level due to different domains (token management vs account state). -> [Knowledge Extraction] -> No full match, no partial match, but API mappings can be extracted for logging and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx692_rank3.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx692_rank3.rs", "c_api": "REQUEST_HILOGE(\"invalid token\")", "rust_api": "info!(\"update active accounts {:?}\", active_accounts)", "mapping_type": "function", "description": "Logging with error context", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function handles token validation and bundle name retrieval; Rust function updates account state and returns SQL list. -> [Similarity] -> No structural similarity at function level due to different domains (token management vs account state). -> [Knowledge Extraction] -> No full match, no partial match, but API mappings can be extracted for logging and error handling patterns."}]
+Unixcoder Score: -0.02776716649532318
+--------------------------------------------------
+C_Code: 
+bool ReadBuffer(MessageParcel &msgParcel, size_t len, rust::vec<uint8_t> &buffer)
+{
+    if (len == 0) {
+        return true;
+    }
+    const uint8_t *data = msgParcel.ReadBuffer(len);
+    if (data == nullptr) {
+        return false;
+    }
+    if (memcpy_s(buffer.data(), len, data, len) != EOK) {
+        return false;
+    }
+    return true;
+}
+Function: 
+fn parcel_read() {
+
+    let mut reply = parcel_write();
+
+    assert_eq!(reply.read_interface_token().unwrap(), "hello ipc");
+
+    assert_eq!(
+        reply.read_buffer(TEST_LEN).unwrap(),
+        vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    );
+
+    let mut file = reply.read_file().unwrap();
+    file.rewind();
+    let mut res = vec![];
+    file.read_to_end(&mut res);
+    let s = String::from_utf8(res).unwrap();
+    assert_eq!(s, "hello ipc");
+
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx911_rank1.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx911_rank1.rs", "c_api": "AccessTokenKit::GetHapTokenInfo", "rust_api": "ffi::GetCallingBundle", "mapping_type": "function", "description": "Retrieval of HAP token info via FFI call", "reasoning": "[Task Analysis] C function `GetCallingBundle` retrieves bundle name from token ID, with validation and error handling. Rust function `query_calling_bundle` calls an FFI function `GetCallingBundle` after getting token ID. [Similarity] The overall task is the same (retrieving bundle name), but the C function has complex logic (validation, error logging) while Rust just delegates. [Knowledge Extraction] No full structural match due to different scopes and logic. However, there's a clear API mapping between C's `AccessTokenKit::GetTokenTypeFlag` and Rust's `ipc::Skeleton::calling_full_token_id()` as both retrieve token information. Also, C's `AccessTokenKit::GetHapTokenInfo` and Rust's `ffi::GetCallingBundle` both handle token info retrieval, even though they differ in implementation details. No partial match due to domain mismatch (C has validation/logic, Rust just calls FFI)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx911_rank1.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx911_rank1.rs", "c_api": "AccessTokenKit::GetTokenTypeFlag", "rust_api": "ipc::Skeleton::calling_full_token_id", "mapping_type": "function", "description": "Token type validation and token ID retrieval", "reasoning": "[Task Analysis] C function `GetCallingBundle` retrieves bundle name from token ID, with validation and error handling. Rust function `query_calling_bundle` calls an FFI function `GetCallingBundle` after getting token ID. [Similarity] The overall task is the same (retrieving bundle name), but the C function has complex logic (validation, error logging) while Rust just delegates. [Knowledge Extraction] No full structural match due to different scopes and logic. However, there's a clear API mapping between C's `AccessTokenKit::GetTokenTypeFlag` and Rust's `ipc::Skeleton::calling_full_token_id()` as both retrieve token information. Also, C's `AccessTokenKit::GetHapTokenInfo` and Rust's `ffi::GetCallingBundle` both handle token info retrieval, even though they differ in implementation details. No partial match due to domain mismatch (C has validation/logic, Rust just calls FFI)."}]
+Unixcoder Score: -0.030186066403985023
+--------------------------------------------------

@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_ioserstat_listener_2",
+  "function_name": "IoServiceStatusListenerNewInstance",
+  "source_c_file": "src/ioserstat_listener.c",
+  "c_code": "struct ServiceStatusListener * IoServiceStatusListenerNewInstance()\n{\n    struct IoServiceStatusListener *listener = OsalMemCalloc(sizeof(struct IoServiceStatusListener));\n    if (listener == NULL) {\n        return NULL;\n    }\n\n    listener->ioservListener.onReceive = OnIoServiceEventReceive;\n    listener->ioservListener.priv = (void *)listener;\n\n    return &listener->svcstatListener;\n}",
+  "rust_signature": "pub extern \"C\" fn IoServiceStatusListenerNewInstance() -> *mut crate::types::ServiceStatusListener",
+  "rust_code": "pub extern \\\"C\\\" fn IoServiceStatusListenerNewInstance() -> *mut ServiceStatusListener {\n    unsafe {\n        let listener = OsalMemCalloc(core::mem::size_of::<IoServiceStatusListener>() as size_t) as *mut IoServiceStatusListener;\n        if listener.is_null() {\n            return core::ptr::null_mut();\n        }\n        (*listener).ioservListener.onReceive = Some(OnIoServiceEventReceive);\n        (*listener).ioservListener.priv_ = listener as *mut core::ffi::c_void;\n        core::ptr::addr_of_mut!((*listener).svcstatListener)\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemCalloc",
+      "rust_api": "OsalMemCalloc",
+      "description": "Allocate zeroed memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

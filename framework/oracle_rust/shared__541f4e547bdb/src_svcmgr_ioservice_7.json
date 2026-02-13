@@ -1,0 +1,43 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_svcmgr_ioservice_7",
+  "function_name": "SvcMgrIoserviceGet",
+  "source_c_file": "src/svcmgr_ioservice.c",
+  "c_code": "struct ISvcMgrIoservice * SvcMgrIoserviceGet()\n{\n    struct SvcMgrIoservice *svcmgrInst = OsalMemCalloc(sizeof(struct SvcMgrIoservice));\n    if (svcmgrInst == NULL) {\n        return NULL;\n    }\n\n    svcmgrInst->iosvc = HdfIoServiceBind(DEV_SVCMGR_NODE);\n    if (svcmgrInst->iosvc == NULL) {\n        HDF_LOGE(\"ioserivce %{public}s not exist\", DEV_SVCMGR_NODE);\n        OsalMemFree(svcmgrInst);\n        return NULL;\n    }\n    SvcMgrIoserviceConstruct(&svcmgrInst->svcmgr);\n    return &svcmgrInst->svcmgr;\n}",
+  "rust_signature": "pub extern \"C\" fn SvcMgrIoserviceGet() -> *mut crate::types::ISvcMgrIoservice",
+  "rust_code": "pub extern \\\"C\\\" fn SvcMgrIoserviceGet() -> *mut ISvcMgrIoservice {\n    unsafe {\n        let svcmgrInst = OsalMemCalloc(core::mem::size_of::<SvcMgrIoservice>() as size_t) as *mut SvcMgrIoservice;\n        if svcmgrInst.is_null() {\n            return core::ptr::null_mut();\n        }\n\n        (*svcmgrInst).iosvc = HdfIoServiceBind(DEV_SVCMGR_NODE.as_ptr() as *const core::ffi::c_char);\n        if (*svcmgrInst).iosvc.is_null() {\n            OsalMemFree(svcmgrInst as *mut core::ffi::c_void);\n            return core::ptr::null_mut();\n        }\n\n        let iface = core::ptr::addr_of_mut!((*svcmgrInst).svcmgr);\n        SvcMgrIoserviceConstruct(iface);\n        iface\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemCalloc",
+      "rust_api": "OsalMemCalloc",
+      "description": "Allocate zeroed memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemFree",
+      "rust_api": "OsalMemFree",
+      "description": "Free memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceBind",
+      "rust_api": "HdfIoServiceBind",
+      "description": "Bind an HDF I/O service by name",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4373_rank3.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4373_rank3.rs", "c_api": "return pre_query_asset(...)", "rust_api": "map_err(|e| e.code as u32)?", "mapping_type": "pattern", "description": "Handle and propagate error", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not refer to the same concept (AssetPreQuery vs ce_query), and domains are different (low-level asset query vs high-level database query). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic scope. However, both involve querying data with parameters and returning results, so API mappings can be extracted for the query operation pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4373_rank3.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4373_rank3.rs", "c_api": "pre_query_asset(query, queryCnt, challenge)", "rust_api": "db.query_datas(&vec![], attributes, None, false)", "mapping_type": "function", "description": "Query data with given parameters", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not refer to the same concept (AssetPreQuery vs ce_query), and domains are different (low-level asset query vs high-level database query). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic scope. However, both involve querying data with parameters and returning results, so API mappings can be extracted for the query operation pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4373_rank3.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4373_rank3.rs", "c_api": "return pre_query_asset(...)", "rust_api": "Ok(query_data)", "mapping_type": "pattern", "description": "Return successful result", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not refer to the same concept (AssetPreQuery vs ce_query), and domains are different (low-level asset query vs high-level database query). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic scope. However, both involve querying data with parameters and returning results, so API mappings can be extracted for the query operation pattern."}]
+Unixcoder Score: 0.05630490183830261
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__AssetPreQuery__idx4603_rank5.c", "source_rust_file": "Partial__AssetPreQuery__idx4603_rank5.rs", "c_fragment": "return pre_query_asset(query, queryCnt, challenge);", "rust_fragment": "match manager.query_sync_result(&map) { Err(e) => map_err(e.code), Ok(res) => { *sync_result = res; RESULT_CODE_SUCCESS }, }", "description": "Both perform a query operation and return a result code.", "reasoning": "[Task Analysis] C function calls a helper function, Rust function performs validation, builds a manager, and calls a method. [Similarity] Names don't match but both perform a query operation with similar parameters. [Knowledge Extraction] Found partial structural match in function call and parameter handling, and API mapping for query operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AssetPreQuery__idx4603_rank5.c", "source_rust_file": "Partial__AssetPreQuery__idx4603_rank5.rs", "c_api": "pre_query_asset", "rust_api": "manager.query_sync_result", "mapping_type": "function", "description": "Query operation with similar parameters and return behavior.", "reasoning": "[Task Analysis] C function calls a helper function, Rust function performs validation, builds a manager, and calls a method. [Similarity] Names don't match but both perform a query operation with similar parameters. [Knowledge Extraction] Found partial structural match in function call and parameter handling, and API mapping for query operation."}]
+Unixcoder Score: 0.055278219282627106
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4616_rank2.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4616_rank2.rs", "c_api": "pre_query_asset", "rust_api": "self.process_one_agr_request", "mapping_type": "function", "description": "Query processing", "reasoning": "[Task Analysis] C function calls a helper function with same signature, Rust method processes a query and returns result. [Similarity] Names don't match but both perform query logic; C delegates to pre_query_asset, Rust uses process_one_agr_request and deserialize_maps. [Knowledge Extraction] Found API mapping for query operation, no full/partial match due to domain mismatch (C: pre_query_asset helper, Rust: full query processing with deserialization)."}]
+Unixcoder Score: 0.05456564947962761
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__AssetPreQuery__idx4598_rank4.c", "source_rust_file": "Partial__AssetPreQuery__idx4598_rank4.rs", "c_fragment": "return pre_query_asset(query, queryCnt, challenge);", "rust_fragment": "return ErrCode::InvalidArgument as i32;", "description": "Both functions return a result code after processing input parameters.", "reasoning": "[Task Analysis] C function calls a helper function, Rust function does the same logic with additional error handling and data conversion. [Similarity] Names don't match but the overall task is to process asset queries and return a result code. [Knowledge Extraction] Found partial structural match in function call and return logic, and API mapping for error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AssetPreQuery__idx4598_rank4.c", "source_rust_file": "Partial__AssetPreQuery__idx4598_rank4.rs", "c_api": "pre_query_asset", "rust_api": "Manager::build", "mapping_type": "function", "description": "Initialization of manager object for processing asset queries", "reasoning": "[Task Analysis] C function calls a helper function, Rust function does the same logic with additional error handling and data conversion. [Similarity] Names don't match but the overall task is to process asset queries and return a result code. [Knowledge Extraction] Found partial structural match in function call and return logic, and API mapping for error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AssetPreQuery__idx4598_rank4.c", "source_rust_file": "Partial__AssetPreQuery__idx4598_rank4.rs", "c_api": "pre_query_asset", "rust_api": "manager.remove", "mapping_type": "method", "description": "Removal of asset from manager", "reasoning": "[Task Analysis] C function calls a helper function, Rust function does the same logic with additional error handling and data conversion. [Similarity] Names don't match but the overall task is to process asset queries and return a result code. [Knowledge Extraction] Found partial structural match in function call and return logic, and API mapping for error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AssetPreQuery__idx4598_rank4.c", "source_rust_file": "Partial__AssetPreQuery__idx4598_rank4.rs", "c_api": "return pre_query_asset(query, queryCnt, challenge);", "rust_api": "return ErrCode::InvalidArgument as i32;", "mapping_type": "pattern", "description": "Error handling pattern for invalid arguments", "reasoning": "[Task Analysis] C function calls a helper function, Rust function does the same logic with additional error handling and data conversion. [Similarity] Names don't match but the overall task is to process asset queries and return a result code. [Knowledge Extraction] Found partial structural match in function call and return logic, and API mapping for error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AssetPreQuery__idx4598_rank4.c", "source_rust_file": "Partial__AssetPreQuery__idx4598_rank4.rs", "c_api": "pre_query_asset", "rust_api": "into_map", "mapping_type": "function", "description": "Data conversion from C-style parameters to Rust map structure", "reasoning": "[Task Analysis] C function calls a helper function, Rust function does the same logic with additional error handling and data conversion. [Similarity] Names don't match but the overall task is to process asset queries and return a result code. [Knowledge Extraction] Found partial structural match in function call and return logic, and API mapping for error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__AssetPreQuery__idx4598_rank4.c", "source_rust_file": "Partial__AssetPreQuery__idx4598_rank4.rs", "c_api": "return pre_query_asset(query, queryCnt, challenge);", "rust_api": "e.code as i32", "mapping_type": "pattern", "description": "Error code propagation from manager to caller", "reasoning": "[Task Analysis] C function calls a helper function, Rust function does the same logic with additional error handling and data conversion. [Similarity] Names don't match but the overall task is to process asset queries and return a result code. [Knowledge Extraction] Found partial structural match in function call and return logic, and API mapping for error handling pattern."}]
+Unixcoder Score: 0.0481918528676033
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4372_rank4.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4372_rank4.rs", "c_api": "return", "rust_api": "Ok(query_data)", "mapping_type": "pattern", "description": "Successful return value wrapping", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not match ('AssetPreQuery' vs 'query'), but both perform pre-query logic. [Knowledge Extraction] No full structural match due to domain mismatch (C calls a single function, Rust has complex logic with loops and error handling). However, there are API mappings related to query operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4372_rank4.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4372_rank4.rs", "c_api": "pre_query_asset", "rust_api": "db.query_datas", "mapping_type": "function", "description": "Query operation on database", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not match ('AssetPreQuery' vs 'query'), but both perform pre-query logic. [Knowledge Extraction] No full structural match due to domain mismatch (C calls a single function, Rust has complex logic with loops and error handling). However, there are API mappings related to query operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4372_rank4.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4372_rank4.rs", "c_api": "return", "rust_api": "map_err(|e| e.code as u32)", "mapping_type": "pattern", "description": "Error code conversion and propagation", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not match ('AssetPreQuery' vs 'query'), but both perform pre-query logic. [Knowledge Extraction] No full structural match due to domain mismatch (C calls a single function, Rust has complex logic with loops and error handling). However, there are API mappings related to query operations and error handling patterns."}]
+Unixcoder Score: 0.04084580019116402
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4622_rank2.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4622_rank2.rs", "c_api": "return", "rust_api": "Ok(reply)", "mapping_type": "pattern", "description": "Successful response return", "reasoning": "[Task Analysis] C function calls a helper function with same signature; Rust function performs IPC request with error handling and response parsing. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to IPC communication and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4622_rank2.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4622_rank2.rs", "c_api": "return", "rust_api": "throw_error!", "mapping_type": "pattern", "description": "Error response handling", "reasoning": "[Task Analysis] C function calls a helper function with same signature; Rust function performs IPC request with error handling and response parsing. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to IPC communication and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4622_rank2.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4622_rank2.rs", "c_api": "pre_query_asset", "rust_api": "self.remote.send_request", "mapping_type": "function", "description": "IPC request sending", "reasoning": "[Task Analysis] C function calls a helper function with same signature; Rust function performs IPC request with error handling and response parsing. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to IPC communication and error handling."}]
+Unixcoder Score: 0.037386346608400345
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4615_rank1.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4615_rank1.rs", "c_api": "pre_query_asset", "rust_api": "self.process_one_agr_request", "mapping_type": "function", "description": "Pre-query processing function", "reasoning": "[Task Analysis] C function calls a helper function with same name, Rust method processes a query and returns result. [Similarity] Names don't match exactly but both perform pre-query logic. [Knowledge Extraction] No full structural match due to different domains (C function vs Rust method with complex logic), but API mapping found for query processing."}]
+Unixcoder Score: 0.03645569831132889
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__AssetPreQuery__idx4605_rank2.c", "source_rust_file": "Partial__AssetPreQuery__idx4605_rank2.rs", "c_api": "AssetMalloc", "rust_api": "AssetMalloc", "mapping_type": "function", "description": "Memory allocation for asset blob data", "reasoning": "[Task Analysis] C function calls a helper function, Rust implements a conversion from Vec<u8> to AssetBlob with memory allocation and copying. [Similarity] Names don't match but logic involves asset blob creation and memory handling. [Knowledge Extraction] Found partial structural match in memory allocation and data copying, and API mapping for memory allocation pattern."}, {"knowledge_type": "Partial", "source_c_file": "Partial__AssetPreQuery__idx4605_rank2.c", "source_rust_file": "Partial__AssetPreQuery__idx4605_rank2.rs", "c_fragment": "blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };", "rust_fragment": "blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };", "description": "Both sides perform unsafe memory allocation for asset blob data using a similar API call pattern.", "reasoning": "[Task Analysis] C function calls a helper function, Rust implements a conversion from Vec<u8> to AssetBlob with memory allocation and copying. [Similarity] Names don't match but logic involves asset blob creation and memory handling. [Knowledge Extraction] Found partial structural match in memory allocation and data copying, and API mapping for memory allocation pattern."}]
+Unixcoder Score: 0.03244861960411072
+--------------------------------------------------
+C_Code: 
+int32_t AssetPreQuery(const AssetAttr *query, uint32_t queryCnt, AssetBlob *challenge)
+{
+    return pre_query_asset(query, queryCnt, challenge);
+}
+Function: 
+fn generate_db_key() -> Result<DbKey> {
+        const KEY_LEN_IN_BYTES: usize = 32; // aes-256-gcm requires key length 256 bits = 32 bytes.
+        let mut db_key = [0; KEY_LEN_IN_BYTES];
+
+        if unsafe { GenerateRandom(db_key.as_mut_ptr(), db_key.len() as u32) } != SUCCESS {
+            return log_throw_error!(ErrCode::CryptoError, "[FATAL]Generate random failed!");
+        }
+        Ok(Self { db_key: db_key.to_vec() })
+    }
+Unixcoder Score: 0.016546521335840225
+--------------------------------------------------
+C_Code: 
+struct CRequestCert
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Unixcoder Score: 0.010219727642834187
+--------------------------------------------------

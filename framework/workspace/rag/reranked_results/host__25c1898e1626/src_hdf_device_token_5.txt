@@ -1,0 +1,249 @@
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+extern "C" fn inner(
+                _version: c_int,
+                actions: uw::_Unwind_Action,
+                _exception_class: uw::_Unwind_Exception_Class,
+                _ue_header: *mut uw::_Unwind_Exception,
+                _context: *mut uw::_Unwind_Context
+            ) -> uw::_Unwind_Reason_Code
+        {
+            if (actions as c_int & uw::_UA_SEARCH_PHASE as c_int) != 0 { // search phase
+                uw::_URC_HANDLER_FOUND // catch!
+            }
+            else { // cleanup phase
+                uw::_URC_INSTALL_CONTEXT
+            }
+        }
+Unixcoder Score: 0.059964630752801895
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub fn begin_unwind(msg: &str, file: &'static str, line: uint) -> ! {
+    #[allow(ctypes)]
+    extern { fn rust_begin_unwind(msg: &str, file: &'static str,
+                                  line: uint) -> !; }
+    unsafe { rust_begin_unwind(msg, file, line) }
+}
+Unixcoder Score: 0.03748123347759247
+--------------------------------------------------
+C_Code: 
+void IpcCApiParcelUnitTest::ReadWriteInterfaceTokenCpp(const char *token,
+    uint32_t &writeDuration, uint32_t &readDuration)
+{
+    MessageParcel dataCpp;
+    auto startPoint = std::chrono::steady_clock::now();
+    auto u16Token = OHOS::Str8ToStr16(token);
+    dataCpp.WriteInterfaceToken(u16Token.c_str());
+    auto endPoint = std::chrono::steady_clock::now();
+    writeDuration = CalcSpendTime(startPoint, endPoint);
+
+    startPoint = std::chrono::steady_clock::now();
+    auto u16TokenRead = dataCpp.ReadInterfaceToken();
+    std::string strTokenRead = OHOS::Str16ToStr8(u16TokenRead);
+    endPoint = std::chrono::steady_clock::now();
+    EXPECT_EQ(strTokenRead.length(), strlen(token));
+    EXPECT_EQ(strTokenRead.compare(token), 0);
+    readDuration = CalcSpendTime(startPoint, endPoint);
+}
+Function: 
+fn context() {
+    init();
+    let context = Skeleton::get_context_object().unwrap();
+    let mut data = MsgParcel::new();
+    let mut option = MsgOption::new();
+    data.write_interface_token("ohos.samgr.accessToken");
+    data.write(&TEST_SYSTEM_ABILITY_ID);
+    data.write_remote(RemoteObj::from_stub(TestRemoteStub).unwrap())
+        .unwrap();
+    data.write(&false);
+    data.write(&0);
+    data.write("");
+    data.write("");
+
+    let mut reply = context.send_request(3, &mut data).unwrap();
+    let value = reply.read::<i32>().unwrap();
+
+    assert_eq!(value, 0);
+
+    data.write_interface_token("ohos.samgr.accessToken");
+    data.write(&TEST_SYSTEM_ABILITY_ID);
+    let mut reply = context.send_request(2, &mut data).unwrap();
+    let remote = reply.read_remote().unwrap();
+    let mut reply = remote.send_request(0, &mut data).unwrap();
+    let s = reply.read::<String>().unwrap();
+    assert_eq!("TestRemoteStub", s);
+
+    data.write_interface_token("ohos.samgr.accessToken");
+    data.write(&TEST_SYSTEM_ABILITY_ID);
+    let mut reply = context.send_request(4, &mut data).unwrap();
+    let value = reply.read::<i32>().unwrap();
+    assert_eq!(value, 0);
+}
+Unixcoder Score: 0.037229809910058975
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn fail_bounds_check(file: *u8, line: uint, index: uint, len: uint) -> ! {
+    #[allow(ctypes)]
+    extern { fn rust_fail_bounds_check(file: *u8, line: uint,
+                                       index: uint, len: uint,) -> !; }
+    unsafe { rust_fail_bounds_check(file, line, index, len) }
+}
+Unixcoder Score: 0.031743597239255905
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub unsafe extern fn __rust_start_panic(data: usize, vtable: usize) -> u32 {
+    imp::panic(mem::transmute(raw::TraitObject {
+        data: data as *mut (),
+        vtable: vtable as *mut (),
+    }))
+}
+Unixcoder Score: 0.031360168009996414
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn parse_type_alias(&mut self, defaultness: Defaultness) -> PResult<'a, ItemInfo> {
+        let ident = self.parse_ident()?;
+        let mut generics = self.parse_generics()?;
+
+        // Parse optional colon and param bounds.
+        let bounds =
+            if self.eat(&token::Colon) { self.parse_generic_bounds()? } else { Vec::new() };
+        let before_where_clause = self.parse_where_clause()?;
+
+        let ty = if self.eat(&token::Eq) { Some(self.parse_ty()?) } else { None };
+
+        let after_where_clause = self.parse_where_clause()?;
+
+        let where_clauses = (
+            TyAliasWhereClause(before_where_clause.has_where_token, before_where_clause.span),
+            TyAliasWhereClause(after_where_clause.has_where_token, after_where_clause.span),
+        );
+        let where_predicates_split = before_where_clause.predicates.len();
+        let mut predicates = before_where_clause.predicates;
+        predicates.extend(after_where_clause.predicates.into_iter());
+        let where_clause = WhereClause {
+            has_where_token: before_where_clause.has_where_token
+                || after_where_clause.has_where_token,
+            predicates,
+            span: DUMMY_SP,
+        };
+        generics.where_clause = where_clause;
+
+        self.expect_semi()?;
+
+        Ok((
+            ident,
+            ItemKind::TyAlias(Box::new(TyAlias {
+                defaultness,
+                generics,
+                where_clauses,
+                where_predicates_split,
+                bounds,
+                ty,
+            })),
+        ))
+    }
+Unixcoder Score: 0.029507221654057503
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub fn begin_unwind(&mut self, cause: ~Any) -> ! {
+        rtdebug!("begin_unwind()");
+
+        self.unwinding = true;
+        self.cause = Some(cause);
+
+        unsafe {
+            let exception = ~_Unwind_Exception {
+                exception_class: rust_exception_class(),
+                exception_cleanup: exception_cleanup,
+                private_1: 0,
+                private_2: 0
+            };
+            let error = _Unwind_RaiseException(transmute(exception));
+            rtabort!("Could not unwind stack, error = {}", error as int)
+        }
+
+        extern "C" fn exception_cleanup(_unwind_code: _Unwind_Reason_Code,
+                                        exception: *_Unwind_Exception) {
+            rtdebug!("exception_cleanup()");
+            unsafe {
+                let _: ~_Unwind_Exception = transmute(exception);
+            }
+        }
+    }
+Unixcoder Score: 0.02764318324625492
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub extern "C" fn rust_eh_personality(
+        version: c_int,
+        actions: uw::_Unwind_Action,
+        exception_class: uw::_Unwind_Exception_Class,
+        ue_header: *mut uw::_Unwind_Exception,
+        context: *mut uw::_Unwind_Context
+    ) -> uw::_Unwind_Reason_Code
+    {
+        unsafe {
+            __gcc_personality_sj0(version, actions, exception_class, ue_header,
+                                  context)
+        }
+    }
+Unixcoder Score: 0.026736656203866005
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub fn begin_unwind(msg: &str, file: &'static str, line: uint) -> ! {
+    #[allow(ctypes)]
+    extern { fn rust_begin_unwind(msg: &str, file: &'static str,
+                                  line: uint) -> !; }
+    unsafe { rust_begin_unwind(msg, file, line) }
+}
+Unixcoder Score: 0.02635619230568409
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn good_unwind_rust() {
+    panic!();
+}
+Unixcoder Score: 0.025561226531863213
+--------------------------------------------------

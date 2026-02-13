@@ -1,0 +1,43 @@
+{
+  "project": "osal__0bc4f21396ad",
+  "func_key": "src_osal_sysevent_4",
+  "function_name": "InitKeventIoServiceListenerLocked",
+  "source_c_file": "src/osal_sysevent.c",
+  "c_code": "static int InitKeventIoServiceListenerLocked(struct HdfSysEventNotifier * notifier)\n{\n    if (notifier->keventIoService == NULL) {\n        notifier->keventIoService = HdfIoServiceBind(KEVENT_IOSERVICE_NAME);\n    }\n    if (notifier->keventIoService == NULL) {\n        HDF_LOGE(\" ioservice %{public}s is invalid\", KEVENT_IOSERVICE_NAME);\n        return HDF_DEV_ERR_NO_DEVICE;\n    }\n\n    notifier->ioServiceListener.onReceive = OnKEventReceived;\n    notifier->ioServiceListener.priv = notifier;\n    int ret = HdfDeviceRegisterEventListener(notifier->keventIoService, &notifier->ioServiceListener);\n    if (ret != HDF_SUCCESS) {\n        HDF_LOGE(\" ioservice %{public}s is invalid\", KEVENT_IOSERVICE_NAME);\n        HdfIoServiceRecycle(notifier->keventIoService);\n        notifier->keventIoService = NULL;\n    }\n\n    return ret;\n}",
+  "rust_signature": "fn InitKeventIoServiceListenerLocked(notifier: *mut crate::types::HdfSysEventNotifier) -> i32",
+  "rust_code": "fn InitKeventIoServiceListenerLocked(notifier: *mut HdfSysEventNotifier) -> i32 {\n    const KEVENT_IOSERVICE_NAME: &[u8] = b\\\"hdf_kevent\\0\\\";\n    const HDF_SUCCESS: i32 = 0;\n    const HDF_DEV_ERR_NO_DEVICE: i32 = -202;\n\n    unsafe {\n        if notifier.is_null() {\n            return -3;\n        }\n\n        if (*notifier).keventIoService.is_null() {\n            (*notifier).keventIoService = HdfIoServiceBind(KEVENT_IOSERVICE_NAME.as_ptr() as *const core::ffi::c_char);\n        }\n        if (*notifier).keventIoService.is_null() {\n            return HDF_DEV_ERR_NO_DEVICE;\n        }\n\n        (*notifier).ioServiceListener.onReceive = Some(OnKEventReceived);\n        (*notifier).ioServiceListener.priv_ = notifier as *mut core::ffi::c_void;\n        let ret = HdfDeviceRegisterEventListener((*notifier).keventIoService, core::ptr::addr_of_mut!((*notifier).ioServiceListener));\n        if ret != HDF_SUCCESS {\n            HdfIoServiceRecycle((*notifier).keventIoService);\n            (*notifier).keventIoService = core::ptr::null_mut();\n        }\n        ret\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfDeviceRegisterEventListener",
+      "rust_api": "HdfDeviceRegisterEventListener",
+      "description": "Register device event listener",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceBind",
+      "rust_api": "HdfIoServiceBind",
+      "description": "Bind an HDF I/O service by name",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceRecycle",
+      "rust_api": "HdfIoServiceRecycle",
+      "description": "Recycle HDF I/O service",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

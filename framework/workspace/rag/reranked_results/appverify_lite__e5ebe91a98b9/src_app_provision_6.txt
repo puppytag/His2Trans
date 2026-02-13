@@ -1,0 +1,314 @@
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.10688789188861847
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn build_task_certificate_pins(
+    config: &TaskConfig,
+) -> Result<Option<PubKeyPins>, Box<dyn Error + Send + Sync>> {
+    if config.certificate_pins.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(cvt_res_error!(
+        PubKeyPins::builder()
+            .add(&config.url, &config.certificate_pins)
+            .build()
+            .map_err(Box::new),
+        "Create task certificate pinned_key failed",
+    )))
+}
+Unixcoder Score: 0.09466042369604111
+--------------------------------------------------
+C_Code: 
+int GetString(RowEntity &rowEntity, int index, rust::string &value)
+{
+    std::string val;
+    int ret = rowEntity.Get(index).GetString(val);
+    value = val;
+    return ret;
+}
+Function: 
+fn from_sql(index: i32, row: Pin<&mut RowEntity>) -> Self {
+        let mut value = String::new();
+        GetString(row, index, &mut value);
+        value
+    }
+Unixcoder Score: 0.09015845507383347
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.08748306334018707
+--------------------------------------------------
+C_Code: 
+int GetString(RowEntity &rowEntity, int index, rust::string &value)
+{
+    std::string val;
+    int ret = rowEntity.Get(index).GetString(val);
+    value = val;
+    return ret;
+}
+Function: 
+fn from_sql(index: i32, row: Pin<&mut RowEntity>) -> Self {
+        let mut value = Vec::new();
+        GetBlob(row, index, &mut value);
+        value
+    }
+Unixcoder Score: 0.07078090310096741
+--------------------------------------------------
+C_Code: 
+UPB_INLINE int32_t google_protobuf_FeatureSet_json_format(const google_protobuf_FeatureSet* msg) {
+  int32_t default_val = 0;
+  int32_t ret;
+  const upb_MiniTableField field = {6, 32, 69, 5, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+Function: 
+pub unsafe fn debug_string(msg: RawMessage, mt: *const upb_MiniTable) -> String {
+    // Only find out the length first to then allocate a buffer of the minimum size
+    // needed.
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is nullptr and `buf_len` is 0
+    let len =
+        unsafe { upb_DebugString(msg, mt, Options::NoSortMaps as i32, core::ptr::null_mut(), 0) };
+    assert!(len < isize::MAX as usize);
+    // +1 for the trailing NULL
+    let mut buf = vec![0u8; len + 1];
+    // SAFETY:
+    // - `msg` is a legally dereferencable upb_Message whose associated minitable is
+    //   `mt`
+    // - `buf` is legally writable for 'buf_len' bytes
+    let written_len = unsafe {
+        upb_DebugString(msg, mt, Options::NoSortMaps as i32, buf.as_mut_ptr(), buf.len())
+    };
+    assert_eq!(len, written_len);
+    String::from_utf8_lossy(buf.as_slice()).to_string()
+}
+Unixcoder Score: 0.061760783195495605
+--------------------------------------------------
+C_Code: 
+int GetString(RowEntity &rowEntity, int index, rust::string &value)
+{
+    std::string val;
+    int ret = rowEntity.Get(index).GetString(val);
+    value = val;
+    return ret;
+}
+Function: 
+fn from_sql(index: i32, row: Pin<&mut RowEntity>) -> Self {
+        let mut value = String::new();
+        GetString(row, index, &mut value);
+        value
+    }
+Unixcoder Score: 0.06018858402967453
+--------------------------------------------------
+C_Code: 
+std::string CheckerMock::GetAppId(const CheckerManager::StoreInfo &info)
+{
+    return info.bundleName;
+}
+Function: 
+pub fn app_id(&self) -> &str {
+        &self.app_id
+    }
+Unixcoder Score: 0.025447700172662735
+--------------------------------------------------
+C_Code: 
+std::string CheckerMock::GetAppId(const CheckerManager::StoreInfo &info)
+{
+    return info.bundleName;
+}
+Function: 
+pub fn bundle_name(&self) -> &str {
+        &self.bundle_name
+    }
+Unixcoder Score: 0.01832977496087551
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bundleName,
+    int32_t instanceId)
+{
+    SchemaMeta schemaMeta;
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(userId);
+    if (status != SUCCESS) {
+        // GetCloudInfo has print the log info. so we don`t need print again.
+        return { status, schemaMeta };
+    }
+    if (!bundleName.empty() && !cloudInfo.Exist(bundleName, instanceId)) {
+        ZLOGD("bundleName:%{public}s instanceId:%{public}d is not exist", bundleName.c_str(), instanceId);
+        return { ERROR, schemaMeta };
+    }
+    std::string schemaKey = cloudInfo.GetSchemaKey(bundleName, instanceId);
+    if (MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true) &&
+        schemaMeta.metaVersion == SchemaMeta::CURRENT_VERSION) {
+        return { SUCCESS, schemaMeta };
+    }
+    UpgradeSchemaMeta(userId, schemaMeta);
+    HapInfo hapInfo{ .user = userId, .instIndex = instanceId, .bundleName = bundleName };
+    std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
+    if (status == SUCCESS) {
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+        return { status, schemaMeta };
+    }
+    if (!Account::GetInstance()->IsVerified(userId)) {
+        ZLOGE("user:%{public}d is locked!", userId);
+        return { ERROR, schemaMeta };
+    }
+    std::tie(status, schemaMeta) = GetAppSchemaFromServer(userId, bundleName);
+    if (status == NOT_SUPPORT) {
+        ZLOGW("app not support, del cloudInfo! userId:%{public}d, bundleName:%{public}s", userId, bundleName.c_str());
+        MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+        return { status, schemaMeta };
+    }
+    if (status != SUCCESS) {
+        return { status, schemaMeta };
+    }
+    MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+    return { SUCCESS, schemaMeta };
+}
+Function: 
+pub(crate) fn get_app_schema(
+        &mut self,
+        user_id: i32,
+        bundle_name: &str,
+    ) -> ConnectResult<RwLockReadGuard<Schema>> {
+        self.infos.entry(user_id).or_default();
+        let infos = self.infos.get_mut(&user_id).unwrap();
+
+        let mut lock = infos.app_schema.write().unwrap();
+
+        let mut msg_parcel = MsgParcel::new();
+
+        msg_parcel
+            .write_string16(bundle_name)
+            .map_err(|_| Error::WriteMsgParcelFailed)?;
+
+        let function_number = GetAppSchema as u32;
+        let remote_obj = self
+            .remote_obj
+            .clone()
+            .ok_or(Error::CreateMsgParcelFailed)?;
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
+            .map_err(|_| Error::SendRequestFailed)?;
+
+        lock.read(&mut receive)?;
+
+        drop(lock);
+
+        Ok(infos.app_schema.read().unwrap())
+    }
+Unixcoder Score: 0.017576124519109726
+--------------------------------------------------

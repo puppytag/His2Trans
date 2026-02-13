@@ -1,0 +1,425 @@
+C_Code: 
+static int
+imemalign(void **memptr, size_t alignment, size_t size,
+    size_t min_alignment)
+{
+	int ret;
+	size_t usize;
+	void *result;
+	prof_thr_cnt_t *cnt JEMALLOC_CC_SILENCE_INIT(NULL);
+
+	assert(min_alignment != 0);
+
+	if (malloc_init())
+		result = NULL;
+	else {
+		if (size == 0)
+			size = 1;
+
+		/* Make sure that alignment is a large enough power of 2. */
+		if (((alignment - 1) & alignment) != 0
+		    || (alignment < min_alignment)) {
+			if (config_xmalloc && opt_xmalloc) {
+				malloc_write("<jemalloc>: Error allocating "
+				    "aligned memory: invalid alignment\n");
+				abort();
+			}
+			result = NULL;
+			ret = EINVAL;
+			goto label_return;
+		}
+
+		usize = sa2u(size, alignment);
+		if (usize == 0) {
+			result = NULL;
+			ret = ENOMEM;
+			goto label_return;
+		}
+
+		if (config_prof && opt_prof) {
+			PROF_ALLOC_PREP(2, usize, cnt);
+			if (cnt == NULL) {
+				result = NULL;
+				ret = EINVAL;
+			} else {
+				if (prof_promote && (uintptr_t)cnt !=
+				    (uintptr_t)1U && usize <= SMALL_MAXCLASS) {
+					assert(sa2u(SMALL_MAXCLASS+1,
+					    alignment) != 0);
+					result = ipalloc(sa2u(SMALL_MAXCLASS+1,
+					    alignment), alignment, false);
+					if (result != NULL) {
+						arena_prof_promoted(result,
+						    usize);
+					}
+				} else {
+					result = ipalloc(usize, alignment,
+					    false);
+				}
+			}
+		} else
+			result = ipalloc(usize, alignment, false);
+	}
+
+	if (result == NULL) {
+		if (config_xmalloc && opt_xmalloc) {
+			malloc_write("<jemalloc>: Error allocating aligned "
+			    "memory: out of memory\n");
+			abort();
+		}
+		ret = ENOMEM;
+		goto label_return;
+	}
+
+	*memptr = result;
+	ret = 0;
+
+label_return:
+	if (config_stats && result != NULL) {
+		assert(usize == isalloc(result, config_prof));
+		thread_allocated_tsd_get()->allocated += usize;
+	}
+	if (config_prof && opt_prof && result != NULL)
+		prof_malloc(result, usize, cnt);
+	UTRACE(0, size, result);
+	return (ret);
+}
+Function: 
+unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // jemalloc provides alignment less than MIN_ALIGN for small allocations.
+        // So only rely on MIN_ALIGN if size >= align.
+        // Also see <https://github.com/rust-lang/rust/issues/45955> and
+        // <https://github.com/rust-lang/rust/issues/62251#issuecomment-507580914>.
+        if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+            unsafe { libc::malloc(layout.size()) as *mut u8 }
+        } else {
+            // `posix_memalign` returns a non-aligned value if supplied a very
+            // large alignment on older versions of Apple's platforms (unknown
+            // exactly which version range, but the issue is definitely
+            // present in macOS 10.14 and iOS 13.3).
+            //
+            // <https://github.com/rust-lang/rust/issues/30170>
+            #[cfg(target_vendor = "apple")]
+            {
+                if layout.align() > (1 << 31) {
+                    return ptr::null_mut();
+                }
+            }
+            unsafe { aligned_malloc(&layout) }
+        }
+    }
+Unixcoder Score: 0.025663577020168304
+--------------------------------------------------
+C_Code: 
+UPB_INLINE upb_StringView upb_tabstrview(upb_tabkey key) {
+  upb_StringView ret;
+  uint32_t len;
+  ret.data = upb_tabstr(key, &len);
+  ret.size = len;
+  return ret;
+}
+Function: 
+fn elem_to_view<'msg>(v: PtrAndLen) -> View<'msg, ProtoString> {
+        ptrlen_to_str(v)
+    }
+Unixcoder Score: 0.011691729538142681
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: 0.01020153146237135
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: 0.00863355677574873
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: 0.004156876355409622
+--------------------------------------------------
+C_Code: 
+UPB_INLINE upb_StringView upb_tabstrview(upb_tabkey key) {
+  upb_StringView ret;
+  uint32_t len;
+  ret.data = upb_tabstr(key, &len);
+  ret.size = len;
+  return ret;
+}
+Function: 
+pub(crate) fn as_bytes(&self) -> &[u8] {
+        // SAFETY: `self.owned_ptr` points to a valid std::string object.
+        unsafe { proto2_rust_cpp_string_to_view(self.owned_ptr).as_ref() }
+    }
+Unixcoder Score: 0.0023691707756370306
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: 0.002274679485708475
+--------------------------------------------------
+C_Code: 
+static int
+imemalign(void **memptr, size_t alignment, size_t size,
+    size_t min_alignment)
+{
+	int ret;
+	size_t usize;
+	void *result;
+	prof_thr_cnt_t *cnt JEMALLOC_CC_SILENCE_INIT(NULL);
+
+	assert(min_alignment != 0);
+
+	if (malloc_init())
+		result = NULL;
+	else {
+		if (size == 0)
+			size = 1;
+
+		/* Make sure that alignment is a large enough power of 2. */
+		if (((alignment - 1) & alignment) != 0
+		    || (alignment < min_alignment)) {
+			if (config_xmalloc && opt_xmalloc) {
+				malloc_write("<jemalloc>: Error allocating "
+				    "aligned memory: invalid alignment\n");
+				abort();
+			}
+			result = NULL;
+			ret = EINVAL;
+			goto label_return;
+		}
+
+		usize = sa2u(size, alignment);
+		if (usize == 0) {
+			result = NULL;
+			ret = ENOMEM;
+			goto label_return;
+		}
+
+		if (config_prof && opt_prof) {
+			PROF_ALLOC_PREP(2, usize, cnt);
+			if (cnt == NULL) {
+				result = NULL;
+				ret = EINVAL;
+			} else {
+				if (prof_promote && (uintptr_t)cnt !=
+				    (uintptr_t)1U && usize <= SMALL_MAXCLASS) {
+					assert(sa2u(SMALL_MAXCLASS+1,
+					    alignment) != 0);
+					result = ipalloc(sa2u(SMALL_MAXCLASS+1,
+					    alignment), alignment, false);
+					if (result != NULL) {
+						arena_prof_promoted(result,
+						    usize);
+					}
+				} else {
+					result = ipalloc(usize, alignment,
+					    false);
+				}
+			}
+		} else
+			result = ipalloc(usize, alignment, false);
+	}
+
+	if (result == NULL) {
+		if (config_xmalloc && opt_xmalloc) {
+			malloc_write("<jemalloc>: Error allocating aligned "
+			    "memory: out of memory\n");
+			abort();
+		}
+		ret = ENOMEM;
+		goto label_return;
+	}
+
+	*memptr = result;
+	ret = 0;
+
+label_return:
+	if (config_stats && result != NULL) {
+		assert(usize == isalloc(result, config_prof));
+		thread_allocated_tsd_get()->allocated += usize;
+	}
+	if (config_prof && opt_prof && result != NULL)
+		prof_malloc(result, usize, cnt);
+	UTRACE(0, size, result);
+	return (ret);
+}
+Function: 
+pub fn variant_a(input: &[(usize, usize, usize, usize)]) -> usize {
+    input.iter().filter(|(a, b, c, d)| a <= c && d <= b || c <= a && b <= d).count()
+}
+Unixcoder Score: 0.0004141289973631501
+--------------------------------------------------
+C_Code: 
+UPB_INLINE upb_StringView upb_tabstrview(upb_tabkey key) {
+  upb_StringView ret;
+  uint32_t len;
+  ret.data = upb_tabstr(key, &len);
+  ret.size = len;
+  return ret;
+}
+Function: 
+fn elem_to_view<'msg>(v: PtrAndLen) -> View<'msg, ProtoString> {
+        ptrlen_to_str(v)
+    }
+Unixcoder Score: -0.0019107474945485592
+--------------------------------------------------
+C_Code: 
+bool ResponseMessageReceiver::ReadUdsData(char *buffer, int32_t readSize, int32_t &length)
+{
+    std::lock_guard<std::mutex> lock(sockFdMutex_);
+    if (sockFd_ < 0) {
+        REQUEST_HILOGE("OnReadable errfd: %{public}d", sockFd_);
+        return false;
+    }
+    length = read(sockFd_, buffer, readSize);
+    if (length <= 0) {
+        REQUEST_HILOGE("read message error: %{public}d, %{public}d", length, errno);
+        return false;
+    }
+    REQUEST_HILOGD("read message: %{public}d", length);
+
+    char lenBuf[4];
+    *reinterpret_cast<uint32_t *>(lenBuf) = length;
+    int32_t ret = write(sockFd_, lenBuf, 4);
+    if (ret <= 0) {
+        REQUEST_HILOGE("send length back failed: %{public}d, %{public}d", ret, errno);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, UDS_FAULT_02, "write" + std::to_string(ret));
+    }
+    return true;
+}
+Function: 
+pub(crate) fn send_event(&self, event: ClientEvent) -> bool {
+        if self.tx.send(event).is_err() {
+            #[cfg(feature = "oh")]
+            unsafe {
+                if let Some(e) = PANIC_INFO.as_ref() {
+                    error!("Sends ClientManager event failed {}", e);
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::UDS_FAULT_02,
+                        &format!("Sends ClientManager event failed {}", e)
+                    );
+                } else {
+                    info!("ClientManager is unloading");
+                }
+            }
+            return false;
+        }
+        true
+    }
+Unixcoder Score: -0.0022450280375778675
+--------------------------------------------------

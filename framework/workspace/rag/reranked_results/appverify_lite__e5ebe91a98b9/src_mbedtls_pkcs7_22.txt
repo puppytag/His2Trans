@@ -1,0 +1,416 @@
+C_Code: 
+int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const struct HksBlob *inData,
+    struct HksBlob *outData)
+{
+    struct HksParam encryptParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+    };
+    struct HksParamSet *encryptParamSet = NULL;
+    int32_t ret = BuildParamSet(&encryptParamSet, encryptParams, ARRAY_SIZE(encryptParams), keyId->userId);
+    if (ret != HKS_SUCCESS) {
+        return HuksErrorTransfer(ret);
+    }
+
+    uint8_t handle[sizeof(uint64_t)] = { 0 };
+    struct HksBlob handleBlob = { sizeof(uint64_t), handle };
+    ret = HksInit(&keyId->alias, encryptParamSet, &handleBlob, NULL);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS encrypt init failed. error=%{public}d", ret);
+        HksFreeParamSet(&encryptParamSet);
+        return HuksErrorTransfer(ret);
+    }
+
+    ret = HksFinish(&handleBlob, encryptParamSet, inData, outData);
+    HksFreeParamSet(&encryptParamSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS encrypt finish failed. error=%{public}d", ret);
+    }
+    return HuksErrorTransfer(ret);
+}
+Function: 
+pub fn exists(&self) -> Result<bool> {
+        let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
+        let ret = unsafe { IsKeyExist(&key_id as *const KeyId) };
+        match ret {
+            SUCCESS => Ok(true),
+            ret if ret == ErrCode::NotFound as i32 => Ok(false),
+            _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),
+        }
+    }
+Unixcoder Score: 0.05525755137205124
+--------------------------------------------------
+C_Code: 
+int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const struct HksBlob *inData,
+    struct HksBlob *outData)
+{
+    struct HksParam encryptParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+    };
+    struct HksParamSet *encryptParamSet = NULL;
+    int32_t ret = BuildParamSet(&encryptParamSet, encryptParams, ARRAY_SIZE(encryptParams), keyId->userId);
+    if (ret != HKS_SUCCESS) {
+        return HuksErrorTransfer(ret);
+    }
+
+    uint8_t handle[sizeof(uint64_t)] = { 0 };
+    struct HksBlob handleBlob = { sizeof(uint64_t), handle };
+    ret = HksInit(&keyId->alias, encryptParamSet, &handleBlob, NULL);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS encrypt init failed. error=%{public}d", ret);
+        HksFreeParamSet(&encryptParamSet);
+        return HuksErrorTransfer(ret);
+    }
+
+    ret = HksFinish(&handleBlob, encryptParamSet, inData, outData);
+    HksFreeParamSet(&encryptParamSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS encrypt finish failed. error=%{public}d", ret);
+    }
+    return HuksErrorTransfer(ret);
+}
+Function: 
+fn get_bytes_attr(&self, key: &K) -> Result<&Vec<u8>> {
+        if let Some(Value::Bytes(bytes)) = self.get(key) {
+            Ok(bytes)
+        } else {
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+        }
+    }
+Unixcoder Score: 0.03507208079099655
+--------------------------------------------------
+C_Code: 
+static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
+{
+    struct HksParam commonParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_ALLOWED_DATA_WRAP, .boolParam = true },
+    };
+    return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
+}
+Function: 
+pub fn generate(&self) -> Result<()> {
+        let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
+        let ret = unsafe { GenerateKey(&key_id as *const KeyId, self.need_user_auth(), self.require_password_set) };
+        match ret {
+            SUCCESS => Ok(()),
+            _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),
+        }
+    }
+Unixcoder Score: 0.02268092706799507
+--------------------------------------------------
+C_Code: 
+static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
+{
+    struct HksParam commonParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_ALLOWED_DATA_WRAP, .boolParam = true },
+    };
+    return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
+}
+Function: 
+fn get_existing_key_alias(
+    calling_info: &CallingInfo,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    require_password_set: bool,
+) -> Result<KeyAliasVersion> {
+    let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
+    let key = SecretKey {
+        user_id: calling_info.user_id(),
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: prefixed_new_alias.clone(),
+    };
+    if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with v3 alias exists.");
+        return Ok(KeyAliasVersion::V3);
+    }
+
+    let key = SecretKey {
+        user_id: calling_info.user_id(),
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: new_alias.clone(),
+    };
+    if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with v2 alias exists.");
+        return Ok(KeyAliasVersion::V2(new_alias));
+    }
+
+    let old_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
+    let key = SecretKey {
+        user_id: calling_info.user_id(),
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: old_alias.clone(),
+    };
+    if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with v1 alias exists.");
+        return Ok(KeyAliasVersion::V1(old_alias));
+    }
+
+    Ok(KeyAliasVersion::None)
+}
+Unixcoder Score: 0.013602842576801777
+--------------------------------------------------
+C_Code: 
+static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
+{
+    struct HksParam commonParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_ALLOWED_DATA_WRAP, .boolParam = true },
+    };
+    return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
+}
+Function: 
+fn huks_rename_key_alias(
+    calling_info: &CallingInfo,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    require_password_set: bool,
+    alias: Vec<u8>,
+) -> i32 {
+    // Prepare secret key id with outdated alias.
+    let alias_ref = &alias;
+    let alias_blob = HksBlob { size: alias.len() as u32, data: alias_ref.as_ptr() };
+    let key_id = KeyId::new(calling_info.user_id(), alias_blob, access_type);
+
+    // Prepare secret key alias to be replaced in.
+    let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias].concat();
+    let prefixed_new_alias_ref = &prefixed_new_alias;
+    let prefixed_new_alias_blob =
+        HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias_ref.as_ptr() };
+
+    unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) }
+}
+Unixcoder Score: 0.01260486152023077
+--------------------------------------------------
+C_Code: 
+static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
+{
+    struct HksParam commonParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_ALLOWED_DATA_WRAP, .boolParam = true },
+    };
+    return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
+}
+Function: 
+fn get_bytes_attr(&self, key: &K) -> Result<&Vec<u8>> {
+        if let Some(Value::Bytes(bytes)) = self.get(key) {
+            Ok(bytes)
+        } else {
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+        }
+    }
+Unixcoder Score: 0.008165624924004078
+--------------------------------------------------
+C_Code: 
+static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
+{
+    struct HksParam commonParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_ALLOWED_DATA_WRAP, .boolParam = true },
+    };
+    return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
+}
+Function: 
+fn append_attr<T>(tag: &str, value: T, vec: &mut Vec<u8>)
+where
+    T: Default + std::cmp::PartialEq,
+    u32: std::convert::From<T>,
+{
+    if value != T::default() {
+        vec.push(b'_');
+        vec.extend_from_slice(tag.as_bytes());
+        vec.push(b':');
+        vec.extend_from_slice(&u32::from(value).to_le_bytes());
+    }
+}
+Unixcoder Score: 0.002812439575791359
+--------------------------------------------------
+C_Code: 
+static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
+{
+    struct HksParam commonParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_ALLOWED_DATA_WRAP, .boolParam = true },
+    };
+    return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
+}
+Function: 
+fn get_enum_attr<T: TryFrom<u32, Error = AssetError>>(&self, key: &K) -> Result<T> {
+        if let Some(Value::Number(num)) = self.get(key) {
+            T::try_from(*num)
+        } else {
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
+        }
+    }
+Unixcoder Score: -0.0013473995495587587
+--------------------------------------------------
+C_Code: 
+void ResponseMessageReceiver::HandWaitData(char *&leftBuf, int32_t &leftLen)
+{
+    int32_t taskId;
+    if (Int32FromParcel(taskId, leftBuf, leftLen) != 0) {
+        REQUEST_HILOGE("Bad taskId");
+        return;
+    }
+    uint32_t reason;
+    if (Uint32FromParcel(reason, leftBuf, leftLen) != 0) {
+        REQUEST_HILOGE("Bad reason");
+        return;
+    }
+    this->handler_->OnWaitReceive(taskId, static_cast<WaitingReason>(reason));
+}
+Function: 
+async fn handle_send_waiting_notify(&mut self, task_id: u32, waiting_reason: WaitingCause) {
+        let mut message = Vec::<u8>::new();
+
+        message.extend_from_slice(&REQUEST_MAGIC_NUM.to_le_bytes());
+
+        message.extend_from_slice(&self.message_id.to_le_bytes());
+        self.message_id += 1;
+
+        let message_type = MessageType::Waiting as u16;
+        message.extend_from_slice(&message_type.to_le_bytes());
+
+        let message_body_size: u16 = 0;
+        message.extend_from_slice(&message_body_size.to_le_bytes());
+
+        message.extend_from_slice(&task_id.to_le_bytes());
+
+        message.extend_from_slice(&(waiting_reason.clone() as u32).to_le_bytes());
+
+        let size = message.len() as u16;
+        debug!(
+            "send wait notify, tid {:?} reason {:?} size {:?}",
+            task_id, waiting_reason, size
+        );
+        let size = size.to_le_bytes();
+        message[POSITION_OF_LENGTH as usize] = size[0];
+        message[(POSITION_OF_LENGTH + 1) as usize] = size[1];
+
+        self.send_message(message).await;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__RenameKeyAlias__idx4516_rank4.c", "source_rust_file": "Partial__RenameKeyAlias__idx4516_rank4.rs", "c_api": "HksRenameKeyAlias(&keyId->alias, paramSet, newKeyAlias)", "rust_api": "IsKeyExist(&key_id as *const KeyId)", "mapping_type": "function", "description": "Key alias operation (rename vs check existence)", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('RenameKeyAlias' vs 'exists'), but both relate to key alias operations. [Filter 2: Empty/Trivial Code] -> Both functions have substantial logic. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on key management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a definition, Rust function is a method; however, they are both implementations of key-related logic, not usage/call mismatches. [Full Blockers] -> No full blockers detected. [Partial/Full Classification] -> While not full due to different operations (rename vs check existence), there are structural similarities in error handling and parameter usage. [API Mappings] -> Extract API mappings based on similar logical operations like parameter passing, error handling, and key alias operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__RenameKeyAlias__idx4516_rank4.c", "source_rust_file": "Partial__RenameKeyAlias__idx4516_rank4.rs", "c_fragment": "struct HksParam params[] = {\n        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },\n        { .tag = HKS_TAG_IS_COPY_NEW_KEY, .boolParam = true },\n    };", "rust_fragment": "let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };", "description": "Construction of key-related data structures for parameter passing.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('RenameKeyAlias' vs 'exists'), but both relate to key alias operations. [Filter 2: Empty/Trivial Code] -> Both functions have substantial logic. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on key management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a definition, Rust function is a method; however, they are both implementations of key-related logic, not usage/call mismatches. [Full Blockers] -> No full blockers detected. [Partial/Full Classification] -> While not full due to different operations (rename vs check existence), there are structural similarities in error handling and parameter usage. [API Mappings] -> Extract API mappings based on similar logical operations like parameter passing, error handling, and key alias operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__RenameKeyAlias__idx4516_rank4.c", "source_rust_file": "Partial__RenameKeyAlias__idx4516_rank4.rs", "c_fragment": "if (ret != HKS_SUCCESS) {\n        return HuksErrorTransfer(ret);\n    }", "rust_fragment": "match ret {\n            SUCCESS => Ok(true),\n            ret if ret == ErrCode::NotFound as i32 => Ok(false),\n            _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),\n        }", "description": "Error handling logic for checking HUKS operation result and returning appropriate error or success.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('RenameKeyAlias' vs 'exists'), but both relate to key alias operations. [Filter 2: Empty/Trivial Code] -> Both functions have substantial logic. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on key management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a definition, Rust function is a method; however, they are both implementations of key-related logic, not usage/call mismatches. [Full Blockers] -> No full blockers detected. [Partial/Full Classification] -> While not full due to different operations (rename vs check existence), there are structural similarities in error handling and parameter usage. [API Mappings] -> Extract API mappings based on similar logical operations like parameter passing, error handling, and key alias operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RenameKeyAlias__idx4516_rank4.c", "source_rust_file": "Partial__RenameKeyAlias__idx4516_rank4.rs", "c_api": "HksFreeParamSet(&paramSet)", "rust_api": "unsafe { IsKeyExist(...) }", "mapping_type": "function", "description": "Cleanup of parameter set (free vs unsafe call)", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('RenameKeyAlias' vs 'exists'), but both relate to key alias operations. [Filter 2: Empty/Trivial Code] -> Both functions have substantial logic. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on key management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a definition, Rust function is a method; however, they are both implementations of key-related logic, not usage/call mismatches. [Full Blockers] -> No full blockers detected. [Partial/Full Classification] -> While not full due to different operations (rename vs check existence), there are structural similarities in error handling and parameter usage. [API Mappings] -> Extract API mappings based on similar logical operations like parameter passing, error handling, and key alias operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__RenameKeyAlias__idx4516_rank4.c", "source_rust_file": "Partial__RenameKeyAlias__idx4516_rank4.rs", "c_api": "BuildParamSet(&paramSet, params, ARRAY_SIZE(params), keyId->userId)", "rust_api": "KeyId::new(self.user_id, key_alias, self.access_type)", "mapping_type": "function", "description": "Construction of parameter set for key operations", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('RenameKeyAlias' vs 'exists'), but both relate to key alias operations. [Filter 2: Empty/Trivial Code] -> Both functions have substantial logic. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on key management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C function is a definition, Rust function is a method; however, they are both implementations of key-related logic, not usage/call mismatches. [Full Blockers] -> No full blockers detected. [Partial/Full Classification] -> While not full due to different operations (rename vs check existence), there are structural similarities in error handling and parameter usage. [API Mappings] -> Extract API mappings based on similar logical operations like parameter passing, error handling, and key alias operations."}]
+Unixcoder Score: -0.002545334631577134
+--------------------------------------------------
+C_Code: 
+void ResponseMessageReceiver::OnReadable(int32_t fd)
+{
+    int readSize = ResponseMessageReceiver::RESPONSE_MAX_SIZE;
+    char buffer[readSize];
+    int32_t length = 0;
+    if (!ReadUdsData(buffer, readSize, length)) {
+        REQUEST_HILOGE("ReadUdsData err: %{public}d,%{public}d, %{public}d", sockFd_, fd, length);
+        return;
+    };
+
+    char *leftBuf = buffer;
+    int32_t leftLen = length;
+    int32_t msgId = -1;
+    int16_t msgType = -1;
+    int16_t headerSize = -1;
+    MsgHeaderParcel(msgId, msgType, headerSize, leftBuf, leftLen);
+    if (msgId != messageId_) {
+        REQUEST_HILOGE("Bad messageId, expect %{public}d = %{public}d", msgId, messageId_);
+    }
+    if (headerSize != static_cast<int16_t>(length)) {
+        REQUEST_HILOGE("Bad headerSize, %{public}d, %{public}d", length, headerSize);
+    }
+    ++messageId_;
+
+    if (msgType == MessageType::HTTP_RESPONSE) {
+        HandResponseData(leftBuf, leftLen);
+    } else if (msgType == MessageType::NOTIFY_DATA) {
+        HandNotifyData(leftBuf, leftLen);
+    } else if (msgType == MessageType::FAULTS) {
+        HandFaultsData(leftBuf, leftLen);
+    } else if (msgType == MessageType::WAIT) {
+        HandWaitData(leftBuf, leftLen);
+    }
+}
+Function: 
+async fn handle_send_waiting_notify(&mut self, task_id: u32, waiting_reason: WaitingCause) {
+        let mut message = Vec::<u8>::new();
+
+        message.extend_from_slice(&REQUEST_MAGIC_NUM.to_le_bytes());
+
+        message.extend_from_slice(&self.message_id.to_le_bytes());
+        self.message_id += 1;
+
+        let message_type = MessageType::Waiting as u16;
+        message.extend_from_slice(&message_type.to_le_bytes());
+
+        let message_body_size: u16 = 0;
+        message.extend_from_slice(&message_body_size.to_le_bytes());
+
+        message.extend_from_slice(&task_id.to_le_bytes());
+
+        message.extend_from_slice(&(waiting_reason.clone() as u32).to_le_bytes());
+
+        let size = message.len() as u16;
+        debug!(
+            "send wait notify, tid {:?} reason {:?} size {:?}",
+            task_id, waiting_reason, size
+        );
+        let size = size.to_le_bytes();
+        message[POSITION_OF_LENGTH as usize] = size[0];
+        message[(POSITION_OF_LENGTH + 1) as usize] = size[1];
+
+        self.send_message(message).await;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Parse__idx7473_rank2.h", "source_rust_file": "API_Mapping__Parse__idx7473_rank2.rs", "c_api": "traceId.GetChainId()", "rust_api": "trace_id.get_chain_id()", "mapping_type": "method", "description": "Get chain ID field", "reasoning": "[Task Analysis] C function parses a trace ID struct and sets its fields; Rust function performs a unit test with similar field operations on a trace ID. [Similarity] Names do not refer to the same concept (Parse vs unit test), and domains are different (parsing vs testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings between field-setting operations in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Parse__idx7473_rank2.h", "source_rust_file": "API_Mapping__Parse__idx7473_rank2.rs", "c_api": "traceId.SetFlags(id.flags)", "rust_api": "trace_id.set_flags(HiTraceFlag::IncludeAsync | HiTraceFlag::TpInfo)", "mapping_type": "method", "description": "Set flags field", "reasoning": "[Task Analysis] C function parses a trace ID struct and sets its fields; Rust function performs a unit test with similar field operations on a trace ID. [Similarity] Names do not refer to the same concept (Parse vs unit test), and domains are different (parsing vs testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings between field-setting operations in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Parse__idx7473_rank2.h", "source_rust_file": "API_Mapping__Parse__idx7473_rank2.rs", "c_api": "traceId.SetSpanId(id.spanId)", "rust_api": "trace_id.set_span_id(1025u64)", "mapping_type": "method", "description": "Set span ID field", "reasoning": "[Task Analysis] C function parses a trace ID struct and sets its fields; Rust function performs a unit test with similar field operations on a trace ID. [Similarity] Names do not refer to the same concept (Parse vs unit test), and domains are different (parsing vs testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings between field-setting operations in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Parse__idx7473_rank2.h", "source_rust_file": "API_Mapping__Parse__idx7473_rank2.rs", "c_api": "traceId.GetFlags()", "rust_api": "trace_id.get_flags()", "mapping_type": "method", "description": "Get flags field", "reasoning": "[Task Analysis] C function parses a trace ID struct and sets its fields; Rust function performs a unit test with similar field operations on a trace ID. [Similarity] Names do not refer to the same concept (Parse vs unit test), and domains are different (parsing vs testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings between field-setting operations in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Parse__idx7473_rank2.h", "source_rust_file": "API_Mapping__Parse__idx7473_rank2.rs", "c_api": "traceId.SetChainId(id.chainId)", "rust_api": "trace_id.set_chain_id(1024u64)", "mapping_type": "method", "description": "Set chain ID field", "reasoning": "[Task Analysis] C function parses a trace ID struct and sets its fields; Rust function performs a unit test with similar field operations on a trace ID. [Similarity] Names do not refer to the same concept (Parse vs unit test), and domains are different (parsing vs testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings between field-setting operations in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Parse__idx7473_rank2.h", "source_rust_file": "API_Mapping__Parse__idx7473_rank2.rs", "c_api": "traceId.GetParentSpanId()", "rust_api": "trace_id.get_parent_span_id()", "mapping_type": "method", "description": "Get parent span ID field", "reasoning": "[Task Analysis] C function parses a trace ID struct and sets its fields; Rust function performs a unit test with similar field operations on a trace ID. [Similarity] Names do not refer to the same concept (Parse vs unit test), and domains are different (parsing vs testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings between field-setting operations in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Parse__idx7473_rank2.h", "source_rust_file": "API_Mapping__Parse__idx7473_rank2.rs", "c_api": "traceId.SetParentSpanId(id.parentSpanId)", "rust_api": "trace_id.set_parent_span_id(1026u64)", "mapping_type": "method", "description": "Set parent span ID field", "reasoning": "[Task Analysis] C function parses a trace ID struct and sets its fields; Rust function performs a unit test with similar field operations on a trace ID. [Similarity] Names do not refer to the same concept (Parse vs unit test), and domains are different (parsing vs testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings between field-setting operations in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Parse__idx7473_rank2.h", "source_rust_file": "API_Mapping__Parse__idx7473_rank2.rs", "c_api": "traceId.GetSpanId()", "rust_api": "trace_id.get_span_id()", "mapping_type": "method", "description": "Get span ID field", "reasoning": "[Task Analysis] C function parses a trace ID struct and sets its fields; Rust function performs a unit test with similar field operations on a trace ID. [Similarity] Names do not refer to the same concept (Parse vs unit test), and domains are different (parsing vs testing). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings between field-setting operations in both languages."}]
+Unixcoder Score: -0.0025780319701880217
+--------------------------------------------------

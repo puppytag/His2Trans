@@ -1,0 +1,315 @@
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+pub fn append_bits(&mut self, val: u32, len: u8) {
+		assert!(len <= 31 && val >> len == 0, "Value out of range");
+		self.0.extend((0 .. i32::from(len)).rev().map(|i| get_bit(val, i)));  // Append bit by bit
+	}
+Unixcoder Score: 0.09756755083799362
+--------------------------------------------------
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+pub fn append_bits(&mut self, val: u32, len: u8) {
+		assert!(len <= 31 && val >> len == 0, "Value out of range");
+		self.0.extend((0 .. i32::from(len)).rev().map(|i| get_bit(val, i)));  // Append bit by bit
+	}
+Unixcoder Score: 0.07415507733821869
+--------------------------------------------------
+C_Code: 
+FT_CALLBACK_DEF( unsigned long )
+  ft_ansi_stream_io( FT_Stream       stream,
+                     unsigned long   offset,
+                     unsigned char*  buffer,
+                     unsigned long   count )
+  {
+    FT_FILE*  file;
+
+
+    if ( offset > stream->size && !count )
+      return 1;
+
+    file = STREAM_FILE( stream );
+
+    if ( stream->pos != offset )
+      ft_fseek( file, (long)offset, SEEK_SET );
+
+    /* Avoid calling `fread` with `buffer=NULL` and `count=0`, */
+    /* which is undefined behaviour.                           */
+    if ( !count )
+      return 0;
+
+    return (unsigned long)ft_fread( buffer, 1, count, file );
+  }
+Function: 
+fn table_data(font_ref: &BridgeFontRef, tag: u32, offset: usize, data: &mut [u8]) -> usize {
+    let table_data = font_ref
+        .with_font(|f| f.table_data(Tag::from_be_bytes(tag.to_be_bytes())))
+        .unwrap_or_default();
+    let table_data = table_data.as_ref();
+    // Remaining table data size measured from offset to end, or 0 if offset is
+    // too large.
+    let mut to_copy_length = table_data.len().saturating_sub(offset);
+    match data.len() {
+        0 => to_copy_length,
+        _ => {
+            to_copy_length = to_copy_length.min(data.len());
+            let table_offset_data = table_data
+                .get(offset..offset + to_copy_length)
+                .unwrap_or_default();
+            data.get_mut(..table_offset_data.len())
+                .map_or(0, |data_slice| {
+                    data_slice.copy_from_slice(table_offset_data);
+                    data_slice.len()
+                })
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteUpdateData__idx359_rank1.c", "source_rust_file": "Partial__WriteUpdateData__idx359_rank1.rs", "c_api": "insertValues.PutString", "rust_api": "progress.processed[index] = 0", "mapping_type": "function", "description": "Data insertion into container", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function prepares batch upload with progress tracking and file operations. [Similarity] No full structural similarity due to different domains (data insertion vs upload preparation). [Knowledge Extraction] Partial structural fragments found in data access patterns; API mappings identified for data insertion and progress tracking."}, {"knowledge_type": "Partial", "source_c_file": "Partial__WriteUpdateData__idx359_rank1.c", "source_rust_file": "Partial__WriteUpdateData__idx359_rank1.rs", "c_fragment": "insertValues.PutString(\"mime_type\", std::string(info->mimeType.cStr, info->mimeType.len));", "rust_fragment": "let file = self.files.get(index)", "description": "Both access and process data from external sources (C accesses info struct, Rust accesses self.files)", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function prepares batch upload with progress tracking and file operations. [Similarity] No full structural similarity due to different domains (data insertion vs upload preparation). [Knowledge Extraction] Partial structural fragments found in data access patterns; API mappings identified for data insertion and progress tracking."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteUpdateData__idx359_rank1.c", "source_rust_file": "Partial__WriteUpdateData__idx359_rank1.rs", "c_api": "insertValues.PutLong", "rust_api": "progress.common_data.index = current_index", "mapping_type": "function", "description": "Data insertion into container", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function prepares batch upload with progress tracking and file operations. [Similarity] No full structural similarity due to different domains (data insertion vs upload preparation). [Knowledge Extraction] Partial structural fragments found in data access patterns; API mappings identified for data insertion and progress tracking."}, {"knowledge_type": "Partial", "source_c_file": "Partial__WriteUpdateData__idx359_rank1.c", "source_rust_file": "Partial__WriteUpdateData__idx359_rank1.rs", "c_fragment": "insertValues.PutInt(\"state\", info->progress.commonData.state);", "rust_fragment": "let total = progress.common_data.total_processed;", "description": "Both access and use progress-related data fields", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function prepares batch upload with progress tracking and file operations. [Similarity] No full structural similarity due to different domains (data insertion vs upload preparation). [Knowledge Extraction] Partial structural fragments found in data access patterns; API mappings identified for data insertion and progress tracking."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteUpdateData__idx359_rank1.c", "source_rust_file": "Partial__WriteUpdateData__idx359_rank1.rs", "c_api": "insertValues.PutString", "rust_api": "progress.common_data.total_processed = progress.processed.iter().take(current_index).sum()", "mapping_type": "function", "description": "Data insertion into container", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function prepares batch upload with progress tracking and file operations. [Similarity] No full structural similarity due to different domains (data insertion vs upload preparation). [Knowledge Extraction] Partial structural fragments found in data access patterns; API mappings identified for data insertion and progress tracking."}]
+Unixcoder Score: 0.06106511875987053
+--------------------------------------------------
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+fn get_bit(x: u32, i: u8) -> bool {
+	(x >> i) & 1 != 0
+}
+Unixcoder Score: 0.05972934886813164
+--------------------------------------------------
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+pub fn append_bits(&mut self, val: u32, len: u8) {
+		assert!(len <= 31 && val >> len == 0);
+		assert!(usize::from(len) <= usize::MAX - self.length);
+		for i in (0 .. len).rev() {
+			let index: usize = self.length >> 3;
+			let shift: u8 = 7 - ((self.length as u8) & 7);
+			let bit: u8 = ((val >> i) as u8) & 1;
+			if shift == 7 {
+				self.data[index] = bit << shift;
+			} else {
+				self.data[index] |= bit << shift;
+			}
+			self.length += 1;
+		}
+	}
+Unixcoder Score: 0.05385657027363777
+--------------------------------------------------
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+pub fn append_bits(&mut self, val: u32, len: u8) {
+		assert!(len <= 31 && val >> len == 0);
+		assert!(usize::from(len) <= usize::MAX - self.length);
+		for i in (0 .. len).rev() {
+			let index: usize = self.length >> 3;
+			let shift: u8 = 7 - ((self.length as u8) & 7);
+			let bit: u8 = ((val >> i) as u8) & 1;
+			if shift == 7 {
+				self.data[index] = bit << shift;
+			} else {
+				self.data[index] |= bit << shift;
+			}
+			self.length += 1;
+		}
+	}
+Unixcoder Score: 0.053603604435920715
+--------------------------------------------------
+C_Code: 
+inline int64_t GetLong(std::shared_ptr<OHOS::NativeRdb::ResultSet> resultSet, int line)
+{
+    int64_t value = 0;
+    resultSet->GetLong(line, value);
+    return value;
+}
+Function: 
+pub(crate) fn query_integer<T: TryFrom<i64> + Default>(&self, sql: &str) -> Vec<T>
+    where
+        T::Error: Display,
+    {
+        let mut v = vec![];
+        let ret = unsafe { Pin::new_unchecked(&mut *self.inner).QueryInteger(sql, &mut v) };
+        let v = v
+            .into_iter()
+            .map(|a| {
+                a.try_into().unwrap_or_else(|e| {
+                    error!("query_integer failed, value: {}", e);
+                    sys_event!(
+                        ExecFault,
+                        DfxCode::RDB_FAULT_06,
+                        &format!("query_integer failed, value: {}", e)
+                    );
+                    Default::default()
+                })
+            })
+            .collect();
+
+        if ret != 0 {
+            error!("query integer err:{}", ret);
+            sys_event!(
+                ExecFault,
+                DfxCode::RDB_FAULT_06,
+                &format!("query integer err:{}", ret)
+            );
+        }
+        v
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__appendBitsToBuffer__idx144404_rank2.c", "source_rust_file": "Partial__appendBitsToBuffer__idx144404_rank2.rs", "c_api": "assert!(len <= 31 && val >> len == 0, \"Value out of range\");", "rust_api": "if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))\n\treturn;", "mapping_type": "pattern", "description": "Value range validation before processing", "reasoning": "[Task Analysis] C function manipulates bits in a buffer, Rust function appends bits to a collection. [Similarity] Both perform bit manipulation and appending logic, but with different data structures (buffer vs self.0). [Knowledge Extraction] Found partial structural match in bit manipulation loop and API mapping for bit extraction/append operation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__appendBitsToBuffer__idx144404_rank2.c", "source_rust_file": "Partial__appendBitsToBuffer__idx144404_rank2.rs", "c_fragment": "for (i = numBits - 1; i >= 0; i--, (*bitLen)++)\n\tbuffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));", "rust_fragment": "self.0.extend((0 .. i32::from(len)).rev().map(|i| get_bit(val, i)));", "description": "Bit-by-bit extraction and insertion into a buffer/data structure", "reasoning": "[Task Analysis] C function manipulates bits in a buffer, Rust function appends bits to a collection. [Similarity] Both perform bit manipulation and appending logic, but with different data structures (buffer vs self.0). [Knowledge Extraction] Found partial structural match in bit manipulation loop and API mapping for bit extraction/append operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__appendBitsToBuffer__idx144404_rank2.c", "source_rust_file": "Partial__appendBitsToBuffer__idx144404_rank2.rs", "c_api": "buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7))", "rust_api": "get_bit(val, i)", "mapping_type": "function", "description": "Extract individual bit from value and place it in correct position", "reasoning": "[Task Analysis] C function manipulates bits in a buffer, Rust function appends bits to a collection. [Similarity] Both perform bit manipulation and appending logic, but with different data structures (buffer vs self.0). [Knowledge Extraction] Found partial structural match in bit manipulation loop and API mapping for bit extraction/append operation."}]
+Unixcoder Score: 0.04511653631925583
+--------------------------------------------------
+C_Code: 
+static unsigned long sk_ft_stream_io(FT_Stream ftStream,
+                                         unsigned long offset,
+                                         unsigned char* buffer,
+                                         unsigned long count)
+    {
+        SkStreamAsset* stream = static_cast<SkStreamAsset*>(ftStream->descriptor.pointer);
+
+        if (count) {
+            if (!stream->seek(offset)) {
+                return 0;
+            }
+            count = stream->read(buffer, count);
+        }
+        return count;
+    }
+Function: 
+fn table_data(font_ref: &BridgeFontRef, tag: u32, offset: usize, data: &mut [u8]) -> usize {
+    let table_data = font_ref
+        .with_font(|f| f.table_data(Tag::from_be_bytes(tag.to_be_bytes())))
+        .unwrap_or_default();
+    let table_data = table_data.as_ref();
+    // Remaining table data size measured from offset to end, or 0 if offset is
+    // too large.
+    let mut to_copy_length = table_data.len().saturating_sub(offset);
+    match data.len() {
+        0 => to_copy_length,
+        _ => {
+            to_copy_length = to_copy_length.min(data.len());
+            let table_offset_data = table_data
+                .get(offset..offset + to_copy_length)
+                .unwrap_or_default();
+            data.get_mut(..table_offset_data.len())
+                .map_or(0, |data_slice| {
+                    data_slice.copy_from_slice(table_offset_data);
+                    data_slice.len()
+                })
+        }
+    }
+}
+Unixcoder Score: 0.025932874530553818
+--------------------------------------------------
+C_Code: 
+static unsigned long sk_ft_stream_io(FT_Stream ftStream,
+                                         unsigned long offset,
+                                         unsigned char* buffer,
+                                         unsigned long count)
+    {
+        SkStreamAsset* stream = static_cast<SkStreamAsset*>(ftStream->descriptor.pointer);
+
+        if (count) {
+            if (!stream->seek(offset)) {
+                return 0;
+            }
+            count = stream->read(buffer, count);
+        }
+        return count;
+    }
+Function: 
+fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        Ok(self.as_mut().read(buf))
+    }
+Unixcoder Score: 0.0023111733607947826
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE uint64_t
+atomic_add_uint64(uint64_t *p, uint64_t x)
+{
+
+	/*
+	 * atomic_fetchadd_64() doesn't exist, but we only ever use this
+	 * function on LP64 systems, so atomic_fetchadd_long() will do.
+	 */
+	assert(sizeof(uint64_t) == sizeof(unsigned long));
+
+	return (atomic_fetchadd_long(p, (unsigned long)x) + x);
+}
+Function: 
+fn atomic_all_ops() {
+    static ATOMIC: AtomicIsize = AtomicIsize::new(0);
+    static ATOMIC_UNSIGNED: AtomicU64 = AtomicU64::new(0);
+
+    let load_orders = [Relaxed, Acquire, SeqCst];
+    let stored_orders = [Relaxed, Release, SeqCst];
+    let rmw_orders = [Relaxed, Release, Acquire, AcqRel, SeqCst];
+
+    // loads
+    for o in load_orders {
+        ATOMIC.load(o);
+    }
+
+    // stores
+    for o in stored_orders {
+        ATOMIC.store(1, o);
+    }
+
+    // most RMWs
+    for o in rmw_orders {
+        ATOMIC.swap(0, o);
+        ATOMIC.fetch_or(0, o);
+        ATOMIC.fetch_xor(0, o);
+        ATOMIC.fetch_and(0, o);
+        ATOMIC.fetch_nand(0, o);
+        ATOMIC.fetch_add(0, o);
+        ATOMIC.fetch_sub(0, o);
+        ATOMIC.fetch_min(0, o);
+        ATOMIC.fetch_max(0, o);
+        ATOMIC_UNSIGNED.fetch_min(0, o);
+        ATOMIC_UNSIGNED.fetch_max(0, o);
+    }
+
+    // RMWs with separate failure ordering
+    for o1 in rmw_orders {
+        for o2 in load_orders {
+            let _res = ATOMIC.compare_exchange(0, 0, o1, o2);
+            let _res = ATOMIC.compare_exchange_weak(0, 0, o1, o2);
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteUpdateData__idx588_rank3.c", "source_rust_file": "API_Mapping__WriteUpdateData__idx588_rank3.rs", "c_api": "insertValues.PutString(\"mime_type\", std::string(info->mimeType.cStr, info->mimeType.len))", "rust_api": "RequestDb::get_instance().get_task_info(task_id)", "mapping_type": "function", "description": "Retrieving task info from database", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function updates task status with database operations and state checks. [Similarity] No full structural similarity due to different domains (data insertion vs state management). [Knowledge Extraction] Extract API mappings for database operations and state transitions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteUpdateData__idx588_rank3.c", "source_rust_file": "API_Mapping__WriteUpdateData__idx588_rank3.rs", "c_api": "insertValues.PutString(\"sizes\", std::string(info->progress.sizes.cStr, info->progress.sizes.len))", "rust_api": "info.progress.sizes", "mapping_type": "field_access", "description": "Accessing progress sizes field", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function updates task status with database operations and state checks. [Similarity] No full structural similarity due to different domains (data insertion vs state management). [Knowledge Extraction] Extract API mappings for database operations and state transitions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteUpdateData__idx588_rank3.c", "source_rust_file": "API_Mapping__WriteUpdateData__idx588_rank3.rs", "c_api": "insertValues.PutLong(\"idx\", info->progress.commonData.index)", "rust_api": "info.progress.common_data.index", "mapping_type": "field_access", "description": "Accessing progress index field", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function updates task status with database operations and state checks. [Similarity] No full structural similarity due to different domains (data insertion vs state management). [Knowledge Extraction] Extract API mappings for database operations and state transitions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteUpdateData__idx588_rank3.c", "source_rust_file": "API_Mapping__WriteUpdateData__idx588_rank3.rs", "c_api": "return true", "rust_api": "Ok(())", "mapping_type": "function", "description": "Successful operation return", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function updates task status with database operations and state checks. [Similarity] No full structural similarity due to different domains (data insertion vs state management). [Knowledge Extraction] Extract API mappings for database operations and state transitions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteUpdateData__idx588_rank3.c", "source_rust_file": "API_Mapping__WriteUpdateData__idx588_rank3.rs", "c_api": "insertValues.PutString(\"extras\", std::string(info->progress.extras.cStr, info->progress.extras.len))", "rust_api": "info.progress.extras", "mapping_type": "field_access", "description": "Accessing progress extras field", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function updates task status with database operations and state checks. [Similarity] No full structural similarity due to different domains (data insertion vs state management). [Knowledge Extraction] Extract API mappings for database operations and state transitions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteUpdateData__idx588_rank3.c", "source_rust_file": "API_Mapping__WriteUpdateData__idx588_rank3.rs", "c_api": "insertValues.PutInt(\"state\", info->progress.commonData.state)", "rust_api": "info.progress.common_data.state", "mapping_type": "field_access", "description": "Accessing progress state field", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function updates task status with database operations and state checks. [Similarity] No full structural similarity due to different domains (data insertion vs state management). [Knowledge Extraction] Extract API mappings for database operations and state transitions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteUpdateData__idx588_rank3.c", "source_rust_file": "API_Mapping__WriteUpdateData__idx588_rank3.rs", "c_api": "insertValues.PutLong(\"total_processed\", info->progress.commonData.totalProcessed)", "rust_api": "info.progress.common_data.total_processed", "mapping_type": "field_access", "description": "Accessing progress total processed field", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function updates task status with database operations and state checks. [Similarity] No full structural similarity due to different domains (data insertion vs state management). [Knowledge Extraction] Extract API mappings for database operations and state transitions."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteUpdateData__idx588_rank3.c", "source_rust_file": "API_Mapping__WriteUpdateData__idx588_rank3.rs", "c_api": "insertValues.PutString(\"processed\", std::string(info->progress.processed.cStr, info->progress.processed.len))", "rust_api": "info.progress.processed", "mapping_type": "field_access", "description": "Accessing progress processed field", "reasoning": "[Task Analysis] C function writes data to a ValuesBucket; Rust function updates task status with database operations and state checks. [Similarity] No full structural similarity due to different domains (data insertion vs state management). [Knowledge Extraction] Extract API mappings for database operations and state transitions."}]
+Unixcoder Score: 0.0009082293254323304
+--------------------------------------------------

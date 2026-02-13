@@ -1,0 +1,104 @@
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__CRequestCert__idx59_rank3.h", "source_rust_file": "Full__CRequestCert__idx59_rank3.rs", "reasoning": "[Entity Name Check] -> CRequestCert and CRequestCert refer to the same concept (struct name). [Empty/Trivial Code] -> Neither struct is empty. [FFI Wrapper] -> No FFI call detected. [Semantic Domain Mismatch] -> Both are struct definitions with same domain (data structure). [Empty Structs] -> Both structs have fields. [Definition vs Usage Asymmetry] -> Both are struct definitions, not function calls or usages. -> [Full] -> Names match, both are struct definitions with same fields and types. -> [Partial] -> No partial fragments. -> [API Mappings] -> No API mappings found.", "description": "Full structural translation"}]
+Unixcoder Score: 0.17870184779167175
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__CRequestCert__idx59_rank2.h", "source_rust_file": "Full__CRequestCert__idx59_rank2.rs", "reasoning": "[Entity Name Check] -> CRequestCert and CRequestCert refer to the same concept (struct name) -> [Empty/Trivial Code] -> Neither struct is empty -> [FFI Wrapper] -> No FFI calls present -> [Semantic Domain Mismatch] -> Both are struct definitions with similar fields -> [Empty Structs] -> Both structs have fields -> [Definition vs Usage Asymmetry] -> Both are struct definitions -> [Full] -> Names match, both are struct definitions with same fields -> [Partial] -> No partial fragments to extract -> [API Mappings] -> No API mappings to extract", "description": "Full structural translation"}]
+Unixcoder Score: 0.15928804874420166
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__CRequestCert__idx59_rank4.c", "source_rust_file": "Full__CRequestCert__idx59_rank4.rs", "c_fragment": "struct CRequestCert", "rust_fragment": "pub(crate) struct CRequestCert {", "description": "Both define a struct named CRequestCert with similar visibility and field layout.", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCert' match conceptually (struct name). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with same domain (data structure). [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Check] -> Names match, both are struct definitions with same fields. [Partial Check] -> No partial fragments as full match exists. [API Mappings] -> No API mappings as this is a struct definition comparison with no function calls or operations."}, {"knowledge_type": "Full", "source_c_file": "Full__CRequestCert__idx59_rank4.c", "source_rust_file": "Full__CRequestCert__idx59_rank4.rs", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCert' match conceptually (struct name). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with same domain (data structure). [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions. [Full Check] -> Names match, both are struct definitions with same fields. [Partial Check] -> No partial fragments as full match exists. [API Mappings] -> No API mappings as this is a struct definition comparison with no function calls or operations.", "description": "Full structural translation"}]
+Unixcoder Score: 0.14140386879444122
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__CRequestCert__idx59_rank5.c", "source_rust_file": "Full__CRequestCert__idx59_rank5.rs", "reasoning": "[Entity Name Check] -> CRequestCert and CRequestCert refer to the same concept (struct name) -> [Empty/Trivial Code] -> Neither struct is empty -> [FFI Wrapper] -> No FFI calls present -> [Semantic Domain Mismatch] -> Both are struct definitions with similar fields -> [Empty Structs] -> Both structs have fields -> [Definition vs Usage Asymmetry] -> Both are struct definitions -> [Full] -> Names match, both are struct definitions with same fields -> [Partial] -> No partial fragments to extract -> [API Mappings] -> No API mappings to extract", "description": "Full structural translation"}]
+Unixcoder Score: 0.1331789642572403
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__CRequestCerts__idx60_rank3.h", "source_rust_file": "Full__CRequestCerts__idx60_rank3.rs", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCerts' match conceptually (both refer to same struct type). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with field declarations, same domain. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Full Classification] -> Names match, both are struct definitions with same fields, only difference is in field visibility and pointer syntax. [Partial Classification] -> No partial match since full match exists. [API Mappings] -> No API mappings since this is a struct definition comparison, not function or operation mapping. [Knowledge Extraction] -> Full match on struct definition with minor syntax differences (visibility, pointer types).", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__CRequestCerts__idx60_rank3.h", "source_rust_file": "Full__CRequestCerts__idx60_rank3.rs", "c_fragment": "cert_data_list: *const *const CRequestCert,\n    len: u32,", "rust_fragment": "pub(crate) cert_data_list: *const *const CRequestCert,\n    pub(crate) len: u32,", "description": "Field declarations with same types and names", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCerts' match conceptually (both refer to same struct type). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with field declarations, same domain. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Full Classification] -> Names match, both are struct definitions with same fields, only difference is in field visibility and pointer syntax. [Partial Classification] -> No partial match since full match exists. [API Mappings] -> No API mappings since this is a struct definition comparison, not function or operation mapping. [Knowledge Extraction] -> Full match on struct definition with minor syntax differences (visibility, pointer types)."}, {"knowledge_type": "Partial", "source_c_file": "Full__CRequestCerts__idx60_rank3.h", "source_rust_file": "Full__CRequestCerts__idx60_rank3.rs", "c_fragment": "struct CRequestCerts", "rust_fragment": "pub(crate) struct CRequestCerts {", "description": "Struct definition with same name and visibility", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCerts' match conceptually (both refer to same struct type). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with field declarations, same domain. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Full Classification] -> Names match, both are struct definitions with same fields, only difference is in field visibility and pointer syntax. [Partial Classification] -> No partial match since full match exists. [API Mappings] -> No API mappings since this is a struct definition comparison, not function or operation mapping. [Knowledge Extraction] -> Full match on struct definition with minor syntax differences (visibility, pointer types)."}]
+Unixcoder Score: 0.12135222554206848
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__CRequestCerts__idx60_rank2.h", "source_rust_file": "Full__CRequestCerts__idx60_rank2.rs", "c_fragment": "struct CRequestCerts", "rust_fragment": "pub(crate) struct CRequestCerts {", "description": "Struct definition with same name and visibility", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCerts' match conceptually (both refer to same struct type). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with field declarations, same domain. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Full Classification] -> Names match, both are struct definitions with same fields, only difference is in field visibility and pointer syntax. [Partial Classification] -> No partial match as full match exists. [API Mappings] -> No API mappings as this is a struct definition comparison, not function or operation mapping. [Knowledge Extraction] -> Full match on struct definition with minor syntax differences (visibility, pointer types)."}, {"knowledge_type": "Partial", "source_c_file": "Full__CRequestCerts__idx60_rank2.h", "source_rust_file": "Full__CRequestCerts__idx60_rank2.rs", "c_fragment": "struct CRequestCerts", "rust_fragment": "pub(crate) struct CRequestCerts {", "description": "Struct definition with same name and visibility", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCerts' match conceptually (both refer to same struct type). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with field declarations, same domain. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Full Classification] -> Names match, both are struct definitions with same fields, only difference is in field visibility and pointer syntax. [Partial Classification] -> No partial match as full match exists. [API Mappings] -> No API mappings as this is a struct definition comparison, not function or operation mapping. [Knowledge Extraction] -> Full match on struct definition with minor syntax differences (visibility, pointer types)."}, {"knowledge_type": "Full", "source_c_file": "Full__CRequestCerts__idx60_rank2.h", "source_rust_file": "Full__CRequestCerts__idx60_rank2.rs", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCerts' match conceptually (both refer to same struct type). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with field declarations, same domain. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Full Classification] -> Names match, both are struct definitions with same fields, only difference is in field visibility and pointer syntax. [Partial Classification] -> No partial match as full match exists. [API Mappings] -> No API mappings as this is a struct definition comparison, not function or operation mapping. [Knowledge Extraction] -> Full match on struct definition with minor syntax differences (visibility, pointer types).", "description": "Full structural translation"}]
+Unixcoder Score: 0.11305686831474304
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__CRequestCerts__idx60_rank4.h", "source_rust_file": "Full__CRequestCerts__idx60_rank4.rs", "c_fragment": "struct CRequestCerts", "rust_fragment": "pub(crate) struct CRequestCerts {", "description": "Struct definition with same name and concept", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCerts' match conceptually (both refer to same struct type). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with field declarations, same domain. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Full Classification] -> Names match, both are struct definitions with same fields, only difference is in field visibility and pointer syntax. [Partial Classification] -> No partial match as full match exists. [API Mappings] -> No API mappings as this is a struct definition comparison, not function or operation mapping. [Knowledge Extraction] -> Full match on struct definition with minor syntax differences (visibility, pointer types)."}, {"knowledge_type": "Full", "source_c_file": "Full__CRequestCerts__idx60_rank4.h", "source_rust_file": "Full__CRequestCerts__idx60_rank4.rs", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CRequestCerts' match conceptually (both refer to same struct type). [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with field declarations, same domain. [Filter 5: Empty Structs] -> Both structs have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Full Classification] -> Names match, both are struct definitions with same fields, only difference is in field visibility and pointer syntax. [Partial Classification] -> No partial match as full match exists. [API Mappings] -> No API mappings as this is a struct definition comparison, not function or operation mapping. [Knowledge Extraction] -> Full match on struct definition with minor syntax differences (visibility, pointer types).", "description": "Full structural translation"}]
+Unixcoder Score: 0.11259325593709946
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CertList__idx63_rank1.h", "source_rust_file": "Partial__CertList__idx63_rank1.rs", "c_fragment": "struct CertList", "rust_fragment": "pub(crate) struct SystemConfig", "description": "Both are struct definitions, but with different purposes and field layouts.", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CertList' (C) and 'SystemConfig' (Rust) refer to different concepts; 'CertList' suggests a list of certificates, while 'SystemConfig' is a configuration struct with various fields including an optional certificate list. This fails the name alignment for Full/Partial classification. [Filter 2: Empty/Trivial Code] -> Neither code is empty or trivial. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C struct 'CertList' implies a data structure for managing a list of certificates, whereas Rust struct 'SystemConfig' is a configuration struct that includes an optional vector of certificates. While both involve certificate lists, the semantic domains are not directly equivalent (one is a list container, the other is a config object). However, the presence of `certs: Option<Vec<Certificate>>` in Rust and a potential `CertList` in C suggests a mapping in data structure usage. [Filter 5: Empty Structs] -> Both structs have fields, so not empty. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls or usages, so this does not apply. [Task Analysis] -> The task is to determine if there's a structural or API mapping between a C struct and a Rust struct. [Similarity] -> The structs differ in naming and purpose but share a common field related to certificates. [Knowledge Extraction] -> There is a partial structural similarity in the field `certs` and a potential API mapping in how certificate lists are handled in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CertList__idx63_rank1.h", "source_rust_file": "Partial__CertList__idx63_rank1.rs", "c_api": "struct CertList", "rust_api": "pub(crate) certs: Option<Vec<Certificate>>", "mapping_type": "field_access", "description": "Both represent a list of certificates, with Rust using an Option<Vec<Certificate>> for safety.", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CertList' (C) and 'SystemConfig' (Rust) refer to different concepts; 'CertList' suggests a list of certificates, while 'SystemConfig' is a configuration struct with various fields including an optional certificate list. This fails the name alignment for Full/Partial classification. [Filter 2: Empty/Trivial Code] -> Neither code is empty or trivial. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C struct 'CertList' implies a data structure for managing a list of certificates, whereas Rust struct 'SystemConfig' is a configuration struct that includes an optional vector of certificates. While both involve certificate lists, the semantic domains are not directly equivalent (one is a list container, the other is a config object). However, the presence of `certs: Option<Vec<Certificate>>` in Rust and a potential `CertList` in C suggests a mapping in data structure usage. [Filter 5: Empty Structs] -> Both structs have fields, so not empty. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls or usages, so this does not apply. [Task Analysis] -> The task is to determine if there's a structural or API mapping between a C struct and a Rust struct. [Similarity] -> The structs differ in naming and purpose but share a common field related to certificates. [Knowledge Extraction] -> There is a partial structural similarity in the field `certs` and a potential API mapping in how certificate lists are handled in both languages."}]
+Unixcoder Score: 0.1057649552822113
+--------------------------------------------------
+C_Code: 
+struct CRequestCert {
+    uint32_t size;
+    uint8_t *data;
+}
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Unixcoder Score: 0.03965047374367714
+--------------------------------------------------
+C_Code: 
+struct CRequestCert {
+    uint32_t size;
+    uint8_t *data;
+}
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Unixcoder Score: 0.027179507538676262
+--------------------------------------------------

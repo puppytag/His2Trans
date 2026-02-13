@@ -1,0 +1,497 @@
+C_Code: 
+void UnsubscribeRunningTaskCount(std::shared_ptr<IRunningTaskObserver> ob)
+{
+    FwkRunningTaskCountManager::GetInstance()->DetachObserver(ob);
+    if (FwkRunningTaskCountManager::GetInstance()->HasObserver()) {
+        REQUEST_HILOGD("Unsubscribe running task count success.");
+        return;
+    }
+
+    int32_t ret = RequestManagerImpl::GetInstance()->UnsubRunCount();
+    RequestManagerImpl::GetInstance()->UnsubscribeSA();
+    if (ret != E_OK) {
+        REQUEST_HILOGE("Unsubscribe running task count failed, ret: %{public}d.", ret);
+    }
+}
+Function: 
+pub(crate) fn subscribe_run_count(
+        &self,
+        data: &mut MsgParcel,
+        reply: &mut MsgParcel,
+    ) -> IpcResult<()> {
+        if is_called_by_hap() {
+            error!("Service run_count subscribe called by hap");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A32,
+                "Service run_count subscribe called by hap"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let pid = ipc::Skeleton::calling_pid();
+        info!("Service run_count subscribe pid {}", pid);
+
+        let obj: RemoteObj = data.read_remote()?;
+        let ret = self.run_count_manager.subscribe_run_count(pid, obj);
+
+        reply.write(&(ret as i32))?;
+        if ret != ErrorCode::ErrOk {
+            error!("End Service run_count subscribe, failed:{}", ret as i32);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A32,
+                &format!("End Service run_count subscribe, failed:{}", ret as i32)
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__unregister__idx1568_rank1.c", "source_rust_file": "Full__unregister__idx1568_rank1.rs", "c_fragment": "return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);", "rust_fragment": "let ret = inner.unregister();\n            if ret != 0 {\n                *handle = Some(inner);\n                return Err(NetUnregisterError::UnregisterFailed(ret));\n            }\n            Ok(())", "description": "Both perform an unregister operation and handle the result, with C returning directly and Rust using a Result type with error propagation.", "reasoning": "[Task Analysis] C function calls a method on a singleton instance, returning its result. Rust function locks a mutex, checks for an inner handle, calls unregister on it, and handles success/failure with error propagation. [Similarity] Names don't match exactly but refer to same concept (unregistering a network connection). Both perform similar logic: check state, call unregister, handle return value. [Knowledge Extraction] Full structural similarity in core logic flow and intent, but with different idioms (C-style return vs Rust Result). API mappings found for the core unregister operation and error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__unregister__idx1568_rank1.c", "source_rust_file": "Full__unregister__idx1568_rank1.rs", "c_api": "NetConnClient::GetInstance().UnregisterNetConnCallback(observer_)", "rust_api": "inner.unregister()", "mapping_type": "function", "description": "Network connection unregister operation", "reasoning": "[Task Analysis] C function calls a method on a singleton instance, returning its result. Rust function locks a mutex, checks for an inner handle, calls unregister on it, and handles success/failure with error propagation. [Similarity] Names don't match exactly but refer to same concept (unregistering a network connection). Both perform similar logic: check state, call unregister, handle return value. [Knowledge Extraction] Full structural similarity in core logic flow and intent, but with different idioms (C-style return vs Rust Result). API mappings found for the core unregister operation and error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__unregister__idx1568_rank1.c", "source_rust_file": "Full__unregister__idx1568_rank1.rs", "c_api": "return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);", "rust_api": "Ok(())", "mapping_type": "pattern", "description": "Successful return value handling", "reasoning": "[Task Analysis] C function calls a method on a singleton instance, returning its result. Rust function locks a mutex, checks for an inner handle, calls unregister on it, and handles success/failure with error propagation. [Similarity] Names don't match exactly but refer to same concept (unregistering a network connection). Both perform similar logic: check state, call unregister, handle return value. [Knowledge Extraction] Full structural similarity in core logic flow and intent, but with different idioms (C-style return vs Rust Result). API mappings found for the core unregister operation and error handling pattern."}, {"knowledge_type": "Full", "source_c_file": "Full__unregister__idx1568_rank1.c", "source_rust_file": "Full__unregister__idx1568_rank1.rs", "reasoning": "[Task Analysis] C function calls a method on a singleton instance, returning its result. Rust function locks a mutex, checks for an inner handle, calls unregister on it, and handles success/failure with error propagation. [Similarity] Names don't match exactly but refer to same concept (unregistering a network connection). Both perform similar logic: check state, call unregister, handle return value. [Knowledge Extraction] Full structural similarity in core logic flow and intent, but with different idioms (C-style return vs Rust Result). API mappings found for the core unregister operation and error handling pattern.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__unregister__idx1568_rank1.c", "source_rust_file": "Full__unregister__idx1568_rank1.rs", "c_fragment": "NetConnClient::GetInstance().UnregisterNetConnCallback(observer_)", "rust_fragment": "inner.unregister()", "description": "Both call the unregister functionality on a network connection client, with C using a singleton pattern and Rust using a method call on an inner object.", "reasoning": "[Task Analysis] C function calls a method on a singleton instance, returning its result. Rust function locks a mutex, checks for an inner handle, calls unregister on it, and handles success/failure with error propagation. [Similarity] Names don't match exactly but refer to same concept (unregistering a network connection). Both perform similar logic: check state, call unregister, handle return value. [Knowledge Extraction] Full structural similarity in core logic flow and intent, but with different idioms (C-style return vs Rust Result). API mappings found for the core unregister operation and error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__unregister__idx1568_rank1.c", "source_rust_file": "Full__unregister__idx1568_rank1.rs", "c_api": "NetConnClient::GetInstance()", "rust_api": "self.unregistration.lock().unwrap()", "mapping_type": "function", "description": "Accessing singleton instance or shared state", "reasoning": "[Task Analysis] C function calls a method on a singleton instance, returning its result. Rust function locks a mutex, checks for an inner handle, calls unregister on it, and handles success/failure with error propagation. [Similarity] Names don't match exactly but refer to same concept (unregistering a network connection). Both perform similar logic: check state, call unregister, handle return value. [Knowledge Extraction] Full structural similarity in core logic flow and intent, but with different idioms (C-style return vs Rust Result). API mappings found for the core unregister operation and error handling pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__unregister__idx1568_rank1.c", "source_rust_file": "Full__unregister__idx1568_rank1.rs", "c_api": "return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);", "rust_api": "Err(NetUnregisterError::UnregisterFailed(ret))", "mapping_type": "pattern", "description": "Failed return value handling with error propagation", "reasoning": "[Task Analysis] C function calls a method on a singleton instance, returning its result. Rust function locks a mutex, checks for an inner handle, calls unregister on it, and handles success/failure with error propagation. [Similarity] Names don't match exactly but refer to same concept (unregistering a network connection). Both perform similar logic: check state, call unregister, handle return value. [Knowledge Extraction] Full structural similarity in core logic flow and intent, but with different idioms (C-style return vs Rust Result). API mappings found for the core unregister operation and error handling pattern."}]
+Unixcoder Score: 0.03541036322712898
+--------------------------------------------------
+C_Code: 
+void TestOnEventWrapperCb(OnRustCb callback, HiSysEventRecordC record)
+{
+    // do nothing
+}
+Function: 
+fn test_hisysevent_query_001() {
+    // write two events at first.
+    let mut ret = hisysevent::write(
+        "HIVIEWDFX",
+        "PLUGIN_LOAD",
+        EventType::Behavior,
+        &[hisysevent::build_str_param!("STRING_SINGLE", "test_hisysevent_query_001")]
+    );
+    assert!(ret == SUCCEED);
+    ret = hisysevent::write(
+        "HIVIEWDFX",
+        "PLUGIN_UNLOAD",
+        EventType::Behavior,
+        &[hisysevent::build_str_param!("STRING_SINGLE", "test_hisysevent_query_001")]
+    );
+    assert!(ret == SUCCEED);
+    // query event.
+    let query_arg = QueryArg {
+        begin_time: -1,
+        end_time: -1,
+        max_events: 2,
+    };
+    let query_rules = [
+        QueryRule {
+            domain: "HIVIEWDFX",
+            event_list: vec![
+                "PLUGIN_LOAD",
+                "PLUGIN_UNLOAD",
+            ],
+            condition: "{\"version\":\"V1\",\"condition\":{\"and\":[{\"param\":\"
+                NAME\",\"op\":\"=\",\"value\":\"SysEventService\"}]}}",
+        },
+        QueryRule {
+            domain: "HIVIEWDFX",
+            event_list: vec![
+                "PLUGIN_LOAD",
+            ],
+            condition: "",
+        }
+    ];
+    // step1: construct a querier.
+    let querier = Querier::new(|records: &[HiSysEventRecord]| {
+        for item in records {
+            assert!(item.get_domain() == "HIVIEWDFX");
+        }
+    }, |reason: i32, total: i32| {
+        assert!(reason == SUCCEED);
+        assert!(total == QUERY_CNT);
+    }).expect("Construct a querier by Querier::new");
+    // step2: query.
+    ret = hisysevent::query(&query_arg, &query_rules, &querier);
+    assert!(ret == SUCCEED);
+    // step3: recycle allocated memories of this Querier.
+    querier.try_to_recycle();
+    ret = hisysevent::query(&query_arg, &query_rules, &querier);
+    assert!(ret == LISTENER_NOT_EXIST);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__record_stack_limit__idx135896_rank1.h", "source_rust_file": "Partial__record_stack_limit__idx135896_rank1.rs", "c_fragment": "assert(stk);\n    assert((uintptr_t)stk->end - RED_ZONE_SIZE\n      - (uintptr_t)stk->data >= LIMIT_OFFSET\n           && \"Stack size must be greater than LIMIT_OFFSET\");", "rust_fragment": "debug_assert_eq!(\n            self.stack().is_empty(),\n            matches!(return_to_block, StackPopCleanup::Root { .. })\n        );", "description": "Both perform validation checks before proceeding with stack/frame operations.", "reasoning": "[Task Analysis] C function records stack limit using assert and a helper call; Rust function pushes a stack frame with multiple checks and operations. [Similarity] No full structural similarity due to different domains (stack limit recording vs stack frame management). [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared control flow patterns and memory management concepts."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__record_stack_limit__idx135896_rank1.h", "source_rust_file": "Partial__record_stack_limit__idx135896_rank1.rs", "c_api": "stk->data + LIMIT_OFFSET + RED_ZONE_SIZE", "rust_api": "self.frame_mut().loc = Left(mir::Location::START)", "mapping_type": "pattern", "description": "Address calculation in C corresponds to setting initial location in Rust frame.", "reasoning": "[Task Analysis] C function records stack limit using assert and a helper call; Rust function pushes a stack frame with multiple checks and operations. [Similarity] No full structural similarity due to different domains (stack limit recording vs stack frame management). [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared control flow patterns and memory management concepts."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__record_stack_limit__idx135896_rank1.h", "source_rust_file": "Partial__record_stack_limit__idx135896_rank1.rs", "c_api": "record_sp_limit", "rust_api": "self.stack_mut().push(frame)", "mapping_type": "function", "description": "Stack limit recording in C maps to pushing a new stack frame in Rust.", "reasoning": "[Task Analysis] C function records stack limit using assert and a helper call; Rust function pushes a stack frame with multiple checks and operations. [Similarity] No full structural similarity due to different domains (stack limit recording vs stack frame management). [Knowledge Extraction] Extract partial structural fragments and API mappings based on shared control flow patterns and memory management concepts."}]
+Unixcoder Score: 0.02667876146733761
+--------------------------------------------------
+C_Code: 
+DBStatus UnRegisterObserver() override
+    {
+        return DBStatus::OK;
+    }
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudSyncUnsubscribe(
+    server: *mut OhCloudExtCloudSync,
+    relations: *const OhCloudExtHashMap,
+    err: *mut *const OhCloudExtVector,
+) -> c_int {
+    if server.is_null() || relations.is_null() || err.is_null() {
+        return ERRNO_NULLPTR;
+    }
+
+    let cloud_server = match OhCloudExtCloudSync::get_inner_mut(server, SafetyCheckId::CloudSync) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let relations = match OhCloudExtHashMap::get_inner_ref(relations, SafetyCheckId::HashMap) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+    let relations = match relations {
+        HashMapCffi::VecString(res) => res,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match cloud_server.unsubscribe(relations) {
+        Ok(()) => ERRNO_SUCCESS,
+        Err(e) => {
+            let errno = map_single_sync_err(&e);
+            if errno == ERRNO_IPC_ERRORS {
+                if let SyncError::IPCErrors(vec) = e {
+                    let ret = VectorCffi::I32(vec.iter().map(map_ipc_err).collect());
+                    *err = OhCloudExtVector::new(ret, SafetyCheckId::Vector).into_ptr();
+                }
+            }
+            errno
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__reset_stack_limit__idx130161_rank4.c", "source_rust_file": "Partial__reset_stack_limit__idx130161_rank4.rs", "c_api": "record_stack_limit", "rust_api": "stack::record_os_managed_stack_bounds", "mapping_type": "function", "description": "Stack limit recording operation", "reasoning": "[Task Analysis] C function 'reset_stack_limit' manages stack limits by traversing stack segments and recording limits, while Rust function 'core_spawn' sets up thread stack bounds and manages thread spawning. [Similarity] No full structural similarity due to different domains (stack management vs thread spawning) and different code lengths. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for stack limit recording and stack traversal operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__reset_stack_limit__idx130161_rank4.c", "source_rust_file": "Partial__reset_stack_limit__idx130161_rank4.rs", "c_api": "prev_stack", "rust_api": "stack::record_os_managed_stack_bounds", "mapping_type": "function", "description": "Stack traversal operation for setting stack bounds", "reasoning": "[Task Analysis] C function 'reset_stack_limit' manages stack limits by traversing stack segments and recording limits, while Rust function 'core_spawn' sets up thread stack bounds and manages thread spawning. [Similarity] No full structural similarity due to different domains (stack management vs thread spawning) and different code lengths. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for stack limit recording and stack traversal operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__reset_stack_limit__idx130161_rank4.c", "source_rust_file": "Partial__reset_stack_limit__idx130161_rank4.rs", "c_fragment": "while (!sp_in_stk_seg(sp, stk)) {\n        reseted = true;\n        prev_stack();\n        assert(stk != NULL && \"Failed to find the current stack\");\n    }", "rust_fragment": "let main = proc() {\n            let something_around_the_top_of_the_stack = 1;\n            let addr = &something_around_the_top_of_the_stack as *const int;\n            let my_stack_top = addr as uint;\n            let my_stack_bottom = my_stack_top - stack_size + 1024;\n            unsafe {\n                stack::record_os_managed_stack_bounds(my_stack_bottom, my_stack_top);\n            }", "description": "Both contain logic for managing stack boundaries and recording stack information", "reasoning": "[Task Analysis] C function 'reset_stack_limit' manages stack limits by traversing stack segments and recording limits, while Rust function 'core_spawn' sets up thread stack bounds and manages thread spawning. [Similarity] No full structural similarity due to different domains (stack management vs thread spawning) and different code lengths. [Knowledge Extraction] Found partial structural match in loop logic and API mappings for stack limit recording and stack traversal operations."}]
+Unixcoder Score: 0.022668415680527687
+--------------------------------------------------
+C_Code: 
+void UnsubscribeRunningTaskCount(std::shared_ptr<IRunningTaskObserver> ob)
+{
+    FwkRunningTaskCountManager::GetInstance()->DetachObserver(ob);
+    if (FwkRunningTaskCountManager::GetInstance()->HasObserver()) {
+        REQUEST_HILOGD("Unsubscribe running task count success.");
+        return;
+    }
+
+    int32_t ret = RequestManagerImpl::GetInstance()->UnsubRunCount();
+    RequestManagerImpl::GetInstance()->UnsubscribeSA();
+    if (ret != E_OK) {
+        REQUEST_HILOGE("Unsubscribe running task count failed, ret: %{public}d.", ret);
+    }
+}
+Function: 
+pub(crate) fn unsubscribe_run_count(&self, reply: &mut MsgParcel) -> IpcResult<()> {
+        if is_called_by_hap() {
+            error!("Service run_count unsubscribe called by hap");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A34,
+                "Service run_count unsubscribe called by hap"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let pid = ipc::Skeleton::calling_pid();
+        info!("Service run_count unsubscribe pid {}", pid);
+
+        let ret = self.run_count_manager.unsubscribe_run_count(pid);
+        reply.write(&(ret as i32))?;
+        if ret != ErrorCode::ErrOk {
+            error!("End Service run_count unsubscribe, failed: {}", ret as i32);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A34,
+                &format!("End Service run_count unsubscribe, failed: {}", ret as i32)
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__unregister__idx1567_rank4.c", "source_rust_file": "API_Mapping__unregister__idx1567_rank4.rs", "c_api": "return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_)", "rust_api": "Err(NetRegisterError::AlreadyRegistered)", "mapping_type": "function", "description": "Error handling for already registered state", "reasoning": "[Task Analysis] C code is a const method that calls a C++ class method to unregister a callback. Rust code is a pub method that registers a callback with error handling and locking. [Similarity] Names do not refer to the same concept (unregister vs register), and the operations are opposites (unregistering vs registering). [Knowledge Extraction] No full or partial match due to semantic mismatch and opposite operations. However, both involve registration/unregistration logic and error handling patterns, so API mappings can be extracted for similar operations like callback registration and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__unregister__idx1567_rank4.c", "source_rust_file": "API_Mapping__unregister__idx1567_rank4.rs", "c_api": "NetConnClient::GetInstance().UnregisterNetConnCallback(observer_)", "rust_api": "RegisterNetObserver(wrapper, &mut ret)", "mapping_type": "function", "description": "Callback registration/unregistration", "reasoning": "[Task Analysis] C code is a const method that calls a C++ class method to unregister a callback. Rust code is a pub method that registers a callback with error handling and locking. [Similarity] Names do not refer to the same concept (unregister vs register), and the operations are opposites (unregistering vs registering). [Knowledge Extraction] No full or partial match due to semantic mismatch and opposite operations. However, both involve registration/unregistration logic and error handling patterns, so API mappings can be extracted for similar operations like callback registration and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__unregister__idx1567_rank4.c", "source_rust_file": "API_Mapping__unregister__idx1567_rank4.rs", "c_api": "NetConnClient::GetInstance().UnregisterNetConnCallback(observer_)", "rust_api": "*unregistration = Some(handle)", "mapping_type": "pattern", "description": "State update after successful operation", "reasoning": "[Task Analysis] C code is a const method that calls a C++ class method to unregister a callback. Rust code is a pub method that registers a callback with error handling and locking. [Similarity] Names do not refer to the same concept (unregister vs register), and the operations are opposites (unregistering vs registering). [Knowledge Extraction] No full or partial match due to semantic mismatch and opposite operations. However, both involve registration/unregistration logic and error handling patterns, so API mappings can be extracted for similar operations like callback registration and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__unregister__idx1567_rank4.c", "source_rust_file": "API_Mapping__unregister__idx1567_rank4.rs", "c_api": "return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_)", "rust_api": "Err(NetRegisterError::RegisterFailed(ret))", "mapping_type": "function", "description": "Error handling for registration failure", "reasoning": "[Task Analysis] C code is a const method that calls a C++ class method to unregister a callback. Rust code is a pub method that registers a callback with error handling and locking. [Similarity] Names do not refer to the same concept (unregister vs register), and the operations are opposites (unregistering vs registering). [Knowledge Extraction] No full or partial match due to semantic mismatch and opposite operations. However, both involve registration/unregistration logic and error handling patterns, so API mappings can be extracted for similar operations like callback registration and error handling."}]
+Unixcoder Score: 0.01865013688802719
+--------------------------------------------------
+C_Code: 
+Releaser(const Releaser& rhs) : tr_(rhs.tr_) { tr_->Record(kCopy); }
+Function: 
+fn from(src: &vello_encoding::BufferSizes) -> Self {
+        Self {
+            path_reduced: src.path_reduced.size_in_bytes(),
+            path_reduced2: src.path_reduced2.size_in_bytes(),
+            path_reduced_scan: src.path_reduced_scan.size_in_bytes(),
+            path_monoids: src.path_monoids.size_in_bytes(),
+            path_bboxes: src.path_bboxes.size_in_bytes(),
+            draw_reduced: src.draw_reduced.size_in_bytes(),
+            draw_monoids: src.draw_monoids.size_in_bytes(),
+            info: src.info.size_in_bytes(),
+            clip_inps: src.clip_inps.size_in_bytes(),
+            clip_els: src.clip_els.size_in_bytes(),
+            clip_bics: src.clip_bics.size_in_bytes(),
+            clip_bboxes: src.clip_bboxes.size_in_bytes(),
+            draw_bboxes: src.draw_bboxes.size_in_bytes(),
+            bump_alloc: src.bump_alloc.size_in_bytes(),
+            indirect_count: src.indirect_count.size_in_bytes(),
+            bin_headers: src.bin_headers.size_in_bytes(),
+            paths: src.paths.size_in_bytes(),
+            lines: src.lines.size_in_bytes(),
+            bin_data: src.bin_data.size_in_bytes(),
+            tiles: src.tiles.size_in_bytes(),
+            seg_counts: src.seg_counts.size_in_bytes(),
+            segments: src.segments.size_in_bytes(),
+            ptcl: src.ptcl.size_in_bytes(),
+        }
+    }
+Unixcoder Score: 0.007986859418451786
+--------------------------------------------------
+C_Code: 
+void
+rust_task::reset_stack_limit() {
+    uintptr_t sp = get_sp();
+    bool reseted = false;
+    while (!sp_in_stk_seg(sp, stk)) {
+        reseted = true;
+        prev_stack();
+        assert(stk != NULL && "Failed to find the current stack");
+    }
+
+    // Each call to prev_stack will record the stack limit. If we *didn't*
+    // call prev_stack then we still need to record it now to catch a corner case:
+    // the throw to initiate unwinding starts on the C stack while sp limit is 0.
+    // If we don't set the limit here then the rust code run subsequently will
+    // will veer into the red zone. Lame!
+    if (!reseted) {
+        record_stack_limit();
+    }
+}
+Function: 
+pub unsafe fn record_sp_limit(limit: uint) {
+    return target_record_sp_limit(limit);
+
+    // x86-64
+    #[cfg(target_arch = "x86_64", target_os = "macos")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movq $$0x60+90*8, %rsi
+              movq $0, %gs:(%rsi)" :: "r"(limit) : "rsi" : "volatile")
+    }
+    #[cfg(target_arch = "x86_64", target_os = "linux")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movq $0, %fs:112" :: "r"(limit) :: "volatile")
+    }
+    #[cfg(target_arch = "x86_64", target_os = "win32")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        // see: http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+        // store this inside of the "arbitrary data slot", but double the size
+        // because this is 64 bit instead of 32 bit
+        asm!("movq $0, %gs:0x28" :: "r"(limit) :: "volatile")
+    }
+    #[cfg(target_arch = "x86_64", target_os = "freebsd")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movq $0, %fs:24" :: "r"(limit) :: "volatile")
+    }
+
+    // x86
+    #[cfg(target_arch = "x86", target_os = "macos")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movl $$0x48+90*4, %eax
+              movl $0, %gs:(%eax)" :: "r"(limit) : "eax" : "volatile")
+    }
+    #[cfg(target_arch = "x86", target_os = "linux")]
+    #[cfg(target_arch = "x86", target_os = "freebsd")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        asm!("movl $0, %gs:48" :: "r"(limit) :: "volatile")
+    }
+    #[cfg(target_arch = "x86", target_os = "win32")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        // see: http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+        // store this inside of the "arbitrary data slot"
+        asm!("movl $0, %fs:0x14" :: "r"(limit) :: "volatile")
+    }
+
+    // mips, arm - Some brave soul can port these to inline asm, but it's over
+    //             my head personally
+    #[cfg(target_arch = "mips")]
+    #[cfg(target_arch = "arm")] #[inline(always)]
+    unsafe fn target_record_sp_limit(limit: uint) {
+        return record_sp_limit(limit as *c_void);
+        extern {
+            fn record_sp_limit(limit: *c_void);
+        }
+    }
+}
+Unixcoder Score: 0.006574695464223623
+--------------------------------------------------
+C_Code: 
+void
+rust_task::reset_stack_limit() {
+    uintptr_t sp = get_sp();
+    bool reseted = false;
+    while (!sp_in_stk_seg(sp, stk)) {
+        reseted = true;
+        prev_stack();
+        assert(stk != NULL && "Failed to find the current stack");
+    }
+
+    // Each call to prev_stack will record the stack limit. If we *didn't*
+    // call prev_stack then we still need to record it now to catch a corner case:
+    // the throw to initiate unwinding starts on the C stack while sp limit is 0.
+    // If we don't set the limit here then the rust code run subsequently will
+    // will veer into the red zone. Lame!
+    if (!reseted) {
+        record_stack_limit();
+    }
+}
+Function: 
+fn core_spawn<T: Send>(self, f: proc():Send -> T, after: proc(Result<T>):Send)
+                           -> (imp::rust_thread, Thread)
+    {
+        let Cfg { name, stack_size, stdout, stderr } = self;
+
+        let stack_size = stack_size.unwrap_or(rt::min_stack());
+        let my_thread = Thread::new(name);
+        let their_thread = my_thread.clone();
+
+        // Spawning a new OS thread guarantees that __morestack will never get
+        // triggered, but we must manually set up the actual stack bounds once
+        // this function starts executing. This raises the lower limit by a bit
+        // because by the time that this function is executing we've already
+        // consumed at least a little bit of stack (we don't know the exact byte
+        // address at which our stack started).
+        let main = proc() {
+            let something_around_the_top_of_the_stack = 1;
+            let addr = &something_around_the_top_of_the_stack as *const int;
+            let my_stack_top = addr as uint;
+            let my_stack_bottom = my_stack_top - stack_size + 1024;
+            unsafe {
+                stack::record_os_managed_stack_bounds(my_stack_bottom, my_stack_top);
+            }
+            thread_info::set(
+                (my_stack_bottom, my_stack_top),
+                thread::current_guard_page(),
+                their_thread
+            );
+
+            // There are two primary reasons that general try/catch is
+            // unsafe. The first is that we do not support nested try/catch. The
+            // fact that this is happening in a newly-spawned thread
+            // suffices. The second is that unwinding while unwinding is not
+            // defined.  We take care of that by having an 'unwinding' flag in
+            // the thread itself. For these reasons, this unsafety should be ok.
+            unsafe {
+                let mut output = None;
+                let mut f_opt = Some( // option dance
+                    if stdout.is_some() || stderr.is_some() {
+                        proc() {
+                            let _ = stdout.map(stdio::set_stdout);
+                            let _ = stderr.map(stdio::set_stderr);
+                            f()
+                        }
+                    } else {
+                        f
+                    });
+                let try_result = unwind::try(|| output = Some((f_opt.take().unwrap())()));
+                match (output, try_result) {
+                    (Some(data), Ok(_)) => after(Ok(data)),
+                    (None, Err(cause)) => after(Err(cause)),
+                    _ => unreachable!()
+                }
+            }
+        };
+        (unsafe { imp::create(stack, box main) }, my_thread)
+    }
+Unixcoder Score: -0.0009977915324270725
+--------------------------------------------------
+C_Code: 
+void
+rust_task::reset_stack_limit() {
+    uintptr_t sp = get_sp();
+    bool reseted = false;
+    while (!sp_in_stk_seg(sp, stk)) {
+        reseted = true;
+        prev_stack();
+        assert(stk != NULL && "Failed to find the current stack");
+    }
+
+    // Each call to prev_stack will record the stack limit. If we *didn't*
+    // call prev_stack then we still need to record it now to catch a corner case:
+    // the throw to initiate unwinding starts on the C stack while sp limit is 0.
+    // If we don't set the limit here then the rust code run subsequently will
+    // will veer into the red zone. Lame!
+    if (!reseted) {
+        record_stack_limit();
+    }
+}
+Function: 
+pub fn spawn(opts: TaskOpts, f: proc()) {
+    // must happen before the spawn, no need to synchronize with a lock.
+    unsafe { THREAD_CNT.fetch_add(1, SeqCst); }
+
+    let TaskOpts {
+        watched: _watched,
+        notify_chan, name, stack_size
+    } = opts;
+
+    let mut task = new();
+    task.name = name;
+    match notify_chan {
+        Some(chan) => {
+            let on_exit = proc(task_result) { chan.send(task_result) };
+            task.death.on_exit = Some(on_exit);
+        }
+        None => {}
+    }
+
+    let stack = stack_size.unwrap_or(env::min_stack());
+    let task = task;
+
+    // Spawning a new OS thread guarantees that __morestack will never get
+    // triggered, but we must manually set up the actual stack bounds once this
+    // function starts executing. This raises the lower limit by a bit because
+    // by the time that this function is executing we've already consumed at
+    // least a little bit of stack (we don't know the exact byte address at
+    // which our stack started).
+    Thread::spawn_stack(stack, proc() {
+        let something_around_the_top_of_the_stack = 1;
+        let addr = &something_around_the_top_of_the_stack as *int;
+        unsafe {
+            let my_stack = addr as uint;
+            stack::record_stack_bounds(my_stack - stack + 1024, my_stack);
+        }
+
+        run(task, f);
+        signal_done();
+    })
+}
+Unixcoder Score: -0.0022381695453077555
+--------------------------------------------------
+C_Code: 
+int32_t NetUnregistration::unregister() const
+{
+    return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);
+}
+Function: 
+pub fn unregister(&self) -> Result<(), NetUnregisterError> {
+        let mut handle = self.unregistration.lock().unwrap();
+        if let Some(inner) = handle.take() {
+            let ret = inner.unregister();
+            if ret != 0 {
+                *handle = Some(inner);
+                return Err(NetUnregisterError::UnregisterFailed(ret));
+            }
+            Ok(())
+        } else {
+            Err(NetUnregisterError::NotRegistered)
+        }
+    }
+Unixcoder Score: -0.013757782056927681
+--------------------------------------------------
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetObserverWrapper {
+    inner: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.c", "source_rust_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.rs", "c_api": "REQUEST_HILOGD(\"Unsubscribe running task count success.\")", "rust_api": "info!(\"Service run_count subscribe pid {}\", pid)", "mapping_type": "function", "description": "Logging with success status", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function subscribes to run count via IPC. [Similarity] Names don't match conceptually (unsubscribe vs subscribe), but both involve observer pattern and IPC communication. [Knowledge Extraction] No full structural match due to different logic flows and domains (observer detachment vs IPC subscription). However, there are API mappings related to observer pattern and error handling in IPC communication."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.c", "source_rust_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.rs", "c_api": "REQUEST_HILOGE(\"Unsubscribe running task count failed, ret: %{public}d.\", ret)", "rust_api": "error!(\"End Service run_count subscribe, failed:{}\", ret as i32)", "mapping_type": "function", "description": "Error logging with status code", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function subscribes to run count via IPC. [Similarity] Names don't match conceptually (unsubscribe vs subscribe), but both involve observer pattern and IPC communication. [Knowledge Extraction] No full structural match due to different logic flows and domains (observer detachment vs IPC subscription). However, there are API mappings related to observer pattern and error handling in IPC communication."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.c", "source_rust_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.rs", "c_api": "sys_event!(ExecError, DfxCode::INVALID_IPC_MESSAGE_A32, \"Service run_count subscribe called by hap\")", "rust_api": "sys_event!(ExecError, DfxCode::INVALID_IPC_MESSAGE_A32, &format!(\"End Service run_count subscribe, failed:{}\", ret as i32))", "mapping_type": "function", "description": "System event reporting for invalid IPC messages", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function subscribes to run count via IPC. [Similarity] Names don't match conceptually (unsubscribe vs subscribe), but both involve observer pattern and IPC communication. [Knowledge Extraction] No full structural match due to different logic flows and domains (observer detachment vs IPC subscription). However, there are API mappings related to observer pattern and error handling in IPC communication."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.c", "source_rust_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->DetachObserver(ob)", "rust_api": "self.run_count_manager.subscribe_run_count(pid, obj)", "mapping_type": "function", "description": "Observer pattern management (detach vs subscribe)", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function subscribes to run count via IPC. [Similarity] Names don't match conceptually (unsubscribe vs subscribe), but both involve observer pattern and IPC communication. [Knowledge Extraction] No full structural match due to different logic flows and domains (observer detachment vs IPC subscription). However, there are API mappings related to observer pattern and error handling in IPC communication."}]
+Unixcoder Score: -0.018965454772114754
+--------------------------------------------------

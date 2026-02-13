@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_device_info_1",
+  "function_name": "HdfDeviceInfoConstruct",
+  "source_c_file": "src/hdf_device_info.c",
+  "c_code": "void HdfDeviceInfoConstruct(struct HdfDeviceInfo * deviceInfo)\n{\n    if (deviceInfo == NULL) {\n        return;\n    }\n    deviceInfo->isDynamic = false;\n    deviceInfo->status = HDF_SERVICE_UNUSABLE;\n    deviceInfo->deviceType = HDF_DEV_LOCAL_SERVICE;\n    deviceInfo->deviceId = 0;\n    deviceInfo->policy = SERVICE_POLICY_INVALID;\n    deviceInfo->priority = 0;\n    deviceInfo->preload = DEVICE_PRELOAD_ENABLE;\n    deviceInfo->permission = 0;\n    deviceInfo->svcName = NULL;\n    deviceInfo->moduleName = NULL;\n    deviceInfo->deviceMatchAttr = NULL;\n    deviceInfo->deviceName = NULL;\n}",
+  "rust_signature": "pub extern \"C\" fn HdfDeviceInfoConstruct(deviceInfo: *mut crate::types::HdfDeviceInfo)",
+  "rust_code": "pub extern \\\"C\\\" fn HdfDeviceInfoConstruct(deviceInfo: *mut HdfDeviceInfo) {\n    if deviceInfo.is_null() {\n        return;\n    }\n    unsafe {\n        (*deviceInfo).isDynamic = false;\n        (*deviceInfo).status = HDF_SERVICE_UNUSABLE as u16;\n        (*deviceInfo).deviceType = HDF_DEV_LOCAL_SERVICE as u16;\n        (*deviceInfo).deviceId = 0;\n        (*deviceInfo).policy = SERVICE_POLICY_INVALID as u16;\n        (*deviceInfo).priority = 0;\n        (*deviceInfo).preload = DEVICE_PRELOAD_ENABLE as u16;\n        (*deviceInfo).permission = 0;\n        (*deviceInfo).svcName = core::ptr::null();\n        (*deviceInfo).moduleName = core::ptr::null();\n        (*deviceInfo).deviceMatchAttr = core::ptr::null();\n        (*deviceInfo).deviceName = core::ptr::null();\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

@@ -1,0 +1,266 @@
+C_Code: 
+void
+je_free(void *ptr)
+{
+
+	UTRACE(ptr, 0, 0);
+	if (ptr != NULL) {
+		size_t usize;
+		size_t rzsize JEMALLOC_CC_SILENCE_INIT(0);
+
+		assert(malloc_initialized || IS_INITIALIZER);
+
+		if (config_prof && opt_prof) {
+			usize = isalloc(ptr, config_prof);
+			prof_free(ptr, usize);
+		} else if (config_stats || config_valgrind)
+			usize = isalloc(ptr, config_prof);
+		if (config_stats)
+			thread_allocated_tsd_get()->deallocated += usize;
+		if (config_valgrind && opt_valgrind)
+			rzsize = p2rz(ptr);
+		iqalloc(ptr);
+		JEMALLOC_VALGRIND_FREE(ptr, rzsize);
+	}
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        unsafe { libc::free(ptr as *mut libc::c_void) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__prof_free__idx89729_rank1.h", "source_rust_file": "Full__prof_free__idx89729_rank1.rs", "c_api": "isalloc(ptr, true)", "rust_api": "layout.size()", "mapping_type": "function", "description": "Memory size retrieval for allocation tracking", "reasoning": "[Filter 1] Names do not directly match ('prof_free' vs 'dealloc') but both refer to memory deallocation logic -> [Filter 2] Neither code is empty/trivial -> [Filter 3] Not an FFI wrapper -> [Filter 4] Both operate in memory management domain -> [Filter 5] Not empty structs -> [Filter 6] Both are function definitions, not usage calls -> [Task Analysis] C function handles profiling context and memory accounting during free; Rust function deallocates memory with zeroization and calls system allocator -> [Similarity] Full structural alignment in memory deallocation logic, despite different naming and context -> [Knowledge Extraction] Full match in core logic, with API mappings for memory deallocation and synchronization primitives"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__prof_free__idx89729_rank1.h", "source_rust_file": "Full__prof_free__idx89729_rank1.rs", "c_api": "prof_lookup(ctx->bt)", "rust_api": "System.dealloc(ptr, layout)", "mapping_type": "function", "description": "Profiling context lookup and memory deallocation", "reasoning": "[Filter 1] Names do not directly match ('prof_free' vs 'dealloc') but both refer to memory deallocation logic -> [Filter 2] Neither code is empty/trivial -> [Filter 3] Not an FFI wrapper -> [Filter 4] Both operate in memory management domain -> [Filter 5] Not empty structs -> [Filter 6] Both are function definitions, not usage calls -> [Task Analysis] C function handles profiling context and memory accounting during free; Rust function deallocates memory with zeroization and calls system allocator -> [Similarity] Full structural alignment in memory deallocation logic, despite different naming and context -> [Knowledge Extraction] Full match in core logic, with API mappings for memory deallocation and synchronization primitives"}, {"knowledge_type": "Full", "source_c_file": "Full__prof_free__idx89729_rank1.h", "source_rust_file": "Full__prof_free__idx89729_rank1.rs", "reasoning": "[Filter 1] Names do not directly match ('prof_free' vs 'dealloc') but both refer to memory deallocation logic -> [Filter 2] Neither code is empty/trivial -> [Filter 3] Not an FFI wrapper -> [Filter 4] Both operate in memory management domain -> [Filter 5] Not empty structs -> [Filter 6] Both are function definitions, not usage calls -> [Task Analysis] C function handles profiling context and memory accounting during free; Rust function deallocates memory with zeroization and calls system allocator -> [Similarity] Full structural alignment in memory deallocation logic, despite different naming and context -> [Knowledge Extraction] Full match in core logic, with API mappings for memory deallocation and synchronization primitives", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__prof_free__idx89729_rank1.h", "source_rust_file": "Full__prof_free__idx89729_rank1.rs", "c_api": "malloc_mutex_lock(ctx->lock)", "rust_api": "System.dealloc(ptr, layout)", "mapping_type": "function", "description": "Memory deallocation with locking mechanism", "reasoning": "[Filter 1] Names do not directly match ('prof_free' vs 'dealloc') but both refer to memory deallocation logic -> [Filter 2] Neither code is empty/trivial -> [Filter 3] Not an FFI wrapper -> [Filter 4] Both operate in memory management domain -> [Filter 5] Not empty structs -> [Filter 6] Both are function definitions, not usage calls -> [Task Analysis] C function handles profiling context and memory accounting during free; Rust function deallocates memory with zeroization and calls system allocator -> [Similarity] Full structural alignment in memory deallocation logic, despite different naming and context -> [Knowledge Extraction] Full match in core logic, with API mappings for memory deallocation and synchronization primitives"}, {"knowledge_type": "Partial", "source_c_file": "Full__prof_free__idx89729_rank1.h", "source_rust_file": "Full__prof_free__idx89729_rank1.rs", "c_fragment": "prof_ctx_t *ctx = prof_ctx_get(ptr);\n\ncassert(config_prof);\n\nif ((uintptr_t)ctx > (uintptr_t)1) {\n\tprof_thr_cnt_t *tcnt;\n\tassert(size == isalloc(ptr, true));\n\ttcnt = prof_lookup(ctx->bt);\n\n\tif (tcnt != NULL) {\n\t\ttcnt->epoch++;\n\t\t/*********/\n\t\tmb_write();\n\t\t/*********/\n\t\ttcnt->cnts.curobjs--;\n\t\ttcnt->cnts.curbytes -= size;\n\t\t/*********/\n\t\tmb_write();\n\t\t/*********/\n\t\ttcnt->epoch++;\n\t\t/*********/\n\t\tmb_write();\n\t\t/*********/\n\t} else {\n\t\t/*\n\t\t * OOM during free() cannot be propagated, so operate\n\t\t * directly on cnt->ctx->cnt_merged.\n\t\t */\n\t\tmalloc_mutex_lock(ctx->lock);\n\t\tctx->cnt_merged.curobjs--;\n\t\tctx->cnt_merged.curbytes -= size;\n\t\tmalloc_mutex_unlock(ctx->lock);\n\t}", "rust_fragment": "unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {\n        // securely wipe the deallocated memory\n        // SAFETY: `ptr` is valid for writes of `layout.size()` bytes since it was\n        // previously successfully allocated (by the safety assumption on this function)\n        // and not yet deallocated\n        unsafe {\n            volatile_write_zeroize_mem(ptr, layout.size());\n        }\n        // SAFETY: uphold by caller\n        unsafe { System.dealloc(ptr, layout) }\n    }", "description": "Both functions handle memory deallocation with associated profiling and safety checks", "reasoning": "[Filter 1] Names do not directly match ('prof_free' vs 'dealloc') but both refer to memory deallocation logic -> [Filter 2] Neither code is empty/trivial -> [Filter 3] Not an FFI wrapper -> [Filter 4] Both operate in memory management domain -> [Filter 5] Not empty structs -> [Filter 6] Both are function definitions, not usage calls -> [Task Analysis] C function handles profiling context and memory accounting during free; Rust function deallocates memory with zeroization and calls system allocator -> [Similarity] Full structural alignment in memory deallocation logic, despite different naming and context -> [Knowledge Extraction] Full match in core logic, with API mappings for memory deallocation and synchronization primitives"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__prof_free__idx89729_rank1.h", "source_rust_file": "Full__prof_free__idx89729_rank1.rs", "c_api": "mb_write()", "rust_api": "volatile_write_zeroize_mem(ptr, layout.size())", "mapping_type": "function", "description": "Memory barrier/synchronization operation", "reasoning": "[Filter 1] Names do not directly match ('prof_free' vs 'dealloc') but both refer to memory deallocation logic -> [Filter 2] Neither code is empty/trivial -> [Filter 3] Not an FFI wrapper -> [Filter 4] Both operate in memory management domain -> [Filter 5] Not empty structs -> [Filter 6] Both are function definitions, not usage calls -> [Task Analysis] C function handles profiling context and memory accounting during free; Rust function deallocates memory with zeroization and calls system allocator -> [Similarity] Full structural alignment in memory deallocation logic, despite different naming and context -> [Knowledge Extraction] Full match in core logic, with API mappings for memory deallocation and synchronization primitives"}]
+Unixcoder Score: 0.09873165935277939
+--------------------------------------------------
+C_Code: 
+void
+je_free(void *ptr)
+{
+
+	UTRACE(ptr, 0, 0);
+	if (ptr != NULL) {
+		size_t usize;
+		size_t rzsize JEMALLOC_CC_SILENCE_INIT(0);
+
+		assert(malloc_initialized || IS_INITIALIZER);
+
+		if (config_prof && opt_prof) {
+			usize = isalloc(ptr, config_prof);
+			prof_free(ptr, usize);
+		} else if (config_stats || config_valgrind)
+			usize = isalloc(ptr, config_prof);
+		if (config_stats)
+			thread_allocated_tsd_get()->deallocated += usize;
+		if (config_valgrind && opt_valgrind)
+			rzsize = p2rz(ptr);
+		iqalloc(ptr);
+		JEMALLOC_VALGRIND_FREE(ptr, rzsize);
+	}
+}
+Function: 
+pub extern fn __rust_deallocate(ptr: *mut u8, old_size: usize, align: usize) {
+    let flags = align_to_flags(align);
+    unsafe { je_sdallocx(ptr as *mut c_void, old_size as size_t, flags) }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__prof_free__idx140195_rank2.h", "source_rust_file": "API_Mapping__prof_free__idx140195_rank2.rs", "c_api": "free(ptr, size)", "rust_api": "DLMALLOC.free(ptr, layout.size(), layout.align())", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function `prof_free` handles profiling-related memory deallocation, while Rust function `dealloc` is part of a memory allocator trait implementation. [Similarity] Names do not refer to the same concept (prof_free vs dealloc), and domains differ: C uses profiling logic with context lookup and mutex locking, while Rust directly calls a low-level allocator. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different control flow. However, both perform memory deallocation operations, so API mapping is extracted."}]
+Unixcoder Score: 0.06438682228326797
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            LLVMRustFreeOperandBundleDef(&mut *(self.raw as *mut _));
+        }
+    }
+Unixcoder Score: 0.03397136181592941
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn write_operand_repeatedly(&mut self, cg_elem: OperandRef<'tcx, RValue<'gcc>>, count: u64, dest: PlaceRef<'tcx, RValue<'gcc>>) {
+        let zero = self.const_usize(0);
+        let count = self.const_usize(count);
+        let start = dest.project_index(self, zero).llval;
+        let end = dest.project_index(self, count).llval;
+
+        let header_bb = self.append_sibling_block("repeat_loop_header");
+        let body_bb = self.append_sibling_block("repeat_loop_body");
+        let next_bb = self.append_sibling_block("repeat_loop_next");
+
+        let ptr_type = start.get_type();
+        let current = self.llbb().get_function().new_local(None, ptr_type, "loop_var");
+        let current_val = current.to_rvalue();
+        self.assign(current, start);
+
+        self.br(header_bb);
+
+        self.switch_to_block(header_bb);
+        let keep_going = self.icmp(IntPredicate::IntNE, current_val, end);
+        self.cond_br(keep_going, body_bb, next_bb);
+
+        self.switch_to_block(body_bb);
+        let align = dest.align.restrict_for_offset(dest.layout.field(self.cx(), 0).size);
+        cg_elem.val.store(self, PlaceRef::new_sized_aligned(current_val, cg_elem.layout, align));
+
+        let next = self.inbounds_gep(self.backend_type(cg_elem.layout), current.to_rvalue(), &[self.const_usize(1)]);
+        self.llbb().add_assignment(None, current, next);
+        self.br(header_bb);
+
+        self.switch_to_block(next_bb);
+    }
+Unixcoder Score: 0.02052590250968933
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn drop(&mut self) {}
+Unixcoder Score: 0.01989789679646492
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_free(const void *ptr, size_t size)
+{
+	prof_ctx_t *ctx = prof_ctx_get(ptr);
+
+	cassert(config_prof);
+
+	if ((uintptr_t)ctx > (uintptr_t)1) {
+		prof_thr_cnt_t *tcnt;
+		assert(size == isalloc(ptr, true));
+		tcnt = prof_lookup(ctx->bt);
+
+		if (tcnt != NULL) {
+			tcnt->epoch++;
+			/*********/
+			mb_write();
+			/*********/
+			tcnt->cnts.curobjs--;
+			tcnt->cnts.curbytes -= size;
+			/*********/
+			mb_write();
+			/*********/
+			tcnt->epoch++;
+			/*********/
+			mb_write();
+			/*********/
+		} else {
+			/*
+			 * OOM during free() cannot be propagated, so operate
+			 * directly on cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(ctx->lock);
+			ctx->cnt_merged.curobjs--;
+			ctx->cnt_merged.curbytes -= size;
+			malloc_mutex_unlock(ctx->lock);
+		}
+	}
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            let ptr = (*self.0.as_ptr()).0.get();
+            super::free(ptr as _, mem::size_of_val(&mut *ptr), T::align_of());
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__prof_sample_accum_update__idx139224_rank2.h", "source_rust_file": "Partial__prof_sample_accum_update__idx139224_rank2.rs", "c_api": "prof_tdata->accum += size", "rust_api": "allowed && metadata.is_span() && metadata.level() >= &Level::INFO", "mapping_type": "pattern", "description": "Both represent accumulation or filtering logic based on input values.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code is a profiling sample accumulator update function; Rust code is a tracing layer filter builder. -> [Similarity] -> No full structural similarity due to domain mismatch (memory profiling vs tracing filter logic). -> [Knowledge Extraction] -> No full match, but partial logic blocks and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__prof_sample_accum_update__idx139224_rank2.h", "source_rust_file": "Partial__prof_sample_accum_update__idx139224_rank2.rs", "c_api": "prof_sample_threshold_update(prof_tdata)", "rust_api": "filter::filter_fn(...)", "mapping_type": "function", "description": "Both functions update or recompute thresholds based on conditions.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code is a profiling sample accumulator update function; Rust code is a tracing layer filter builder. -> [Similarity] -> No full structural similarity due to domain mismatch (memory profiling vs tracing filter logic). -> [Knowledge Extraction] -> No full match, but partial logic blocks and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__prof_sample_accum_update__idx139224_rank2.h", "source_rust_file": "Partial__prof_sample_accum_update__idx139224_rank2.rs", "c_fragment": "if (size >= prof_tdata->threshold - prof_tdata->accum) {\n\t\tprof_tdata->accum -= (prof_tdata->threshold - size);\n\t\t/* Compute new sample threshold. */\n\t\tprof_sample_threshold_update(prof_tdata);\n\t\twhile (prof_tdata->accum >= prof_tdata->threshold) {\n\t\t\tprof_tdata->accum -= prof_tdata->threshold;\n\t\t\tprof_sample_threshold_update(prof_tdata);\n\t\t}\n\t\treturn (false);\n\t} else {\n\t\tprof_tdata->accum += size;\n\t\treturn (true);\n\t}", "rust_fragment": "let profile_filter = filter::filter_fn(move |metadata| {\n            let allowed = match &allowed_names {\n                Some(names) => names.contains(metadata.name()),\n                None => true,\n            };\n\n            allowed\n                && metadata.is_span()\n                && metadata.level() >= &Level::INFO\n                && !metadata.target().starts_with(\"salsa\")\n                && metadata.name() != \"compute_exhaustiveness_and_usefulness\"\n                && !metadata.target().starts_with(\"chalk\")\n        });", "description": "Both functions perform conditional logic based on thresholds or conditions, though the domains differ (memory profiling vs tracing filter).", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code is a profiling sample accumulator update function; Rust code is a tracing layer filter builder. -> [Similarity] -> No full structural similarity due to domain mismatch (memory profiling vs tracing filter logic). -> [Knowledge Extraction] -> No full match, but partial logic blocks and API mappings can be extracted."}]
+Unixcoder Score: 0.018779659643769264
+--------------------------------------------------
+C_Code: 
+static void
+zone_free_definite_size(malloc_zone_t *zone, void *ptr, size_t size)
+{
+
+	if (ivsalloc(ptr, config_prof) != 0) {
+		assert(ivsalloc(ptr, config_prof) == size);
+		je_free(ptr);
+		return;
+	}
+
+	free(ptr);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        unsafe { libc::free(ptr as *mut libc::c_void) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__prof_free__idx141723_rank1.h", "source_rust_file": "Partial__prof_free__idx141723_rank1.rs", "c_fragment": "super::free(ptr as _, mem::size_of_val(&mut *ptr), T::align_of());", "rust_fragment": "super::free(ptr as _, mem::size_of_val(&mut *ptr), T::align_of());", "description": "Both perform low-level memory deallocation with size and alignment parameters.", "reasoning": "[Task Analysis] C function `prof_free` handles profiling-related memory deallocation, tracking object counts and bytes for heap profiling. Rust function `drop` performs a similar low-level deallocation using `super::free`. [Similarity] Both functions perform memory deallocation with associated metadata updates. However, the C code has complex profiling logic involving context lookup, thread counters, and mutex locking, while the Rust code is a simple drop implementation. [Knowledge Extraction] The core memory deallocation operation is present in both, but the profiling logic is not mirrored. The key API mapping is between the memory deallocation calls. No full structural match due to domain mismatch (profiling vs generic drop), but partial match in deallocation pattern and API mapping exists."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__prof_free__idx141723_rank1.h", "source_rust_file": "Partial__prof_free__idx141723_rank1.rs", "c_api": "super::free(ptr as _, mem::size_of_val(&mut *ptr), T::align_of());", "rust_api": "super::free(ptr as _, mem::size_of_val(&mut *ptr), T::align_of());", "mapping_type": "function", "description": "Memory deallocation with size and alignment", "reasoning": "[Task Analysis] C function `prof_free` handles profiling-related memory deallocation, tracking object counts and bytes for heap profiling. Rust function `drop` performs a similar low-level deallocation using `super::free`. [Similarity] Both functions perform memory deallocation with associated metadata updates. However, the C code has complex profiling logic involving context lookup, thread counters, and mutex locking, while the Rust code is a simple drop implementation. [Knowledge Extraction] The core memory deallocation operation is present in both, but the profiling logic is not mirrored. The key API mapping is between the memory deallocation calls. No full structural match due to domain mismatch (profiling vs generic drop), but partial match in deallocation pattern and API mapping exists."}]
+Unixcoder Score: 0.01607387699186802
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            LLVMRustFreeOperandBundleDef(&mut *(self.raw as *mut _));
+        }
+    }
+Unixcoder Score: 0.015326854772865772
+--------------------------------------------------
+C_Code: 
+void LLVMRustFreeOperandBundleDef(OperandBundleDef *Bundle) {
+  delete Bundle;
+}
+Function: 
+fn blah2() {
+    let a = &A { a: Box::new(1) };
+    match a.a { //~ ERROR cannot move out of
+        n => {
+            free(n)
+        }
+    }
+    free(a)
+}
+Unixcoder Score: 0.01094024907797575
+--------------------------------------------------
+C_Code: 
+size_t
+je_malloc_usable_size(JEMALLOC_USABLE_SIZE_CONST void *ptr)
+{
+	size_t ret;
+
+	assert(malloc_initialized || IS_INITIALIZER);
+	malloc_thread_init();
+
+	if (config_ivsalloc)
+		ret = ivsalloc(ptr, config_prof);
+	else
+		ret = (ptr != NULL) ? isalloc(ptr, config_prof) : 0;
+
+	return (ret);
+}
+Function: 
+unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // jemalloc provides alignment less than MIN_ALIGN for small allocations.
+        // So only rely on MIN_ALIGN if size >= align.
+        // Also see <https://github.com/rust-lang/rust/issues/45955> and
+        // <https://github.com/rust-lang/rust/issues/62251#issuecomment-507580914>.
+        if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+            unsafe { libc::malloc(layout.size()) as *mut u8 }
+        } else {
+            // `posix_memalign` returns a non-aligned value if supplied a very
+            // large alignment on older versions of Apple's platforms (unknown
+            // exactly which version range, but the issue is definitely
+            // present in macOS 10.14 and iOS 13.3).
+            //
+            // <https://github.com/rust-lang/rust/issues/30170>
+            #[cfg(target_vendor = "apple")]
+            {
+                if layout.align() > (1 << 31) {
+                    return ptr::null_mut();
+                }
+            }
+            unsafe { aligned_malloc(&layout) }
+        }
+    }
+Unixcoder Score: -0.02122369408607483
+--------------------------------------------------

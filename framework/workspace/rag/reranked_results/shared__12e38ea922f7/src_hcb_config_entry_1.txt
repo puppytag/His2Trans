@@ -1,0 +1,580 @@
+C_Code: 
+int AshmemCreate(const char *name, size_t size)
+{
+    int ret;
+    int fd = AshmemOpen();
+    if (fd < 0) {
+        UTILS_LOGE("%{public}s: Failed to exec AshmemOpen fd = %{public}d", __func__, fd);
+        return fd;
+    }
+
+    if (name != nullptr) {
+        char buf[ASHMEM_NAME_LEN] = {0};
+        ret = strcpy_s(buf, sizeof(buf), name);
+        if (ret != EOK) {
+            UTILS_LOGE("%{public}s: Failed to exec strcpy_s, name= %{public}s, ret= %{public}d", __func__, name, ret);
+            close(fd);
+            return -1;
+        }
+        ret = TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_SET_NAME, buf));
+        if (ret < 0) {
+            UTILS_LOGE("%{public}s: Failed to set name, name= %{public}s, ret= %{public}d, errno = %{public}d",
+                       __func__, name, ret,  errno);
+            close(fd);
+            return ret;
+        }
+    }
+
+    ret = TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_SET_SIZE, size));
+    if (ret < 0) {
+        UTILS_LOGE("%{public}s: Failed to set size, size= %{public}zu, errno = %{public}d", __func__, size, errno);
+        close(fd);
+        return ret;
+    }
+    return fd;
+}
+Function: 
+pub unsafe fn create_ashmem_instance(name: &str, size: i32) -> Option<Ashmem> {
+    let c_name = CString::new(name).expect("CString::new Failed!");
+    let name_ptr = c_name.as_ptr();
+    let c_ashmem_ptr = ffi::CreateAshmemStd(name_ptr, size);
+
+    if c_ashmem_ptr.is_null() {
+        None
+    } else {
+        Some(Ashmem::new(c_ashmem_ptr))
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5008_rank3.c", "source_rust_file": "API_Mapping__Convert__idx5008_rank3.rs", "c_api": "OhCloudExtVectorNew(OhCloudExtRustType::VALUETYPE_FIELD)", "rust_api": "OhCloudExtVector::new(vec, SafetyCheckId::Vector).into_ptr()", "mapping_type": "function", "description": "Vector creation based on type", "reasoning": "[Task Analysis] C function creates a vector and populates it with fields from a database table; Rust function creates a vector based on type. [Similarity] Names don't match exactly but both perform vector creation logic. [Knowledge Extraction] Found API mappings for vector creation and field pushing, but no full structural match due to different control flow and domain focus."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5008_rank3.c", "source_rust_file": "API_Mapping__Convert__idx5008_rank3.rs", "c_api": "OhCloudExtVectorPush(fields, fd, fdLen)", "rust_api": "VectorCffi::Field(vec![])", "mapping_type": "function", "description": "Pushing elements into vector", "reasoning": "[Task Analysis] C function creates a vector and populates it with fields from a database table; Rust function creates a vector based on type. [Similarity] Names don't match exactly but both perform vector creation logic. [Knowledge Extraction] Found API mappings for vector creation and field pushing, but no full structural match due to different control flow and domain focus."}]
+Unixcoder Score: 0.21592383086681366
+--------------------------------------------------
+C_Code: 
+int AshmemCreate(const char *name, size_t size)
+{
+    int ret;
+    int fd = AshmemOpen();
+    if (fd < 0) {
+        UTILS_LOGE("%{public}s: Failed to exec AshmemOpen fd = %{public}d", __func__, fd);
+        return fd;
+    }
+
+    if (name != nullptr) {
+        char buf[ASHMEM_NAME_LEN] = {0};
+        ret = strcpy_s(buf, sizeof(buf), name);
+        if (ret != EOK) {
+            UTILS_LOGE("%{public}s: Failed to exec strcpy_s, name= %{public}s, ret= %{public}d", __func__, name, ret);
+            close(fd);
+            return -1;
+        }
+        ret = TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_SET_NAME, buf));
+        if (ret < 0) {
+            UTILS_LOGE("%{public}s: Failed to set name, name= %{public}s, ret= %{public}d, errno = %{public}d",
+                       __func__, name, ret,  errno);
+            close(fd);
+            return ret;
+        }
+    }
+
+    ret = TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_SET_SIZE, size));
+    if (ret < 0) {
+        UTILS_LOGE("%{public}s: Failed to set size, size= %{public}zu, errno = %{public}d", __func__, size, errno);
+        close(fd);
+        return ret;
+    }
+    return fd;
+}
+Function: 
+pub unsafe fn create_ashmem_instance(name: &str, size: i32) -> Option<Ashmem> {
+    let c_name = CString::new(name).expect("CString::new Failed!");
+    let name_ptr = c_name.as_ptr();
+    let c_ashmem_ptr = ffi::CreateAshmemStd(name_ptr, size);
+
+    if c_ashmem_ptr.is_null() {
+        None
+    } else {
+        Some(Ashmem::new(c_ashmem_ptr))
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__readdir__idx143919_rank4.c", "source_rust_file": "API_Mapping__fs__readdir__idx143919_rank4.rs", "c_api": "malloc", "rust_api": "Box::new", "mapping_type": "pattern", "description": "Heap allocation", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_readdir(...)` which is a direct wrapper around a C library function. The C code implements a filesystem readdir operation using Windows API calls. [Task Analysis] -> The C code is a full implementation of a filesystem directory reading function with memory management, error handling, and UTF-16 to UTF-8 conversion. The Rust code is a thin FFI wrapper that delegates to the underlying C library. [Similarity] -> While both perform the same high-level task (reading directory contents), the Rust code is a simple FFI wrapper with no actual logic, and the C code has complex internal implementation. [Knowledge Extraction] -> This is a case where the Rust code is an FFI wrapper and should be excluded from full/partial matching, but we can extract API mappings between the C and Rust interfaces for the underlying filesystem operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__readdir__idx143919_rank4.c", "source_rust_file": "API_Mapping__fs__readdir__idx143919_rank4.rs", "c_api": "FindNextFileW", "rust_api": "uvll::fs_readdir", "mapping_type": "function", "description": "Continue directory enumeration", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_readdir(...)` which is a direct wrapper around a C library function. The C code implements a filesystem readdir operation using Windows API calls. [Task Analysis] -> The C code is a full implementation of a filesystem directory reading function with memory management, error handling, and UTF-16 to UTF-8 conversion. The Rust code is a thin FFI wrapper that delegates to the underlying C library. [Similarity] -> While both perform the same high-level task (reading directory contents), the Rust code is a simple FFI wrapper with no actual logic, and the C code has complex internal implementation. [Knowledge Extraction] -> This is a case where the Rust code is an FFI wrapper and should be excluded from full/partial matching, but we can extract API mappings between the C and Rust interfaces for the underlying filesystem operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__readdir__idx143919_rank4.c", "source_rust_file": "API_Mapping__fs__readdir__idx143919_rank4.rs", "c_api": "FindClose", "rust_api": "uvll::fs_readdir", "mapping_type": "function", "description": "Close directory handle", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_readdir(...)` which is a direct wrapper around a C library function. The C code implements a filesystem readdir operation using Windows API calls. [Task Analysis] -> The C code is a full implementation of a filesystem directory reading function with memory management, error handling, and UTF-16 to UTF-8 conversion. The Rust code is a thin FFI wrapper that delegates to the underlying C library. [Similarity] -> While both perform the same high-level task (reading directory contents), the Rust code is a simple FFI wrapper with no actual logic, and the C code has complex internal implementation. [Knowledge Extraction] -> This is a case where the Rust code is an FFI wrapper and should be excluded from full/partial matching, but we can extract API mappings between the C and Rust interfaces for the underlying filesystem operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__readdir__idx143919_rank4.c", "source_rust_file": "API_Mapping__fs__readdir__idx143919_rank4.rs", "c_api": "free", "rust_api": "Box::new", "mapping_type": "pattern", "description": "Memory deallocation", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_readdir(...)` which is a direct wrapper around a C library function. The C code implements a filesystem readdir operation using Windows API calls. [Task Analysis] -> The C code is a full implementation of a filesystem directory reading function with memory management, error handling, and UTF-16 to UTF-8 conversion. The Rust code is a thin FFI wrapper that delegates to the underlying C library. [Similarity] -> While both perform the same high-level task (reading directory contents), the Rust code is a simple FFI wrapper with no actual logic, and the C code has complex internal implementation. [Knowledge Extraction] -> This is a case where the Rust code is an FFI wrapper and should be excluded from full/partial matching, but we can extract API mappings between the C and Rust interfaces for the underlying filesystem operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__readdir__idx143919_rank4.c", "source_rust_file": "API_Mapping__fs__readdir__idx143919_rank4.rs", "c_api": "FindFirstFileW", "rust_api": "uvll::fs_readdir", "mapping_type": "function", "description": "Directory enumeration function", "reasoning": "[FFI Check] -> The Rust code contains an FFI call `uvll::fs_readdir(...)` which is a direct wrapper around a C library function. The C code implements a filesystem readdir operation using Windows API calls. [Task Analysis] -> The C code is a full implementation of a filesystem directory reading function with memory management, error handling, and UTF-16 to UTF-8 conversion. The Rust code is a thin FFI wrapper that delegates to the underlying C library. [Similarity] -> While both perform the same high-level task (reading directory contents), the Rust code is a simple FFI wrapper with no actual logic, and the C code has complex internal implementation. [Knowledge Extraction] -> This is a case where the Rust code is an FFI wrapper and should be excluded from full/partial matching, but we can extract API mappings between the C and Rust interfaces for the underlying filesystem operation."}]
+Unixcoder Score: 0.2071654498577118
+--------------------------------------------------
+C_Code: 
+std::string JSUtil::Convert2String(napi_env env, napi_value jsString)
+{
+    size_t maxLen = JSUtil::MAX_LEN;
+    napi_status status = napi_get_value_string_utf8(env, jsString, NULL, 0, &maxLen);
+    if (status != napi_ok) {
+        GET_AND_THROW_LAST_ERROR((env));
+        maxLen = JSUtil::MAX_LEN;
+    }
+    if (maxLen == 0) {
+        return std::string();
+    }
+    char *buf = new char[maxLen + 1];
+    if (buf == nullptr) {
+        return std::string();
+    }
+    size_t len = 0;
+    status = napi_get_value_string_utf8(env, jsString, buf, maxLen + 1, &len);
+    if (status != napi_ok) {
+        GET_AND_THROW_LAST_ERROR((env));
+    }
+    buf[len] = 0;
+    std::string value(buf);
+    delete[] buf;
+    return value;
+}
+Function: 
+pub fn to_string(&self) -> String {
+        if self.c_str.is_null() || self.len == 0 {
+            return String::new();
+        }
+        let c_str = unsafe { CStr::from_ptr(self.c_str) };
+        let str_slice = c_str.to_str().unwrap();
+        let str = str_slice.to_string();
+        unsafe { DeleteChar(self.c_str) };
+        str
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx27977_rank2.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx27977_rank2.rs", "c_api": "getOrInsertFunction", "rust_api": "globals.borrow().contains_key", "mapping_type": "function", "description": "Check if symbol already exists in global symbol table", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertFunction is a wrapper around LLVM's getOrInsertFunction API, while Rust function get_or_insert_global manages global symbol declaration in GCC. [Similarity] Names do not refer to the same concept (LLVMRust vs get_or_insert_global), and domains are different (LLVM IR vs GCC IR). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different semantic roles. However, both perform symbol/table lookup/insertion logic with conditional global creation, so API mappings can be extracted for the core operation of symbol resolution/insertion."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx27977_rank2.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx27977_rank2.rs", "c_api": "getOrInsertFunction", "rust_api": "declare_global", "mapping_type": "function", "description": "Symbol/table lookup and insertion for global symbols", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertFunction is a wrapper around LLVM's getOrInsertFunction API, while Rust function get_or_insert_global manages global symbol declaration in GCC. [Similarity] Names do not refer to the same concept (LLVMRust vs get_or_insert_global), and domains are different (LLVM IR vs GCC IR). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different semantic roles. However, both perform symbol/table lookup/insertion logic with conditional global creation, so API mappings can be extracted for the core operation of symbol resolution/insertion."}]
+Unixcoder Score: 0.088093601167202
+--------------------------------------------------
+C_Code: 
+void LLVMRustSetComdat(LLVMModuleRef M, LLVMValueRef V,
+                                  const char *Name, size_t NameLen) {
+  Triple TargetTriple(unwrap(M)->getTargetTriple());
+  GlobalObject *GV = unwrap<GlobalObject>(V);
+  if (TargetTriple.supportsCOMDAT()) {
+    StringRef NameRef(Name, NameLen);
+    GV->setComdat(unwrap(M)->getOrInsertComdat(NameRef));
+  }
+}
+Function: 
+pub(crate) fn save_func_record_to_mod<'ll, 'tcx>(
+    cx: &CodegenCx<'ll, 'tcx>,
+    func_name_hash: u64,
+    func_record_val: &'ll llvm::Value,
+    is_used: bool,
+) {
+    // Assign a name to the function record. This is used to merge duplicates.
+    //
+    // In LLVM, a "translation unit" (effectively, a `Crate` in Rust) can describe functions that
+    // are included-but-not-used. If (or when) Rust generates functions that are
+    // included-but-not-used, note that a dummy description for a function included-but-not-used
+    // in a Crate can be replaced by full description provided by a different Crate. The two kinds
+    // of descriptions play distinct roles in LLVM IR; therefore, assign them different names (by
+    // appending "u" to the end of the function record var name, to prevent `linkonce_odr` merging.
+    let func_record_var_name =
+        format!("__covrec_{:X}{}", func_name_hash, if is_used { "u" } else { "" });
+    debug!("function record var name: {:?}", func_record_var_name);
+
+    let func_record_section_name = llvm::build_string(|s| unsafe {
+        llvm::LLVMRustCoverageWriteFuncSectionNameToString(cx.llmod, s);
+    })
+    .expect("Rust Coverage function record section name failed UTF-8 conversion");
+    debug!("function record section name: {:?}", func_record_section_name);
+
+    let llglobal = llvm::add_global(cx.llmod, cx.val_ty(func_record_val), &func_record_var_name);
+    llvm::set_initializer(llglobal, func_record_val);
+    llvm::set_global_constant(llglobal, true);
+    llvm::set_linkage(llglobal, llvm::Linkage::LinkOnceODRLinkage);
+    llvm::set_visibility(llglobal, llvm::Visibility::Hidden);
+    llvm::set_section(llglobal, &func_record_section_name);
+    llvm::set_alignment(llglobal, VAR_ALIGN_BYTES);
+    llvm::set_comdat(cx.llmod, llglobal, &func_record_var_name);
+    cx.add_used_global(llglobal);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5012_rank5.c", "source_rust_file": "API_Mapping__Convert__idx5012_rank5.rs", "c_api": "OhCloudExtVectorNew", "rust_api": "OhCloudExtVector::get_inner_ref", "mapping_type": "function", "description": "Vector creation and access", "reasoning": "[Task Analysis] C function builds a vector of fields from a DB table; Rust function gets the length of a vector. [Similarity] Names refer to different concepts (Convert vs GetLength), domains are different (construction vs inspection), and code lengths differ significantly (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and structural differences. However, there are API mappings related to vector operations and field handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5012_rank5.c", "source_rust_file": "API_Mapping__Convert__idx5012_rank5.rs", "c_api": "OhCloudExtFieldNew", "rust_api": "VectorCffi::Field", "mapping_type": "function", "description": "Field creation and type handling", "reasoning": "[Task Analysis] C function builds a vector of fields from a DB table; Rust function gets the length of a vector. [Similarity] Names refer to different concepts (Convert vs GetLength), domains are different (construction vs inspection), and code lengths differ significantly (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and structural differences. However, there are API mappings related to vector operations and field handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5012_rank5.c", "source_rust_file": "API_Mapping__Convert__idx5012_rank5.rs", "c_api": "OhCloudExtVectorPush", "rust_api": "match vector { ... }", "mapping_type": "function", "description": "Pushing elements to vector and length retrieval", "reasoning": "[Task Analysis] C function builds a vector of fields from a DB table; Rust function gets the length of a vector. [Similarity] Names refer to different concepts (Convert vs GetLength), domains are different (construction vs inspection), and code lengths differ significantly (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and structural differences. However, there are API mappings related to vector operations and field handling."}]
+Unixcoder Score: 0.02681984193623066
+--------------------------------------------------
+C_Code: 
+void LLVMRustSetComdat(LLVMModuleRef M, LLVMValueRef V,
+                                  const char *Name, size_t NameLen) {
+  Triple TargetTriple(unwrap(M)->getTargetTriple());
+  GlobalObject *GV = unwrap<GlobalObject>(V);
+  if (TargetTriple.supportsCOMDAT()) {
+    StringRef NameRef(Name, NameLen);
+    GV->setComdat(unwrap(M)->getOrInsertComdat(NameRef));
+  }
+}
+Function: 
+pub fn set_comdat(llmod: &Module, llglobal: &Value, name: &str) {
+    unsafe {
+        LLVMRustSetComdat(llmod, llglobal, name.as_ptr().cast(), name.len());
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5026_rank4.c", "source_rust_file": "API_Mapping__Convert__idx5026_rank4.rs", "c_api": "OhCloudExtVectorNew(OhCloudExtRustType::VALUETYPE_FIELD)", "rust_api": "OhCloudExtVectorNew(OhCloudExtRustType::U32)", "mapping_type": "function", "description": "Vector creation with specified type", "reasoning": "[Task Analysis] C function builds a vector of fields from a DBTable, while Rust function tests vector push functionality. [Similarity] Names don't refer to the same concept (Convert vs ut_vec_vecu32), and domains differ (data conversion vs unit test). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, API mapping can be extracted for OhCloudExtVectorPush and OhCloudExtVectorNew."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5026_rank4.c", "source_rust_file": "API_Mapping__Convert__idx5026_rank4.rs", "c_api": "OhCloudExtVectorPush(fields, fd, fdLen)", "rust_api": "OhCloudExtVectorPush(vec, &mut src as *mut _ as *mut c_void, 1)", "mapping_type": "function", "description": "Push element into vector", "reasoning": "[Task Analysis] C function builds a vector of fields from a DBTable, while Rust function tests vector push functionality. [Similarity] Names don't refer to the same concept (Convert vs ut_vec_vecu32), and domains differ (data conversion vs unit test). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, API mapping can be extracted for OhCloudExtVectorPush and OhCloudExtVectorNew."}]
+Unixcoder Score: 0.02016068994998932
+--------------------------------------------------
+C_Code: 
+LLVMMetadataRef LLVMRustDIBuilderCreateBasicType(
+    LLVMRustDIBuilderRef Builder, const char *Name, size_t NameLen,
+    uint64_t SizeInBits, unsigned Encoding) {
+  return wrap(Builder->createBasicType(StringRef(Name, NameLen), SizeInBits, Encoding));
+}
+Function: 
+fn build_enum_variant_part_di_node<'ll, 'tcx>(
+    cx: &CodegenCx<'ll, 'tcx>,
+    enum_type_and_layout: TyAndLayout<'tcx>,
+    enum_type_di_node: &'ll DIType,
+    variant_member_infos: &[VariantMemberInfo<'_, 'll>],
+) -> &'ll DIType {
+    let tag_member_di_node =
+        build_discr_member_di_node(cx, enum_type_and_layout, enum_type_di_node);
+
+    let variant_part_unique_type_id =
+        UniqueTypeId::for_enum_variant_part(cx.tcx, enum_type_and_layout.ty);
+
+    let stub = StubInfo::new(
+        cx,
+        variant_part_unique_type_id,
+        |cx, variant_part_unique_type_id_str| unsafe {
+            let variant_part_name = "";
+            llvm::LLVMRustDIBuilderCreateVariantPart(
+                DIB(cx),
+                enum_type_di_node,
+                variant_part_name.as_ptr().cast(),
+                variant_part_name.len(),
+                unknown_file_metadata(cx),
+                UNKNOWN_LINE_NUMBER,
+                enum_type_and_layout.size.bits(),
+                enum_type_and_layout.align.abi.bits() as u32,
+                DIFlags::FlagZero,
+                tag_member_di_node,
+                create_DIArray(DIB(cx), &[]),
+                variant_part_unique_type_id_str.as_ptr().cast(),
+                variant_part_unique_type_id_str.len(),
+            )
+        },
+    );
+
+    type_map::build_type_with_children(
+        cx,
+        stub,
+        |cx, variant_part_di_node| {
+            variant_member_infos
+                .iter()
+                .map(|variant_member_info| {
+                    build_enum_variant_member_di_node(
+                        cx,
+                        enum_type_and_layout,
+                        variant_part_di_node,
+                        variant_member_info,
+                    )
+                })
+                .collect()
+        },
+        NO_GENERICS,
+    )
+    .di_node
+}
+Unixcoder Score: 0.016229843720793724
+--------------------------------------------------
+C_Code: 
+FT_CALLBACK_DEF( FT_Error )
+  t42_get_glyph_name( FT_Face     face,        /* T42_Face */
+                      FT_UInt     glyph_index,
+                      FT_Pointer  buffer,
+                      FT_UInt     buffer_max )
+  {
+    T42_Face  t42face = (T42_Face)face;
+
+
+    FT_STRCPYN( buffer,
+                t42face->type1.glyph_names[glyph_index],
+                buffer_max );
+
+    return FT_Err_Ok;
+  }
+Function: 
+pub fn get_glyph_name(&self, glyph: u32) -> String {
+        let mut s = [1u8; 32];
+        unsafe {
+            font_glyph_to_string(self.0, glyph, s.as_mut_ptr(), 32);
+        }
+        unsafe { CStr::from_ptr(s.as_ptr() as *const _) }
+            .to_str()
+            .unwrap()
+            .to_string()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.rs", "c_api": "LLVMModuleRef", "rust_api": "dyn Module", "mapping_type": "type", "description": "Module reference type", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertFunction is a wrapper around LLVM's getOrInsertFunction API, while Rust function create_wrapper_function builds a wrapper function using Cranelift IR. [Similarity] Names do not refer to the same concept (LLVMRustGetOrInsertFunction vs create_wrapper_function), and the domains are different: C uses LLVM IR manipulation, Rust uses Cranelift IR construction. [Knowledge Extraction] No full structural match due to domain mismatch and different implementation approaches. However, both perform function declaration/lookup and wrapping logic. API mappings found: function declaration, function call, and signature handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.rs", "c_api": "wrap", "rust_api": "define_function", "mapping_type": "function", "description": "Finalize and define a function in the module", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertFunction is a wrapper around LLVM's getOrInsertFunction API, while Rust function create_wrapper_function builds a wrapper function using Cranelift IR. [Similarity] Names do not refer to the same concept (LLVMRustGetOrInsertFunction vs create_wrapper_function), and the domains are different: C uses LLVM IR manipulation, Rust uses Cranelift IR construction. [Knowledge Extraction] No full structural match due to domain mismatch and different implementation approaches. However, both perform function declaration/lookup and wrapping logic. API mappings found: function declaration, function call, and signature handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.rs", "c_api": "FunctionTy", "rust_api": "Signature", "mapping_type": "type", "description": "Function signature type", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertFunction is a wrapper around LLVM's getOrInsertFunction API, while Rust function create_wrapper_function builds a wrapper function using Cranelift IR. [Similarity] Names do not refer to the same concept (LLVMRustGetOrInsertFunction vs create_wrapper_function), and the domains are different: C uses LLVM IR manipulation, Rust uses Cranelift IR construction. [Knowledge Extraction] No full structural match due to domain mismatch and different implementation approaches. However, both perform function declaration/lookup and wrapping logic. API mappings found: function declaration, function call, and signature handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.rs", "c_api": "getOrInsertFunction", "rust_api": "declare_function", "mapping_type": "function", "description": "Function declaration/lookup in module", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertFunction is a wrapper around LLVM's getOrInsertFunction API, while Rust function create_wrapper_function builds a wrapper function using Cranelift IR. [Similarity] Names do not refer to the same concept (LLVMRustGetOrInsertFunction vs create_wrapper_function), and the domains are different: C uses LLVM IR manipulation, Rust uses Cranelift IR construction. [Knowledge Extraction] No full structural match due to domain mismatch and different implementation approaches. However, both perform function declaration/lookup and wrapping logic. API mappings found: function declaration, function call, and signature handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.c", "source_rust_file": "API_Mapping__LLVMRustGetOrInsertFunction__idx23680_rank1.rs", "c_api": "getCallee", "rust_api": "declare_func_in_func", "mapping_type": "function", "description": "Obtain reference to a declared function", "reasoning": "[Task Analysis] C function LLVMRustGetOrInsertFunction is a wrapper around LLVM's getOrInsertFunction API, while Rust function create_wrapper_function builds a wrapper function using Cranelift IR. [Similarity] Names do not refer to the same concept (LLVMRustGetOrInsertFunction vs create_wrapper_function), and the domains are different: C uses LLVM IR manipulation, Rust uses Cranelift IR construction. [Knowledge Extraction] No full structural match due to domain mismatch and different implementation approaches. However, both perform function declaration/lookup and wrapping logic. API mappings found: function declaration, function call, and signature handling."}]
+Unixcoder Score: 0.016172030940651894
+--------------------------------------------------
+C_Code: 
+LLVMValueRef
+LLVMRustGetOrInsertGlobal(LLVMModuleRef M, const char *Name, size_t NameLen, LLVMTypeRef Ty) {
+  Module *Mod = unwrap(M);
+  StringRef NameRef(Name, NameLen);
+
+  // We don't use Module::getOrInsertGlobal because that returns a Constant*,
+  // which may either be the real GlobalVariable*, or a constant bitcast of it
+  // if our type doesn't match the original declaration. We always want the
+  // GlobalVariable* so we can access linkage, visibility, etc.
+  GlobalVariable *GV = Mod->getGlobalVariable(NameRef, true);
+  if (!GV)
+    GV = new GlobalVariable(*Mod, unwrap(Ty), false,
+                            GlobalValue::ExternalLinkage, nullptr, NameRef);
+  return wrap(GV);
+}
+Function: 
+pub fn declare_global(&self, name: &str, ty: Type<'gcc>, global_kind: GlobalKind, is_tls: bool, link_section: Option<Symbol>) -> LValue<'gcc> {
+        let global = self.context.new_global(None, global_kind, ty, name);
+        if is_tls {
+            global.set_tls_model(self.tls_model);
+        }
+        if let Some(link_section) = link_section {
+            global.set_link_section(link_section.as_str());
+        }
+        let global_address = global.get_address(None);
+        self.globals.borrow_mut().insert(name.to_string(), global_address);
+        global
+    }
+Unixcoder Score: 0.015276512131094933
+--------------------------------------------------
+C_Code: 
+FT_CALLBACK_DEF( FT_Error )
+  sfnt_get_glyph_name( FT_Face     face,
+                       FT_UInt     glyph_index,
+                       FT_Pointer  buffer,
+                       FT_UInt     buffer_max )
+  {
+    FT_String*  gname;
+    FT_Error    error;
+
+
+    error = tt_face_get_ps_name( (TT_Face)face, glyph_index, &gname );
+    if ( !error )
+      FT_STRCPYN( buffer, gname, buffer_max );
+
+    return error;
+  }
+Function: 
+fn postscript_name(font_ref: &BridgeFontRef, out_string: &mut String) -> bool {
+    let postscript_name = english_or_first_font_name(font_ref, StringId::POSTSCRIPT_NAME);
+    match postscript_name {
+        Some(name) => {
+            *out_string = name;
+            true
+        }
+        _ => false,
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__LLVMRustGetOrInsertFunction__idx132519_rank5.c", "source_rust_file": "Partial__LLVMRustGetOrInsertFunction__idx132519_rank5.rs", "c_fragment": "for bounds in params {\n        atys += [T_ptr(cx.tydesc_type)];\n        for bound in *bounds {\n            alt bound {\n              ty::bound_iface(_) { atys += [T_ptr(T_dict())]; }\n              _ {}\n            }\n        }\n    }", "rust_fragment": "for bounds in params {\n        atys += [T_ptr(cx.tydesc_type)];\n        for bound in *bounds {\n            alt bound {\n              ty::bound_iface(_) { atys += [T_ptr(T_dict())]; }\n              _ {}\n            }\n        }\n    }", "description": "Iterate over parameter bounds and nested bounds to build argument types.", "reasoning": "[Task Analysis] C function wraps LLVM's getOrInsertFunction; Rust function constructs LLVM function types. [Similarity] Names differ (LLVMRustGetOrInsertFunction vs type_of_fn), but both involve LLVM function type construction. [Knowledge Extraction] No full structural match due to domain mismatch (LLVM API vs type construction). Partial match in loop/iteration logic. API mapping found between C's getOrInsertFunction and Rust's T_fn construction."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustGetOrInsertFunction__idx132519_rank5.c", "source_rust_file": "Partial__LLVMRustGetOrInsertFunction__idx132519_rank5.rs", "c_api": "getOrInsertFunction", "rust_api": "T_fn", "mapping_type": "function", "description": "Constructs an LLVM function type from argument and return types.", "reasoning": "[Task Analysis] C function wraps LLVM's getOrInsertFunction; Rust function constructs LLVM function types. [Similarity] Names differ (LLVMRustGetOrInsertFunction vs type_of_fn), but both involve LLVM function type construction. [Knowledge Extraction] No full structural match due to domain mismatch (LLVM API vs type construction). Partial match in loop/iteration logic. API mapping found between C's getOrInsertFunction and Rust's T_fn construction."}]
+Unixcoder Score: 0.015097694471478462
+--------------------------------------------------
+C_Code: 
+LLVMValueRef
+LLVMRustGetOrInsertGlobal(LLVMModuleRef M, const char *Name, size_t NameLen, LLVMTypeRef Ty) {
+  Module *Mod = unwrap(M);
+  StringRef NameRef(Name, NameLen);
+
+  // We don't use Module::getOrInsertGlobal because that returns a Constant*,
+  // which may either be the real GlobalVariable*, or a constant bitcast of it
+  // if our type doesn't match the original declaration. We always want the
+  // GlobalVariable* so we can access linkage, visibility, etc.
+  GlobalVariable *GV = Mod->getGlobalVariable(NameRef, true);
+  if (!GV)
+    GV = new GlobalVariable(*Mod, unwrap(Ty), false,
+                            GlobalValue::ExternalLinkage, nullptr, NameRef);
+  return wrap(GV);
+}
+Function: 
+fn codegen_static(&self, def_id: DefId, is_mutable: bool) {
+        unsafe {
+            let attrs = self.tcx.codegen_fn_attrs(def_id);
+
+            let Ok((v, alloc)) = codegen_static_initializer(self, def_id) else {
+                // Error has already been reported
+                return;
+            };
+            let alloc = alloc.inner();
+
+            let g = self.get_static(def_id);
+
+            // boolean SSA values are i1, but they have to be stored in i8 slots,
+            // otherwise some LLVM optimization passes don't work as expected
+            let mut val_llty = self.val_ty(v);
+            let v = if val_llty == self.type_i1() {
+                val_llty = self.type_i8();
+                llvm::LLVMConstZExt(v, val_llty)
+            } else {
+                v
+            };
+
+            let instance = Instance::mono(self.tcx, def_id);
+            let ty = instance.ty(self.tcx, ty::ParamEnv::reveal_all());
+            let llty = self.layout_of(ty).llvm_type(self);
+            let g = if val_llty == llty {
+                g
+            } else {
+                // If we created the global with the wrong type,
+                // correct the type.
+                let name = llvm::get_value_name(g).to_vec();
+                llvm::set_value_name(g, b"");
+
+                let linkage = llvm::LLVMRustGetLinkage(g);
+                let visibility = llvm::LLVMRustGetVisibility(g);
+
+                let new_g = llvm::LLVMRustGetOrInsertGlobal(
+                    self.llmod,
+                    name.as_ptr().cast(),
+                    name.len(),
+                    val_llty,
+                );
+
+                llvm::LLVMRustSetLinkage(new_g, linkage);
+                llvm::LLVMRustSetVisibility(new_g, visibility);
+
+                // The old global has had its name removed but is returned by
+                // get_static since it is in the instance cache. Provide an
+                // alternative lookup that points to the new global so that
+                // global_asm! can compute the correct mangled symbol name
+                // for the global.
+                self.renamed_statics.borrow_mut().insert(def_id, new_g);
+
+                // To avoid breaking any invariants, we leave around the old
+                // global for the moment; we'll replace all references to it
+                // with the new global later. (See base::codegen_backend.)
+                self.statics_to_rauw.borrow_mut().push((g, new_g));
+                new_g
+            };
+            set_global_alignment(self, g, self.align_of(ty));
+            llvm::LLVMSetInitializer(g, v);
+
+            if self.should_assume_dso_local(g, true) {
+                llvm::LLVMRustSetDSOLocal(g, true);
+            }
+
+            // As an optimization, all shared statics which do not have interior
+            // mutability are placed into read-only memory.
+            if !is_mutable && self.type_is_freeze(ty) {
+                llvm::LLVMSetGlobalConstant(g, llvm::True);
+            }
+
+            debuginfo::build_global_var_di_node(self, def_id, g);
+
+            if attrs.flags.contains(CodegenFnAttrFlags::THREAD_LOCAL) {
+                llvm::set_thread_local_mode(g, self.tls_model);
+
+                // Do not allow LLVM to change the alignment of a TLS on macOS.
+                //
+                // By default a global's alignment can be freely increased.
+                // This allows LLVM to generate more performant instructions
+                // e.g., using load-aligned into a SIMD register.
+                //
+                // However, on macOS 10.10 or below, the dynamic linker does not
+                // respect any alignment given on the TLS (radar 24221680).
+                // This will violate the alignment assumption, and causing segfault at runtime.
+                //
+                // This bug is very easy to trigger. In `println!` and `panic!`,
+                // the `LOCAL_STDOUT`/`LOCAL_STDERR` handles are stored in a TLS,
+                // which the values would be `mem::replace`d on initialization.
+                // The implementation of `mem::replace` will use SIMD
+                // whenever the size is 32 bytes or higher. LLVM notices SIMD is used
+                // and tries to align `LOCAL_STDOUT`/`LOCAL_STDERR` to a 32-byte boundary,
+                // which macOS's dyld disregarded and causing crashes
+                // (see issues #51794, #51758, #50867, #48866 and #44056).
+                //
+                // To workaround the bug, we trick LLVM into not increasing
+                // the global's alignment by explicitly assigning a section to it
+                // (equivalent to automatically generating a `#[link_section]` attribute).
+                // See the comment in the `GlobalValue::canIncreaseAlignment()` function
+                // of `lib/IR/Globals.cpp` for why this works.
+                //
+                // When the alignment is not increased, the optimized `mem::replace`
+                // will use load-unaligned instructions instead, and thus avoiding the crash.
+                //
+                // We could remove this hack whenever we decide to drop macOS 10.10 support.
+                if self.tcx.sess.target.is_like_osx {
+                    // The `inspect` method is okay here because we checked for provenance, and
+                    // because we are doing this access to inspect the final interpreter state
+                    // (not as part of the interpreter execution).
+                    //
+                    // FIXME: This check requires that the (arbitrary) value of undefined bytes
+                    // happens to be zero. Instead, we should only check the value of defined bytes
+                    // and set all undefined bytes to zero if this allocation is headed for the
+                    // BSS.
+                    let all_bytes_are_zero = alloc.provenance().ptrs().is_empty()
+                        && alloc
+                            .inspect_with_uninit_and_ptr_outside_interpreter(0..alloc.len())
+                            .iter()
+                            .all(|&byte| byte == 0);
+
+                    let sect_name = if all_bytes_are_zero {
+                        cstr!("__DATA,__thread_bss")
+                    } else {
+                        cstr!("__DATA,__thread_data")
+                    };
+                    llvm::LLVMSetSection(g, sect_name.as_ptr());
+                }
+            }
+
+            // Wasm statics with custom link sections get special treatment as they
+            // go into custom sections of the wasm executable.
+            if self.tcx.sess.target.is_like_wasm {
+                if let Some(section) = attrs.link_section {
+                    let section = llvm::LLVMMDStringInContext2(
+                        self.llcx,
+                        section.as_str().as_ptr().cast(),
+                        section.as_str().len(),
+                    );
+                    assert!(alloc.provenance().ptrs().is_empty());
+
+                    // The `inspect` method is okay here because we checked for provenance, and
+                    // because we are doing this access to inspect the final interpreter state (not
+                    // as part of the interpreter execution).
+                    let bytes =
+                        alloc.inspect_with_uninit_and_ptr_outside_interpreter(0..alloc.len());
+                    let alloc =
+                        llvm::LLVMMDStringInContext2(self.llcx, bytes.as_ptr().cast(), bytes.len());
+                    let data = [section, alloc];
+                    let meta = llvm::LLVMMDNodeInContext2(self.llcx, data.as_ptr(), data.len());
+                    let val = llvm::LLVMMetadataAsValue(self.llcx, meta);
+                    llvm::LLVMAddNamedMetadataOperand(
+                        self.llmod,
+                        "wasm.custom_sections\0".as_ptr().cast(),
+                        val,
+                    );
+                }
+            } else {
+                base::set_link_section(g, attrs);
+            }
+
+            if attrs.flags.contains(CodegenFnAttrFlags::USED) {
+                // `USED` and `USED_LINKER` can't be used together.
+                assert!(!attrs.flags.contains(CodegenFnAttrFlags::USED_LINKER));
+
+                // The semantics of #[used] in Rust only require the symbol to make it into the
+                // object file. It is explicitly allowed for the linker to strip the symbol if it
+                // is dead, which means we are allowed to use `llvm.compiler.used` instead of
+                // `llvm.used` here.
+                //
+                // Additionally, https://reviews.llvm.org/D97448 in LLVM 13 started emitting unique
+                // sections with SHF_GNU_RETAIN flag for llvm.used symbols, which may trigger bugs
+                // in the handling of `.init_array` (the static constructor list) in versions of
+                // the gold linker (prior to the one released with binutils 2.36).
+                //
+                // That said, we only ever emit these when compiling for ELF targets, unless
+                // `#[used(compiler)]` is explicitly requested. This is to avoid similar breakage
+                // on other targets, in particular MachO targets have *their* static constructor
+                // lists broken if `llvm.compiler.used` is emitted rather than `llvm.used`. However,
+                // that check happens when assigning the `CodegenFnAttrFlags` in `rustc_hir_analysis`,
+                // so we don't need to take care of it here.
+                self.add_compiler_used_global(g);
+            }
+            if attrs.flags.contains(CodegenFnAttrFlags::USED_LINKER) {
+                // `USED` and `USED_LINKER` can't be used together.
+                assert!(!attrs.flags.contains(CodegenFnAttrFlags::USED));
+
+                self.add_used_global(g);
+            }
+        }
+    }
+Unixcoder Score: 0.014223097823560238
+--------------------------------------------------

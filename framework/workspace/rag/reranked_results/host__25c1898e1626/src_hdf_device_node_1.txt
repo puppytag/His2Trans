@@ -1,0 +1,475 @@
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn verify_piece(&mut self, p: &parse::Piece) {
+        match *p {
+            parse::String(*) => {}
+            parse::CurrentArgument => {
+                if self.nest_level == 0 {
+                    self.ecx.span_err(self.fmtsp,
+                                      "`#` reference used with nothing to \
+                                       reference back to");
+                }
+            }
+            parse::Argument(ref arg) => {
+                // argument first (it's first in the format string)
+                let pos = match arg.position {
+                    parse::ArgumentNext => {
+                        let i = self.next_arg;
+                        if self.check_positional_ok() {
+                            self.next_arg += 1;
+                        }
+                        Left(i)
+                    }
+                    parse::ArgumentIs(i) => Left(i),
+                    parse::ArgumentNamed(s) => Right(s.to_managed()),
+                };
+                let ty = if arg.format.ty == "" {
+                    Unknown
+                } else { Known(arg.format.ty.to_managed()) };
+                self.verify_arg_type(pos, ty);
+
+                // width/precision next
+                self.verify_count(arg.format.width);
+                self.verify_count(arg.format.precision);
+
+                // and finally the method being applied
+                match arg.method {
+                    None => {}
+                    Some(ref method) => { self.verify_method(pos, *method); }
+                }
+            }
+        }
+    }
+Unixcoder Score: -0.017154883593320847
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn parse_all_token_trees(&mut self) -> PResult<'a, Vec<TokenTree>> {
+        let mut tts = Vec::new();
+        while self.token != token::Eof {
+            tts.push(self.parse_token_tree());
+        }
+        Ok(tts)
+    }
+Unixcoder Score: -0.018347615376114845
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn visit_mod<E:Clone>(m: &_mod,
+                          _sp: span,
+                          _id: NodeId,
+                          (e, v): (E, vt<E>)) {
+    for m.view_items.iter().advance |vi| {
+        (v.visit_view_item)(vi, (e.clone(), v));
+    }
+    for m.items.iter().advance |i| {
+        (v.visit_item)(*i, (e.clone(), v));
+    }
+}
+Unixcoder Score: -0.02818044275045395
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn parse_config(args: ~[~str]) -> config {
+    let opts =
+        ~[getopts::reqopt("compile-lib-path"),
+          getopts::reqopt("run-lib-path"),
+          getopts::reqopt("rustc-path"), getopts::reqopt("src-base"),
+          getopts::reqopt("build-base"), getopts::reqopt("aux-base"),
+          getopts::reqopt("stage-id"),
+          getopts::reqopt("mode"), getopts::optflag("ignored"),
+          getopts::optopt("runtool"), getopts::optopt("rustcflags"),
+          getopts::optflag("verbose"),
+          getopts::optopt("logfile"),
+          getopts::optflag("jit"),
+          getopts::optflag("newrt"),
+          getopts::optopt("target"),
+          getopts::optopt("adb-path"),
+          getopts::optopt("adb-test-dir")
+         ];
+
+    assert!(!args.is_empty());
+    let args_ = vec::tail(args);
+    let matches =
+        &match getopts::getopts(args_, opts) {
+          Ok(m) => m,
+          Err(f) => fail!(getopts::fail_str(f))
+        };
+
+    fn opt_path(m: &getopts::Matches, nm: &str) -> Path {
+        Path(getopts::opt_str(m, nm))
+    }
+
+    config {
+        compile_lib_path: getopts::opt_str(matches, "compile-lib-path"),
+        run_lib_path: getopts::opt_str(matches, "run-lib-path"),
+        rustc_path: opt_path(matches, "rustc-path"),
+        src_base: opt_path(matches, "src-base"),
+        build_base: opt_path(matches, "build-base"),
+        aux_base: opt_path(matches, "aux-base"),
+        stage_id: getopts::opt_str(matches, "stage-id"),
+        mode: str_mode(getopts::opt_str(matches, "mode")),
+        run_ignored: getopts::opt_present(matches, "ignored"),
+        filter:
+             if !matches.free.is_empty() {
+                 option::Some(copy matches.free[0])
+             } else { option::None },
+        logfile: getopts::opt_maybe_str(matches, "logfile").map(|s| Path(*s)),
+        runtool: getopts::opt_maybe_str(matches, "runtool"),
+        rustcflags: getopts::opt_maybe_str(matches, "rustcflags"),
+        jit: getopts::opt_present(matches, "jit"),
+        newrt: getopts::opt_present(matches, "newrt"),
+        target: opt_str2(getopts::opt_maybe_str(matches, "target")).to_str(),
+        adb_path: opt_str2(getopts::opt_maybe_str(matches, "adb-path")).to_str(),
+        adb_test_dir:
+            opt_str2(getopts::opt_maybe_str(matches, "adb-test-dir")).to_str(),
+        adb_device_status:
+            if (opt_str2(getopts::opt_maybe_str(matches, "target")) ==
+                ~"arm-linux-androideabi") {
+                if (opt_str2(getopts::opt_maybe_str(matches, "adb-test-dir")) !=
+                    ~"(none)" &&
+                    opt_str2(getopts::opt_maybe_str(matches, "adb-test-dir")) !=
+                    ~"") { true }
+                else { false }
+            } else { false },
+        verbose: getopts::opt_present(matches, "verbose")
+    }
+}
+Unixcoder Score: -0.03001665137708187
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn verbosity(&self) -> Verbosity {
+        if self.quiet {
+            return Verbosity::Quiet;
+        }
+        match self.verbose {
+            0 => Verbosity::Normal,
+            1 => Verbosity::Verbose,
+            _ => Verbosity::Spammy,
+        }
+    }
+Unixcoder Score: -0.03010106272995472
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn main() {
+    let args = os::args();
+    if args.len() >= 2 && args[1].as_slice() == "fail" {
+        foo();
+    } else if args.len() >= 2 && args[1].as_slice() == "double-fail" {
+        double();
+    } else {
+        runtest(args[0]);
+    }
+}
+Unixcoder Score: -0.031185073778033257
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_list(len: uint, io: @io::Reader) -> Result {
+    let mut list: ~[Result] = ~[];
+    for _ in range(0, len) {
+        let v = match io.read_char() {
+            '$' => parse_bulk(io),
+            ':' => parse_int(io),
+             _ => fail!()
+        };
+        list.push(v);
+    }
+    return List(list);
+}
+Unixcoder Score: -0.03134673833847046
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_abi(&mut self) -> Option<StrLit> {
+        match self.parse_str_lit() {
+            Ok(str_lit) => Some(str_lit),
+            Err(Some(lit)) => match lit.kind {
+                ast::LitKind::Err => None,
+                _ => {
+                    self.sess.emit_err(NonStringAbiLiteral { span: lit.span });
+                    None
+                }
+            },
+            Err(None) => None,
+        }
+    }
+Unixcoder Score: -0.03148346394300461
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_ident_common(&mut self, recover: bool) -> PResult<'a, Ident> {
+        let (ident, is_raw) = self.ident_or_err(recover)?;
+
+        if !is_raw && ident.is_reserved() {
+            let mut err = self.expected_ident_found_err();
+            if recover {
+                err.emit();
+            } else {
+                return Err(err);
+            }
+        }
+        self.bump();
+        Ok(ident)
+    }
+Unixcoder Score: -0.03188295662403107
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_data(len: uint, io: @io::Reader) -> Result {
+  let res =
+      if (len > 0) {
+      let bytes = io.read_bytes(len as uint);
+      assert_eq!(bytes.len(), len);
+      Data(bytes)
+  } else {
+      Data(~[])
+  };
+  assert_eq!(io.read_char(), '\r');
+  assert_eq!(io.read_char(), '\n');
+  return res;
+}
+Unixcoder Score: -0.032196033746004105
+--------------------------------------------------

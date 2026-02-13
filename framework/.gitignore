@@ -1,0 +1,92 @@
+# 依赖和生成相关文件夹
+dependencies/
+dependencies_not_in_current_file/
+dependencies_not_in_current_file_rs/
+dlp_fuse/
+elastic_search_result_func2func/
+elastic_search_result_func2func_resort/
+functions/
+# generate/
+
+# 结果和修复相关文件夹
+repair_result/
+repair_result_functions_1/
+repair_result_functions_2/
+repair_result_functions_3/
+repair_result_functions_4/
+repair_result_functions_5/
+
+# 骨架代码文件夹
+source_code_skeleton/
+
+# 测试结果相关文件夹
+test_result/
+test_result_repair_1/
+test_result_repair_2/
+test_result_repair_3/
+test_result_repair_4/
+test_result_repair_5/
+
+# 翻译结果相关文件夹
+translate_result_skeleton/
+translated_function_final/
+translated_functions/
+translated_functions_signature/
+
+# 工具或模型相关文件夹
+# NOTE: `unixcoder/` contains only lightweight code in this open-source snapshot.
+# Keep it tracked (do not ignore it).
+#
+# `workspace/` is mostly generated at runtime, but we ship a base RAG knowledge base
+# under `workspace/rag/` to make the repo runnable out-of-the-box.
+workspace/*
+!workspace/rag/
+!workspace/rag/**
+
+# Centralized runtime logs and artifacts
+logs/
+*.log
+*.jsonl
+
+# Python caches and venvs
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.env
+.python-version
+
+# Compile commands cache (保留缓存，但不在 git 中跟踪)
+.cache/
+
+# Editor/IDE metadata
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Rust build cache (shared target lives under workspace already ignored)
+target/
+
+# Temporary pools and tmp dirs (if accidentally created in repo)
+.rust_pool/
+tmp/
+*.tmp
+
+# Jina reranker runtime locks (generated during batch runs)
+.jina_reranker_gpu*_slot*.lock
+
+SelfContained/
+repair_result/
+translation_outputs/
+evaluation_reports/
+data/
+ComparisonMethod/
+SelfContained/
+ComparisonMethod/
+translation_outputs/

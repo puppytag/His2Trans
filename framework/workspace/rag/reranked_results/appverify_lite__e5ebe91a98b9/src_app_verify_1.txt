@@ -1,0 +1,762 @@
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__bi_compare__idx79780_rank2.c", "source_rust_file": "Partial__bi_compare__idx79780_rank2.rs", "c_fragment": "for ( c = bia->num_comps - 1; c >= 0; --c )\n\t\t{\n\t\tif ( bia->comps[c] > bib->comps[c] )\n\t\t    { r = bia->sign; break; }\n\t\telse if ( bia->comps[c] < bib->comps[c] )\n\t\t    { r = -bia->sign; break; }\n\t\t}", "rust_fragment": "for vec::rev_eachi(self.data) |i, elm| {\n            match (*elm, other.data[i]) {\n                (l, r) if l < r => return -1,\n                (l, r) if l > r => return  1,\n                _               => loop\n            };\n        }", "description": "Component-wise digit comparison from high to low in both C and Rust implementations.", "reasoning": "[Task Analysis] C function `bi_compare` compares two big integers by checking signs and component values; Rust function `cmp` compares two `BigUint` values by length and then digit-by-digit. [Similarity] Names don't match (`bi_compare` vs `cmp`), but both perform comparison logic. [Knowledge Extraction] Found partial structural match in loop and conditional logic, and API mapping for comparison operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_compare__idx79780_rank2.c", "source_rust_file": "Partial__bi_compare__idx79780_rank2.rs", "c_api": "bia->sign", "rust_api": "self.data", "mapping_type": "field_access", "description": "Accessing sign or data field for comparison logic.", "reasoning": "[Task Analysis] C function `bi_compare` compares two big integers by checking signs and component values; Rust function `cmp` compares two `BigUint` values by length and then digit-by-digit. [Similarity] Names don't match (`bi_compare` vs `cmp`), but both perform comparison logic. [Knowledge Extraction] Found partial structural match in loop and conditional logic, and API mapping for comparison operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__bi_compare__idx79780_rank2.c", "source_rust_file": "Partial__bi_compare__idx79780_rank2.rs", "c_api": "bi_free( bia );\n    bi_free( bib );", "rust_api": "fn cmp(other: &BigUint) -> int", "mapping_type": "function", "description": "Memory cleanup in C corresponds to function signature in Rust.", "reasoning": "[Task Analysis] C function `bi_compare` compares two big integers by checking signs and component values; Rust function `cmp` compares two `BigUint` values by length and then digit-by-digit. [Similarity] Names don't match (`bi_compare` vs `cmp`), but both perform comparison logic. [Knowledge Extraction] Found partial structural match in loop and conditional logic, and API mapping for comparison operation."}]
+Unixcoder Score: -0.003329555969685316
+--------------------------------------------------
+C_Code: 
+bool SmapsStats::GetMemUsageField(std::string& line, MemUsageInfo& memusage)
+{
+    char field[64];
+    int len = 0;
+    const char* pLine = line.c_str();
+    int ret = sscanf_s(pLine, "%63s %n", field, sizeof(field), &len);
+    size_t dataIndex = strlen(field) > 1 ? strlen(field) - 1 : 0;
+    if (ret == 1 && *field && field[dataIndex] == ':') {
+        const char* c = pLine + len;
+        std::string strfield(field);
+        switch (field[0]) {
+            case 'P':
+                if (MatchHead(strfield, "Pss:")) {
+                    memusage.pss = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "Private_Clean:")) {
+                    uint64_t prcl = strtoull(c, nullptr, DEC_BASE);
+                    memusage.privateClean = prcl;
+                    memusage.uss += prcl;
+                } else if (MatchHead(strfield, "Private_Dirty:")) {
+                    uint64_t prdi = strtoull(c, nullptr, DEC_BASE);
+                    memusage.privateDirty = prdi;
+                    memusage.uss += prdi;
+                }
+                break;
+            case 'S':
+                if (MatchHead(strfield, "Size:")) {
+                    memusage.vss = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "Shared_Clean:")) {
+                    memusage.sharedClean = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "Shared_Dirty:")) {
+                    memusage.sharedDirty = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "Swap:")) {
+                    memusage.swap = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "SwapPss:")) {
+                    memusage.swapPss = strtoull(c, nullptr, DEC_BASE);
+                }
+                break;
+            case 'R':
+                if (MatchHead(strfield, "Rss:")) {
+                    memusage.rss = strtoull(c, nullptr, DEC_BASE);
+                }
+                break;
+            case 'V':
+                if (MatchHead(strfield, "VmFlags:")) {
+                    lastline_ = true;
+                }
+                break;
+            default:
+                break;
+        }
+        return true;
+    }
+
+    return false;
+}
+Function: 
+fn print_smaps_combined(infos: Vec<VmStruct>) {
+    let value_keys = vec![
+        ("Size",          "d"),
+        ("Rss",           "d"),
+        ("Pss",           "d"),
+        ("Shared\nClean", "d"),
+        ("Shared\nDirty", "d"),
+        ("Private\nClean","d"),
+        ("Private\nDirty","d"),
+        ("Swap",          "d"),
+        ("SwapPss",       "d")
+    ];
+    let info_keys = vec![
+        ("Counts",        ""),
+        ("Name",          ""),
+    ];
+    print_smaps_core(infos, &value_keys, &info_keys);
+}
+Unixcoder Score: -0.010100170969963074
+--------------------------------------------------
+C_Code: 
+bool SmapsStats::GetMemUsageField(std::string& line, MemUsageInfo& memusage)
+{
+    char field[64];
+    int len = 0;
+    const char* pLine = line.c_str();
+    int ret = sscanf_s(pLine, "%63s %n", field, sizeof(field), &len);
+    size_t dataIndex = strlen(field) > 1 ? strlen(field) - 1 : 0;
+    if (ret == 1 && *field && field[dataIndex] == ':') {
+        const char* c = pLine + len;
+        std::string strfield(field);
+        switch (field[0]) {
+            case 'P':
+                if (MatchHead(strfield, "Pss:")) {
+                    memusage.pss = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "Private_Clean:")) {
+                    uint64_t prcl = strtoull(c, nullptr, DEC_BASE);
+                    memusage.privateClean = prcl;
+                    memusage.uss += prcl;
+                } else if (MatchHead(strfield, "Private_Dirty:")) {
+                    uint64_t prdi = strtoull(c, nullptr, DEC_BASE);
+                    memusage.privateDirty = prdi;
+                    memusage.uss += prdi;
+                }
+                break;
+            case 'S':
+                if (MatchHead(strfield, "Size:")) {
+                    memusage.vss = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "Shared_Clean:")) {
+                    memusage.sharedClean = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "Shared_Dirty:")) {
+                    memusage.sharedDirty = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "Swap:")) {
+                    memusage.swap = strtoull(c, nullptr, DEC_BASE);
+                } else if (MatchHead(strfield, "SwapPss:")) {
+                    memusage.swapPss = strtoull(c, nullptr, DEC_BASE);
+                }
+                break;
+            case 'R':
+                if (MatchHead(strfield, "Rss:")) {
+                    memusage.rss = strtoull(c, nullptr, DEC_BASE);
+                }
+                break;
+            case 'V':
+                if (MatchHead(strfield, "VmFlags:")) {
+                    lastline_ = true;
+                }
+                break;
+            default:
+                break;
+        }
+        return true;
+    }
+
+    return false;
+}
+Function: 
+fn add(&mut self, key: &String, val: u64) {
+        let v = self.value.entry(key.clone()).or_insert(0);
+        *v += val;
+    }
+Unixcoder Score: -0.015555381774902344
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+fn pop_front_node(&mut self) -> Option<Box<Node<T>, &A>> {
+        // This method takes care not to create mutable references to whole nodes,
+        // to maintain validity of aliasing pointers into `element`.
+        self.head.map(|node| unsafe {
+            let node = Box::from_raw_in(node.as_ptr(), &self.alloc);
+            self.head = node.next;
+
+            match self.head {
+                None => self.tail = None,
+                // Not creating new mutable (unique!) references overlapping `element`.
+                Some(head) => (*head.as_ptr()).prev = None,
+            }
+
+            self.len -= 1;
+            node
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__wlist_add__idx30732_rank1.c", "source_rust_file": "API_Mapping__wlist_add__idx30732_rank1.rs", "c_api": "return true;\n        } else {\n            return false;", "rust_api": "if self.set.insert(element) {", "mapping_type": "pattern", "description": "Conditional insertion with boolean return based on success", "reasoning": "[Task Analysis] C function `wlist_add` modifies a linked list by inserting an element at the head; Rust function `insert` manages a set and deque, returning a boolean based on insertion success. [Similarity] Names do not refer to the same concept (wlist_add vs insert), and domains differ: C manipulates pointers in a list, Rust uses a set and deque. [Knowledge Extraction] No full or partial match due to domain mismatch and different data structures. However, both involve adding elements and returning a boolean, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__wlist_add__idx30732_rank1.c", "source_rust_file": "API_Mapping__wlist_add__idx30732_rank1.rs", "c_api": "elem->next = *head;\n  *head = elem;", "rust_api": "self.deque.push_back(element);", "mapping_type": "pattern", "description": "Inserting an element at the front of a data structure", "reasoning": "[Task Analysis] C function `wlist_add` modifies a linked list by inserting an element at the head; Rust function `insert` manages a set and deque, returning a boolean based on insertion success. [Similarity] Names do not refer to the same concept (wlist_add vs insert), and domains differ: C manipulates pointers in a list, Rust uses a set and deque. [Knowledge Extraction] No full or partial match due to domain mismatch and different data structures. However, both involve adding elements and returning a boolean, so API mappings are extracted."}]
+Unixcoder Score: -0.02901563234627247
+--------------------------------------------------
+C_Code: 
+bigint
+str_to_bi( char* str )
+    {
+    int sign;
+    bigint biR;
+
+    sign = 1;
+    if ( *str == '-' )
+	{
+	sign = -1;
+	++str;
+	}
+    for ( biR = bi_0; *str >= '0' && *str <= '9'; ++str )
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), *str - '0' );
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn from_str_radix(s: &str, radix: uint)
+        -> Option<BigInt> {
+        BigInt::parse_bytes(str::to_bytes(s), radix)
+    }
+Unixcoder Score: -0.03130601719021797
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+pub fn check_links<T>(list: &LinkedList<T>) {
+    unsafe {
+        let mut len = 0;
+        let mut last_ptr: Option<&Node<T>> = None;
+        let mut node_ptr: &Node<T>;
+        match list.head {
+            None => {
+                // tail node should also be None.
+                assert!(list.tail.is_none());
+                assert_eq!(0, list.len);
+                return;
+            }
+            Some(node) => node_ptr = &*node.as_ptr(),
+        }
+        loop {
+            match (last_ptr, node_ptr.prev) {
+                (None, None) => {}
+                (None, _) => panic!("prev link for head"),
+                (Some(p), Some(pptr)) => {
+                    assert_eq!(p as *const Node<T>, pptr.as_ptr() as *const Node<T>);
+                }
+                _ => panic!("prev link is none, not good"),
+            }
+            match node_ptr.next {
+                Some(next) => {
+                    last_ptr = Some(node_ptr);
+                    node_ptr = &*next.as_ptr();
+                    len += 1;
+                }
+                None => {
+                    len += 1;
+                    break;
+                }
+            }
+        }
+
+        // verify that the tail node points to the last node.
+        let tail = list.tail.as_ref().expect("some tail node").as_ref();
+        assert_eq!(tail as *const Node<T>, node_ptr as *const Node<T>);
+        // check that len matches interior links.
+        assert_eq!(len, list.len);
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__wlist_add__idx123202_rank3.c", "source_rust_file": "API_Mapping__wlist_add__idx123202_rank3.rs", "c_api": "elem->next = *head;\n  *head = elem;", "rust_api": "self.base.insert(value)", "mapping_type": "pattern", "description": "Insert element at the beginning of a list/collection", "reasoning": "[Task Analysis] C function `wlist_add` modifies a linked list by inserting an element at the head; Rust function `insert` inserts a value into a collection. [Similarity] Names do not refer to the same concept (`wlist_add` vs `insert`), and the data structures are not clearly equivalent (C uses a raw pointer-based list, Rust uses a generic collection). [Knowledge Extraction] No full or partial match due to domain mismatch (pointer manipulation vs generic container insert). However, both perform insertion logic, so API mapping is extracted."}]
+Unixcoder Score: -0.035894256085157394
+--------------------------------------------------
+C_Code: 
+bigint
+str_to_bi( char* str )
+    {
+    int sign;
+    bigint biR;
+
+    sign = 1;
+    if ( *str == '-' )
+	{
+	sign = -1;
+	++str;
+	}
+    for ( biR = bi_0; *str >= '0' && *str <= '9'; ++str )
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), *str - '0' );
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn test_from_str_radix() {
+        assert BigInt::from_biguint(Plus, BigUint::from_uint(10)) ==
+            BigInt::from_str_radix(~"10", 10).get();
+        assert BigInt::one()== BigInt::from_str_radix(~"1", 10).get();
+        assert BigInt::zero() == BigInt::from_str_radix(~"0", 10).get();
+        assert (-BigInt::one()) == BigInt::from_str_radix(~"-1", 10).get();
+        assert BigInt::from_biguint(Minus, BigUint::from_uint(10)) ==
+            BigInt::from_str_radix(~"-10", 10).get();
+
+        assert BigInt::from_str_radix(~"Z", 10) == None;
+        assert BigInt::from_str_radix(~"_", 2) == None;
+        assert BigInt::from_str_radix(~"-1", 10) ==
+            Some(BigInt::from_biguint(Minus, BigUint::one()));
+    }
+Unixcoder Score: -0.03608803078532219
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+unsafe fn init(&mut self) {
+        if self.head_tail_entry.is_none() {
+            self.head_tail_entry = Some(UnsafeListEntry::dummy());
+            // SAFETY: `head_tail_entry` must be non-null, which it is because we assign it above.
+            self.head_tail =
+                unsafe { NonNull::new_unchecked(self.head_tail_entry.as_mut().unwrap()) };
+            // SAFETY: `self.head_tail` must meet all requirements for a mutable reference.
+            unsafe { self.head_tail.as_mut() }.next = self.head_tail;
+            unsafe { self.head_tail.as_mut() }.prev = self.head_tail;
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__wlist_add__idx113653_rank5.c", "source_rust_file": "API_Mapping__wlist_add__idx113653_rank5.rs", "c_api": "elem->next = *head;\n  *head = elem;", "rust_api": "<T as SpecFromElem>::from_elem(elem, n, Global)", "mapping_type": "pattern", "description": "Element insertion into a container (linked list head insertion vs vector construction)", "reasoning": "[Task Analysis] C function `wlist_add` manipulates a linked list by inserting an element at the head. Rust function `from_elem` creates a vector from a repeated element. [Similarity] Names do not refer to the same concept (`wlist_add` vs `from_elem`), and domains are different (linked list manipulation vs vector construction). [Knowledge Extraction] No full or partial match due to domain mismatch and different data structures. However, both involve adding elements to a container, so API mapping is extracted for the pattern of element insertion into a data structure."}]
+Unixcoder Score: -0.04337901622056961
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_compare__idx72196_rank2.c", "source_rust_file": "API_Mapping__bi_compare__idx72196_rank2.rs", "c_api": "bia->sign", "rust_api": "x == [0; 3]", "mapping_type": "field_access", "description": "Accessing sign field in C vs checking array equality in Rust", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function performs bigint comparison using pointer dereferencing and field access; Rust function checks array equality. -> [Similarity] -> No structural similarity at the function level. -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between field access patterns and comparison operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_compare__idx72196_rank2.c", "source_rust_file": "API_Mapping__bi_compare__idx72196_rank2.rs", "c_api": "bia->comps[c]", "rust_api": "x == [0; 3]", "mapping_type": "field_access", "description": "Accessing comps array element in C vs checking array equality in Rust", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function performs bigint comparison using pointer dereferencing and field access; Rust function checks array equality. -> [Similarity] -> No structural similarity at the function level. -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between field access patterns and comparison operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_compare__idx72196_rank2.c", "source_rust_file": "API_Mapping__bi_compare__idx72196_rank2.rs", "c_api": "bia->num_comps", "rust_api": "x == [0; 3]", "mapping_type": "field_access", "description": "Accessing num_comps field in C vs checking array equality in Rust", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function performs bigint comparison using pointer dereferencing and field access; Rust function checks array equality. -> [Similarity] -> No structural similarity at the function level. -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between field access patterns and comparison operations."}]
+Unixcoder Score: -0.044931236654520035
+--------------------------------------------------
+C_Code: 
+bigint
+str_to_bi( char* str )
+    {
+    int sign;
+    bigint biR;
+
+    sign = 1;
+    if ( *str == '-' )
+	{
+	sign = -1;
+	++str;
+	}
+    for ( biR = bi_0; *str >= '0' && *str <= '9'; ++str )
+	biR = bi_int_add( bi_int_multiply( biR, 10 ), *str - '0' );
+    if ( sign == -1 )
+	biR = bi_negate( biR );
+    return biR;
+    }
+Function: 
+fn to_str_radix(radix: uint) -> ~str {
+        match self.sign {
+            Plus  => self.data.to_str_radix(radix),
+            Zero  => ~"0",
+            Minus => ~"-" + self.data.to_str_radix(radix)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_from_biguint() {
+        assert BigInt::from_biguint(Plus, BigUint::from_uint(1)) ==
+            BigInt { sign: Plus, data: BigUint::from_uint(1) };
+        assert BigInt::from_biguint(Plus, BigUint::zero()) ==
+            BigInt { sign: Zero, data: BigUint::zero() };
+        assert BigInt::from_biguint(Minus, BigUint::from_uint(1)) ==
+            BigInt { sign: Minus, data: BigUint::from_uint(1) };
+        assert BigInt::from_biguint(Zero, BigUint::from_uint(1)) ==
+            BigInt { sign: Zero, data: BigUint::zero() };
+    }
+
+    #[test]
+    fn test_cmp() {
+        let uints = [ &[2], &[1, 1], &[2, 1], &[1, 1, 1] ]
+            .map(|data| BigUint::from_slice(*data));
+        let nums: ~[BigInt]
+            = vec::reversed(uints).map(|bu| BigInt::from_biguint(Minus, *bu))
+            + [ BigInt::zero() ]
+            + uints.map(|bu| BigInt::from_biguint(Plus, *bu));
+
+        for nums.eachi |i, ni| {
+            for vec::view(nums, i, nums.len()).eachi |j0, nj| {
+                let j = i + j0;
+                if i == j {
+                    assert ni.cmp(nj) == 0;
+                    assert nj.cmp(ni) == 0;
+                    assert ni == nj;
+                    assert !(ni != nj);
+                    assert ni <= nj;
+                    assert ni >= nj;
+                    assert !(ni < nj);
+                    assert !(ni > nj);
+                } else {
+                    assert ni.cmp(nj) < 0;
+                    assert nj.cmp(ni) > 0;
+
+                    assert !(ni == nj);
+                    assert ni != nj;
+
+                    assert ni <= nj;
+                    assert !(ni >= nj);
+                    assert ni < nj;
+                    assert !(ni > nj);
+
+                    assert !(nj <= ni);
+                    assert nj >= ni;
+                    assert !(nj < ni);
+                    assert nj > ni;
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_convert_int() {
+        fn check_conv(b: BigInt, i: int) {
+            assert b == num::from_int(i);
+            assert b.to_int() == i;
+        }
+
+        check_conv(BigInt::zero(), 0);
+        check_conv(BigInt::one(), 1);
+        check_conv(
+            BigInt::from_biguint(
+                Plus, BigUint::from_uint(int::max_value as uint)),
+            int::max_value);
+
+        assert BigInt::from_biguint(
+            Plus, BigUint::from_uint(int::max_value as uint + 1)
+        ).to_int() == int::max_value;
+        assert BigInt::from_biguint(
+            Plus, BigUint::from_at_vec(@[1, 2, 3])
+        ).to_int() == int::max_value;
+
+        check_conv(
+            BigInt::from_biguint(
+                Minus, BigUint::from_uint(-int::min_value as uint)),
+            int::min_value);
+        assert BigInt::from_biguint(
+            Minus, BigUint::from_uint(-int::min_value as uint + 1)
+        ).to_int() == int::min_value;
+        assert BigInt::from_biguint(
+            Minus, BigUint::from_at_vec(@[1, 2, 3])
+        ).to_int() == int::min_value;
+    }
+
+    #[test]
+    fn test_convert_uint() {
+        fn check_conv(b: BigInt, u: uint) {
+            assert b == BigInt::from_uint(u);
+            assert b.to_uint() == u;
+        }
+
+        check_conv(BigInt::zero(), 0);
+        check_conv(BigInt::one(), 1);
+
+        check_conv(
+            BigInt::from_biguint(Plus, BigUint::from_uint(uint::max_value)),
+            uint::max_value);
+        assert BigInt::from_biguint(
+            Plus, BigUint::from_at_vec(@[1, 2, 3])
+        ).to_uint() == uint::max_value;
+
+        assert BigInt::from_biguint(
+            Minus, BigUint::from_uint(uint::max_value)
+        ).to_uint() == 0;
+        assert BigInt::from_biguint(
+            Minus, BigUint::from_at_vec(@[1, 2, 3])
+        ).to_uint() == 0;
+    }
+
+    const sum_triples: &[(&[BigDigit], &[BigDigit], &[BigDigit])] = &[
+        (&[],          &[],       &[]),
+        (&[],          &[ 1],     &[ 1]),
+        (&[ 1],        &[ 1],     &[ 2]),
+        (&[ 1],        &[ 1,  1], &[ 2,  1]),
+        (&[ 1],        &[-1],     &[ 0,  1]),
+        (&[ 1],        &[-1, -1], &[ 0,  0, 1]),
+        (&[-1, -1],    &[-1, -1], &[-2, -1, 1]),
+        (&[ 1,  1, 1], &[-1, -1], &[ 0,  1, 2]),
+        (&[ 2,  2, 1], &[-1, -2], &[ 1,  1, 2])
+    ];
+
+    #[test]
+    fn test_add() {
+        for sum_triples.each |elm| {
+            let (aVec, bVec, cVec) = *elm;
+            let a = BigInt::from_slice(Plus, aVec);
+            let b = BigInt::from_slice(Plus, bVec);
+            let c = BigInt::from_slice(Plus, cVec);
+
+            assert a + b == c;
+            assert b + a == c;
+            assert c + (-a) == b;
+            assert c + (-b) == a;
+            assert a + (-c) == (-b);
+            assert b + (-c) == (-a);
+            assert (-a) + (-b) == (-c);
+            assert a + (-a) == BigInt::zero();
+        }
+    }
+
+    #[test]
+    fn test_sub() {
+        for sum_triples.each |elm| {
+            let (aVec, bVec, cVec) = *elm;
+            let a = BigInt::from_slice(Plus, aVec);
+            let b = BigInt::from_slice(Plus, bVec);
+            let c = BigInt::from_slice(Plus, cVec);
+
+            assert c - a == b;
+            assert c - b == a;
+            assert (-b) - a == (-c);
+            assert (-a) - b == (-c);
+            assert b - (-a) == c;
+            assert a - (-b) == c;
+            assert (-c) - (-a) == (-b);
+            assert a - a == BigInt::zero();
+        }
+    }
+
+    const mul_triples: &[(&[BigDigit], &[BigDigit], &[BigDigit])] = &[
+        (&[],               &[],               &[]),
+        (&[],               &[ 1],             &[]),
+        (&[ 2],             &[],               &[]),
+        (&[ 1],             &[ 1],             &[1]),
+        (&[ 2],             &[ 3],             &[ 6]),
+        (&[ 1],             &[ 1,  1,  1],     &[1, 1,  1]),
+        (&[ 1,  2,  3],     &[ 3],             &[ 3,  6,  9]),
+        (&[ 1,  1,  1],     &[-1],             &[-1, -1, -1]),
+        (&[ 1,  2,  3],     &[-1],             &[-1, -2, -2, 2]),
+        (&[ 1,  2,  3,  4], &[-1],             &[-1, -2, -2, -2, 3]),
+        (&[-1],             &[-1],             &[ 1, -2]),
+        (&[-1, -1],         &[-1],             &[ 1, -1, -2]),
+        (&[-1, -1, -1],     &[-1],             &[ 1, -1, -1, -2]),
+        (&[-1, -1, -1, -1], &[-1],             &[ 1, -1, -1, -1, -2]),
+        (&[-1/2 + 1],       &[ 2],             &[ 0,  1]),
+        (&[0, -1/2 + 1],    &[ 2],             &[ 0,  0,  1]),
+        (&[ 1,  2],         &[ 1,  2,  3],     &[1, 4,  7,  6]),
+        (&[-1, -1],         &[-1, -1, -1],     &[1, 0, -1, -2, -1]),
+        (&[-1, -1, -1],     &[-1, -1, -1, -1], &[1, 0,  0, -1, -2, -1, -1]),
+        (&[ 0,  0,  1],     &[ 1,  2,  3],     &[0, 0,  1,  2,  3]),
+        (&[ 0,  0,  1],     &[ 0,  0,  0,  1], &[0, 0,  0,  0,  0,  1])
+    ];
+
+    const divmod_quadruples: &[(&[BigDigit], &[BigDigit],
+                                &[BigDigit], &[BigDigit])]
+        = &[
+            (&[ 1],        &[ 2], &[],               &[1]),
+            (&[ 1,  1],    &[ 2], &[-1/2+1],         &[1]),
+            (&[ 1,  1, 1], &[ 2], &[-1/2+1, -1/2+1], &[1]),
+            (&[ 0,  1],    &[-1], &[1],              &[1]),
+            (&[-1, -1],    &[-2], &[2, 1],           &[3])
+        ];
+
+    #[test]
+    fn test_mul() {
+        for mul_triples.each |elm| {
+            let (aVec, bVec, cVec) = *elm;
+            let a = BigInt::from_slice(Plus, aVec);
+            let b = BigInt::from_slice(Plus, bVec);
+            let c = BigInt::from_slice(Plus, cVec);
+
+            assert a * b == c;
+            assert b * a == c;
+
+            assert (-a) * b == -c;
+            assert (-b) * a == -c;
+        }
+
+        for divmod_quadruples.each |elm| {
+            let (aVec, bVec, cVec, dVec) = *elm;
+            let a = BigInt::from_slice(Plus, aVec);
+            let b = BigInt::from_slice(Plus, bVec);
+            let c = BigInt::from_slice(Plus, cVec);
+            let d = BigInt::from_slice(Plus, dVec);
+
+            assert a == b * c + d;
+            assert a == c * b + d;
+        }
+    }
+
+    #[test]
+    fn test_divmod() {
+        fn check_divmod_sub(a: BigInt, b: BigInt) {
+            let (d, m) = a.divmod(&b);
+            if m.is_not_zero() {
+                assert m.sign == b.sign;
+            }
+            assert m.abs() <= b.abs();
+            assert a == b * d + m;
+        }
+        fn check_divmod(a: BigInt, b: BigInt, c: BigInt, d: BigInt) {
+            check_divmod_sub(a, b);
+            check_divmod_sub(a, -b);
+            check_divmod_sub(-a, b);
+            check_divmod_sub(-a, -b);
+
+            if d.is_zero() {
+                assert a.divmod(&b)     == (c, BigInt::zero());
+                assert (-a).divmod(&b)  == (-c, BigInt::zero());
+                assert (a).divmod(&-b)  == (-c, BigInt::zero());
+                assert (-a).divmod(&-b) == (c, BigInt::zero());
+            } else {
+                // a == bc + d
+                assert a.divmod(&b) == (c, d);
+                // a == (-b)(-c - 1) + (d - b)
+                assert a.divmod(&-b) == (-c - BigInt::one(), d - b);
+                // (-a) == b (-c - 1) + (b - d)
+                assert (-a).divmod(&b) == (-c - BigInt::one(), b - d);
+                // (-a) == (-b)(c) - d
+                assert (-a).divmod(&-b) == (c, -d);
+            }
+        }
+        for mul_triples.each |elm| {
+            let (aVec, bVec, cVec) = *elm;
+            let a = BigInt::from_slice(Plus, aVec);
+            let b = BigInt::from_slice(Plus, bVec);
+            let c = BigInt::from_slice(Plus, cVec);
+
+            if a.is_not_zero() { check_divmod(c, a, b, BigInt::zero()); }
+            if b.is_not_zero() { check_divmod(c, b, a, BigInt::zero()); }
+        }
+
+        for divmod_quadruples.each |elm| {
+            let (aVec, bVec, cVec, dVec) = *elm;
+            let a = BigInt::from_slice(Plus, aVec);
+            let b = BigInt::from_slice(Plus, bVec);
+            let c = BigInt::from_slice(Plus, cVec);
+            let d = BigInt::from_slice(Plus, dVec);
+
+            if b.is_not_zero() {
+                check_divmod(a, b, c, d);
+            }
+        }
+    }
+
+
+    #[test]
+    fn test_quotrem() {
+        fn check_quotrem_sub(a: BigInt, b: BigInt) {
+            let (q, r) = a.quotrem(&b);
+            if r.is_not_zero() {
+                assert r.sign == a.sign;
+            }
+            assert r.abs() <= b.abs();
+            assert a == b * q + r;
+        }
+        fn check_quotrem(a: BigInt, b: BigInt, c: BigInt, d: BigInt) {
+            check_quotrem_sub(a, b);
+            check_quotrem_sub(a, -b);
+            check_quotrem_sub(-a, b);
+            check_quotrem_sub(-a, -b);
+
+            if d.is_zero() {
+                assert a.quotrem(&b)     == (c, BigInt::zero());
+                assert (-a).quotrem(&b)  == (-c, BigInt::zero());
+                assert (a).quotrem(&-b)  == (-c, BigInt::zero());
+                assert (-a).quotrem(&-b) == (c, BigInt::zero());
+            } else {
+                // a == bc + d
+                assert a.quotrem(&b) == (c, d);
+                // a == (-b)(-c) + d
+                assert a.quotrem(&-b) == (-c, d);
+                // (-a) == b (-c) + (-d)
+                assert (-a).quotrem(&b) == (-c, -d);
+                // (-a) == (-b)(c) - d
+                assert (-a).quotrem(&-b) == (c, -d);
+            }
+        }
+        for mul_triples.each |elm| {
+            let (aVec, bVec, cVec) = *elm;
+            let a = BigInt::from_slice(Plus, aVec);
+            let b = BigInt::from_slice(Plus, bVec);
+            let c = BigInt::from_slice(Plus, cVec);
+
+            if a.is_not_zero() { check_quotrem(c, a, b, BigInt::zero()); }
+            if b.is_not_zero() { check_quotrem(c, b, a, BigInt::zero()); }
+        }
+
+        for divmod_quadruples.each |elm| {
+            let (aVec, bVec, cVec, dVec) = *elm;
+            let a = BigInt::from_slice(Plus, aVec);
+            let b = BigInt::from_slice(Plus, bVec);
+            let c = BigInt::from_slice(Plus, cVec);
+            let d = BigInt::from_slice(Plus, dVec);
+
+            if b.is_not_zero() {
+                check_quotrem(a, b, c, d);
+            }
+        }
+    }
+
+    #[test]
+    fn test_to_str_radix() {
+        assert BigInt::from_biguint(Plus, BigUint::from_uint(10))
+            .to_str_radix(10) == ~"10";
+        assert BigInt::one().to_str_radix(10) == ~"1";
+        assert BigInt::zero().to_str_radix(10) == ~"0";
+        assert (-BigInt::one()).to_str_radix(10) == ~"-1";
+        assert BigInt::from_biguint(Minus, BigUint::from_uint(10))
+            .to_str_radix(10) == ~"-10";
+    }
+
+
+    #[test]
+    fn test_from_str_radix() {
+        assert BigInt::from_biguint(Plus, BigUint::from_uint(10)) ==
+            BigInt::from_str_radix(~"10", 10).get();
+        assert BigInt::one()== BigInt::from_str_radix(~"1", 10).get();
+        assert BigInt::zero() == BigInt::from_str_radix(~"0", 10).get();
+        assert (-BigInt::one()) == BigInt::from_str_radix(~"-1", 10).get();
+        assert BigInt::from_biguint(Minus, BigUint::from_uint(10)) ==
+            BigInt::from_str_radix(~"-10", 10).get();
+
+        assert BigInt::from_str_radix(~"Z", 10) == None;
+        assert BigInt::from_str_radix(~"_", 2) == None;
+        assert BigInt::from_str_radix(~"-1", 10) ==
+            Some(BigInt::from_biguint(Minus, BigUint::one()));
+    }
+
+    #[test]
+    fn test_neg() {
+        assert -BigInt::from_at_vec(Plus,  @[1, 1, 1]) ==
+            BigInt::from_at_vec(Minus, @[1, 1, 1]);
+        assert -BigInt::from_at_vec(Minus, @[1, 1, 1]) ==
+            BigInt::from_at_vec(Plus,  @[1, 1, 1]);
+        assert -BigInt::zero() == BigInt::zero();
+    }
+}
+Unixcoder Score: -0.04657777398824692
+--------------------------------------------------

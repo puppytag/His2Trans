@@ -1,0 +1,509 @@
+C_Code: 
+RetDataI64 LseekImpl::Lseek(int32_t fd, int64_t offset, int pos)
+{
+    LOGI("FS_TEST:: LseekImpl::Lseek start");
+    RetDataI64 ret = { .code = EINVAL, .data = 0 };
+    if (fd < 0) {
+        LOGE("Invalid fd");
+        return ret;
+    }
+
+    SeekPos whence = static_cast<SeekPos>(pos);
+
+    int64_t seekRet = ::Lseek(fd, offset, whence);
+    if (seekRet < 0) {
+        LOGE("Failed to lseek, error:%{public}d", errno);
+        ret.code = errno;
+        return ret;
+    }
+    ret.code = SUCCESS_CODE;
+    ret.data = seekRet;
+    return ret;
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Unixcoder Score: 0.005192474462091923
+--------------------------------------------------
+C_Code: 
+static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount,
+    int32_t userId)
+{
+    int32_t ret = HksInitParamSet(paramSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS init param set failed. error=%{public}d", ret);
+        return ret;
+    }
+
+    if (paramCount != 0) {
+        ret = HksAddParams(*paramSet, params, paramCount);
+        if (ret != HKS_SUCCESS) {
+            LOGE("[FATAL]HUKS add params failed. error=%{public}d", ret);
+            HksFreeParamSet(paramSet);
+            return ret;
+        }
+
+        if (userId > ASSET_ROOT_USER_UPPERBOUND) {
+            ret = AddSpecificUserIdParams(*paramSet, userId);
+            if (ret != HKS_SUCCESS) {
+                LOGE("[FATAL]HUKS add specific userId failed. error=%{public}d", ret);
+                HksFreeParamSet(paramSet);
+                return ret;
+            }
+        }
+    }
+
+    ret = HksBuildParamSet(paramSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS build param set failed. error=%{public}d", ret);
+        HksFreeParamSet(paramSet);
+    }
+    return ret;
+}
+Function: 
+fn insert_attr(&mut self, key: K, value: impl Conversion) {
+        self.insert(key, value.into_value());
+    }
+Unixcoder Score: 0.0016719946870580316
+--------------------------------------------------
+C_Code: 
+RetDataI64 LseekImpl::Lseek(int32_t fd, int64_t offset, int pos)
+{
+    LOGI("FS_TEST:: LseekImpl::Lseek start");
+    RetDataI64 ret = { .code = EINVAL, .data = 0 };
+    if (fd < 0) {
+        LOGE("Invalid fd");
+        return ret;
+    }
+
+    SeekPos whence = static_cast<SeekPos>(pos);
+
+    int64_t seekRet = ::Lseek(fd, offset, whence);
+    if (seekRet < 0) {
+        LOGE("Failed to lseek, error:%{public}d", errno);
+        ret.code = errno;
+        return ret;
+    }
+    ret.code = SUCCESS_CODE;
+    ret.data = seekRet;
+    return ret;
+}
+Function: 
+pub extern "C" fn Lseek(fd: i32, offset: i64, pos: SeekPos) -> c_longlong {
+    match seek(fd, offset, pos) {
+        Ok(pos) => pos as c_longlong,
+        Err(e) => unsafe {
+            error_control(e);
+            -1
+        },
+    }
+}
+Unixcoder Score: 0.000927865447010845
+--------------------------------------------------
+C_Code: 
+RetDataI64 LseekImpl::Lseek(int32_t fd, int64_t offset, int pos)
+{
+    LOGI("FS_TEST:: LseekImpl::Lseek start");
+    RetDataI64 ret = { .code = EINVAL, .data = 0 };
+    if (fd < 0) {
+        LOGE("Invalid fd");
+        return ret;
+    }
+
+    SeekPos whence = static_cast<SeekPos>(pos);
+
+    int64_t seekRet = ::Lseek(fd, offset, whence);
+    if (seekRet < 0) {
+        LOGE("Failed to lseek, error:%{public}d", errno);
+        ret.code = errno;
+        return ret;
+    }
+    ret.code = SUCCESS_CODE;
+    ret.data = seekRet;
+    return ret;
+}
+Function: 
+pub extern "C" fn Lseek(fd: i32, offset: i64, pos: SeekPos) -> c_longlong {
+    match seek(fd, offset, pos) {
+        Ok(pos) => pos as c_longlong,
+        Err(e) => unsafe {
+            error_control(e);
+            -1
+        },
+    }
+}
+Unixcoder Score: -0.005464391782879829
+--------------------------------------------------
+C_Code: 
+static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount,
+    int32_t userId)
+{
+    int32_t ret = HksInitParamSet(paramSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS init param set failed. error=%{public}d", ret);
+        return ret;
+    }
+
+    if (paramCount != 0) {
+        ret = HksAddParams(*paramSet, params, paramCount);
+        if (ret != HKS_SUCCESS) {
+            LOGE("[FATAL]HUKS add params failed. error=%{public}d", ret);
+            HksFreeParamSet(paramSet);
+            return ret;
+        }
+
+        if (userId > ASSET_ROOT_USER_UPPERBOUND) {
+            ret = AddSpecificUserIdParams(*paramSet, userId);
+            if (ret != HKS_SUCCESS) {
+                LOGE("[FATAL]HUKS add specific userId failed. error=%{public}d", ret);
+                HksFreeParamSet(paramSet);
+                return ret;
+            }
+        }
+    }
+
+    ret = HksBuildParamSet(paramSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS build param set failed. error=%{public}d", ret);
+        HksFreeParamSet(paramSet);
+    }
+    return ret;
+}
+Function: 
+pub fn new(code: ErrCode, msg: String) -> AssetError {
+        loge!("{}", msg);
+        AssetError { code, msg }
+    }
+Unixcoder Score: -0.00693052401766181
+--------------------------------------------------
+C_Code: 
+static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount,
+    int32_t userId)
+{
+    int32_t ret = HksInitParamSet(paramSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS init param set failed. error=%{public}d", ret);
+        return ret;
+    }
+
+    if (paramCount != 0) {
+        ret = HksAddParams(*paramSet, params, paramCount);
+        if (ret != HKS_SUCCESS) {
+            LOGE("[FATAL]HUKS add params failed. error=%{public}d", ret);
+            HksFreeParamSet(paramSet);
+            return ret;
+        }
+
+        if (userId > ASSET_ROOT_USER_UPPERBOUND) {
+            ret = AddSpecificUserIdParams(*paramSet, userId);
+            if (ret != HKS_SUCCESS) {
+                LOGE("[FATAL]HUKS add specific userId failed. error=%{public}d", ret);
+                HksFreeParamSet(paramSet);
+                return ret;
+            }
+        }
+    }
+
+    ret = HksBuildParamSet(paramSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS build param set failed. error=%{public}d", ret);
+        HksFreeParamSet(paramSet);
+    }
+    return ret;
+}
+Function: 
+fn get_enum_attr<T: TryFrom<u32, Error = AssetError>>(&self, key: &K) -> Result<T> {
+        if let Some(Value::Number(num)) = self.get(key) {
+            T::try_from(*num)
+        } else {
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
+        }
+    }
+Unixcoder Score: -0.008362660184502602
+--------------------------------------------------
+C_Code: 
+RetDataI64 LseekImpl::Lseek(int32_t fd, int64_t offset, int pos)
+{
+    LOGI("FS_TEST:: LseekImpl::Lseek start");
+    RetDataI64 ret = { .code = EINVAL, .data = 0 };
+    if (fd < 0) {
+        LOGE("Invalid fd");
+        return ret;
+    }
+
+    SeekPos whence = static_cast<SeekPos>(pos);
+
+    int64_t seekRet = ::Lseek(fd, offset, whence);
+    if (seekRet < 0) {
+        LOGE("Failed to lseek, error:%{public}d", errno);
+        ret.code = errno;
+        return ret;
+    }
+    ret.code = SUCCESS_CODE;
+    ret.data = seekRet;
+    return ret;
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Unixcoder Score: -0.009430957026779652
+--------------------------------------------------
+C_Code: 
+uint32_t VerifyCert(const CertBlob *cert, const CertBlob *caCert)
+{
+    uint32_t verifyResult = SSL_X509_V_ERR_UNSPECIFIED;
+    X509 *certX509 = nullptr;
+    X509 *caX509 = nullptr;
+    X509_STORE *store = nullptr;
+    X509_STORE_CTX *ctx = nullptr;
+    do {
+        certX509 = CertBlobToX509(cert);
+        if (certX509 == nullptr) {
+            NETSTACK_LOGE("x509 of cert is nullptr\n");
+        }
+        caX509 = CertBlobToX509(caCert);
+        if (caX509 == nullptr) {
+            NETSTACK_LOGE("x509 of ca is nullptr\n");
+        }
+        store = X509_STORE_new();
+        if (store == nullptr) {
+            continue;
+        }
+        if (X509_STORE_add_cert(store, caX509) != VERIFY_RESULT_SUCCESS) {
+            NETSTACK_LOGE("add ca to store failed\n");
+        }
+        ctx = X509_STORE_CTX_new();
+        if (ctx == nullptr) {
+            continue;
+        }
+        X509_STORE_CTX_init(ctx, store, certX509, nullptr);
+        verifyResult = static_cast<uint32_t>(X509_verify_cert(ctx));
+        if (verifyResult != VERIFY_RESULT_SUCCESS) {
+            verifyResult = static_cast<uint32_t>(X509_STORE_CTX_get_error(ctx) + SSL_ERROR_CODE_BASE);
+            NETSTACK_LOGE("failed to verify certificate: %{public}s (%{public}d)\n",
+                          X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)), verifyResult);
+            break;
+        } else {
+            verifyResult = X509_V_OK;
+            NETSTACK_LOGD("certificate validation succeeded.\n");
+        }
+    } while (false);
+
+    FreeResources(&certX509, &caX509, &store, &ctx);
+    return verifyResult;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AsyncExec__idx7661_rank4.c", "source_rust_file": "API_Mapping__AsyncExec__idx7661_rank4.rs", "c_api": "return NError(ERRNO_NOERR);", "rust_api": "match mode { MakeDirectionMode::Single => fs::create_dir(path), MakeDirectionMode::Multiple => fs::create_dir_all(path), }", "mapping_type": "function", "description": "Successful completion with no error", "reasoning": "[Task Analysis] C function handles file reading and size checking with error returns; Rust function handles directory creation with path validation and mode selection. [Similarity] Names don't refer to same concept (AsyncExec vs create_dir), domains are different (file I/O vs filesystem operations), and code lengths differ significantly (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both have validation logic and error handling patterns that can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AsyncExec__idx7661_rank4.c", "source_rust_file": "API_Mapping__AsyncExec__idx7661_rank4.rs", "c_api": "return NError(errno);", "rust_api": "return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));", "mapping_type": "function", "description": "Return error code on failure", "reasoning": "[Task Analysis] C function handles file reading and size checking with error returns; Rust function handles directory creation with path validation and mode selection. [Similarity] Names don't refer to same concept (AsyncExec vs create_dir), domains are different (file I/O vs filesystem operations), and code lengths differ significantly (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both have validation logic and error handling patterns that can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AsyncExec__idx7661_rank4.c", "source_rust_file": "API_Mapping__AsyncExec__idx7661_rank4.rs", "c_api": "if (readerIterator.iterator == nullptr)", "rust_api": "if path.is_null()", "mapping_type": "pattern", "description": "Null pointer check before proceeding", "reasoning": "[Task Analysis] C function handles file reading and size checking with error returns; Rust function handles directory creation with path validation and mode selection. [Similarity] Names don't refer to same concept (AsyncExec vs create_dir), domains are different (file I/O vs filesystem operations), and code lengths differ significantly (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both have validation logic and error handling patterns that can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AsyncExec__idx7661_rank4.c", "source_rust_file": "API_Mapping__AsyncExec__idx7661_rank4.rs", "c_api": "HILOGE(\"Failed to read lines of the file, error: %{public}d\", errno)", "rust_api": "return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"))", "mapping_type": "function", "description": "Error logging and return in case of failure", "reasoning": "[Task Analysis] C function handles file reading and size checking with error returns; Rust function handles directory creation with path validation and mode selection. [Similarity] Names don't refer to same concept (AsyncExec vs create_dir), domains are different (file I/O vs filesystem operations), and code lengths differ significantly (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both have validation logic and error handling patterns that can be mapped."}]
+Unixcoder Score: -0.03305959329009056
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffsetRequired(verifier, VT_FIELDS) &&
+           verifier.VerifyVector(fields()) &&
+           verifier.VerifyVectorOfTables(fields()) &&
+           VerifyField<uint8_t>(verifier, VT_IS_STRUCT, 1) &&
+           VerifyField<int32_t>(verifier, VT_MINALIGN, 4) &&
+           VerifyField<int32_t>(verifier, VT_BYTESIZE, 4) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyOffset(verifier, VT_DECLARATION_FILE) &&
+           verifier.VerifyString(declaration_file()) &&
+           verifier.EndTable();
+  }
+Function: 
+pub fn foo_struct(&self) -> Option<&'a namespace_b::StructInNestedNS> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<namespace_b::StructInNestedNS>(TableInFirstNS::VT_FOO_STRUCT, None)}
+  }
+Unixcoder Score: -0.045349884778261185
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::CreateTasks(const std::vector<Config> &configs, std::vector<TaskRet> &rets)
+{
+    uint32_t len = static_cast<uint32_t>(configs.size());
+    rets.resize(len, {
+                         .code = ExceptionErrorCode::E_OTHER,
+                     });
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteUint32(len);
+    for (auto &config : configs) {
+        WriteConfigData(config, data);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_REQUEST), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request CreateTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        REQUEST_HILOGE("End Request CreateTasks, failed: %{public}d", code);
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+        rets[i].tid = std::to_string(reply.ReadInt32());
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn show(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        debug!("Service show");
+        let permission = PermissionChecker::check_down_permission();
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > GET_INFO_MAX {
+            info!("Service show: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![(ErrorCode::Other, TaskInfo::new()); len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service show tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service show, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!("Service show, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service show, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A18,
+                    &format!(
+                        "Service show, failed: check task uid. tid: {}, uid: {}",
+                        task_id, ipc_uid
+                    )
+                );
+                continue;
+            }
+
+            let info = self.task_manager.lock().unwrap().show(task_uid, task_id);
+            match info {
+                Some(task_info) => {
+                    if let Some((c, info)) = vec.get_mut(i) {
+                        *c = ErrorCode::ErrOk;
+                        *info = task_info;
+                    }
+                }
+                None => {
+                    error!("Service show, failed: task_id not found, tid: {}", task_id);
+                    sys_event!(
+                        ExecError,
+                        DfxCode::INVALID_IPC_MESSAGE_A18,
+                        &format!("Service show, failed: task_id not found, tid: {}", task_id)
+                    );
+                    set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);
+                }
+            };
+        }
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for (c, info) in vec {
+            reply.write(&(c as i32))?;
+            // TODO: Sends info only when ErrOk.
+            serialize_task_info(info, reply)?;
+        }
+        Ok(())
+    }
+Unixcoder Score: -0.04704710468649864
+--------------------------------------------------

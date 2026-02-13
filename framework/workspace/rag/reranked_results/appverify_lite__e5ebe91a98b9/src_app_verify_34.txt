@@ -1,0 +1,214 @@
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__CertInfo__idx57_rank5.h", "source_rust_file": "Full__CertInfo__idx57_rank5.rs", "c_fragment": "struct CertInfo", "rust_fragment": "info: Arc<RwLock<CertInfo>>", "description": "Rust struct contains a field that wraps the C struct in a thread-safe manner.", "reasoning": "[Task Analysis] C defines a struct `CertInfo`, Rust defines a struct `CertManager` containing an `Arc<RwLock<CertInfo>>`. [Similarity] The Rust struct wraps the C struct in a thread-safe container, but the core concept of representing certificate information is preserved. [Knowledge Extraction] Full match on struct definition and usage of the same conceptual data; partial match on field wrapping; API mapping on struct wrapping pattern."}, {"knowledge_type": "Partial", "source_c_file": "Full__CertInfo__idx57_rank5.h", "source_rust_file": "Full__CertInfo__idx57_rank5.rs", "c_fragment": "struct CertInfo", "rust_fragment": "pub(crate) struct CertManager {", "description": "Both define a structure to hold certificate information.", "reasoning": "[Task Analysis] C defines a struct `CertInfo`, Rust defines a struct `CertManager` containing an `Arc<RwLock<CertInfo>>`. [Similarity] The Rust struct wraps the C struct in a thread-safe container, but the core concept of representing certificate information is preserved. [Knowledge Extraction] Full match on struct definition and usage of the same conceptual data; partial match on field wrapping; API mapping on struct wrapping pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__CertInfo__idx57_rank5.h", "source_rust_file": "Full__CertInfo__idx57_rank5.rs", "c_api": "struct CertInfo", "rust_api": "Arc<RwLock<CertInfo>>", "mapping_type": "pattern", "description": "Wrapping a struct in thread-safe containers for shared access.", "reasoning": "[Task Analysis] C defines a struct `CertInfo`, Rust defines a struct `CertManager` containing an `Arc<RwLock<CertInfo>>`. [Similarity] The Rust struct wraps the C struct in a thread-safe container, but the core concept of representing certificate information is preserved. [Knowledge Extraction] Full match on struct definition and usage of the same conceptual data; partial match on field wrapping; API mapping on struct wrapping pattern."}, {"knowledge_type": "Full", "source_c_file": "Full__CertInfo__idx57_rank5.h", "source_rust_file": "Full__CertInfo__idx57_rank5.rs", "reasoning": "[Task Analysis] C defines a struct `CertInfo`, Rust defines a struct `CertManager` containing an `Arc<RwLock<CertInfo>>`. [Similarity] The Rust struct wraps the C struct in a thread-safe container, but the core concept of representing certificate information is preserved. [Knowledge Extraction] Full match on struct definition and usage of the same conceptual data; partial match on field wrapping; API mapping on struct wrapping pattern.", "description": "Full structural translation"}]
+Unixcoder Score: 0.10137616842985153
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__InitCertInfo__idx555_rank3.c", "source_rust_file": "Partial__InitCertInfo__idx555_rank3.rs", "c_fragment": "if (certInfo->certInfo.data == nullptr) {\n        return CMR_ERROR_MALLOC_FAIL;\n    }", "rust_fragment": "if !c_certs_ptr.is_null() {\n        info!(\"GetUserCertsData valid\");", "description": "Both contain conditional checks for null pointers and handle failure cases.", "reasoning": "[Task Analysis] C function allocates memory for a certificate info struct and returns an error code; Rust function fetches certificate data from C FFI, parses it into Rust Certificate objects, and updates a shared CertInfo struct. [Similarity] No full structural similarity due to different domains (memory allocation vs certificate parsing), different control flow, and different data structures. [Knowledge Extraction] Found partial matching logic in error handling and memory management patterns, and API mappings for memory allocation and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__InitCertInfo__idx555_rank3.c", "source_rust_file": "Partial__InitCertInfo__idx555_rank3.rs", "c_api": "free(ptr)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation in C vs FFI call to free memory in Rust", "reasoning": "[Task Analysis] C function allocates memory for a certificate info struct and returns an error code; Rust function fetches certificate data from C FFI, parses it into Rust Certificate objects, and updates a shared CertInfo struct. [Similarity] No full structural similarity due to different domains (memory allocation vs certificate parsing), different control flow, and different data structures. [Knowledge Extraction] Found partial matching logic in error handling and memory management patterns, and API mappings for memory allocation and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__InitCertInfo__idx555_rank3.c", "source_rust_file": "Partial__InitCertInfo__idx555_rank3.rs", "c_api": "static_cast<uint8_t *>(malloc(...))", "rust_api": "std::slice::from_raw_parts(...)", "mapping_type": "pattern", "description": "Raw pointer handling and memory access in C vs Rust", "reasoning": "[Task Analysis] C function allocates memory for a certificate info struct and returns an error code; Rust function fetches certificate data from C FFI, parses it into Rust Certificate objects, and updates a shared CertInfo struct. [Similarity] No full structural similarity due to different domains (memory allocation vs certificate parsing), different control flow, and different data structures. [Knowledge Extraction] Found partial matching logic in error handling and memory management patterns, and API mappings for memory allocation and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__InitCertInfo__idx555_rank3.c", "source_rust_file": "Partial__InitCertInfo__idx555_rank3.rs", "c_api": "malloc(MAX_LEN_CERTIFICATE)", "rust_api": "Vec::new()", "mapping_type": "pattern", "description": "Memory allocation pattern in C vs vector initialization in Rust", "reasoning": "[Task Analysis] C function allocates memory for a certificate info struct and returns an error code; Rust function fetches certificate data from C FFI, parses it into Rust Certificate objects, and updates a shared CertInfo struct. [Similarity] No full structural similarity due to different domains (memory allocation vs certificate parsing), different control flow, and different data structures. [Knowledge Extraction] Found partial matching logic in error handling and memory management patterns, and API mappings for memory allocation and FFI calls."}]
+Unixcoder Score: 0.08784350752830505
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "free", "rust_api": "free", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_fragment": "for (uint32_t i = 0; i < certs->len; i++) {\n        FreeCertData(certs->certDataList[i]);\n    }\n    free(certs->certDataList);\n    free(certs);", "rust_fragment": "for item in c_cert_list_ptr.iter() {\n            let cert = unsafe { &**item };\n            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };\n            match Certificate::from_pem(cert_slice) {\n                Ok(cert) => {\n                    certificates.push(cert);\n                }\n                Err(e) => {\n                    error!(\"parse security cert path failed, error is {:?}\", e);\n                    return;\n                }\n            };\n        }\n        unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Both iterate over a list of certificate data and free memory, though Rust also includes parsing logic.", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory deallocation of certificate data list", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertData", "rust_api": "FreeCertData", "mapping_type": "function", "description": "Free individual certificate data", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}]
+Unixcoder Score: 0.052967995405197144
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn build_task_certificate_pins(
+    config: &TaskConfig,
+) -> Result<Option<PubKeyPins>, Box<dyn Error + Send + Sync>> {
+    if config.certificate_pins.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(cvt_res_error!(
+        PubKeyPins::builder()
+            .add(&config.url, &config.certificate_pins)
+            .build()
+            .map_err(Box::new),
+        "Create task certificate pinned_key failed",
+    )))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_api": "certInfo->certInfo.data = nullptr", "rust_api": "*info = CertInfo { cert: Some(certificates), };", "mapping_type": "pattern", "description": "Pointer nulling vs struct initialization - both represent clearing or resetting data structures", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_fragment": "free(certInfo->certInfo.data);\ncertInfo->certInfo.data = nullptr;", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Memory deallocation pattern - both perform cleanup of allocated memory, though Rust uses FFI call while C uses standard free.", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_api": "free(certInfo->certInfo.data)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation - C's free() equivalent in Rust via FFI call to FreeCertDataList", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}]
+Unixcoder Score: 0.042639631778001785
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__CertInfo__idx58_rank4.c", "source_rust_file": "Full__CertInfo__idx58_rank4.rs", "c_fragment": "struct CertInfo", "rust_fragment": "struct CertInfo {\n    cert: Option<Vec<Certificate>>,\n}", "description": "Both define a struct named CertInfo with a field 'cert' of type Option<Vec<Certificate>>.", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CertInfo' match exactly, so Full/Partial classification is allowed. [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with same conceptual domain (data structure). [Filter 5: Empty Structs] -> Both structs have fields (CertInfo in Rust has cert field). [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Task Analysis] -> Both define a struct named CertInfo with similar purpose. [Similarity] -> Full structural similarity in definition and field structure. [Knowledge Extraction] -> Full match in struct definition with same field type mapping (Option<Vec<Certificate>>)."}, {"knowledge_type": "Full", "source_c_file": "Full__CertInfo__idx58_rank4.c", "source_rust_file": "Full__CertInfo__idx58_rank4.rs", "reasoning": "[Filter 1: Entity Name Check] -> Names 'CertInfo' match exactly, so Full/Partial classification is allowed. [Filter 2: Empty/Trivial Code] -> Neither struct is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both are struct definitions with same conceptual domain (data structure). [Filter 5: Empty Structs] -> Both structs have fields (CertInfo in Rust has cert field). [Filter 6: Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or usages. [Task Analysis] -> Both define a struct named CertInfo with similar purpose. [Similarity] -> Full structural similarity in definition and field structure. [Knowledge Extraction] -> Full match in struct definition with same field type mapping (Option<Vec<Certificate>>).", "description": "Full structural translation"}]
+Unixcoder Score: 0.028735630214214325
+--------------------------------------------------
+C_Code: 
+struct CRequestCert {
+    uint32_t size;
+    uint8_t *data;
+}
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Unixcoder Score: 0.021255694329738617
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Full", "source_c_file": "Full__CRequestCerts__idx60_rank1.h", "source_rust_file": "Full__CRequestCerts__idx60_rank1.rs", "reasoning": "[Entity Name Check] -> C and Rust structs have the same concept (CRequestCerts) with matching fields (certDataList/len). [Empty/Trivial Code] -> Neither struct is empty. [FFI Wrapper] -> No FFI calls detected. [Semantic Domain Mismatch] -> Both structs represent the same data structure (list of certificates with length), no domain mismatch. [Empty Structs] -> Both structs have fields. [Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or tests. [Full] -> Names refer to same concept, field types and semantics match (pointer to array, length). [Partial] -> No partial fragments since full match exists. [API Mappings] -> No API calls or patterns to extract, only struct field mapping. [None] -> No flags are false, but since full match exists, None is not applicable.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__CRequestCerts__idx60_rank1.h", "source_rust_file": "Full__CRequestCerts__idx60_rank1.rs", "c_fragment": "struct CRequestCert **certDataList;\n    uint32_t len;", "rust_fragment": "pub(crate) cert_data_list: *const *const CRequestCert,\n    pub(crate) len: u32,", "description": "Struct field mapping from C pointer to array of pointers and length field to Rust raw pointer and u32 length.", "reasoning": "[Entity Name Check] -> C and Rust structs have the same concept (CRequestCerts) with matching fields (certDataList/len). [Empty/Trivial Code] -> Neither struct is empty. [FFI Wrapper] -> No FFI calls detected. [Semantic Domain Mismatch] -> Both structs represent the same data structure (list of certificates with length), no domain mismatch. [Empty Structs] -> Both structs have fields. [Definition vs Usage Asymmetry] -> Both are struct definitions, not calls or tests. [Full] -> Names refer to same concept, field types and semantics match (pointer to array, length). [Partial] -> No partial fragments since full match exists. [API Mappings] -> No API calls or patterns to extract, only struct field mapping. [None] -> No flags are false, but since full match exists, None is not applicable."}]
+Unixcoder Score: 0.013365056365728378
+--------------------------------------------------
+C_Code: 
+struct CRequestCert {
+    uint32_t size;
+    uint8_t *data;
+}
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Unixcoder Score: 4.1517268982715905e-05
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutBlob(\"body_file_names\", CStringToBlob(taskConfig->bodyFileNamesPtr, taskConfig->bodyFileNamesLen))", "rust_api": "if *task_count >= limit { error!(...) } else { *task_count += 1 }", "mapping_type": "method", "description": "Checking and incrementing task count", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "return true;", "rust_api": "Ok(task_id)", "mapping_type": "pattern", "description": "Successful completion return", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutInt(\"reason\", taskInfo->commonData.reason)", "rust_api": "config.common_data.uid = uid", "mapping_type": "method", "description": "Setting user ID in configuration data", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutBlob(\"form_items\", CFormItemToBlob(taskConfig->formItemsPtr, taskConfig->formItemsLen))", "rust_api": "let (frontend, background) = self.task_count.entry(config.common_data.uid).or_insert((0, 0))", "mapping_type": "method", "description": "Managing task count per user", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutLong(\"tries\", taskInfo->commonData.tries)", "rust_api": "config.version = version", "mapping_type": "method", "description": "Setting version in configuration data", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutBlob(\"certs_paths\", CStringToBlob(taskConfig->certsPathPtr, taskConfig->certsPathLen))", "rust_api": "let (files, client) = check_config(...)", "mapping_type": "method", "description": "Validating configuration and retrieving files/client", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutLong(\"mtime\", taskInfo->commonData.mtime)", "rust_api": "config.common_data.task_id = task_id", "mapping_type": "method", "description": "Setting task ID in configuration data", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "insertValues.PutBlob(\"file_specs\", CFileSpecToBlob(taskConfig->fileSpecsPtr, taskConfig->fileSpecsLen))", "rust_api": "let (task_count, limit) = match config.common_data.mode { Mode::FrontEnd => (frontend, MAX_FRONTEND_TASK), _ => (background, MAX_BACKGROUND_TASK) }", "mapping_type": "method", "description": "Determining task limits based on mode", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__WriteMutableData__idx536_rank5.c", "source_rust_file": "API_Mapping__WriteMutableData__idx536_rank5.rs", "c_api": "if (!WriteUpdateData(insertValues, taskInfo)) { return false; }", "rust_api": "if *task_count >= limit { return Err(ErrorCode::TaskEnqueueErr); }", "mapping_type": "pattern", "description": "Conditional early return on validation failure", "reasoning": "[Task Analysis] C function writes data to a database-like structure, Rust function creates and validates a task with similar data flow. [Similarity] Names don't match but both involve data insertion and validation logic. [Knowledge Extraction] No full structural match due to different domains (data insertion vs task creation/validation). However, there are API mappings for data insertion patterns and conditional validation logic."}]
+Unixcoder Score: -0.00555795943364501
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx355_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx355_rank3.rs", "c_api": "insertValues.PutBlob(\"form_items\", CFormItemToBlob(...))", "rust_api": "multi_part = multi_part.part(part);", "mapping_type": "function", "description": "Adding form item data to a multipart request", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] Names refer to different concepts (WriteMutableData vs build_multipart_request), and domains are different (database operations vs HTTP request building). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and loop structures, and some API mappings related to data insertion and iteration."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__WriteMutableData__idx355_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx355_rank3.rs", "c_api": "insertValues.PutLong(\"mtime\", taskInfo->commonData.mtime)", "rust_api": "let part = Part::new().name(task.conf.file_specs[index].name.as_str()).file_name(task.conf.file_specs[index].file_name.as_str()).mime(task.conf.file_specs[index].mime_type.as_str()).length(Some(upload_length)).stream(task_reader);", "mapping_type": "function", "description": "Setting metadata for a part in a multipart request", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] Names refer to different concepts (WriteMutableData vs build_multipart_request), and domains are different (database operations vs HTTP request building). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and loop structures, and some API mappings related to data insertion and iteration."}, {"knowledge_type": "Partial", "source_c_file": "Partial__WriteMutableData__idx355_rank3.c", "source_rust_file": "Partial__WriteMutableData__idx355_rank3.rs", "c_fragment": "for (int i = 0; i < taskConfig->formItemsLen; i++) {\n        insertValues.PutBlob(\"form_items\", CFormItemToBlob(taskConfig->formItemsPtr + i, 1));\n    }", "rust_fragment": "for item in task.conf.form_items.iter() {\n        let part = Part::new()\n            .name(item.name.as_str())\n            .body(item.value.as_str());\n        multi_part = multi_part.part(part);\n    }", "description": "Both iterate over form items and add them to a collection.", "reasoning": "[Task Analysis] C function writes data to a database-like structure, while Rust function builds an HTTP multipart request. [Similarity] Names refer to different concepts (WriteMutableData vs build_multipart_request), and domains are different (database operations vs HTTP request building). [Knowledge Extraction] No full structural match, but there are partial matching patterns in data handling and loop structures, and some API mappings related to data insertion and iteration."}]
+Unixcoder Score: -0.009557254612445831
+--------------------------------------------------

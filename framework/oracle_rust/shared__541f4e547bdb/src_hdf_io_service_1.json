@@ -1,0 +1,35 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_io_service_1",
+  "function_name": "HdfIoServiceBind",
+  "source_c_file": "src/hdf_io_service.c",
+  "c_code": "struct HdfIoService * HdfIoServiceBind(const char * serviceName)\n{\n    return HdfIoServiceAdapterObtain(serviceName);\n}",
+  "rust_signature": "pub extern \"C\" fn HdfIoServiceBind(serviceName: *const ::core::ffi::c_char) -> *mut crate::types::HdfIoService",
+  "rust_code": "pub extern \\\"C\\\" fn HdfIoServiceBind(serviceName: *const core::ffi::c_char) -> *mut HdfIoService {\n    unsafe { HdfIoServiceAdapterObtain(serviceName) }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceBind",
+      "rust_api": "HdfIoServiceBind",
+      "description": "Bind an HDF I/O service by name",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfIoServiceAdapterObtain",
+      "rust_api": "HdfIoServiceAdapterObtain",
+      "description": "Obtain io service via adapter",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "return foo(...);",
+      "rust_fragment": "return foo(...);",
+      "description": "Direct call/return pattern is preserved in Rust",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

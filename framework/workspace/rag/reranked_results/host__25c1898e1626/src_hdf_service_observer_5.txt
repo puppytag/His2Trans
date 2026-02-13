@@ -1,0 +1,294 @@
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetObserverWrapper {
+    inner: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RemoteServiceStub__idx4856_rank3.c", "source_rust_file": "API_Mapping__RemoteServiceStub__idx4856_rank3.rs", "c_api": "this->inner_ = ability", "rust_api": "AbilityStub::new(ability)", "mapping_type": "function", "description": "Object initialization with ability parameter", "reasoning": "[Task Analysis] C code defines a constructor for `RemoteServiceStub` that initializes a member variable. Rust code defines a function `add_systemability` that creates and returns a value using `AddSystemAbility`. [Similarity] Names do not refer to the same concept (`RemoteServiceStub` vs `add_systemability`), and the domains are different (object initialization vs system ability registration). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to system ability handling and object creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RemoteServiceStub__idx4856_rank3.c", "source_rust_file": "API_Mapping__RemoteServiceStub__idx4856_rank3.rs", "c_api": "Box::new(stub)", "rust_api": "Box::new(stub)", "mapping_type": "function", "description": "Heap allocation for stub object", "reasoning": "[Task Analysis] C code defines a constructor for `RemoteServiceStub` that initializes a member variable. Rust code defines a function `add_systemability` that creates and returns a value using `AddSystemAbility`. [Similarity] Names do not refer to the same concept (`RemoteServiceStub` vs `add_systemability`), and the domains are different (object initialization vs system ability registration). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to system ability handling and object creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RemoteServiceStub__idx4856_rank3.c", "source_rust_file": "API_Mapping__RemoteServiceStub__idx4856_rank3.rs", "c_api": "info!(\"add system ability {}\", said)", "rust_api": "info!(\"add system ability {}\", said)", "mapping_type": "function", "description": "Logging system ability addition", "reasoning": "[Task Analysis] C code defines a constructor for `RemoteServiceStub` that initializes a member variable. Rust code defines a function `add_systemability` that creates and returns a value using `AddSystemAbility`. [Similarity] Names do not refer to the same concept (`RemoteServiceStub` vs `add_systemability`), and the domains are different (object initialization vs system ability registration). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to system ability handling and object creation."}]
+Unixcoder Score: 0.014671252109110355
+--------------------------------------------------
+C_Code: 
+int32_t NetUnregistration::unregister() const
+{
+    return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);
+}
+Function: 
+pub fn unregister(&self) -> Result<(), NetUnregisterError> {
+        let mut handle = self.unregistration.lock().unwrap();
+        if let Some(inner) = handle.take() {
+            let ret = inner.unregister();
+            if ret != 0 {
+                *handle = Some(inner);
+                return Err(NetUnregisterError::UnregisterFailed(ret));
+            }
+            Ok(())
+        } else {
+            Err(NetUnregisterError::NotRegistered)
+        }
+    }
+Unixcoder Score: 0.013944038189947605
+--------------------------------------------------
+C_Code: 
+int32_t NetUnregistration::unregister() const
+{
+    return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);
+}
+Function: 
+pub fn unregister(&self) -> Result<(), NetUnregisterError> {
+        let mut handle = self.unregistration.lock().unwrap();
+        if let Some(inner) = handle.take() {
+            let ret = inner.unregister();
+            if ret != 0 {
+                *handle = Some(inner);
+                return Err(NetUnregisterError::UnregisterFailed(ret));
+            }
+            Ok(())
+        } else {
+            Err(NetUnregisterError::NotRegistered)
+        }
+    }
+Unixcoder Score: 0.006420201621949673
+--------------------------------------------------
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetRegistrar {
+    observer: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+    unregistration: Mutex<Option<UniquePtr<NetUnregistration>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RemoteServiceStub__idx4901_rank1.c", "source_rust_file": "API_Mapping__RemoteServiceStub__idx4901_rank1.rs", "c_api": "this->inner_ = ability;", "rust_api": "Self { inner }", "mapping_type": "pattern", "description": "Struct field initialization from parameter", "reasoning": "[Entity Name Check] -> Names do not refer to the same concept ('RemoteServiceStub' vs 'new'). [Empty/Trivial Code] -> Neither side is empty. [FFI Wrapper] -> No FFI call detected. [Semantic Domain Mismatch] -> C side is about class/struct initialization, Rust side is about constructor logic. [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> C is a constructor definition, Rust is a constructor function definition. However, both represent the same logical operation of initializing a struct with a field. [Full] -> Names don't match, so not full. [Partial] -> No matching structural blocks. [API Mappings] -> The initialization logic is semantically equivalent: C assigns a parameter to a member variable, Rust takes a parameter and initializes a struct field. This is a pattern of struct initialization. [None] -> No full/partial match, but API mapping exists."}]
+Unixcoder Score: 0.006043111905455589
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceProxy::Remove(uint32_t taskId)
+{
+    MessageParcel data, reply;
+    MessageOption option;
+    data.WriteInterfaceToken(DownloadServiceProxy::GetDescriptor());
+    data.WriteInt32(taskId);
+    DOWNLOAD_HILOGD("DownloadServiceProxy Remove started.");
+    bool ret = Remote()->SendRequest(CMD_REMOVE, data, reply, option);
+    if (ret != ERR_NONE) {
+        DOWNLOAD_HILOGE("Remove, ret = %{public}d", ret);
+        return false;
+    }
+    DOWNLOAD_HILOGD("DownloadServiceProxy Remove succeeded.");
+    return true;
+}
+Function: 
+fn remove(&self, data: &BorrowedMsgParcel, reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
+        self.0.remove(data, reply)
+    }
+Unixcoder Score: 0.004991233814507723
+--------------------------------------------------
+C_Code: 
+void AssetLoader::Download(const std::string &tableName, std::vector<AssetsRecord> &assetsRecords)
+{
+    (void)assetsRecords;
+    return;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudAssetLoaderDownload(
+    loader: *mut OhCloudExtCloudAssetLoader,
+    info: *const OhCloudExtUpDownloadInfo,
+    assets: *mut OhCloudExtVector,
+) -> c_int {
+    if loader.is_null() || info.is_null() || assets.is_null() {
+        return ERRNO_NULLPTR;
+    }
+    let info = &*info;
+    let loader =
+        match OhCloudExtCloudAssetLoader::get_inner_mut(loader, SafetyCheckId::CloudAssetLoader) {
+            None => return ERRNO_WRONG_TYPE,
+            Some(v) => v,
+        };
+    let table_name_bytes = &*slice_from_raw_parts(info.table_name, info.table_name_len as usize);
+    let table_name = std::str::from_utf8_unchecked(table_name_bytes);
+
+    let gid_bytes = &*slice_from_raw_parts(info.gid, info.gid_len as usize);
+    let gid = std::str::from_utf8_unchecked(gid_bytes);
+
+    let prefix_bytes = &*slice_from_raw_parts(info.prefix, info.prefix_len as usize);
+    let prefix = std::str::from_utf8_unchecked(prefix_bytes);
+
+    let assets = match OhCloudExtVector::get_inner_ref(assets, SafetyCheckId::Vector) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let assets = match assets {
+        VectorCffi::CloudAsset(re) => re,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match loader.download(table_name, gid, prefix, assets) {
+        Ok(_) => ERRNO_SUCCESS,
+        Err(e) => map_single_sync_err(&e),
+    }
+}
+Unixcoder Score: 0.004689326509833336
+--------------------------------------------------
+C_Code: 
+void UnsubscribeRunningTaskCount(std::shared_ptr<IRunningTaskObserver> ob)
+{
+    FwkRunningTaskCountManager::GetInstance()->DetachObserver(ob);
+    if (FwkRunningTaskCountManager::GetInstance()->HasObserver()) {
+        REQUEST_HILOGD("Unsubscribe running task count success.");
+        return;
+    }
+
+    int32_t ret = RequestManagerImpl::GetInstance()->UnsubRunCount();
+    RequestManagerImpl::GetInstance()->UnsubscribeSA();
+    if (ret != E_OK) {
+        REQUEST_HILOGE("Unsubscribe running task count failed, ret: %{public}d.", ret);
+    }
+}
+Function: 
+pub(crate) fn unsubscribe_run_count(&self, reply: &mut MsgParcel) -> IpcResult<()> {
+        if is_called_by_hap() {
+            error!("Service run_count unsubscribe called by hap");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A34,
+                "Service run_count unsubscribe called by hap"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let pid = ipc::Skeleton::calling_pid();
+        info!("Service run_count unsubscribe pid {}", pid);
+
+        let ret = self.run_count_manager.unsubscribe_run_count(pid);
+        reply.write(&(ret as i32))?;
+        if ret != ErrorCode::ErrOk {
+            error!("End Service run_count unsubscribe, failed: {}", ret as i32);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A34,
+                &format!("End Service run_count unsubscribe, failed: {}", ret as i32)
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        Ok(())
+    }
+Unixcoder Score: 0.0035532291512936354
+--------------------------------------------------
+C_Code: 
+int32_t NetUnregistration::unregister() const
+{
+    return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);
+}
+Function: 
+pub fn register(&self) -> Result<(), NetRegisterError> {
+        let mut unregistration = self.unregistration.lock().unwrap();
+        if unregistration.is_some() {
+            return Err(NetRegisterError::AlreadyRegistered);
+        }
+        let wrapper = Box::new(NetObserverWrapper::new(self.observer.clone()));
+        let mut ret = 0;
+        let handle = RegisterNetObserver(wrapper, &mut ret);
+        if handle.is_null() {
+            return Err(NetRegisterError::RegisterFailed(ret));
+        }
+        if ret != 0 {
+            return Err(NetRegisterError::RegisterFailed(ret));
+        }
+        *unregistration = Some(handle);
+        Ok(())
+    }
+Unixcoder Score: -0.003958589397370815
+--------------------------------------------------
+C_Code: 
+DBStatus UnRegisterObserver() override
+    {
+        return DBStatus::OK;
+    }
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudSyncUnsubscribe(
+    server: *mut OhCloudExtCloudSync,
+    relations: *const OhCloudExtHashMap,
+    err: *mut *const OhCloudExtVector,
+) -> c_int {
+    if server.is_null() || relations.is_null() || err.is_null() {
+        return ERRNO_NULLPTR;
+    }
+
+    let cloud_server = match OhCloudExtCloudSync::get_inner_mut(server, SafetyCheckId::CloudSync) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let relations = match OhCloudExtHashMap::get_inner_ref(relations, SafetyCheckId::HashMap) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+    let relations = match relations {
+        HashMapCffi::VecString(res) => res,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match cloud_server.unsubscribe(relations) {
+        Ok(()) => ERRNO_SUCCESS,
+        Err(e) => {
+            let errno = map_single_sync_err(&e);
+            if errno == ERRNO_IPC_ERRORS {
+                if let SyncError::IPCErrors(vec) = e {
+                    let ret = VectorCffi::I32(vec.iter().map(map_ipc_err).collect());
+                    *err = OhCloudExtVector::new(ret, SafetyCheckId::Vector).into_ptr();
+                }
+            }
+            errno
+        }
+    }
+}
+Unixcoder Score: -0.013855562545359135
+--------------------------------------------------
+C_Code: 
+void AssetLoader::Download(const std::string &tableName, std::vector<AssetsRecord> &assetsRecords)
+{
+    (void)assetsRecords;
+    return;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudAssetLoaderDownload(
+    loader: *mut OhCloudExtCloudAssetLoader,
+    info: *const OhCloudExtUpDownloadInfo,
+    assets: *mut OhCloudExtVector,
+) -> c_int {
+    if loader.is_null() || info.is_null() || assets.is_null() {
+        return ERRNO_NULLPTR;
+    }
+    let info = &*info;
+    let loader =
+        match OhCloudExtCloudAssetLoader::get_inner_mut(loader, SafetyCheckId::CloudAssetLoader) {
+            None => return ERRNO_WRONG_TYPE,
+            Some(v) => v,
+        };
+    let table_name_bytes = &*slice_from_raw_parts(info.table_name, info.table_name_len as usize);
+    let table_name = std::str::from_utf8_unchecked(table_name_bytes);
+
+    let gid_bytes = &*slice_from_raw_parts(info.gid, info.gid_len as usize);
+    let gid = std::str::from_utf8_unchecked(gid_bytes);
+
+    let prefix_bytes = &*slice_from_raw_parts(info.prefix, info.prefix_len as usize);
+    let prefix = std::str::from_utf8_unchecked(prefix_bytes);
+
+    let assets = match OhCloudExtVector::get_inner_ref(assets, SafetyCheckId::Vector) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let assets = match assets {
+        VectorCffi::CloudAsset(re) => re,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match loader.download(table_name, gid, prefix, assets) {
+        Ok(_) => ERRNO_SUCCESS,
+        Err(e) => map_single_sync_err(&e),
+    }
+}
+Unixcoder Score: -0.015531454235315323
+--------------------------------------------------

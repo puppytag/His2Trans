@@ -1,0 +1,313 @@
+C_Code: 
+bool NetworkAdapter::RegOnNetworkChange(RegCallBack &&callback)
+{
+    callback_ = callback;
+    NetSpecifier netSpecifier;
+    NetAllCapabilities netAllCapabilities;
+    netAllCapabilities.netCaps_.insert(NetCap::NET_CAPABILITY_INTERNET);
+    netSpecifier.netCapabilities_ = netAllCapabilities;
+    sptr<NetSpecifier> specifier = new (std::nothrow) NetSpecifier(netSpecifier);
+    if (specifier == nullptr) {
+        REQUEST_HILOGE("new operator error.specifier is nullptr");
+        return false;
+    }
+    sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(*this);
+    if (observer == nullptr) {
+        REQUEST_HILOGE("new operator error.observer is nullptr");
+        return false;
+    }
+    int nRet = NetConnClient::GetInstance().RegisterNetConnCallback(specifier, observer, 0);
+    if (nRet == NETMANAGER_SUCCESS) {
+        REQUEST_HILOGD("RegisterNetConnCallback successfully registered");
+        return true;
+    }
+    REQUEST_HILOGE("Failed to register the callback retcode= %{public}d", nRet);
+    return false;
+}
+Function: 
+pub(crate) fn register_network_change(task_manager: TaskManagerTx) -> Network {
+    let inner = NetworkInner::new();
+    let registry = ffi::RegisterNetworkChange(
+        Box::new(inner.clone()),
+        Box::new(NetworkTaskManagerTx {
+            inner: task_manager.clone(),
+        }),
+        |task_manager| {
+            task_manager
+                .inner
+                .send_event(TaskManagerEvent::network_online());
+        },
+        |task_manager| {
+            task_manager
+                .inner
+                .send_event(TaskManagerEvent::network_offline());
+        },
+    );
+    if registry.is_null() {
+        error!("RegisterNetworkChange failed sleep 1s and retry");
+        #[cfg(not(test))]
+        {
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            return register_network_change(task_manager);
+        }
+    }
+    Network {
+        inner,
+        _registry: Arc::new(registry),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.c", "source_rust_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.rs", "c_api": "REQUEST_HILOGD(\"Unsubscribe running task count success.\")", "rust_api": "info!(\"Service run_count subscribe pid {}\", pid)", "mapping_type": "function", "description": "Logging with success status", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function subscribes to run count via IPC. [Similarity] Names don't match conceptually (unsubscribe vs subscribe), but both involve observer pattern and IPC communication. [Knowledge Extraction] No full structural match due to different logic flows and domains (observer detachment vs IPC subscription). However, there are API mappings related to observer pattern and error handling in IPC communication."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.c", "source_rust_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.rs", "c_api": "REQUEST_HILOGE(\"Unsubscribe running task count failed, ret: %{public}d.\", ret)", "rust_api": "error!(\"End Service run_count subscribe, failed:{}\", ret as i32)", "mapping_type": "function", "description": "Error logging with status code", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function subscribes to run count via IPC. [Similarity] Names don't match conceptually (unsubscribe vs subscribe), but both involve observer pattern and IPC communication. [Knowledge Extraction] No full structural match due to different logic flows and domains (observer detachment vs IPC subscription). However, there are API mappings related to observer pattern and error handling in IPC communication."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.c", "source_rust_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.rs", "c_api": "sys_event!(ExecError, DfxCode::INVALID_IPC_MESSAGE_A32, \"Service run_count subscribe called by hap\")", "rust_api": "sys_event!(ExecError, DfxCode::INVALID_IPC_MESSAGE_A32, &format!(\"End Service run_count subscribe, failed:{}\", ret as i32))", "mapping_type": "function", "description": "System event reporting for invalid IPC messages", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function subscribes to run count via IPC. [Similarity] Names don't match conceptually (unsubscribe vs subscribe), but both involve observer pattern and IPC communication. [Knowledge Extraction] No full structural match due to different logic flows and domains (observer detachment vs IPC subscription). However, there are API mappings related to observer pattern and error handling in IPC communication."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.c", "source_rust_file": "API_Mapping__UnsubscribeRunningTaskCount__idx869_rank5.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->DetachObserver(ob)", "rust_api": "self.run_count_manager.subscribe_run_count(pid, obj)", "mapping_type": "function", "description": "Observer pattern management (detach vs subscribe)", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function subscribes to run count via IPC. [Similarity] Names don't match conceptually (unsubscribe vs subscribe), but both involve observer pattern and IPC communication. [Knowledge Extraction] No full structural match due to different logic flows and domains (observer detachment vs IPC subscription). However, there are API mappings related to observer pattern and error handling in IPC communication."}]
+Unixcoder Score: 0.02497854083776474
+--------------------------------------------------
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetRegistrar {
+    observer: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+    unregistration: Mutex<Option<UniquePtr<NetUnregistration>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetAvailable__idx961_rank1.c", "source_rust_file": "API_Mapping__NetAvailable__idx961_rank1.rs", "c_api": "inner_->net_available(netHandle->GetNetId())", "rust_api": "observer.net_available(0)", "mapping_type": "method", "description": "Calling net_available method to notify network availability", "reasoning": "[Task Analysis] C function `NetObserver::NetAvailable` takes a `NetHandle` and calls `inner_->net_available` with the net ID; Rust function `ut_net_observer_net_available_zero_id_001` is a test that creates a mock service, sets up expectations, and calls `observer.net_available(0)` with a hardcoded ID. [Similarity] The test function calls a method named `net_available` on an observer object, but the C code calls a method on an `inner_` object with a different parameter. The core logic is not directly equivalent; the C code is an implementation while the Rust code is a test. [Knowledge Extraction] The function names are similar but the context and parameters differ significantly, and the Rust code is a test calling the function rather than implementing it. Therefore, this is a test vs implementation mismatch and does not meet criteria for Full or Partial classification. However, there is a potential API mapping between the C method call and the Rust method call in terms of the operation being performed (calling `net_available`)."}]
+Unixcoder Score: 0.02196325547993183
+--------------------------------------------------
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetObserverWrapper {
+    inner: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetAvailable__idx1050_rank1.c", "source_rust_file": "Partial__NetAvailable__idx1050_rank1.rs", "c_api": "netHandle->GetNetId()", "rust_api": "net_id: i32", "mapping_type": "function", "description": "Retrieves network identifier from handle", "reasoning": "[Task Analysis] C function 'NetObserver::NetAvailable' and Rust function 'net_available' both handle network availability events. [Similarity] Names refer to same concept ('NetAvailable'), but differ in naming style and implementation details. [Knowledge Extraction] Full classification blocked by domain mismatch (C calls inner_->net_available with GetNetId, Rust logs and resets tasks). However, partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__NetAvailable__idx1050_rank1.c", "source_rust_file": "Partial__NetAvailable__idx1050_rank1.rs", "c_fragment": "inner_->net_available(netHandle->GetNetId());", "rust_fragment": "CacheDownloadService::get_instance().reset_all_tasks();", "description": "Both handle network availability logic, though C calls a method and Rust resets tasks.", "reasoning": "[Task Analysis] C function 'NetObserver::NetAvailable' and Rust function 'net_available' both handle network availability events. [Similarity] Names refer to same concept ('NetAvailable'), but differ in naming style and implementation details. [Knowledge Extraction] Full classification blocked by domain mismatch (C calls inner_->net_available with GetNetId, Rust logs and resets tasks). However, partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__NetAvailable__idx1050_rank1.c", "source_rust_file": "Partial__NetAvailable__idx1050_rank1.rs", "c_api": "inner_->net_available(...)", "rust_api": "info!(\"net available, net_id: {}\", net_id)", "mapping_type": "function", "description": "Logs network availability event", "reasoning": "[Task Analysis] C function 'NetObserver::NetAvailable' and Rust function 'net_available' both handle network availability events. [Similarity] Names refer to same concept ('NetAvailable'), but differ in naming style and implementation details. [Knowledge Extraction] Full classification blocked by domain mismatch (C calls inner_->net_available with GetNetId, Rust logs and resets tasks). However, partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: 0.015559538267552853
+--------------------------------------------------
+C_Code: 
+void CopyFromSpan(flatbuffers::span<const T, length> src) {
+    const auto p1 = reinterpret_cast<const uint8_t *>(src.data());
+    const auto p2 = Data();
+    FLATBUFFERS_ASSERT(!(p1 >= p2 && p1 < (p2 + length)) &&
+                       !(p2 >= p1 && p2 < (p1 + length)));
+    (void)p1;
+    (void)p2;
+    CopyFromSpanImpl(flatbuffers::bool_constant<is_span_observable>(), src);
+  }
+Function: 
+pub unsafe fn emplace_scalar_array<T: EndianScalar, const N: usize>(
+    buf: &mut [u8],
+    loc: usize,
+    src: &[T; N],
+) {
+    let mut buf_ptr = buf[loc..].as_mut_ptr();
+    for item in src.iter() {
+        let item_le = item.to_little_endian();
+        core::ptr::copy_nonoverlapping(
+            &item_le as *const T::Scalar as *const u8,
+            buf_ptr,
+            size_of::<T::Scalar>(),
+        );
+        buf_ptr = buf_ptr.add(size_of::<T::Scalar>());
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__yield__idx10481_rank1.c", "source_rust_file": "Partial__yield__idx10481_rank1.rs", "c_api": "ctx.next->swap(ctx)", "rust_api": "imp::maybe_yield()", "mapping_type": "function", "description": "Context switching/yielding operation in task scheduling", "reasoning": "[Task Analysis] The C code implements a task yield function with lifecycle checks and context swapping; the Rust code implements a try function that handles task queuing and conditional yielding. [Similarity] Names and domains differ (task scheduling vs queue management), but both involve yielding/continuation logic. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. Partial match found in the yielding logic. API mappings identified for context switching and yielding patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__yield__idx10481_rank1.c", "source_rust_file": "Partial__yield__idx10481_rank1.rs", "c_fragment": "ctx.next->swap(ctx);", "rust_fragment": "imp::maybe_yield();", "description": "Both represent yielding/continuation logic in task scheduling - C via context swap, Rust via explicit yield call.", "reasoning": "[Task Analysis] The C code implements a task yield function with lifecycle checks and context swapping; the Rust code implements a try function that handles task queuing and conditional yielding. [Similarity] Names and domains differ (task scheduling vs queue management), but both involve yielding/continuation logic. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. Partial match found in the yielding logic. API mappings identified for context switching and yielding patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__yield__idx10481_rank1.c", "source_rust_file": "Partial__yield__idx10481_rank1.rs", "c_api": "must_fail_from_being_killed()", "rust_api": "DISCONNECTED", "mapping_type": "pattern", "description": "Error condition handling for task termination", "reasoning": "[Task Analysis] The C code implements a task yield function with lifecycle checks and context swapping; the Rust code implements a try function that handles task queuing and conditional yielding. [Similarity] Names and domains differ (task scheduling vs queue management), but both involve yielding/continuation logic. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. Partial match found in the yielding logic. API mappings identified for context switching and yielding patterns."}]
+Unixcoder Score: -0.009964975528419018
+--------------------------------------------------
+C_Code: 
+void CopyFromSpan(flatbuffers::span<const T, length> src) {
+    const auto p1 = reinterpret_cast<const uint8_t *>(src.data());
+    const auto p2 = Data();
+    FLATBUFFERS_ASSERT(!(p1 >= p2 && p1 < (p2 + length)) &&
+                       !(p2 >= p1 && p2 < (p1 + length)));
+    (void)p1;
+    (void)p2;
+    CopyFromSpanImpl(flatbuffers::bool_constant<is_span_observable>(), src);
+  }
+Function: 
+pub fn as_ptr(&self) -> *const u8 {
+        self.0.as_ptr()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__yield__idx11533_rank2.c", "source_rust_file": "API_Mapping__yield__idx11533_rank2.rs", "c_api": "imp::signal(*self.signal.get() as imp::signal)", "rust_api": "imp::signal(*self.signal.get() as imp::signal)", "mapping_type": "function", "description": "Signal wake-up mechanism", "reasoning": "[Filter 1: Entity Name Check] -> Names 'yield' and 'send' refer to different concepts (task yielding vs message sending), so not a full match. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with task scheduling and context switching; Rust code handles message passing and signaling. These are fundamentally different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. [Task Analysis] -> C function 'yield' manages task state and context switching; Rust function 'send' handles message passing. [Similarity] -> No structural or semantic similarity in core logic. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings due to similar control flow patterns (e.g., locking, assertions)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__yield__idx11533_rank2.c", "source_rust_file": "API_Mapping__yield__idx11533_rank2.rs", "c_api": "scoped_lock with(lifecycle_lock)", "rust_api": "let _guard = self.lock.lock()", "mapping_type": "pattern", "description": "Acquire a lock for thread safety", "reasoning": "[Filter 1: Entity Name Check] -> Names 'yield' and 'send' refer to different concepts (task yielding vs message sending), so not a full match. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with task scheduling and context switching; Rust code handles message passing and signaling. These are fundamentally different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. [Task Analysis] -> C function 'yield' manages task state and context switching; Rust function 'send' handles message passing. [Similarity] -> No structural or semantic similarity in core logic. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings due to similar control flow patterns (e.g., locking, assertions)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__yield__idx11533_rank2.c", "source_rust_file": "API_Mapping__yield__idx11533_rank2.rs", "c_api": "assert(!(state == task_state_blocked))", "rust_api": "assert!(!self.chan.get().is_null())", "mapping_type": "pattern", "description": "Validate preconditions before operation", "reasoning": "[Filter 1: Entity Name Check] -> Names 'yield' and 'send' refer to different concepts (task yielding vs message sending), so not a full match. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with task scheduling and context switching; Rust code handles message passing and signaling. These are fundamentally different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. [Task Analysis] -> C function 'yield' manages task state and context switching; Rust function 'send' handles message passing. [Similarity] -> No structural or semantic similarity in core logic. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings due to similar control flow patterns (e.g., locking, assertions)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__yield__idx11533_rank2.c", "source_rust_file": "API_Mapping__yield__idx11533_rank2.rs", "c_api": "ctx.next->swap(ctx)", "rust_api": "(**self.chan.get()).send(msg)", "mapping_type": "pattern", "description": "Context switching or message sending", "reasoning": "[Filter 1: Entity Name Check] -> Names 'yield' and 'send' refer to different concepts (task yielding vs message sending), so not a full match. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C code deals with task scheduling and context switching; Rust code handles message passing and signaling. These are fundamentally different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. [Task Analysis] -> C function 'yield' manages task state and context switching; Rust function 'send' handles message passing. [Similarity] -> No structural or semantic similarity in core logic. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings due to similar control flow patterns (e.g., locking, assertions)."}]
+Unixcoder Score: -0.012342086993157864
+--------------------------------------------------
+C_Code: 
+void RunCountNotifyStub::OnCallBack(MessageParcel &data)
+{
+    REQUEST_HILOGD("Receive callback");
+    int runCount = data.ReadInt64();
+    REQUEST_HILOGD("RunCount num %{public}d", runCount);
+
+    FwkRunningTaskCountManager::GetInstance()->SetCount(runCount);
+    FwkRunningTaskCountManager::GetInstance()->NotifyAllObservers();
+}
+Function: 
+fn on_remote_request(
+        &self,
+        _code: u32,
+        data: &mut ipc::parcel::MsgParcel,
+        _reply: &mut ipc::parcel::MsgParcel,
+    ) -> i32 {
+        let token = data.read_interface_token().unwrap();
+        assert_eq!(token, "OHOS.Download.NotifyInterface");
+        let run_count: i64 = data.read().unwrap();
+        println!("Run count: {}", run_count);
+        0
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__yield__idx79468_rank2.c", "source_rust_file": "Partial__yield__idx79468_rank2.rs", "c_fragment": "task::yield();", "rust_fragment": "task::yield();", "description": "Both code blocks contain a call to yield function, indicating similar control flow behavior.", "reasoning": "[Task Analysis] C function 'rust_task::yield()' and Rust function 'supervised()' both involve yielding control, but C version has complex logic with lifecycle checks and context swapping while Rust version is a simple call followed by failure. [Similarity] Names do not match exactly but conceptually refer to same operation (yielding control). However, C has extensive logic around yield, while Rust just calls it. [Knowledge Extraction] Full match blocked due to implementation vs usage asymmetry (C is implementation, Rust is usage). No API mappings extracted due to mismatched usage patterns. Structural fragments found but not sufficient for full match."}]
+Unixcoder Score: -0.016247183084487915
+--------------------------------------------------
+C_Code: 
+NetUnregistration::NetUnregistration(sptr<NetObserver> observer) : observer_(observer)
+{
+}
+Function: 
+pub fn add_observer(&self, observer: impl Observer + 'static) {
+        self.observer.lock().unwrap().push(Box::new(observer));
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetObserver__idx1522_rank2.c", "source_rust_file": "API_Mapping__NetObserver__idx1522_rank2.rs", "c_api": "inner_(std::move(wrapper))", "rust_api": "*error = 0", "mapping_type": "pattern", "description": "Setting error code to zero", "reasoning": "[Task Analysis] C constructor initializes a member with a moved wrapper; Rust function registers a net observer by calling methods on the wrapper and setting an error code. [Similarity] Names do not refer to the same concept (constructor vs function), and domains are different (object initialization vs registration logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to method calls on the wrapper object."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetObserver__idx1522_rank2.c", "source_rust_file": "API_Mapping__NetObserver__idx1522_rank2.rs", "c_api": "inner_(std::move(wrapper))", "rust_api": "wrapper.net_capability_changed(TEST_NET_ID, NetInfo { ... })", "mapping_type": "method", "description": "Method call to notify network capability change", "reasoning": "[Task Analysis] C constructor initializes a member with a moved wrapper; Rust function registers a net observer by calling methods on the wrapper and setting an error code. [Similarity] Names do not refer to the same concept (constructor vs function), and domains are different (object initialization vs registration logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to method calls on the wrapper object."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetObserver__idx1522_rank2.c", "source_rust_file": "API_Mapping__NetObserver__idx1522_rank2.rs", "c_api": "inner_(std::move(wrapper))", "rust_api": "wrapper.net_available(TEST_NET_ID)", "mapping_type": "method", "description": "Method call to notify network availability", "reasoning": "[Task Analysis] C constructor initializes a member with a moved wrapper; Rust function registers a net observer by calling methods on the wrapper and setting an error code. [Similarity] Names do not refer to the same concept (constructor vs function), and domains are different (object initialization vs registration logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to method calls on the wrapper object."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetObserver__idx1522_rank2.c", "source_rust_file": "API_Mapping__NetObserver__idx1522_rank2.rs", "c_api": "inner_(std::move(wrapper))", "rust_api": "wrapper.net_lost(TEST_NET_ID)", "mapping_type": "method", "description": "Method call to notify network loss", "reasoning": "[Task Analysis] C constructor initializes a member with a moved wrapper; Rust function registers a net observer by calling methods on the wrapper and setting an error code. [Similarity] Names do not refer to the same concept (constructor vs function), and domains are different (object initialization vs registration logic). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to method calls on the wrapper object."}]
+Unixcoder Score: -0.022730398923158646
+--------------------------------------------------
+C_Code: 
+void RunCountNotifyStub::OnCallBack(MessageParcel &data)
+{
+    REQUEST_HILOGD("Receive callback");
+    int runCount = data.ReadInt64();
+    REQUEST_HILOGD("RunCount num %{public}d", runCount);
+
+    FwkRunningTaskCountManager::GetInstance()->SetCount(runCount);
+    FwkRunningTaskCountManager::GetInstance()->NotifyAllObservers();
+}
+Function: 
+pub(crate) fn subscribe_run_count(
+        &self,
+        data: &mut MsgParcel,
+        reply: &mut MsgParcel,
+    ) -> IpcResult<()> {
+        if is_called_by_hap() {
+            error!("Service run_count subscribe called by hap");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A32,
+                "Service run_count subscribe called by hap"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let pid = ipc::Skeleton::calling_pid();
+        info!("Service run_count subscribe pid {}", pid);
+
+        let obj: RemoteObj = data.read_remote()?;
+        let ret = self.run_count_manager.subscribe_run_count(pid, obj);
+
+        reply.write(&(ret as i32))?;
+        if ret != ErrorCode::ErrOk {
+            error!("End Service run_count subscribe, failed:{}", ret as i32);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A32,
+                &format!("End Service run_count subscribe, failed:{}", ret as i32)
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__yield__idx111533_rank4.c", "source_rust_file": "API_Mapping__yield__idx111533_rank4.rs", "c_api": "ctx.next->swap(ctx)", "rust_api": "self.queue.push(task)", "mapping_type": "pattern", "description": "State transition and data movement between execution contexts", "reasoning": "[Task Analysis] C code is a task yield function with context swapping and lifecycle checks; Rust code is a simple queue push operation. [Similarity] No structural similarity at the function level due to different domains (task scheduling vs queue management). [Knowledge Extraction] No full match, no partial match, but API mapping possible between C's context swap and Rust's queue push in terms of control flow and state transition patterns."}]
+Unixcoder Score: -0.026139356195926666
+--------------------------------------------------
+C_Code: 
+void RunCountNotifyStub::OnCallBack(MessageParcel &data)
+{
+    REQUEST_HILOGD("Receive callback");
+    int runCount = data.ReadInt64();
+    REQUEST_HILOGD("RunCount num %{public}d", runCount);
+
+    FwkRunningTaskCountManager::GetInstance()->SetCount(runCount);
+    FwkRunningTaskCountManager::GetInstance()->NotifyAllObservers();
+}
+Function: 
+fn notify_run_count(&self, run_count: i64) -> IpcResult<()> {
+        info!("run_count:{}", run_count);
+        #[cfg(feature = "oh")]
+        {
+            let mut parcel = MsgParcel::new();
+
+            parcel.write_interface_token("OHOS.Download.NotifyInterface")?;
+            parcel.write(&(run_count))?;
+
+            self.obj
+                .send_request(interface::NOTIFY_RUN_COUNT, &mut parcel)?;
+            Ok(())
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__yield__idx70466_rank3.c", "source_rust_file": "API_Mapping__yield__idx70466_rank3.rs", "c_api": "ctx.next->swap(ctx)", "rust_api": "yield", "mapping_type": "pattern", "description": "Control flow transfer / context switching", "reasoning": "[Task Analysis] C code is a function that handles task yielding with lifecycle checks and context swapping; Rust code is a closure with a yield expression and function calls. [Similarity] No structural similarity at the function level due to different domains (task scheduling vs. generator/closure logic). [Knowledge Extraction] No full match, no partial match, but there is a pattern of yielding control flow that can be mapped between C and Rust constructs."}]
+Unixcoder Score: -0.03429202735424042
+--------------------------------------------------
+C_Code: 
+int32_t SubscribeRunningTaskCount(std::shared_ptr<IRunningTaskObserver> ob)
+{
+    if (!ob) {
+        REQUEST_HILOGE("Subscribe failed because of null observer");
+        return E_OTHER;
+    }
+    if (FwkRunningTaskCountManager::GetInstance()->HasObserver()) {
+        FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob);
+        ob->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+        return E_OK;
+    }
+
+    FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob);
+    auto listener = RunCountNotifyStub::GetInstance();
+    RequestManagerImpl::GetInstance()->SubscribeSA();
+    int32_t ret = RequestManagerImpl::GetInstance()->SubRunCount(listener);
+    if (ret != E_OK) {
+        // IPC is failed, but observer has attached.
+        REQUEST_HILOGE("Subscribe running task count failed, ret: %{public}d.", ret);
+        return ret;
+    }
+    if (!FwkRunningTaskCountManager::GetInstance()->SaIsOnline()) {
+        ob->OnRunningTaskCountUpdate(0);
+    }
+    return E_OK;
+}
+Function: 
+pub(crate) fn subscribe_run_count(
+        &self,
+        data: &mut MsgParcel,
+        reply: &mut MsgParcel,
+    ) -> IpcResult<()> {
+        if is_called_by_hap() {
+            error!("Service run_count subscribe called by hap");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A32,
+                "Service run_count subscribe called by hap"
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let pid = ipc::Skeleton::calling_pid();
+        info!("Service run_count subscribe pid {}", pid);
+
+        let obj: RemoteObj = data.read_remote()?;
+        let ret = self.run_count_manager.subscribe_run_count(pid, obj);
+
+        reply.write(&(ret as i32))?;
+        if ret != ErrorCode::ErrOk {
+            error!("End Service run_count subscribe, failed:{}", ret as i32);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A32,
+                &format!("End Service run_count subscribe, failed:{}", ret as i32)
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__NetAvailable__idx1521_rank1.c", "source_rust_file": "API_Mapping__NetAvailable__idx1521_rank1.rs", "c_api": "netHandle->GetNetId()", "rust_api": "observer.net_available(0)", "mapping_type": "method", "description": "Method call to retrieve network identifier and pass it to availability handler", "reasoning": "[Task Analysis] C function `NetObserver::NetAvailable` calls a method on `netHandle` and returns 0. Rust function `ut_observer_trait_object_safety` creates a mock observer and calls `net_available` with a hardcoded value. [Similarity] Names do not refer to the same concept (`NetObserver` vs `MockObserver`, `NetAvailable` vs `net_available`). The C code is an implementation, while the Rust code is a test case calling the function. [Knowledge Extraction] Filter 6 (Definition vs Usage Asymmetry) blocks Full/Partial classification. However, there is a matching API pattern in the method call: `netHandle->GetNetId()` in C maps to `observer.net_available(0)` in Rust, both representing a call to a method that takes a network identifier. This constitutes an API mapping."}]
+Unixcoder Score: -0.035977113991975784
+--------------------------------------------------

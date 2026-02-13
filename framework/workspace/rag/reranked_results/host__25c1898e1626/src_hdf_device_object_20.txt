@@ -1,0 +1,255 @@
+C_Code: 
+IremoteObjectInterface() {}
+Function: 
+pub unsafe fn from_ciremote(remote: *mut IRemoteObject) -> Option<Self> {
+        if remote.is_null() {
+            return None;
+        }
+
+        let inner = FromCIRemoteObject(remote);
+        if inner.is_null() {
+            return None;
+        }
+
+        Some(Self { inner })
+    }
+Unixcoder Score: 0.019051115959882736
+--------------------------------------------------
+C_Code: 
+std::u16string IPCObjectProxy::GetInterfaceDescriptor()
+{
+    if (!interfaceDesc_.empty()) {
+        return interfaceDesc_;
+    }
+    if (handle_ == 0) {
+        ZLOGD(LABEL, "handle == 0, do nothing");
+        return std::u16string();
+    }
+
+    MessageParcel data, reply;
+    MessageOption option;
+    std::string desc;
+    {
+        std::shared_lock<std::shared_mutex> lockGuard(descMutex_);
+        desc = remoteDescriptor_;
+    }
+
+    int err = SendRequestInner(false, INTERFACE_TRANSACTION, data, reply, option);
+    if (err != ERR_NONE) {
+        PRINT_SEND_REQUEST_FAIL_INFO(handle_, err, desc, ProcessSkeleton::ConvertAddr(this));
+        return std::u16string();
+    }
+    interfaceDesc_ = reply.ReadString16();
+
+    return interfaceDesc_;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_api": "SetValue(node[GET_NAME(fields)], fields)", "rust_api": "typ: ipc_conn::FieldType::try_from(value.typ)?", "mapping_type": "pattern", "description": "Field assignment with type conversion in data transformation", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_api": "SetValue(node[GET_NAME(name)], name)", "rust_api": "col_name: value.col_name.clone()", "mapping_type": "pattern", "description": "Field assignment with cloning in data transformation", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_api": "SetValue(node[GET_NAME(alias)], alias)", "rust_api": "alias: value.alias.clone()", "mapping_type": "pattern", "description": "Field assignment with cloning in data transformation", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_fragment": "SetValue(node[GET_NAME(fields)], fields);", "rust_fragment": "typ: ipc_conn::FieldType::try_from(value.typ)?,", "description": "Copying a type field from source to destination with conversion.", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_fragment": "SetValue(node[GET_NAME(name)], name);", "rust_fragment": "col_name: value.col_name.clone(),", "description": "Copying a field value from source to destination in a data structure.", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_fragment": "SetValue(node[GET_NAME(alias)], alias);", "rust_fragment": "alias: value.alias.clone(),", "description": "Copying an alias field from source to destination in a data structure.", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}]
+Unixcoder Score: -0.0189252570271492
+--------------------------------------------------
+C_Code: 
+IPCObjectStubInterface() {}
+Function: 
+fn skeleton() {
+    unsafe {
+        assert_eq!(
+            Skeleton::calling_device_id(),
+            (*GetCallingDeviceID()).to_string()
+        );
+        assert_eq!(Skeleton::calling_full_token_id(), GetCallingFullTokenID());
+        assert_eq!(Skeleton::calling_pid(), GetCallingPid());
+        assert_eq!(Skeleton::calling_real_pid(), GetCallingRealPid());
+        assert_eq!(Skeleton::calling_token_id(), GetCallingTokenID());
+        assert_eq!(Skeleton::calling_uid(), GetCallingUid());
+        assert_eq!(Skeleton::first_full_token_id(), GetFirstFullTokenID());
+        assert_eq!(Skeleton::first_token_id(), GetFirstTokenID());
+        assert_eq!(Skeleton::self_token_id(), SelfTokenID());
+        assert_eq!(Skeleton::is_local_calling(), IsLocalCalling());
+        assert_eq!(Skeleton::local_device_id(), (*LocalDeviceID()).to_string());
+        assert_eq!(
+            Skeleton::reset_calling_identity(),
+            (*ResetCallingIdentity()).to_string()
+        );
+    }
+}
+Unixcoder Score: -0.021820824593305588
+--------------------------------------------------
+C_Code: 
+IremoteObjectInterface() {}
+Function: 
+pub fn try_new(wrap: UniquePtr<IRemoteObjectWrapper>) -> Option<Self> {
+        if wrap.is_null() {
+            return None;
+        }
+        Some(Self { inner: wrap })
+    }
+Unixcoder Score: -0.038623105734586716
+--------------------------------------------------
+C_Code: 
+std::u16string MessageParcel::ReadInterfaceToken()
+{
+    [[maybe_unused]] int32_t strictModePolicy = ReadInt32();
+    [[maybe_unused]] int32_t workSource = ReadInt32();
+    interfaceToken_ = ReadString16();
+    return interfaceToken_;
+}
+Function: 
+pub fn read_interface_token(&mut self) -> IpcResult<String> {
+        fn read_process(parcel: Pin<&mut MessageParcel>) -> IpcResult<String> {
+            Ok(ReadInterfaceToken(parcel))
+        }
+
+        self.read_process(read_process)
+    }
+Unixcoder Score: -0.04516732320189476
+--------------------------------------------------
+C_Code: 
+int32_t RunCountNotifyStub::OnRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    auto descriptorToken = data.ReadInterfaceToken();
+    if (descriptorToken != GetDescriptor()) {
+        REQUEST_HILOGE("Remote descriptor not the same as local descriptor.");
+        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+
+    if (code == static_cast<uint32_t>(RequestNotifyInterfaceCode::REQUEST_NOTIFY_RUNCOUNT)) {
+        OnCallBack(data);
+        return ERR_NONE;
+    } else {
+        REQUEST_HILOGE("Other interface code received, check needed.");
+        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+}
+Function: 
+fn on_remote_request(
+        &self,
+        _code: u32,
+        data: &mut ipc::parcel::MsgParcel,
+        _reply: &mut ipc::parcel::MsgParcel,
+    ) -> i32 {
+        let token = data.read_interface_token().unwrap();
+        assert_eq!(token, "OHOS.Download.NotifyInterface");
+        let run_count: i64 = data.read().unwrap();
+        println!("Run count: {}", run_count);
+        0
+    }
+Unixcoder Score: -0.05750970542430878
+--------------------------------------------------
+C_Code: 
+rust::string ReadInterfaceToken(MessageParcel &msgParcel)
+{
+    return msgParcel.ReadInterfaceToken().data();
+}
+Function: 
+pub fn read_interface_token(&mut self) -> IpcResult<String> {
+        fn read_process(parcel: Pin<&mut MessageParcel>) -> IpcResult<String> {
+            Ok(ReadInterfaceToken(parcel))
+        }
+
+        self.read_process(read_process)
+    }
+Unixcoder Score: -0.05839091166853905
+--------------------------------------------------
+C_Code: 
+std::u16string MessageParcel::ReadInterfaceToken()
+{
+    [[maybe_unused]] int32_t strictModePolicy = ReadInt32();
+    [[maybe_unused]] int32_t workSource = ReadInt32();
+    interfaceToken_ = ReadString16();
+    return interfaceToken_;
+}
+Function: 
+pub fn read_string16(&mut self) -> IpcResult<String> {
+        Ok(ReadString16(self.as_parcel_mut()))
+    }
+Unixcoder Score: -0.06033283844590187
+--------------------------------------------------
+C_Code: 
+int32_t ListenAbilityStub::OnRemoteRequest(uint32_t code,
+    MessageParcel& data, MessageParcel &reply, MessageOption &option)
+{
+    std::u16string interfaceToken = data.ReadInterfaceToken();
+    if (interfaceToken != GetDescriptor()) {
+        return ERR_PERMISSION_DENIED;
+    }
+    switch (code) {
+        case ADD_VOLUME: {
+            int32_t volume = data.ReadInt32();
+            bool ret = reply.WriteInt32(AddVolume(volume));
+            return (ret ? ERR_OK : ERR_FLATTEN_OBJECT);
+        }
+        default:
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+}
+Function: 
+pub fn on_remote_request(
+        &mut self,
+        code: u32,
+        data: Pin<&mut MessageParcel>,
+        reply: Pin<&mut MessageParcel>,
+    ) -> i32 {
+        unsafe {
+            let mut data = MsgParcel::from_ptr(data.get_unchecked_mut() as *mut MessageParcel);
+            let mut reply = MsgParcel::from_ptr(reply.get_unchecked_mut() as *mut MessageParcel);
+            self.inner.on_remote_request(code, &mut data, &mut reply)
+        }
+    }
+Unixcoder Score: -0.060613423585891724
+--------------------------------------------------
+C_Code: 
+int32_t RunCountNotifyStub::OnRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    auto descriptorToken = data.ReadInterfaceToken();
+    if (descriptorToken != GetDescriptor()) {
+        REQUEST_HILOGE("Remote descriptor not the same as local descriptor.");
+        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+
+    if (code == static_cast<uint32_t>(RequestNotifyInterfaceCode::REQUEST_NOTIFY_RUNCOUNT)) {
+        OnCallBack(data);
+        return ERR_NONE;
+    } else {
+        REQUEST_HILOGE("Other interface code received, check needed.");
+        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+}
+Function: 
+fn on_remote_request(
+        &self,
+        _code: u32,
+        data: &mut ipc::parcel::MsgParcel,
+        _reply: &mut ipc::parcel::MsgParcel,
+    ) -> i32 {
+        let token = data.read_interface_token().unwrap();
+        assert_eq!(token, "OHOS.Download.NotifyInterface");
+        let run_count: i64 = data.read().unwrap();
+        println!("Run count: {}", run_count);
+        0
+    }
+Unixcoder Score: -0.061154238879680634
+--------------------------------------------------

@@ -1,0 +1,261 @@
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn fail_bounds_check(file: *u8, line: uint, index: uint, len: uint) -> ! {
+    #[allow(ctypes)]
+    extern { fn rust_fail_bounds_check(file: *u8, line: uint,
+                                       index: uint, len: uint,) -> !; }
+    unsafe { rust_fail_bounds_check(file, line, index, len) }
+}
+Unixcoder Score: 0.017075588926672935
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub fn begin_unwind(msg: &str, file: &'static str, line: uint) -> ! {
+    #[allow(ctypes)]
+    extern { fn rust_begin_unwind(msg: &str, file: &'static str,
+                                  line: uint) -> !; }
+    unsafe { rust_begin_unwind(msg, file, line) }
+}
+Unixcoder Score: 0.010904505848884583
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub unsafe extern fn __rust_start_panic(data: usize, vtable: usize) -> u32 {
+    imp::panic(mem::transmute(raw::TraitObject {
+        data: data as *mut (),
+        vtable: vtable as *mut (),
+    }))
+}
+Unixcoder Score: 0.005098862107843161
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn parse_type_alias(&mut self, defaultness: Defaultness) -> PResult<'a, ItemInfo> {
+        let ident = self.parse_ident()?;
+        let mut generics = self.parse_generics()?;
+
+        // Parse optional colon and param bounds.
+        let bounds =
+            if self.eat(&token::Colon) { self.parse_generic_bounds()? } else { Vec::new() };
+        let before_where_clause = self.parse_where_clause()?;
+
+        let ty = if self.eat(&token::Eq) { Some(self.parse_ty()?) } else { None };
+
+        let after_where_clause = self.parse_where_clause()?;
+
+        let where_clauses = (
+            TyAliasWhereClause(before_where_clause.has_where_token, before_where_clause.span),
+            TyAliasWhereClause(after_where_clause.has_where_token, after_where_clause.span),
+        );
+        let where_predicates_split = before_where_clause.predicates.len();
+        let mut predicates = before_where_clause.predicates;
+        predicates.extend(after_where_clause.predicates.into_iter());
+        let where_clause = WhereClause {
+            has_where_token: before_where_clause.has_where_token
+                || after_where_clause.has_where_token,
+            predicates,
+            span: DUMMY_SP,
+        };
+        generics.where_clause = where_clause;
+
+        self.expect_semi()?;
+
+        Ok((
+            ident,
+            ItemKind::TyAlias(Box::new(TyAlias {
+                defaultness,
+                generics,
+                where_clauses,
+                where_predicates_split,
+                bounds,
+                ty,
+            })),
+        ))
+    }
+Unixcoder Score: 0.004491010215133429
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub fn begin_unwind(msg: &str, file: &'static str, line: uint) -> ! {
+    #[allow(ctypes)]
+    extern { fn rust_begin_unwind(msg: &str, file: &'static str,
+                                  line: uint) -> !; }
+    unsafe { rust_begin_unwind(msg, file, line) }
+}
+Unixcoder Score: 0.0036184375640004873
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn good_unwind_rust() {
+    panic!();
+}
+Unixcoder Score: 0.0026385318487882614
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub fn begin_unwind(&mut self, cause: ~Any) -> ! {
+        rtdebug!("begin_unwind()");
+
+        self.unwinding = true;
+        self.cause = Some(cause);
+
+        unsafe {
+            let exception = ~_Unwind_Exception {
+                exception_class: rust_exception_class(),
+                exception_cleanup: exception_cleanup,
+                private_1: 0,
+                private_2: 0
+            };
+            let error = _Unwind_RaiseException(transmute(exception));
+            rtabort!("Could not unwind stack, error = {}", error as int)
+        }
+
+        extern "C" fn exception_cleanup(_unwind_code: _Unwind_Reason_Code,
+                                        exception: *_Unwind_Exception) {
+            rtdebug!("exception_cleanup()");
+            unsafe {
+                let _: ~_Unwind_Exception = transmute(exception);
+            }
+        }
+    }
+Unixcoder Score: -0.0016671852208673954
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+pub extern "C" fn rust_eh_personality(
+        version: c_int,
+        actions: uw::_Unwind_Action,
+        exception_class: uw::_Unwind_Exception_Class,
+        ue_header: *mut uw::_Unwind_Exception,
+        context: *mut uw::_Unwind_Context
+    ) -> uw::_Unwind_Reason_Code
+    {
+        unsafe {
+            __gcc_personality_sj0(version, actions, exception_class, ue_header,
+                                  context)
+        }
+    }
+Unixcoder Score: -0.001987825846299529
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+extern "C" fn inner(
+                _version: c_int,
+                actions: uw::_Unwind_Action,
+                _exception_class: uw::_Unwind_Exception_Class,
+                _ue_header: *mut uw::_Unwind_Exception,
+                _context: *mut uw::_Unwind_Context
+            ) -> uw::_Unwind_Reason_Code
+        {
+            if (actions as c_int & uw::_UA_SEARCH_PHASE as c_int) != 0 { // search phase
+                uw::_URC_HANDLER_FOUND // catch!
+            }
+            else { // cleanup phase
+                uw::_URC_INSTALL_CONTEXT
+            }
+        }
+Unixcoder Score: -0.006902662105858326
+--------------------------------------------------
+C_Code: 
+CDECL void
+rust_begin_unwind(uintptr_t token) {
+    throw token;
+}
+Function: 
+fn main() {
+    let mut map: HashMap<SendStr, uint> = HashMap::new();
+    assert!(map.insert(SendStrStatic("foo"), 42));
+    assert!(!map.insert(SendStrOwned(~"foo"), 42));
+    assert!(!map.insert(SendStrStatic("foo"), 42));
+    assert!(!map.insert(SendStrOwned(~"foo"), 42));
+
+    assert!(!map.insert(SendStrStatic("foo"), 43));
+    assert!(!map.insert(SendStrOwned(~"foo"), 44));
+    assert!(!map.insert(SendStrStatic("foo"), 45));
+    assert!(!map.insert(SendStrOwned(~"foo"), 46));
+
+    let v = 46;
+
+    assert_eq!(map.find(&SendStrOwned(~"foo")), Some(&v));
+    assert_eq!(map.find(&SendStrStatic("foo")), Some(&v));
+
+    let (a, b, c, d) = (50, 51, 52, 53);
+
+    assert!(map.insert(SendStrStatic("abc"), a));
+    assert!(map.insert(SendStrOwned(~"bcd"), b));
+    assert!(map.insert(SendStrStatic("cde"), c));
+    assert!(map.insert(SendStrOwned(~"def"), d));
+
+    assert!(!map.insert(SendStrStatic("abc"), a));
+    assert!(!map.insert(SendStrOwned(~"bcd"), b));
+    assert!(!map.insert(SendStrStatic("cde"), c));
+    assert!(!map.insert(SendStrOwned(~"def"), d));
+
+    assert!(!map.insert(SendStrOwned(~"abc"), a));
+    assert!(!map.insert(SendStrStatic("bcd"), b));
+    assert!(!map.insert(SendStrOwned(~"cde"), c));
+    assert!(!map.insert(SendStrStatic("def"), d));
+
+    assert_eq!(map.find_equiv(&("abc")), Some(&a));
+    assert_eq!(map.find_equiv(&("bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&("cde")), Some(&c));
+    assert_eq!(map.find_equiv(&("def")), Some(&d));
+
+    assert_eq!(map.find_equiv(&(~"abc")), Some(&a));
+    assert_eq!(map.find_equiv(&(~"bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&(~"cde")), Some(&c));
+    assert_eq!(map.find_equiv(&(~"def")), Some(&d));
+
+    assert_eq!(map.find_equiv(&(@"abc")), Some(&a));
+    assert_eq!(map.find_equiv(&(@"bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&(@"cde")), Some(&c));
+    assert_eq!(map.find_equiv(&(@"def")), Some(&d));
+
+    assert_eq!(map.find_equiv(&SendStrStatic("abc")), Some(&a));
+    assert_eq!(map.find_equiv(&SendStrStatic("bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&SendStrStatic("cde")), Some(&c));
+    assert_eq!(map.find_equiv(&SendStrStatic("def")), Some(&d));
+
+    assert_eq!(map.find_equiv(&SendStrOwned(~"abc")), Some(&a));
+    assert_eq!(map.find_equiv(&SendStrOwned(~"bcd")), Some(&b));
+    assert_eq!(map.find_equiv(&SendStrOwned(~"cde")), Some(&c));
+    assert_eq!(map.find_equiv(&SendStrOwned(~"def")), Some(&d));
+}
+Unixcoder Score: -0.0069677140563726425
+--------------------------------------------------

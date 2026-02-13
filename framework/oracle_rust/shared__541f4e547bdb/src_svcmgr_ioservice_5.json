@@ -1,0 +1,35 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_svcmgr_ioservice_5",
+  "function_name": "SvcMgrIoserviceUnRegSvcStatListener",
+  "source_c_file": "src/svcmgr_ioservice.c",
+  "c_code": "int32_t SvcMgrIoserviceUnRegSvcStatListener(struct ISvcMgrIoservice * self, struct ServiceStatusListener * listener)\n{\n    if (self == NULL || listener == NULL) {\n        return HDF_ERR_INVALID_PARAM;\n    }\n\n    struct SvcMgrIoservice *svcmgrInst = CONTAINER_OF(self, struct SvcMgrIoservice, svcmgr);\n    struct IoServiceStatusListener *listenerInst\n        = CONTAINER_OF(listener, struct IoServiceStatusListener, svcstatListener);\n\n    int ret = HdfDeviceUnregisterEventListener(svcmgrInst->iosvc, &listenerInst->ioservListener);\n    if (ret != HDF_SUCCESS) {\n        return ret;\n    }\n\n    if (HdfIoserviceGetListenerCount(svcmgrInst->iosvc) == 0) {\n        ret = UnSetListenClass(svcmgrInst, listenerInst->deviceClass);\n    }\n\n    return ret;\n}",
+  "rust_signature": "pub extern \"C\" fn SvcMgrIoserviceUnRegSvcStatListener(self_: *mut crate::types::ISvcMgrIoservice, listener: *mut crate::types::ServiceStatusListener) -> i32",
+  "rust_code": "pub extern \\\"C\\\" fn SvcMgrIoserviceUnRegSvcStatListener(self_: *mut ISvcMgrIoservice, listener: *mut ServiceStatusListener) -> i32 {\n    if self_.is_null() || listener.is_null() {\n        return HDF_ERR_INVALID_PARAM;\n    }\n    unsafe {\n        let svcmgrInst = (self_ as *mut u8).offset(-(core::mem::offset_of!(SvcMgrIoservice, svcmgr) as isize)) as *mut SvcMgrIoservice;\n        let listenerInst = (listener as *mut u8).offset(-(core::mem::offset_of!(IoServiceStatusListener, svcstatListener) as isize)) as *mut IoServiceStatusListener;\n\n        let ret = HdfDeviceUnregisterEventListener((*svcmgrInst).iosvc, core::ptr::addr_of_mut!((*listenerInst).ioservListener));\n        if ret != HDF_SUCCESS {\n            return ret;\n        }\n        if HdfIoserviceGetListenerCount((*svcmgrInst).iosvc as *const HdfIoService) == 0 {\n            return UnSetListenClass(svcmgrInst, (*listenerInst).deviceClass);\n        }\n        ret\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfDeviceUnregisterEventListener",
+      "rust_api": "HdfDeviceUnregisterEventListener",
+      "description": "Unregister device event listener",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "CONTAINER_OF(p, T, field)",
+      "rust_fragment": "(p as *mut u8).offset(-(offset_of!(T, field) as isize)) as *mut T",
+      "description": "Implement container_of via `offset_of!` + pointer arithmetic",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

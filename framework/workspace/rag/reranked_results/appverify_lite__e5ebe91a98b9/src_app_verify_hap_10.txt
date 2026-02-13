@@ -1,0 +1,658 @@
+C_Code: 
+FsResult<int64_t> FsStream::Seek(const int64_t &offset, const optional<int32_t> &typeOpt)
+{
+    int whence = SEEK_SET;
+
+    auto fp = GetFilePtr();
+    if (fp == nullptr) {
+        HILOGE("Failed to get file ptr");
+        return FsResult<int64_t>::Error(ENOENT);
+    }
+
+    if (typeOpt.has_value()) {
+        int pos = typeOpt.value();
+        if (pos < SEEK_SET || pos > SEEK_END) {
+            HILOGE("Invalid whence");
+            return FsResult<int64_t>::Error(EINVAL);
+        }
+        whence = pos;
+    }
+
+    if (offset >= 0) {
+        int ret = fseek(fp.get(), static_cast<long>(offset), whence);
+        if (ret < 0) {
+            HILOGE("Failed to set the offset location of the file stream pointer, ret: %{public}d", ret);
+            return FsResult<int64_t>::Error(errno);
+        }
+    }
+
+    int64_t res = ftell(fp.get());
+    if (res < 0) {
+        HILOGE("Failed to tell, error:%{public}d", errno);
+        return FsResult<int64_t>::Error(errno);
+    }
+
+    return FsResult<int64_t>::Success(res);
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Unixcoder Score: -0.017554031684994698
+--------------------------------------------------
+C_Code: 
+static void
+arena_chunk_dealloc(arena_t *arena, arena_chunk_t *chunk)
+{
+	assert(arena_mapbits_allocated_get(chunk, map_bias) == 0);
+	assert(arena_mapbits_allocated_get(chunk, chunk_npages-1) == 0);
+	assert(arena_mapbits_unallocated_size_get(chunk, map_bias) ==
+	    arena_maxclass);
+	assert(arena_mapbits_unallocated_size_get(chunk, chunk_npages-1) ==
+	    arena_maxclass);
+	assert(arena_mapbits_dirty_get(chunk, map_bias) ==
+	    arena_mapbits_dirty_get(chunk, chunk_npages-1));
+
+	/*
+	 * Remove run from the runs_avail tree, so that the arena does not use
+	 * it.
+	 */
+	arena_avail_remove(arena, chunk, map_bias, chunk_npages-map_bias,
+	    false, false);
+
+	if (arena->spare != NULL) {
+		arena_chunk_t *spare = arena->spare;
+
+		arena->spare = chunk;
+		malloc_mutex_unlock(&arena->lock);
+		chunk_dealloc((void *)spare, chunksize, true);
+		malloc_mutex_lock(&arena->lock);
+		if (config_stats)
+			arena->stats.mapped -= chunksize;
+	} else
+		arena->spare = chunk;
+}
+Function: 
+unsafe fn new(capacity: usize) -> ArenaChunk<T> {
+        ArenaChunk {
+            storage: NonNull::from(Box::leak(Box::new_uninit_slice(capacity))),
+            entries: 0,
+        }
+    }
+Unixcoder Score: -0.020811541005969048
+--------------------------------------------------
+C_Code: 
+static void
+arena_run_dalloc(arena_t *arena, arena_run_t *run, bool dirty, bool cleaned)
+{
+	arena_chunk_t *chunk;
+	size_t size, run_ind, run_pages, flag_dirty;
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(run);
+	run_ind = (size_t)(((uintptr_t)run - (uintptr_t)chunk) >> LG_PAGE);
+	assert(run_ind >= map_bias);
+	assert(run_ind < chunk_npages);
+	if (arena_mapbits_large_get(chunk, run_ind) != 0) {
+		size = arena_mapbits_large_size_get(chunk, run_ind);
+		assert(size == PAGE ||
+		    arena_mapbits_large_size_get(chunk,
+		    run_ind+(size>>LG_PAGE)-1) == 0);
+	} else {
+		size_t binind = arena_bin_index(arena, run->bin);
+		arena_bin_info_t *bin_info = &arena_bin_info[binind];
+		size = bin_info->run_size;
+	}
+	run_pages = (size >> LG_PAGE);
+	if (config_stats) {
+		/*
+		 * Update stats_cactive if nactive is crossing a chunk
+		 * multiple.
+		 */
+		size_t cactive_diff = CHUNK_CEILING(arena->nactive << LG_PAGE) -
+		    CHUNK_CEILING((arena->nactive - run_pages) << LG_PAGE);
+		if (cactive_diff != 0)
+			stats_cactive_sub(cactive_diff);
+	}
+	arena->nactive -= run_pages;
+
+	/*
+	 * The run is dirty if the caller claims to have dirtied it, as well as
+	 * if it was already dirty before being allocated and the caller
+	 * doesn't claim to have cleaned it.
+	 */
+	assert(arena_mapbits_dirty_get(chunk, run_ind) ==
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages-1));
+	if (cleaned == false && arena_mapbits_dirty_get(chunk, run_ind) != 0)
+		dirty = true;
+	flag_dirty = dirty ? CHUNK_MAP_DIRTY : 0;
+
+	/* Mark pages as unallocated in the chunk map. */
+	if (dirty) {
+		arena_mapbits_unallocated_set(chunk, run_ind, size,
+		    CHUNK_MAP_DIRTY);
+		arena_mapbits_unallocated_set(chunk, run_ind+run_pages-1, size,
+		    CHUNK_MAP_DIRTY);
+	} else {
+		arena_mapbits_unallocated_set(chunk, run_ind, size,
+		    arena_mapbits_unzeroed_get(chunk, run_ind));
+		arena_mapbits_unallocated_set(chunk, run_ind+run_pages-1, size,
+		    arena_mapbits_unzeroed_get(chunk, run_ind+run_pages-1));
+	}
+
+	/* Try to coalesce forward. */
+	if (run_ind + run_pages < chunk_npages &&
+	    arena_mapbits_allocated_get(chunk, run_ind+run_pages) == 0 &&
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages) == flag_dirty) {
+		size_t nrun_size = arena_mapbits_unallocated_size_get(chunk,
+		    run_ind+run_pages);
+		size_t nrun_pages = nrun_size >> LG_PAGE;
+
+		/*
+		 * Remove successor from runs_avail; the coalesced run is
+		 * inserted later.
+		 */
+		assert(arena_mapbits_unallocated_size_get(chunk,
+		    run_ind+run_pages+nrun_pages-1) == nrun_size);
+		assert(arena_mapbits_dirty_get(chunk,
+		    run_ind+run_pages+nrun_pages-1) == flag_dirty);
+		arena_avail_remove(arena, chunk, run_ind+run_pages, nrun_pages,
+		    false, true);
+
+		size += nrun_size;
+		run_pages += nrun_pages;
+
+		arena_mapbits_unallocated_size_set(chunk, run_ind, size);
+		arena_mapbits_unallocated_size_set(chunk, run_ind+run_pages-1,
+		    size);
+	}
+
+	/* Try to coalesce backward. */
+	if (run_ind > map_bias && arena_mapbits_allocated_get(chunk, run_ind-1)
+	    == 0 && arena_mapbits_dirty_get(chunk, run_ind-1) == flag_dirty) {
+		size_t prun_size = arena_mapbits_unallocated_size_get(chunk,
+		    run_ind-1);
+		size_t prun_pages = prun_size >> LG_PAGE;
+
+		run_ind -= prun_pages;
+
+		/*
+		 * Remove predecessor from runs_avail; the coalesced run is
+		 * inserted later.
+		 */
+		assert(arena_mapbits_unallocated_size_get(chunk, run_ind) ==
+		    prun_size);
+		assert(arena_mapbits_dirty_get(chunk, run_ind) == flag_dirty);
+		arena_avail_remove(arena, chunk, run_ind, prun_pages, true,
+		    false);
+
+		size += prun_size;
+		run_pages += prun_pages;
+
+		arena_mapbits_unallocated_size_set(chunk, run_ind, size);
+		arena_mapbits_unallocated_size_set(chunk, run_ind+run_pages-1,
+		    size);
+	}
+
+	/* Insert into runs_avail, now that coalescing is complete. */
+	assert(arena_mapbits_unallocated_size_get(chunk, run_ind) ==
+	    arena_mapbits_unallocated_size_get(chunk, run_ind+run_pages-1));
+	assert(arena_mapbits_dirty_get(chunk, run_ind) ==
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages-1));
+	arena_avail_insert(arena, chunk, run_ind, run_pages, true, true);
+
+	/* Deallocate chunk if it is now completely unused. */
+	if (size == arena_maxclass) {
+		assert(run_ind == map_bias);
+		assert(run_pages == (arena_maxclass >> LG_PAGE));
+		arena_chunk_dealloc(arena, chunk);
+	}
+
+	/*
+	 * It is okay to do dirty page processing here even if the chunk was
+	 * deallocated above, since in that case it is the spare.  Waiting
+	 * until after possible chunk deallocation to do dirty processing
+	 * allows for an old spare to be fully deallocated, thus decreasing the
+	 * chances of spuriously crossing the dirty page purging threshold.
+	 */
+	if (dirty)
+		arena_maybe_purge(arena);
+}
+Function: 
+fn allocate_on<'a>(self, arena: &'a Arena<'tcx>) -> &'a mut Self {
+                if !::std::mem::needs_drop::<Self>() {
+                    arena.dropless.alloc(self)
+                } else {
+                    arena.$name.alloc(self)
+                }
+            }
+Unixcoder Score: -0.02786906622350216
+--------------------------------------------------
+C_Code: 
+FsResult<size_t> FsStream::Write(const ArrayBuffer &buf, const optional<WriteOptions> &options)
+{
+    auto fp = GetFilePtr();
+    if (!fp) {
+        HILOGE("Failed to get file ptr");
+        return FsResult<size_t>::Error(EIO);
+    }
+
+    auto [succ, retLen, offset] = ValidWriteArg(buf.length, options);
+    if (!succ) {
+        HILOGE("Invalid options");
+        return FsResult<size_t>::Error(EINVAL);
+    }
+
+    if (offset >= 0) {
+        int ret = fseek(fp.get(), static_cast<long>(offset), SEEK_SET);
+        if (ret < 0) {
+            HILOGE("Failed to set the offset location of the file stream pointer, ret: %{public}d", ret);
+            return FsResult<size_t>::Error(errno);
+        }
+    }
+
+    size_t writeLen = fwrite(buf.buf, 1, retLen, fp.get());
+    if ((writeLen == 0) && (writeLen != retLen)) {
+        HILOGE("Failed to fwrite stream");
+        return FsResult<size_t>::Error(EIO);
+    }
+    return FsResult<size_t>::Success(writeLen);
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetSharingHandle__idx5058_rank3.c", "source_rust_file": "Partial__GetSharingHandle__idx5058_rank3.rs", "c_fragment": "return handle;", "rust_fragment": "Ok(Self {\n            remote_obj: Some(result),\n        })", "description": "Both return a constructed object or null on success.", "reasoning": "[Task Analysis] C function returns a shared_ptr from a connection attempt; Rust function creates a stub by sending a request over IPC. [Similarity] No full structural similarity due to different domains (connection logic vs IPC communication), different control flow, and different return patterns. [Knowledge Extraction] Found partial structural fragments in the error handling and data flow patterns, and API mappings in the IPC communication and error propagation mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSharingHandle__idx5058_rank3.c", "source_rust_file": "Partial__GetSharingHandle__idx5058_rank3.rs", "c_api": "return nullptr;", "rust_api": ".ok_or(Error::GetProxyObjectFailed)?;", "mapping_type": "pattern", "description": "Early return on failure with error propagation.", "reasoning": "[Task Analysis] C function returns a shared_ptr from a connection attempt; Rust function creates a stub by sending a request over IPC. [Similarity] No full structural similarity due to different domains (connection logic vs IPC communication), different control flow, and different return patterns. [Knowledge Extraction] Found partial structural fragments in the error handling and data flow patterns, and API mappings in the IPC communication and error propagation mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSharingHandle__idx5058_rank3.c", "source_rust_file": "Partial__GetSharingHandle__idx5058_rank3.rs", "c_api": "return handle;", "rust_api": "Ok(Self {", "mapping_type": "pattern", "description": "Successful return of constructed object.", "reasoning": "[Task Analysis] C function returns a shared_ptr from a connection attempt; Rust function creates a stub by sending a request over IPC. [Similarity] No full structural similarity due to different domains (connection logic vs IPC communication), different control flow, and different return patterns. [Knowledge Extraction] Found partial structural fragments in the error handling and data flow patterns, and API mappings in the IPC communication and error propagation mechanisms."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSharingHandle__idx5058_rank3.c", "source_rust_file": "Partial__GetSharingHandle__idx5058_rank3.rs", "c_api": "instance->ConnectSharingCenter", "rust_api": "remote_obj.send_request", "mapping_type": "function", "description": "Connecting to a service and sending a request over IPC.", "reasoning": "[Task Analysis] C function returns a shared_ptr from a connection attempt; Rust function creates a stub by sending a request over IPC. [Similarity] No full structural similarity due to different domains (connection logic vs IPC communication), different control flow, and different return patterns. [Knowledge Extraction] Found partial structural fragments in the error handling and data flow patterns, and API mappings in the IPC communication and error propagation mechanisms."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetSharingHandle__idx5058_rank3.c", "source_rust_file": "Partial__GetSharingHandle__idx5058_rank3.rs", "c_fragment": "if (instance == nullptr) {\n        return nullptr;\n    }", "rust_fragment": "let remote_obj = unsafe { RemoteObj::from_ciremote(ConnectService(user_id)) }\n            .ok_or(Error::GetProxyObjectFailed)?;", "description": "Both check for null/invalid state and return early on failure.", "reasoning": "[Task Analysis] C function returns a shared_ptr from a connection attempt; Rust function creates a stub by sending a request over IPC. [Similarity] No full structural similarity due to different domains (connection logic vs IPC communication), different control flow, and different return patterns. [Knowledge Extraction] Found partial structural fragments in the error handling and data flow patterns, and API mappings in the IPC communication and error propagation mechanisms."}]
+Unixcoder Score: -0.029275033622980118
+--------------------------------------------------
+C_Code: 
+int
+main(void)
+{
+	int ret, err;
+	size_t sz, lg_chunk, chunksize, i;
+	char *p, *q;
+
+	malloc_printf("Test begin\n");
+
+	sz = sizeof(lg_chunk);
+	if ((err = mallctl("opt.lg_chunk", &lg_chunk, &sz, NULL, 0))) {
+		assert(err != ENOENT);
+		malloc_printf("%s(): Error in mallctl(): %s\n", __func__,
+		    strerror(err));
+		ret = 1;
+		goto label_return;
+	}
+	chunksize = ((size_t)1U) << lg_chunk;
+
+	p = (char *)malloc(chunksize);
+	if (p == NULL) {
+		malloc_printf("malloc(%zu) --> %p\n", chunksize, p);
+		ret = 1;
+		goto label_return;
+	}
+	memset(p, 'a', chunksize);
+
+	q = (char *)realloc(p, chunksize * 2);
+	if (q == NULL) {
+		malloc_printf("realloc(%p, %zu) --> %p\n", p, chunksize * 2,
+		    q);
+		ret = 1;
+		goto label_return;
+	}
+	for (i = 0; i < chunksize; i++) {
+		assert(q[i] == 'a');
+	}
+
+	p = q;
+
+	q = (char *)realloc(p, chunksize);
+	if (q == NULL) {
+		malloc_printf("realloc(%p, %zu) --> %p\n", p, chunksize, q);
+		ret = 1;
+		goto label_return;
+	}
+	for (i = 0; i < chunksize; i++) {
+		assert(q[i] == 'a');
+	}
+
+	free(q);
+
+	ret = 0;
+label_return:
+	malloc_printf("Test end\n");
+	return (ret);
+}
+Function: 
+fn main() {}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx70825_rank1.c", "source_rust_file": "API_Mapping__main__idx70825_rank1.rs", "c_api": "free(q)", "rust_api": "drop(...)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C code performs memory allocation, reallocation, and assertion checks; Rust code performs simple variable assignment. [Similarity] Names do not refer to the same concept (main function logic differs significantly). [Knowledge Extraction] No full structural match, no partial fragments, but there are API mappings for memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx70825_rank1.c", "source_rust_file": "API_Mapping__main__idx70825_rank1.rs", "c_api": "realloc(p, chunksize * 2)", "rust_api": "Vec::resize(...)", "mapping_type": "function", "description": "Reallocation of memory buffer", "reasoning": "[Task Analysis] C code performs memory allocation, reallocation, and assertion checks; Rust code performs simple variable assignment. [Similarity] Names do not refer to the same concept (main function logic differs significantly). [Knowledge Extraction] No full structural match, no partial fragments, but there are API mappings for memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx70825_rank1.c", "source_rust_file": "API_Mapping__main__idx70825_rank1.rs", "c_api": "malloc(chunksize)", "rust_api": "Box::new(...)", "mapping_type": "function", "description": "Memory allocation", "reasoning": "[Task Analysis] C code performs memory allocation, reallocation, and assertion checks; Rust code performs simple variable assignment. [Similarity] Names do not refer to the same concept (main function logic differs significantly). [Knowledge Extraction] No full structural match, no partial fragments, but there are API mappings for memory management patterns."}]
+Unixcoder Score: -0.031043797731399536
+--------------------------------------------------
+C_Code: 
+int
+main(void)
+{
+	int ret, err;
+	size_t sz, lg_chunk, chunksize, i;
+	char *p, *q;
+
+	malloc_printf("Test begin\n");
+
+	sz = sizeof(lg_chunk);
+	if ((err = mallctl("opt.lg_chunk", &lg_chunk, &sz, NULL, 0))) {
+		assert(err != ENOENT);
+		malloc_printf("%s(): Error in mallctl(): %s\n", __func__,
+		    strerror(err));
+		ret = 1;
+		goto label_return;
+	}
+	chunksize = ((size_t)1U) << lg_chunk;
+
+	p = (char *)malloc(chunksize);
+	if (p == NULL) {
+		malloc_printf("malloc(%zu) --> %p\n", chunksize, p);
+		ret = 1;
+		goto label_return;
+	}
+	memset(p, 'a', chunksize);
+
+	q = (char *)realloc(p, chunksize * 2);
+	if (q == NULL) {
+		malloc_printf("realloc(%p, %zu) --> %p\n", p, chunksize * 2,
+		    q);
+		ret = 1;
+		goto label_return;
+	}
+	for (i = 0; i < chunksize; i++) {
+		assert(q[i] == 'a');
+	}
+
+	p = q;
+
+	q = (char *)realloc(p, chunksize);
+	if (q == NULL) {
+		malloc_printf("realloc(%p, %zu) --> %p\n", p, chunksize, q);
+		ret = 1;
+		goto label_return;
+	}
+	for (i = 0; i < chunksize; i++) {
+		assert(q[i] == 'a');
+	}
+
+	free(q);
+
+	ret = 0;
+label_return:
+	malloc_printf("Test end\n");
+	return (ret);
+}
+Function: 
+fn main() {
+    let p = &malloc_pool(());
+    let x = new(*p) 4u;
+    io::print(#fmt["%u", *x]);
+    assert *x == 4u;
+    unsafe {
+        libc::free(unsafe::reinterpret_cast(x));
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_run_dalloc__idx28961_rank4.c", "source_rust_file": "API_Mapping__arena_run_dalloc__idx28961_rank4.rs", "c_api": "arena_chunk_dealloc(arena, chunk)", "rust_api": "arena.dropless.alloc_from_iter(iter)", "mapping_type": "function", "description": "Memory deallocation and allocation in arena-based systems", "reasoning": "[FFI Check] -> C code contains no FFI calls, Rust code is standard Rust function. -> [Task Analysis] -> C function `arena_run_dalloc` manages memory deallocation for arena runs, including coalescing and updating metadata. Rust function `allocate_from_iter` allocates memory from an iterator using an arena's allocator. -> [Similarity] -> No structural similarity at function level; C is low-level memory management, Rust is high-level allocation. -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to memory allocation patterns."}]
+Unixcoder Score: -0.03218492865562439
+--------------------------------------------------
+C_Code: 
+static bool
+arena_ralloc_large(void *ptr, size_t oldsize, size_t size, size_t extra,
+    bool zero)
+{
+	size_t psize;
+
+	psize = PAGE_CEILING(size + extra);
+	if (psize == oldsize) {
+		/* Same size class. */
+		if (config_fill && opt_junk && size < oldsize) {
+			memset((void *)((uintptr_t)ptr + size), 0x5a, oldsize -
+			    size);
+		}
+		return (false);
+	} else {
+		arena_chunk_t *chunk;
+		arena_t *arena;
+
+		chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+		arena = chunk->arena;
+
+		if (psize < oldsize) {
+			/* Fill before shrinking in order avoid a race. */
+			if (config_fill && opt_junk) {
+				memset((void *)((uintptr_t)ptr + size), 0x5a,
+				    oldsize - size);
+			}
+			arena_ralloc_large_shrink(arena, chunk, ptr, oldsize,
+			    psize);
+			return (false);
+		} else {
+			bool ret = arena_ralloc_large_grow(arena, chunk, ptr,
+			    oldsize, PAGE_CEILING(size),
+			    psize - PAGE_CEILING(size), zero);
+			if (config_fill && ret == false && zero == false &&
+			    opt_zero) {
+				memset((void *)((uintptr_t)ptr + oldsize), 0,
+				    size - oldsize);
+			}
+			return (ret);
+		}
+	}
+}
+Function: 
+fn grow(&self, additional: usize) {
+        unsafe {
+            // We need the element size to convert chunk sizes (ranging from
+            // PAGE to HUGE_PAGE bytes) to element counts.
+            let elem_size = cmp::max(1, mem::size_of::<T>());
+            let mut chunks = self.chunks.borrow_mut();
+            let mut new_cap;
+            if let Some(last_chunk) = chunks.last_mut() {
+                // If a type is `!needs_drop`, we don't need to keep track of how many elements
+                // the chunk stores - the field will be ignored anyway.
+                if mem::needs_drop::<T>() {
+                    // FIXME: this should *likely* use `offset_from`, but more
+                    // investigation is needed (including running tests in miri).
+                    let used_bytes = self.ptr.get().addr() - last_chunk.start().addr();
+                    last_chunk.entries = used_bytes / mem::size_of::<T>();
+                }
+
+                // If the previous chunk's len is less than HUGE_PAGE
+                // bytes, then this chunk will be least double the previous
+                // chunk's size.
+                new_cap = last_chunk.storage.len().min(HUGE_PAGE / elem_size / 2);
+                new_cap *= 2;
+            } else {
+                new_cap = PAGE / elem_size;
+            }
+            // Also ensure that this chunk can fit `additional`.
+            new_cap = cmp::max(additional, new_cap);
+
+            let mut chunk = ArenaChunk::<T>::new(new_cap);
+            self.ptr.set(chunk.start());
+            self.end.set(chunk.end());
+            chunks.push(chunk);
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__GenChunkMask__idx5864_rank4.c", "source_rust_file": "Partial__GenChunkMask__idx5864_rank4.rs", "c_api": "GenChunkMask(it->fields, has_bit_indices)", "rust_api": "self.push(item)", "mapping_type": "function", "description": "Recursive processing of fields in C vs pushing items to collection in Rust", "reasoning": "[Task Analysis] C function processes chunk masks using iterators and bit manipulation; Rust function extends a collection with an iterator. [Similarity] Names and domains differ (C: chunk mask generation, Rust: collection extension), but both involve iteration and data processing. [Knowledge Extraction] No full structural match due to domain mismatch and different logic scopes. Partial match found in loop structure and data processing pattern. API mappings identified for iterator usage and collection extension patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GenChunkMask__idx5864_rank4.c", "source_rust_file": "Partial__GenChunkMask__idx5864_rank4.rs", "c_api": "it->fields.front()->index()", "rust_api": "iter.into_iter()", "mapping_type": "pattern", "description": "Accessing first element of a sequence in C vs converting into iterator in Rust", "reasoning": "[Task Analysis] C function processes chunk masks using iterators and bit manipulation; Rust function extends a collection with an iterator. [Similarity] Names and domains differ (C: chunk mask generation, Rust: collection extension), but both involve iteration and data processing. [Knowledge Extraction] No full structural match due to domain mismatch and different logic scopes. Partial match found in loop structure and data processing pattern. API mappings identified for iterator usage and collection extension patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GenChunkMask__idx5864_rank4.c", "source_rust_file": "Partial__GenChunkMask__idx5864_rank4.rs", "c_fragment": "do {\n    ABSL_CHECK_EQ(first_index_offset,\n                  has_bit_indices[it->fields.front()->index()] / 32);\n    chunk_mask |= GenChunkMask(it->fields, has_bit_indices);\n  } while (++it != end);", "rust_fragment": "for item in iter {\n            self.push(item);\n        }", "description": "Both code blocks iterate over a sequence of items and perform operations on each item.", "reasoning": "[Task Analysis] C function processes chunk masks using iterators and bit manipulation; Rust function extends a collection with an iterator. [Similarity] Names and domains differ (C: chunk mask generation, Rust: collection extension), but both involve iteration and data processing. [Knowledge Extraction] No full structural match due to domain mismatch and different logic scopes. Partial match found in loop structure and data processing pattern. API mappings identified for iterator usage and collection extension patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GenChunkMask__idx5864_rank4.c", "source_rust_file": "Partial__GenChunkMask__idx5864_rank4.rs", "c_api": "do ... while", "rust_api": "for ... in", "mapping_type": "pattern", "description": "Loop pattern for iterating through elements in C vs Rust", "reasoning": "[Task Analysis] C function processes chunk masks using iterators and bit manipulation; Rust function extends a collection with an iterator. [Similarity] Names and domains differ (C: chunk mask generation, Rust: collection extension), but both involve iteration and data processing. [Knowledge Extraction] No full structural match due to domain mismatch and different logic scopes. Partial match found in loop structure and data processing pattern. API mappings identified for iterator usage and collection extension patterns."}]
+Unixcoder Score: -0.03613218665122986
+--------------------------------------------------
+C_Code: 
+rust::string GetCallingBundle(rust::u64 tokenId)
+{
+    auto tokenType = AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(tokenId));
+    if (tokenType != TOKEN_HAP) {
+        REQUEST_HILOGE("invalid token");
+        return rust::string("");
+    }
+    HapTokenInfo info;
+    int ret = AccessTokenKit::GetHapTokenInfo(tokenId, info);
+    if (ret != 0) {
+        REQUEST_HILOGE("failed to get hap info, ret: %{public}d", ret);
+        return rust::string("");
+    }
+    return rust::string(info.bundleName);
+}
+Function: 
+pub(crate) fn query_calling_bundle() -> String {
+    let token_id = ipc::Skeleton::calling_full_token_id();
+    ffi::GetCallingBundle(token_id)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx692_rank3.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx692_rank3.rs", "c_api": "REQUEST_HILOGE(\"failed to get hap info, ret: %{public}d\", ret)", "rust_api": "info!(\"update active accounts {:?}\", active_accounts)", "mapping_type": "function", "description": "Logging with error context", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function handles token validation and bundle name retrieval; Rust function updates account state and returns SQL list. -> [Similarity] -> No structural similarity at function level due to different domains (token management vs account state). -> [Knowledge Extraction] -> No full match, no partial match, but API mappings can be extracted for logging and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx692_rank3.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx692_rank3.rs", "c_api": "REQUEST_HILOGE(\"invalid token\")", "rust_api": "info!(\"update active accounts {:?}\", active_accounts)", "mapping_type": "function", "description": "Logging with error context", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function handles token validation and bundle name retrieval; Rust function updates account state and returns SQL list. -> [Similarity] -> No structural similarity at function level due to different domains (token management vs account state). -> [Knowledge Extraction] -> No full match, no partial match, but API mappings can be extracted for logging and error handling patterns."}]
+Unixcoder Score: -0.0368955060839653
+--------------------------------------------------
+C_Code: 
+int
+main(void)
+{
+	int ret, err;
+	size_t sz, lg_chunk, chunksize, i;
+	char *p, *q;
+
+	malloc_printf("Test begin\n");
+
+	sz = sizeof(lg_chunk);
+	if ((err = mallctl("opt.lg_chunk", &lg_chunk, &sz, NULL, 0))) {
+		assert(err != ENOENT);
+		malloc_printf("%s(): Error in mallctl(): %s\n", __func__,
+		    strerror(err));
+		ret = 1;
+		goto label_return;
+	}
+	chunksize = ((size_t)1U) << lg_chunk;
+
+	p = (char *)malloc(chunksize);
+	if (p == NULL) {
+		malloc_printf("malloc(%zu) --> %p\n", chunksize, p);
+		ret = 1;
+		goto label_return;
+	}
+	memset(p, 'a', chunksize);
+
+	q = (char *)realloc(p, chunksize * 2);
+	if (q == NULL) {
+		malloc_printf("realloc(%p, %zu) --> %p\n", p, chunksize * 2,
+		    q);
+		ret = 1;
+		goto label_return;
+	}
+	for (i = 0; i < chunksize; i++) {
+		assert(q[i] == 'a');
+	}
+
+	p = q;
+
+	q = (char *)realloc(p, chunksize);
+	if (q == NULL) {
+		malloc_printf("realloc(%p, %zu) --> %p\n", p, chunksize, q);
+		ret = 1;
+		goto label_return;
+	}
+	for (i = 0; i < chunksize; i++) {
+		assert(q[i] == 'a');
+	}
+
+	free(q);
+
+	ret = 0;
+label_return:
+	malloc_printf("Test end\n");
+	return (ret);
+}
+Function: 
+fn main() {
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_run_dalloc__idx28965_rank2.c", "source_rust_file": "API_Mapping__arena_run_dalloc__idx28965_rank2.rs", "c_api": "arena_mapbits_unallocated_set", "rust_api": "alloc_slice", "mapping_type": "function", "description": "Memory layout operations for unallocated regions", "reasoning": "[Task Analysis] C function `arena_run_dalloc` manages memory deallocation for arena runs, handling coalescing and chunk management. Rust function `alloc_slice` allocates a slice from a dropless allocator. [Similarity] No structural similarity due to different domains (memory management vs allocation). [Knowledge Extraction] No full/partial match. API mappings found: C `arena_mapbits_unallocated_set` ↔ Rust `alloc_slice` (both handle memory layout operations)."}]
+Unixcoder Score: -0.03865866735577583
+--------------------------------------------------
+C_Code: 
+int
+main(void)
+{
+	int ret, err;
+	size_t sz, lg_chunk, chunksize, i;
+	char *p, *q;
+
+	malloc_printf("Test begin\n");
+
+	sz = sizeof(lg_chunk);
+	if ((err = mallctl("opt.lg_chunk", &lg_chunk, &sz, NULL, 0))) {
+		assert(err != ENOENT);
+		malloc_printf("%s(): Error in mallctl(): %s\n", __func__,
+		    strerror(err));
+		ret = 1;
+		goto label_return;
+	}
+	chunksize = ((size_t)1U) << lg_chunk;
+
+	p = (char *)malloc(chunksize);
+	if (p == NULL) {
+		malloc_printf("malloc(%zu) --> %p\n", chunksize, p);
+		ret = 1;
+		goto label_return;
+	}
+	memset(p, 'a', chunksize);
+
+	q = (char *)realloc(p, chunksize * 2);
+	if (q == NULL) {
+		malloc_printf("realloc(%p, %zu) --> %p\n", p, chunksize * 2,
+		    q);
+		ret = 1;
+		goto label_return;
+	}
+	for (i = 0; i < chunksize; i++) {
+		assert(q[i] == 'a');
+	}
+
+	p = q;
+
+	q = (char *)realloc(p, chunksize);
+	if (q == NULL) {
+		malloc_printf("realloc(%p, %zu) --> %p\n", p, chunksize, q);
+		ret = 1;
+		goto label_return;
+	}
+	for (i = 0; i < chunksize; i++) {
+		assert(q[i] == 'a');
+	}
+
+	free(q);
+
+	ret = 0;
+label_return:
+	malloc_printf("Test end\n");
+	return (ret);
+}
+Function: 
+fn main() {}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__arena_chunk_dealloc__idx28951_rank1.c", "source_rust_file": "Partial__arena_chunk_dealloc__idx28951_rank1.rs", "c_api": "arena_avail_remove(arena, chunk, map_bias, chunk_npages-map_bias, false, false)", "rust_api": "self.clear_last_chunk(&mut last_chunk)", "mapping_type": "function", "description": "Removal of a chunk from an available list or container", "reasoning": "[Task Analysis] C function manages memory deallocation for arena chunks, involving assertions, tree removal, and conditional chunk handling. Rust function drops owned chunks by clearing contents and destroying them, using borrowing and iteration. [Similarity] No full structural similarity due to different domains (memory management vs drop behavior), different control flow, and different data structures. [Knowledge Extraction] No full match, but both involve resource cleanup and chunk handling. Extract partial fragments and API mappings based on shared logic patterns and operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__arena_chunk_dealloc__idx28951_rank1.c", "source_rust_file": "Partial__arena_chunk_dealloc__idx28951_rank1.rs", "c_api": "chunk_dealloc((void *)spare, chunksize, true)", "rust_api": "chunk.destroy(chunk.entries)", "mapping_type": "function", "description": "Resource deallocation of a chunk in memory management context", "reasoning": "[Task Analysis] C function manages memory deallocation for arena chunks, involving assertions, tree removal, and conditional chunk handling. Rust function drops owned chunks by clearing contents and destroying them, using borrowing and iteration. [Similarity] No full structural similarity due to different domains (memory management vs drop behavior), different control flow, and different data structures. [Knowledge Extraction] No full match, but both involve resource cleanup and chunk handling. Extract partial fragments and API mappings based on shared logic patterns and operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__arena_chunk_dealloc__idx28951_rank1.c", "source_rust_file": "Partial__arena_chunk_dealloc__idx28951_rank1.rs", "c_fragment": "arena_chunk_t *spare = arena->spare;\n\n\t\tarena->spare = chunk;\n\t\tmalloc_mutex_unlock(&arena->lock);\n\t\tchunk_dealloc((void *)spare, chunksize, true);\n\t\tmalloc_mutex_lock(&arena->lock);", "rust_fragment": "for chunk in chunks_borrow.iter_mut() {\n                    chunk.destroy(chunk.entries);\n                }", "description": "Both handle cleanup of existing resources (spare chunk in C, other chunks in Rust) before assigning new ones.", "reasoning": "[Task Analysis] C function manages memory deallocation for arena chunks, involving assertions, tree removal, and conditional chunk handling. Rust function drops owned chunks by clearing contents and destroying them, using borrowing and iteration. [Similarity] No full structural similarity due to different domains (memory management vs drop behavior), different control flow, and different data structures. [Knowledge Extraction] No full match, but both involve resource cleanup and chunk handling. Extract partial fragments and API mappings based on shared logic patterns and operations."}]
+Unixcoder Score: -0.03871282562613487
+--------------------------------------------------

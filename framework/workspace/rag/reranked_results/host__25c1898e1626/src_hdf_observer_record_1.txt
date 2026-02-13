@@ -1,0 +1,346 @@
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetRegistrar {
+    observer: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+    unregistration: Mutex<Option<UniquePtr<NetUnregistration>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__record_stack_limit__idx141101_rank1.h", "source_rust_file": "Partial__record_stack_limit__idx141101_rank1.rs", "c_fragment": "assert(stk);\n    assert((uintptr_t)stk->end - RED_ZONE_SIZE\n      - (uintptr_t)stk->data >= LIMIT_OFFSET\n           && \"Stack size must be greater than LIMIT_OFFSET\");", "rust_fragment": "if !NEED_ALTSTACK.load(Ordering::Acquire) {\n            return Handler::null();\n        }", "description": "Both involve validation of stack-related conditions before proceeding.", "reasoning": "[Task Analysis] C function records stack limit using assert and a helper function; Rust function manages signal stack handling with FFI calls and conditional logic. [Similarity] No full structural similarity due to different domains (stack limit recording vs signal stack management). [Knowledge Extraction] No full match, but both involve stack-related logic and assertions; partial fragments found in conditional checks and stack manipulation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__record_stack_limit__idx141101_rank1.h", "source_rust_file": "Partial__record_stack_limit__idx141101_rank1.rs", "c_fragment": "record_sp_limit(stk->data + LIMIT_OFFSET + RED_ZONE_SIZE);", "rust_fragment": "let guard = unsafe { current_guard() }.unwrap_or(0..0);\n            GUARD.set((guard.start, guard.end));", "description": "Both perform operations related to setting or recording stack limits/guards.", "reasoning": "[Task Analysis] C function records stack limit using assert and a helper function; Rust function manages signal stack handling with FFI calls and conditional logic. [Similarity] No full structural similarity due to different domains (stack limit recording vs signal stack management). [Knowledge Extraction] No full match, but both involve stack-related logic and assertions; partial fragments found in conditional checks and stack manipulation patterns."}]
+Unixcoder Score: 0.043163470923900604
+--------------------------------------------------
+C_Code: 
+struct NetObserverWrapper
+Function: 
+pub struct NetObserverWrapper {
+    inner: Arc<Mutex<Vec<Box<dyn Observer>>>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx60005_rank1.h", "source_rust_file": "API_Mapping__record_stack_limit__idx60005_rank1.rs", "c_api": "stk->data + LIMIT_OFFSET + RED_ZONE_SIZE", "rust_api": "a.alloc()", "mapping_type": "function", "description": "Memory allocation for stack pointer", "reasoning": "[Task Analysis] C function `record_stack_limit` records stack limit by asserting stack size and calling `record_sp_limit`, while Rust function `panic_after_init` manages allocations and exceptions in an allocator. [Similarity] No structural similarity at the function level due to different domains (stack management vs allocation/panic handling). [Knowledge Extraction] No full match, no partial match, but both involve memory/stack operations and allocation patterns. Extract API mappings for allocation and stack-related operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx60005_rank1.h", "source_rust_file": "API_Mapping__record_stack_limit__idx60005_rank1.rs", "c_api": "record_sp_limit", "rust_api": "a.alloc_leaked", "mapping_type": "function", "description": "Stack pointer limit recording", "reasoning": "[Task Analysis] C function `record_stack_limit` records stack limit by asserting stack size and calling `record_sp_limit`, while Rust function `panic_after_init` manages allocations and exceptions in an allocator. [Similarity] No structural similarity at the function level due to different domains (stack management vs allocation/panic handling). [Knowledge Extraction] No full match, no partial match, but both involve memory/stack operations and allocation patterns. Extract API mappings for allocation and stack-related operations."}]
+Unixcoder Score: 0.04057867079973221
+--------------------------------------------------
+C_Code: 
+void TestOnEventWrapperCb(OnRustCb callback, HiSysEventRecordC record)
+{
+    // do nothing
+}
+Function: 
+fn test_hisysevent_query_001() {
+    // write two events at first.
+    let mut ret = hisysevent::write(
+        "HIVIEWDFX",
+        "PLUGIN_LOAD",
+        EventType::Behavior,
+        &[hisysevent::build_str_param!("STRING_SINGLE", "test_hisysevent_query_001")]
+    );
+    assert!(ret == SUCCEED);
+    ret = hisysevent::write(
+        "HIVIEWDFX",
+        "PLUGIN_UNLOAD",
+        EventType::Behavior,
+        &[hisysevent::build_str_param!("STRING_SINGLE", "test_hisysevent_query_001")]
+    );
+    assert!(ret == SUCCEED);
+    // query event.
+    let query_arg = QueryArg {
+        begin_time: -1,
+        end_time: -1,
+        max_events: 2,
+    };
+    let query_rules = [
+        QueryRule {
+            domain: "HIVIEWDFX",
+            event_list: vec![
+                "PLUGIN_LOAD",
+                "PLUGIN_UNLOAD",
+            ],
+            condition: "{\"version\":\"V1\",\"condition\":{\"and\":[{\"param\":\"
+                NAME\",\"op\":\"=\",\"value\":\"SysEventService\"}]}}",
+        },
+        QueryRule {
+            domain: "HIVIEWDFX",
+            event_list: vec![
+                "PLUGIN_LOAD",
+            ],
+            condition: "",
+        }
+    ];
+    // step1: construct a querier.
+    let querier = Querier::new(|records: &[HiSysEventRecord]| {
+        for item in records {
+            assert!(item.get_domain() == "HIVIEWDFX");
+        }
+    }, |reason: i32, total: i32| {
+        assert!(reason == SUCCEED);
+        assert!(total == QUERY_CNT);
+    }).expect("Construct a querier by Querier::new");
+    // step2: query.
+    ret = hisysevent::query(&query_arg, &query_rules, &querier);
+    assert!(ret == SUCCEED);
+    // step3: recycle allocated memories of this Querier.
+    querier.try_to_recycle();
+    ret = hisysevent::query(&query_arg, &query_rules, &querier);
+    assert!(ret == LISTENER_NOT_EXIST);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__record_stack_limit__idx129994_rank4.h", "source_rust_file": "Partial__record_stack_limit__idx129994_rank4.rs", "c_fragment": "assert(stk);\n    assert((uintptr_t)stk->end - RED_ZONE_SIZE\n      - (uintptr_t)stk->data >= LIMIT_OFFSET\n           && \"Stack size must be greater than LIMIT_OFFSET\");\n    record_sp_limit(stk->data + LIMIT_OFFSET + RED_ZONE_SIZE);", "rust_fragment": "if enlist_many(child, &child_arc, &mut ancestors) {\n                let group = @TCB(child, move child_arc, move ancestors,\n                                 is_main, move notifier);\n                unsafe {\n                    local_set(child, taskgroup_key!(), group);\n                }\n\n                // Run the child's body.\n                f();\n\n                // TLS cleanup code will exit the taskgroup.\n            }", "description": "Both contain assertion-like checks and conditional execution logic for proceeding with operations.", "reasoning": "[Task Analysis] C function is a stack limit recording utility; Rust function is a task group wrapper creation with nested enlistment logic. [Similarity] No full structural match due to different domains (stack management vs task group management) and vastly different code lengths. [Knowledge Extraction] Found partial matching control flow in nested function logic and some similar error handling patterns, but no API mappings due to domain mismatch and structural asymmetry."}]
+Unixcoder Score: -0.0013721149880439043
+--------------------------------------------------
+C_Code: 
+int32_t SubscribeRunningTaskCount(std::shared_ptr<IRunningTaskObserver> ob)
+{
+    if (!ob) {
+        REQUEST_HILOGE("Subscribe failed because of null observer");
+        return E_OTHER;
+    }
+    if (FwkRunningTaskCountManager::GetInstance()->HasObserver()) {
+        FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob);
+        ob->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+        return E_OK;
+    }
+
+    FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob);
+    auto listener = RunCountNotifyStub::GetInstance();
+    RequestManagerImpl::GetInstance()->SubscribeSA();
+    int32_t ret = RequestManagerImpl::GetInstance()->SubRunCount(listener);
+    if (ret != E_OK) {
+        // IPC is failed, but observer has attached.
+        REQUEST_HILOGE("Subscribe running task count failed, ret: %{public}d.", ret);
+        return ret;
+    }
+    if (!FwkRunningTaskCountManager::GetInstance()->SaIsOnline()) {
+        ob->OnRunningTaskCountUpdate(0);
+    }
+    return E_OK;
+}
+Function: 
+pub(crate) fn subscribe_run_count(&self, pid: u64, obj: RemoteObj) -> ErrorCode {
+        let (tx, rx) = oneshot::channel::<ErrorCode>();
+        let event = RunCountEvent::Subscribe(pid, obj, tx);
+        self.send_event(event);
+        ylong_runtime::block_on(rx).unwrap()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.c", "source_rust_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.rs", "c_api": "sys_event!", "rust_api": "sys_event!", "mapping_type": "function", "description": "System event logging", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function handles IPC unsubscribe with error handling and logging. [Similarity] Both perform observer detachment, logging, and error checking, but with different domains (C: observer pattern, Rust: IPC). [Knowledge Extraction] Names don't refer to same concept (UnsubscribeRunningTaskCount vs unsubscribe_run_count), and domains differ (observer pattern vs IPC). No full match. Partial match in error handling/logic flow. API mappings found for logging and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.c", "source_rust_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.rs", "c_api": "REQUEST_HILOGE", "rust_api": "error!", "mapping_type": "function", "description": "Logging error message", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function handles IPC unsubscribe with error handling and logging. [Similarity] Both perform observer detachment, logging, and error checking, but with different domains (C: observer pattern, Rust: IPC). [Knowledge Extraction] Names don't refer to same concept (UnsubscribeRunningTaskCount vs unsubscribe_run_count), and domains differ (observer pattern vs IPC). No full match. Partial match in error handling/logic flow. API mappings found for logging and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.c", "source_rust_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.rs", "c_api": "RequestManagerImpl::GetInstance()->UnsubRunCount()", "rust_api": "self.run_count_manager.unsubscribe_run_count(pid)", "mapping_type": "function", "description": "Unsubscribe from running task count", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function handles IPC unsubscribe with error handling and logging. [Similarity] Both perform observer detachment, logging, and error checking, but with different domains (C: observer pattern, Rust: IPC). [Knowledge Extraction] Names don't refer to same concept (UnsubscribeRunningTaskCount vs unsubscribe_run_count), and domains differ (observer pattern vs IPC). No full match. Partial match in error handling/logic flow. API mappings found for logging and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.c", "source_rust_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.rs", "c_fragment": "if (FwkRunningTaskCountManager::GetInstance()->HasObserver()) {\n        REQUEST_HILOGD(\"Unsubscribe running task count success.\");\n        return;\n    }", "rust_fragment": "if is_called_by_hap() {\n            error!(\"Service run_count unsubscribe called by hap\");\n            sys_event!(\n                ExecError,\n                DfxCode::INVALID_IPC_MESSAGE_A34,\n                \"Service run_count unsubscribe called by hap\"\n            );\n            return Err(IpcStatusCode::Failed);\n        }", "description": "Both check a condition and return early with logging/error reporting.", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function handles IPC unsubscribe with error handling and logging. [Similarity] Both perform observer detachment, logging, and error checking, but with different domains (C: observer pattern, Rust: IPC). [Knowledge Extraction] Names don't refer to same concept (UnsubscribeRunningTaskCount vs unsubscribe_run_count), and domains differ (observer pattern vs IPC). No full match. Partial match in error handling/logic flow. API mappings found for logging and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.c", "source_rust_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.rs", "c_fragment": "int32_t ret = RequestManagerImpl::GetInstance()->UnsubRunCount();\n    RequestManagerImpl::GetInstance()->UnsubscribeSA();\n    if (ret != E_OK) {\n        REQUEST_HILOGE(\"Unsubscribe running task count failed, ret: %{public}d.\", ret);\n    }", "rust_fragment": "let ret = self.run_count_manager.unsubscribe_run_count(pid);\n        reply.write(&(ret as i32))?;\n        if ret != ErrorCode::ErrOk {\n            error!(\"End Service run_count unsubscribe, failed: {}\", ret as i32);\n            sys_event!(\n                ExecError,\n                DfxCode::INVALID_IPC_MESSAGE_A34,\n                &format!(\"End Service run_count unsubscribe, failed: {}\", ret as i32)\n            );\n            return Err(IpcStatusCode::Failed);\n        }", "description": "Both perform an operation and check result, logging failure if not successful.", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function handles IPC unsubscribe with error handling and logging. [Similarity] Both perform observer detachment, logging, and error checking, but with different domains (C: observer pattern, Rust: IPC). [Knowledge Extraction] Names don't refer to same concept (UnsubscribeRunningTaskCount vs unsubscribe_run_count), and domains differ (observer pattern vs IPC). No full match. Partial match in error handling/logic flow. API mappings found for logging and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.c", "source_rust_file": "Partial__UnsubscribeRunningTaskCount__idx863_rank1.rs", "c_api": "REQUEST_HILOGD", "rust_api": "info!", "mapping_type": "function", "description": "Logging debug message", "reasoning": "[Task Analysis] C function unsubscribes from task count observer; Rust function handles IPC unsubscribe with error handling and logging. [Similarity] Both perform observer detachment, logging, and error checking, but with different domains (C: observer pattern, Rust: IPC). [Knowledge Extraction] Names don't refer to same concept (UnsubscribeRunningTaskCount vs unsubscribe_run_count), and domains differ (observer pattern vs IPC). No full match. Partial match in error handling/logic flow. API mappings found for logging and error handling patterns."}]
+Unixcoder Score: -0.00522700697183609
+--------------------------------------------------
+C_Code: 
+DBStatus UnRegisterObserver() override
+    {
+        return DBStatus::OK;
+    }
+Function: 
+pub unsafe extern "C" fn OhCloudExtCloudSyncUnsubscribe(
+    server: *mut OhCloudExtCloudSync,
+    relations: *const OhCloudExtHashMap,
+    err: *mut *const OhCloudExtVector,
+) -> c_int {
+    if server.is_null() || relations.is_null() || err.is_null() {
+        return ERRNO_NULLPTR;
+    }
+
+    let cloud_server = match OhCloudExtCloudSync::get_inner_mut(server, SafetyCheckId::CloudSync) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    let relations = match OhCloudExtHashMap::get_inner_ref(relations, SafetyCheckId::HashMap) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+    let relations = match relations {
+        HashMapCffi::VecString(res) => res,
+        _ => return ERRNO_INVALID_INPUT_TYPE,
+    };
+
+    match cloud_server.unsubscribe(relations) {
+        Ok(()) => ERRNO_SUCCESS,
+        Err(e) => {
+            let errno = map_single_sync_err(&e);
+            if errno == ERRNO_IPC_ERRORS {
+                if let SyncError::IPCErrors(vec) = e {
+                    let ret = VectorCffi::I32(vec.iter().map(map_ipc_err).collect());
+                    *err = OhCloudExtVector::new(ret, SafetyCheckId::Vector).into_ptr();
+                }
+            }
+            errno
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx136303_rank5.h", "source_rust_file": "API_Mapping__record_stack_limit__idx136303_rank5.rs", "c_api": "alloc(Layout::from_size_align(...))", "rust_api": "alloc(Layout::from_size_align(...))", "mapping_type": "function", "description": "Heap memory allocation for stack", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to libc functions like `sigaltstack`, `sigaction`, `sigemptyset`, and `alloc`, which are typical of system-level operations. [Task Analysis] -> The C code appears to be setting up a stack limit for a task, while the Rust code sets up a signal handler with an alternate stack. [Similarity] -> While both involve stack management, the domains are different: C focuses on stack limit recording, Rust on signal handling setup. [Knowledge Extraction] -> The FFI wrapper nature of the Rust code blocks Full/Partial classification, but API mappings can still be extracted for the system-level operations involved."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx136303_rank5.h", "source_rust_file": "API_Mapping__record_stack_limit__idx136303_rank5.rs", "c_api": "libc::sigaction", "rust_api": "libc::sigaction", "mapping_type": "function", "description": "Registering signal handler", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to libc functions like `sigaltstack`, `sigaction`, `sigemptyset`, and `alloc`, which are typical of system-level operations. [Task Analysis] -> The C code appears to be setting up a stack limit for a task, while the Rust code sets up a signal handler with an alternate stack. [Similarity] -> While both involve stack management, the domains are different: C focuses on stack limit recording, Rust on signal handling setup. [Knowledge Extraction] -> The FFI wrapper nature of the Rust code blocks Full/Partial classification, but API mappings can still be extracted for the system-level operations involved."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx136303_rank5.h", "source_rust_file": "API_Mapping__record_stack_limit__idx136303_rank5.rs", "c_api": "libc::sigemptyset", "rust_api": "libc::sigemptyset", "mapping_type": "function", "description": "Initializing signal mask", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to libc functions like `sigaltstack`, `sigaction`, `sigemptyset`, and `alloc`, which are typical of system-level operations. [Task Analysis] -> The C code appears to be setting up a stack limit for a task, while the Rust code sets up a signal handler with an alternate stack. [Similarity] -> While both involve stack management, the domains are different: C focuses on stack limit recording, Rust on signal handling setup. [Knowledge Extraction] -> The FFI wrapper nature of the Rust code blocks Full/Partial classification, but API mappings can still be extracted for the system-level operations involved."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__record_stack_limit__idx136303_rank5.h", "source_rust_file": "API_Mapping__record_stack_limit__idx136303_rank5.rs", "c_api": "record_sp_limit", "rust_api": "libc::sigaltstack", "mapping_type": "function", "description": "Setting up alternate signal stack", "reasoning": "[FFI Check] -> The Rust code contains FFI calls to libc functions like `sigaltstack`, `sigaction`, `sigemptyset`, and `alloc`, which are typical of system-level operations. [Task Analysis] -> The C code appears to be setting up a stack limit for a task, while the Rust code sets up a signal handler with an alternate stack. [Similarity] -> While both involve stack management, the domains are different: C focuses on stack limit recording, Rust on signal handling setup. [Knowledge Extraction] -> The FFI wrapper nature of the Rust code blocks Full/Partial classification, but API mappings can still be extracted for the system-level operations involved."}]
+Unixcoder Score: -0.016372134909033775
+--------------------------------------------------
+C_Code: 
+void FwkIRunningTaskObserver::UpdateRunningTaskCount()
+{
+    pInnerOb_->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+}
+Function: 
+pub(crate) fn task_unload() {
+    let instance = RequestTaskCount::get_instance();
+    let mut task_count = instance.lock().unwrap();
+    if task_count.load_state {
+        let completed = task_count.completed_task_count;
+        let failed = task_count.failed_task_count;
+        sys_event!(
+            ExecError,
+            DfxCode::TASK_STATISTICS,
+            &format!("Task Completed {}, failed {}", completed, failed)
+        );
+        task_count.completed_task_count = 0;
+        task_count.failed_task_count = 0;
+        task_count.load_state = false;
+    }
+}
+Unixcoder Score: -0.016696663573384285
+--------------------------------------------------
+C_Code: 
+int32_t NetUnregistration::unregister() const
+{
+    return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);
+}
+Function: 
+pub fn unregister(&self) -> Result<(), NetUnregisterError> {
+        let mut handle = self.unregistration.lock().unwrap();
+        if let Some(inner) = handle.take() {
+            let ret = inner.unregister();
+            if ret != 0 {
+                *handle = Some(inner);
+                return Err(NetUnregisterError::UnregisterFailed(ret));
+            }
+            Ok(())
+        } else {
+            Err(NetUnregisterError::NotRegistered)
+        }
+    }
+Unixcoder Score: -0.017511317506432533
+--------------------------------------------------
+C_Code: 
+void
+rust_task::reset_stack_limit() {
+    uintptr_t sp = get_sp();
+    bool reseted = false;
+    while (!sp_in_stk_seg(sp, stk)) {
+        reseted = true;
+        prev_stack();
+        assert(stk != NULL && "Failed to find the current stack");
+    }
+
+    // Each call to prev_stack will record the stack limit. If we *didn't*
+    // call prev_stack then we still need to record it now to catch a corner case:
+    // the throw to initiate unwinding starts on the C stack while sp limit is 0.
+    // If we don't set the limit here then the rust code run subsequently will
+    // will veer into the red zone. Lame!
+    if (!reseted) {
+        record_stack_limit();
+    }
+}
+Function: 
+fn core_spawn<T: Send>(self, f: proc():Send -> T, after: proc(Result<T>):Send)
+                           -> (imp::rust_thread, Thread)
+    {
+        let Cfg { name, stack_size, stdout, stderr } = self;
+
+        let stack_size = stack_size.unwrap_or(rt::min_stack());
+        let my_thread = Thread::new(name);
+        let their_thread = my_thread.clone();
+
+        // Spawning a new OS thread guarantees that __morestack will never get
+        // triggered, but we must manually set up the actual stack bounds once
+        // this function starts executing. This raises the lower limit by a bit
+        // because by the time that this function is executing we've already
+        // consumed at least a little bit of stack (we don't know the exact byte
+        // address at which our stack started).
+        let main = proc() {
+            let something_around_the_top_of_the_stack = 1;
+            let addr = &something_around_the_top_of_the_stack as *const int;
+            let my_stack_top = addr as uint;
+            let my_stack_bottom = my_stack_top - stack_size + 1024;
+            unsafe {
+                stack::record_os_managed_stack_bounds(my_stack_bottom, my_stack_top);
+            }
+            thread_info::set(
+                (my_stack_bottom, my_stack_top),
+                thread::current_guard_page(),
+                their_thread
+            );
+
+            // There are two primary reasons that general try/catch is
+            // unsafe. The first is that we do not support nested try/catch. The
+            // fact that this is happening in a newly-spawned thread
+            // suffices. The second is that unwinding while unwinding is not
+            // defined.  We take care of that by having an 'unwinding' flag in
+            // the thread itself. For these reasons, this unsafety should be ok.
+            unsafe {
+                let mut output = None;
+                let mut f_opt = Some( // option dance
+                    if stdout.is_some() || stderr.is_some() {
+                        proc() {
+                            let _ = stdout.map(stdio::set_stdout);
+                            let _ = stderr.map(stdio::set_stderr);
+                            f()
+                        }
+                    } else {
+                        f
+                    });
+                let try_result = unwind::try(|| output = Some((f_opt.take().unwrap())()));
+                match (output, try_result) {
+                    (Some(data), Ok(_)) => after(Ok(data)),
+                    (None, Err(cause)) => after(Err(cause)),
+                    _ => unreachable!()
+                }
+            }
+        };
+        (unsafe { imp::create(stack, box main) }, my_thread)
+    }
+Unixcoder Score: -0.01759602688252926
+--------------------------------------------------
+C_Code: 
+struct  BaseGlyphV1Record_
+  {
+    FT_UShort  gid;
+    /* Offset from start of BaseGlyphV1List, i.e., from base_glyphs_v1. */
+    FT_ULong   paint_offset;
+
+  }
+Function: 
+pub struct Glyph {
+    /// The Unicode codepoint or glyph ID of the item
+    pub codepoint: u32,
+    /// The index of the cluster in the input text where this came from
+    pub cluster: u32,
+    /// The horizontal advance of the glyph
+    pub x_advance: i32,
+    /// The vertical advance of the glyph
+    pub y_advance: i32,
+    /// The horizontal offset of the glyph
+    pub x_offset: i32,
+    /// The vertical offset of the glyph
+    pub y_offset: i32,
+    /// You can use this for whatever you like
+    pub flags: u32,
+}
+Unixcoder Score: -0.023021744564175606
+--------------------------------------------------
+C_Code: 
+int32_t NetUnregistration::unregister() const
+{
+    return NetConnClient::GetInstance().UnregisterNetConnCallback(observer_);
+}
+Function: 
+pub fn unregister(&self) -> Result<(), NetUnregisterError> {
+        let mut handle = self.unregistration.lock().unwrap();
+        if let Some(inner) = handle.take() {
+            let ret = inner.unregister();
+            if ret != 0 {
+                *handle = Some(inner);
+                return Err(NetUnregisterError::UnregisterFailed(ret));
+            }
+            Ok(())
+        } else {
+            Err(NetUnregisterError::NotRegistered)
+        }
+    }
+Unixcoder Score: -0.024078482761979103
+--------------------------------------------------

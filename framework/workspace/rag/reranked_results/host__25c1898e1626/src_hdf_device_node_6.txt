@@ -1,0 +1,628 @@
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn verify_piece(&mut self, p: &parse::Piece) {
+        match *p {
+            parse::String(*) => {}
+            parse::CurrentArgument => {
+                if self.nest_level == 0 {
+                    self.ecx.span_err(self.fmtsp,
+                                      "`#` reference used with nothing to \
+                                       reference back to");
+                }
+            }
+            parse::Argument(ref arg) => {
+                // argument first (it's first in the format string)
+                let pos = match arg.position {
+                    parse::ArgumentNext => {
+                        let i = self.next_arg;
+                        if self.check_positional_ok() {
+                            self.next_arg += 1;
+                        }
+                        Left(i)
+                    }
+                    parse::ArgumentIs(i) => Left(i),
+                    parse::ArgumentNamed(s) => Right(s.to_managed()),
+                };
+                let ty = if arg.format.ty == "" {
+                    Unknown
+                } else { Known(arg.format.ty.to_managed()) };
+                self.verify_arg_type(pos, ty);
+
+                // width/precision next
+                self.verify_count(arg.format.width);
+                self.verify_count(arg.format.precision);
+
+                // and finally the method being applied
+                match arg.method {
+                    None => {}
+                    Some(ref method) => { self.verify_method(pos, *method); }
+                }
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx77120_rank3.c", "source_rust_file": "Partial__main__idx77120_rank3.rs", "c_api": "while (nodes)", "rust_api": "for _ in range(0, len)", "mapping_type": "pattern", "description": "Loop iteration pattern in C vs Rust", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function. [Similarity] Names don't refer to same concept (main vs parse_list), and domains differ (CLI handling vs data parsing). [Knowledge Extraction] No full match due to domain mismatch and different logic scope. Partial match found in loop structure and memory management pattern. API mappings identified in loop constructs and memory deallocation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx77120_rank3.c", "source_rust_file": "Partial__main__idx77120_rank3.rs", "c_api": "free(tmp)", "rust_api": "list.push(v)", "mapping_type": "pattern", "description": "Memory deallocation in C vs pushing elements to a collection in Rust", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function. [Similarity] Names don't refer to same concept (main vs parse_list), and domains differ (CLI handling vs data parsing). [Knowledge Extraction] No full match due to domain mismatch and different logic scope. Partial match found in loop structure and memory management pattern. API mappings identified in loop constructs and memory deallocation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx77120_rank3.c", "source_rust_file": "Partial__main__idx77120_rank3.rs", "c_api": "free((void*)tmp->name)", "rust_api": "list.push(v)", "mapping_type": "pattern", "description": "Memory deallocation in C vs pushing elements to a collection in Rust", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function. [Similarity] Names don't refer to same concept (main vs parse_list), and domains differ (CLI handling vs data parsing). [Knowledge Extraction] No full match due to domain mismatch and different logic scope. Partial match found in loop structure and memory management pattern. API mappings identified in loop constructs and memory deallocation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__main__idx77120_rank3.c", "source_rust_file": "Partial__main__idx77120_rank3.rs", "c_fragment": "while (nodes) {\n    tmp = nodes;\n    nodes = tmp->next;\n    if (tmp->own_string) {\n      free((void*)tmp->name);\n    }\n    free(tmp);\n  }", "rust_fragment": "for _ in range(0, len) {\n        let v = match io.read_char() {\n            '$' => parse_bulk(io),\n            ':' => parse_int(io),\n             _ => fail!()\n        };\n        list.push(v);\n    }", "description": "Both contain iterative processing over a data structure, though with different semantics (memory cleanup vs list building).", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function. [Similarity] Names don't refer to same concept (main vs parse_list), and domains differ (CLI handling vs data parsing). [Knowledge Extraction] No full match due to domain mismatch and different logic scope. Partial match found in loop structure and memory management pattern. API mappings identified in loop constructs and memory deallocation patterns."}]
+Unixcoder Score: -0.03222096711397171
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn main() {
+    if env::args().len() > 1 {
+        print!("hello!");
+        exit(0);
+    } else {
+        let out = Command::new(env::args().next().unwrap()).arg("foo")
+                          .output().unwrap();
+        assert!(out.status.success());
+        assert_eq!(String::from_utf8(out.stdout).unwrap(), "hello!");
+        assert_eq!(String::from_utf8(out.stderr).unwrap(), "");
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx77119_rank2.c", "source_rust_file": "API_Mapping__main__idx77119_rank2.rs", "c_api": "free((void*)tmp->name)", "rust_api": "Data(bytes)", "mapping_type": "pattern", "description": "Memory deallocation and data construction", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a data parsing function. [Similarity] No structural similarity at function level due to different domains (CLI handling vs data parsing). [Knowledge Extraction] No full/partial match. API mappings identified: C memset vs Rust read_bytes, C free vs Rust memory cleanup, C strcmp vs Rust string comparison logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx77119_rank2.c", "source_rust_file": "API_Mapping__main__idx77119_rank2.rs", "c_api": "strcmp(argv[1], \"-v\") == 0", "rust_api": "len > 0", "mapping_type": "pattern", "description": "Conditional logic for input validation", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a data parsing function. [Similarity] No structural similarity at function level due to different domains (CLI handling vs data parsing). [Knowledge Extraction] No full/partial match. API mappings identified: C memset vs Rust read_bytes, C free vs Rust memory cleanup, C strcmp vs Rust string comparison logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx77119_rank2.c", "source_rust_file": "API_Mapping__main__idx77119_rank2.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "io.read_bytes(len as uint)", "mapping_type": "pattern", "description": "Buffer initialization and data reading", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a data parsing function. [Similarity] No structural similarity at function level due to different domains (CLI handling vs data parsing). [Knowledge Extraction] No full/partial match. API mappings identified: C memset vs Rust read_bytes, C free vs Rust memory cleanup, C strcmp vs Rust string comparison logic."}]
+Unixcoder Score: -0.05473936349153519
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn verbosity(&self) -> Verbosity {
+        if self.quiet {
+            return Verbosity::Quiet;
+        }
+        match self.verbose {
+            0 => Verbosity::Normal,
+            1 => Verbosity::Verbose,
+            _ => Verbosity::Spammy,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank4.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank4.rs", "c_api": "old_node->prev->next = new_node;", "rust_api": "self.insert_left(nobe, neighbour);", "mapping_type": "function", "description": "Updating the next pointer of the previous node during list insertion.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Both perform the same core operation of list insertion, but with different data structures (C uses raw pointers, Rust uses a wrapper). [Knowledge Extraction] Structural fragments match in logic (insertion), but not in full form due to different data structures and control flow. API mappings found for list insertion operations and node creation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank4.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank4.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "self.insert_left(nobe, neighbour);", "description": "Both perform insertion of a new node into a doubly-linked list structure.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Both perform the same core operation of list insertion, but with different data structures (C uses raw pointers, Rust uses a wrapper). [Knowledge Extraction] Structural fragments match in logic (insertion), but not in full form due to different data structures and control flow. API mappings found for list insertion operations and node creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank4.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank4.rs", "c_api": "struct list_node* new_node", "rust_api": "dlist_node<T>", "mapping_type": "type", "description": "Node type in doubly-linked list structure.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Both perform the same core operation of list insertion, but with different data structures (C uses raw pointers, Rust uses a wrapper). [Knowledge Extraction] Structural fragments match in logic (insertion), but not in full form due to different data structures and control flow. API mappings found for list insertion operations and node creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank4.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank4.rs", "c_api": "struct list_node* old_node", "rust_api": "dlist_node<T>", "mapping_type": "type", "description": "Node type in doubly-linked list structure.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Both perform the same core operation of list insertion, but with different data structures (C uses raw pointers, Rust uses a wrapper). [Knowledge Extraction] Structural fragments match in logic (insertion), but not in full form due to different data structures and control flow. API mappings found for list insertion operations and node creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank4.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank4.rs", "c_api": "new_node->prev = old_node->prev;", "rust_api": "self.insert_left(nobe, neighbour);", "mapping_type": "function", "description": "Setting the previous pointer of a new node during list insertion.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Both perform the same core operation of list insertion, but with different data structures (C uses raw pointers, Rust uses a wrapper). [Knowledge Extraction] Structural fragments match in logic (insertion), but not in full form due to different data structures and control flow. API mappings found for list insertion operations and node creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank4.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank4.rs", "c_api": "new_node->next = old_node;", "rust_api": "self.insert_left(nobe, neighbour);", "mapping_type": "function", "description": "Inserting a node into a doubly-linked list structure.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Both perform the same core operation of list insertion, but with different data structures (C uses raw pointers, Rust uses a wrapper). [Knowledge Extraction] Structural fragments match in logic (insertion), but not in full form due to different data structures and control flow. API mappings found for list insertion operations and node creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank4.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank4.rs", "c_api": "old_node->prev = new_node;", "rust_api": "self.insert_left(nobe, neighbour);", "mapping_type": "function", "description": "Updating the previous pointer of the current node during list insertion.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Both perform the same core operation of list insertion, but with different data structures (C uses raw pointers, Rust uses a wrapper). [Knowledge Extraction] Structural fragments match in logic (insertion), but not in full form due to different data structures and control flow. API mappings found for list insertion operations and node creation."}]
+Unixcoder Score: -0.06397201865911484
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn trans_piece(&mut self, piece: &parse::Piece) -> @ast::expr {
+        let sp = self.fmtsp;
+        let rtpath = |s: &str| {
+            ~[self.ecx.ident_of("std"), self.ecx.ident_of("fmt"),
+              self.ecx.ident_of("rt"), self.ecx.ident_of(s)]
+        };
+        let ctpath = |s: &str| {
+            ~[self.ecx.ident_of("std"), self.ecx.ident_of("fmt"),
+              self.ecx.ident_of("parse"), self.ecx.ident_of(s)]
+        };
+        let none = || {
+            let p = self.ecx.path(sp, ~[self.ecx.ident_of("None")]);
+            self.ecx.expr_path(p)
+        };
+        let some = |e: @ast::expr| {
+            self.ecx.expr_call_ident(sp, self.ecx.ident_of("Some"), ~[e])
+        };
+        let trans_count = |c: parse::Count| {
+            match c {
+                parse::CountIs(i) => {
+                    self.ecx.expr_call_global(sp, ctpath("CountIs"),
+                                              ~[self.ecx.expr_uint(sp, i)])
+                }
+                parse::CountIsParam(i) => {
+                    self.ecx.expr_call_global(sp, ctpath("CountIsParam"),
+                                              ~[self.ecx.expr_uint(sp, i)])
+                }
+                parse::CountImplied => {
+                    let path = self.ecx.path_global(sp, ctpath("CountImplied"));
+                    self.ecx.expr_path(path)
+                }
+                parse::CountIsNextParam => {
+                    let path = self.ecx.path_global(sp, ctpath("CountIsNextParam"));
+                    self.ecx.expr_path(path)
+                }
+            }
+        };
+        let trans_method = |method: &parse::Method| {
+            let method = match *method {
+                parse::Select(ref arms, ref default) => {
+                    let arms = arms.iter().transform(|arm| {
+                        let p = self.ecx.path_global(sp, rtpath("SelectArm"));
+                        let result = arm.result.iter().transform(|p| {
+                            self.trans_piece(p)
+                        }).collect();
+                        let s = arm.selector.to_managed();
+                        let selector = self.ecx.expr_str(sp, s);
+                        self.ecx.expr_struct(sp, p, ~[
+                            self.ecx.field_imm(sp,
+                                               self.ecx.ident_of("selector"),
+                                               selector),
+                            self.ecx.field_imm(sp, self.ecx.ident_of("result"),
+                                               self.ecx.expr_vec_slice(sp, result)),
+                        ])
+                    }).collect();
+                    let default = default.iter().transform(|p| {
+                        self.trans_piece(p)
+                    }).collect();
+                    self.ecx.expr_call_global(sp, rtpath("Select"), ~[
+                        self.ecx.expr_vec_slice(sp, arms),
+                        self.ecx.expr_vec_slice(sp, default),
+                    ])
+                }
+                parse::Plural(offset, ref arms, ref default) => {
+                    let offset = match offset {
+                        Some(i) => { some(self.ecx.expr_uint(sp, i)) }
+                        None => { none() }
+                    };
+                    let arms = arms.iter().transform(|arm| {
+                        let p = self.ecx.path_global(sp, rtpath("PluralArm"));
+                        let result = arm.result.iter().transform(|p| {
+                            self.trans_piece(p)
+                        }).collect();
+                        let (lr, selarg) = match arm.selector {
+                            Left(t) => {
+                                let p = ctpath(fmt!("%?", t));
+                                let p = self.ecx.path_global(sp, p);
+                                (self.ecx.ident_of("Left"),
+                                 self.ecx.expr_path(p))
+                            }
+                            Right(i) => {
+                                (self.ecx.ident_of("Right"),
+                                 self.ecx.expr_uint(sp, i))
+                            }
+                        };
+                        let selector = self.ecx.expr_call_ident(sp,
+                                lr, ~[selarg]);
+                        self.ecx.expr_struct(sp, p, ~[
+                            self.ecx.field_imm(sp,
+                                               self.ecx.ident_of("selector"),
+                                               selector),
+                            self.ecx.field_imm(sp, self.ecx.ident_of("result"),
+                                               self.ecx.expr_vec_slice(sp, result)),
+                        ])
+                    }).collect();
+                    let default = default.iter().transform(|p| {
+                        self.trans_piece(p)
+                    }).collect();
+                    self.ecx.expr_call_global(sp, rtpath("Plural"), ~[
+                        offset,
+                        self.ecx.expr_vec_slice(sp, arms),
+                        self.ecx.expr_vec_slice(sp, default),
+                    ])
+                }
+            };
+            let life = self.ecx.lifetime(sp, self.ecx.ident_of("static"));
+            let ty = self.ecx.ty_path(self.ecx.path_all(
+                sp,
+                true,
+                rtpath("Method"),
+                Some(life),
+                ~[]
+            ), None);
+            let st = ast::item_static(ty, ast::m_imm, method);
+            let static_name = self.ecx.ident_of(fmt!("__static_method_%u",
+                                                     self.method_statics.len()));
+            let item = self.ecx.item(sp, static_name, ~[], st);
+            self.method_statics.push(item);
+            self.ecx.expr_ident(sp, static_name)
+        };
+
+        match *piece {
+            parse::String(s) => {
+                self.ecx.expr_call_global(sp, rtpath("String"),
+                                          ~[self.ecx.expr_str(sp, s.to_managed())])
+            }
+            parse::CurrentArgument => {
+                let nil = self.ecx.expr_lit(sp, ast::lit_nil);
+                self.ecx.expr_call_global(sp, rtpath("CurrentArgument"), ~[nil])
+            }
+            parse::Argument(ref arg) => {
+                // Translate the position
+                let pos = match arg.position {
+                    // These two have a direct mapping
+                    parse::ArgumentNext => {
+                        let path = self.ecx.path_global(sp,
+                                                        rtpath("ArgumentNext"));
+                        self.ecx.expr_path(path)
+                    }
+                    parse::ArgumentIs(i) => {
+                        self.ecx.expr_call_global(sp, rtpath("ArgumentIs"),
+                                                  ~[self.ecx.expr_uint(sp, i)])
+                    }
+                    // Named arguments are converted to positional arguments at
+                    // the end of the list of arguments
+                    parse::ArgumentNamed(n) => {
+                        let n = n.to_managed();
+                        let i = match self.name_positions.find_copy(&n) {
+                            Some(i) => i,
+                            None => 0, // error already emitted elsewhere
+                        };
+                        let i = i + self.args.len();
+                        self.ecx.expr_call_global(sp, rtpath("ArgumentIs"),
+                                                  ~[self.ecx.expr_uint(sp, i)])
+                    }
+                };
+
+                // Translate the format
+                let fill = match arg.format.fill { Some(c) => c, None => ' ' };
+                let fill = self.ecx.expr_lit(sp, ast::lit_int(fill as i64,
+                                                              ast::ty_char));
+                let align = match arg.format.align {
+                    None | Some(parse::AlignLeft) => {
+                        self.ecx.expr_bool(sp, true)
+                    }
+                    Some(parse::AlignRight) => {
+                        self.ecx.expr_bool(sp, false)
+                    }
+                };
+                let flags = self.ecx.expr_uint(sp, arg.format.flags);
+                let prec = trans_count(arg.format.precision);
+                let width = trans_count(arg.format.width);
+                let path = self.ecx.path_global(sp, rtpath("FormatSpec"));
+                let fmt = self.ecx.expr_struct(sp, path, ~[
+                    self.ecx.field_imm(sp, self.ecx.ident_of("fill"), fill),
+                    self.ecx.field_imm(sp, self.ecx.ident_of("alignleft"), align),
+                    self.ecx.field_imm(sp, self.ecx.ident_of("flags"), flags),
+                    self.ecx.field_imm(sp, self.ecx.ident_of("precision"), prec),
+                    self.ecx.field_imm(sp, self.ecx.ident_of("width"), width),
+                ]);
+
+                // Translate the method (if any)
+                let method = match arg.method {
+                    None => { none() }
+                    Some(ref m) => {
+                        let m = trans_method(*m);
+                        some(self.ecx.expr_addr_of(sp, m))
+                    }
+                };
+                let path = self.ecx.path_global(sp, rtpath("Argument"));
+                let s = self.ecx.expr_struct(sp, path, ~[
+                    self.ecx.field_imm(sp, self.ecx.ident_of("position"), pos),
+                    self.ecx.field_imm(sp, self.ecx.ident_of("format"), fmt),
+                    self.ecx.field_imm(sp, self.ecx.ident_of("method"), method),
+                ]);
+                self.ecx.expr_call_global(sp, rtpath("Argument"), ~[s])
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113835_rank5.c", "source_rust_file": "Partial__ares__insert_in_list__idx113835_rank5.rs", "c_api": "old_node->prev = new_node;", "rust_api": "self.list.splice_nodes(...)", "mapping_type": "function", "description": "Node insertion in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function splices a linked list after a given position. [Similarity] Both involve list manipulation and node re-linking, but the Rust version is more complex with safety checks and state management. [Knowledge Extraction] Full match blocked due to domain mismatch (low-level pointer manipulation vs high-level safe abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx113835_rank5.c", "source_rust_file": "Partial__ares__insert_in_list__idx113835_rank5.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "self.list.splice_nodes(self.current, node_next, splice_head, splice_tail, splice_len);", "description": "Both code blocks perform node re-linking operations in a doubly-linked list structure.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function splices a linked list after a given position. [Similarity] Both involve list manipulation and node re-linking, but the Rust version is more complex with safety checks and state management. [Knowledge Extraction] Full match blocked due to domain mismatch (low-level pointer manipulation vs high-level safe abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113835_rank5.c", "source_rust_file": "Partial__ares__insert_in_list__idx113835_rank5.rs", "c_api": "old_node->prev->next = new_node;", "rust_api": "self.list.splice_nodes(...)", "mapping_type": "function", "description": "Node insertion in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function splices a linked list after a given position. [Similarity] Both involve list manipulation and node re-linking, but the Rust version is more complex with safety checks and state management. [Knowledge Extraction] Full match blocked due to domain mismatch (low-level pointer manipulation vs high-level safe abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113835_rank5.c", "source_rust_file": "Partial__ares__insert_in_list__idx113835_rank5.rs", "c_api": "new_node->next = old_node;", "rust_api": "self.list.splice_nodes(...)", "mapping_type": "function", "description": "Node insertion in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function splices a linked list after a given position. [Similarity] Both involve list manipulation and node re-linking, but the Rust version is more complex with safety checks and state management. [Knowledge Extraction] Full match blocked due to domain mismatch (low-level pointer manipulation vs high-level safe abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113835_rank5.c", "source_rust_file": "Partial__ares__insert_in_list__idx113835_rank5.rs", "c_api": "new_node->prev = old_node->prev;", "rust_api": "self.list.splice_nodes(...)", "mapping_type": "function", "description": "Node insertion in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function splices a linked list after a given position. [Similarity] Both involve list manipulation and node re-linking, but the Rust version is more complex with safety checks and state management. [Knowledge Extraction] Full match blocked due to domain mismatch (low-level pointer manipulation vs high-level safe abstraction), but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.06730661541223526
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+pub unsafe fn remove(&mut self, entry: &mut UnsafeListEntry<T>) {
+        rtassert!(!self.is_empty());
+        // BEFORE:
+        //     /----\ next ---> /-----\ next ---> /----\
+        // ... |prev|           |entry|           |next| ...
+        //     \----/ <--- prev \-----/ <--- prev \----/
+        //
+        // AFTER:
+        //     /----\ next ---> /----\
+        // ... |prev|           |next| ...
+        //     \----/ <--- prev \----/
+        let mut prev = entry.prev;
+        let mut next = entry.next;
+        // SAFETY: `prev` and `next` must meet all requirements for a mutable reference.entry
+        unsafe { prev.as_mut() }.next = next;
+        unsafe { next.as_mut() }.prev = prev;
+        entry.next = NonNull::dangling();
+        entry.prev = NonNull::dangling();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_api": "node->prev = NULL", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Clearing node links after removal in a doubly-linked list.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_api": "node->next = NULL", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Clearing node links after removal in a doubly-linked list.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_api": "node->next->prev = node->prev", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Removing a node from a doubly-linked list by updating adjacent node pointers.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "l.remove(one);\n        l.assert_consistent(); l.remove(two);", "description": "Removal of elements from a doubly-linked list structure.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134555_rank1.c", "source_rust_file": "Partial__ares__remove_from_list__idx134555_rank1.rs", "c_api": "node->prev->next = node->next", "rust_api": "l.remove(one)", "mapping_type": "function", "description": "Removing a node from a doubly-linked list by updating adjacent node pointers.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests removal of elements from a doubly-linked list. [Similarity] Names don't match but domain is same (doubly-linked list operations). [Knowledge Extraction] Full match blocked by domain mismatch (C: low-level pointer manipulation, Rust: high-level list abstraction), but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.07257607579231262
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn visit_mod<E:Clone>(m: &_mod,
+                          _sp: span,
+                          _id: NodeId,
+                          (e, v): (E, vt<E>)) {
+    for m.view_items.iter().advance |vi| {
+        (v.visit_view_item)(vi, (e.clone(), v));
+    }
+    for m.items.iter().advance |i| {
+        (v.visit_item)(*i, (e.clone(), v));
+    }
+}
+Unixcoder Score: -0.07267921417951584
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn integer(&mut self) -> Option<uint> {
+        let mut cur = 0;
+        let mut found = false;
+        loop {
+            match self.cur.clone().next() {
+                Some((_, c)) => {
+                    match char::to_digit(c, 10) {
+                        Some(i) => {
+                            cur = cur * 10 + i;
+                            found = true;
+                            self.cur.next();
+                        }
+                        None => { break }
+                    }
+                }
+                None => { break }
+            }
+        }
+        if found {
+            return Some(cur);
+        } else {
+            return None;
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx134562_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx134562_rank3.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "l.insert_after(3, two);", "description": "Inserting a node into a doubly-linked list structure.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between existing nodes; Rust function tests a doubly-linked list implementation by inserting after a given node and asserting consistency. [Similarity] Names do not match ('ares__insert_in_list' vs 'test_dlist_insert_after_tail'), but both involve list insertion logic. [Knowledge Extraction] Full structural match is blocked due to domain mismatch (memory management vs testing logic), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134562_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx134562_rank3.rs", "c_api": "old_node->prev->next = new_node;", "rust_api": "l.insert_after(3, two);", "mapping_type": "function", "description": "Updating the next pointer of the previous node in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between existing nodes; Rust function tests a doubly-linked list implementation by inserting after a given node and asserting consistency. [Similarity] Names do not match ('ares__insert_in_list' vs 'test_dlist_insert_after_tail'), but both involve list insertion logic. [Knowledge Extraction] Full structural match is blocked due to domain mismatch (memory management vs testing logic), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134562_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx134562_rank3.rs", "c_api": "old_node->prev = new_node;", "rust_api": "l.insert_after(3, two);", "mapping_type": "function", "description": "Updating the previous pointer of the old node in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between existing nodes; Rust function tests a doubly-linked list implementation by inserting after a given node and asserting consistency. [Similarity] Names do not match ('ares__insert_in_list' vs 'test_dlist_insert_after_tail'), but both involve list insertion logic. [Knowledge Extraction] Full structural match is blocked due to domain mismatch (memory management vs testing logic), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134562_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx134562_rank3.rs", "c_api": "new_node->prev = old_node->prev;", "rust_api": "l.insert_after(3, two);", "mapping_type": "function", "description": "Setting the previous pointer of a new node in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between existing nodes; Rust function tests a doubly-linked list implementation by inserting after a given node and asserting consistency. [Similarity] Names do not match ('ares__insert_in_list' vs 'test_dlist_insert_after_tail'), but both involve list insertion logic. [Knowledge Extraction] Full structural match is blocked due to domain mismatch (memory management vs testing logic), but partial structural fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134562_rank3.c", "source_rust_file": "Partial__ares__insert_in_list__idx134562_rank3.rs", "c_api": "new_node->next = old_node;", "rust_api": "l.insert_after(3, two);", "mapping_type": "function", "description": "Inserting a node after a specified node in a doubly-linked list.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between existing nodes; Rust function tests a doubly-linked list implementation by inserting after a given node and asserting consistency. [Similarity] Names do not match ('ares__insert_in_list' vs 'test_dlist_insert_after_tail'), but both involve list insertion logic. [Knowledge Extraction] Full structural match is blocked due to domain mismatch (memory management vs testing logic), but partial structural fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.07428478449583054
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn run(self) -> anyhow::Result<()> {
+        let _p = profile::span("parsing");
+        let text = read_stdin()?;
+        let file = SourceFile::parse(&text).tree();
+        if !self.no_dump {
+            println!("{:#?}", file.syntax());
+        }
+        std::mem::forget(file);
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "new_node->next = old_node", "rust_api": "self.insert_left(nobe, neighbour)", "mapping_type": "method", "description": "Inserting a new node into a doubly-linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "new_node->prev = old_node->prev", "rust_api": "self.insert_left(nobe, neighbour)", "mapping_type": "method", "description": "Setting the previous pointer of a new node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "old_node->prev = new_node", "rust_api": "self.insert_left(nobe, neighbour)", "mapping_type": "method", "description": "Updating the previous pointer of the current node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "let mut nobe = self.new_link(data);\n        self.insert_left(nobe, neighbour);", "description": "Both code blocks perform insertion of a new node into a doubly-linked list structure, with similar logic of updating next/prev pointers.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "struct list_node* old_node", "rust_api": "dlist_node<T>", "mapping_type": "type", "description": "Doubly-linked list node type", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "old_node->prev->next = new_node", "rust_api": "self.insert_left(nobe, neighbour)", "mapping_type": "method", "description": "Updating the next pointer of the previous node in a doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx134527_rank2.c", "source_rust_file": "Partial__ares__insert_in_list__idx134527_rank2.rs", "c_api": "struct list_node* new_node", "rust_api": "dlist_node<T>", "mapping_type": "type", "description": "Doubly-linked list node type", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a new node before an existing one; Rust function inserts a node before a neighbor in a doubly-linked list. [Similarity] Names don't match but the semantic domain is consistent (doubly-linked list manipulation). [Knowledge Extraction] Found partial structural match in list insertion logic and API mapping for node creation and insertion operations."}]
+Unixcoder Score: -0.0745643749833107
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_before_n(+data: T, neighbour: dlist_node<T>) -> dlist_node<T> {
+        let mut nobe = self.new_link(data);
+        self.insert_left(nobe, neighbour);
+        option::get(nobe)
+    }
+Unixcoder Score: -0.0746886134147644
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn from_iter<T: Iterator<char>>(mut iterator: T) -> ~str {
+        let (lower, _) = iterator.size_hint();
+        let mut cap = if lower == 0 {16} else {lower};
+        let mut len = 0;
+        let mut tmp = [0u8, ..4];
+
+        unsafe {
+            let mut ptr = alloc(cap) as *mut Vec<u8>;
+            let mut ret = cast::transmute(ptr);
+            for ch in iterator {
+                let amt = ch.encode_utf8(tmp);
+
+                if len + amt > cap {
+                    cap = cap.checked_mul(&2).expect("cap overflow");
+                    if cap < len + amt {
+                        cap = len + amt;
+                    }
+                    let ptr2 = alloc(cap) as *mut Vec<u8>;
+                    ptr::copy_nonoverlapping_memory(&mut (*ptr2).data,
+                                                    &(*ptr).data,
+                                                    len);
+                    free(ptr as *u8);
+                    cast::forget(ret);
+                    ret = cast::transmute(ptr2);
+                    ptr = ptr2;
+                }
+
+                let base = &mut (*ptr).data as *mut u8;
+                for byte in tmp.slice_to(amt).iter() {
+                    *base.offset(len as int) = *byte;
+                    len += 1;
+                }
+                (*ptr).fill = len;
+            }
+            ret
+        }
+    }
+Unixcoder Score: -0.0749710202217102
+--------------------------------------------------

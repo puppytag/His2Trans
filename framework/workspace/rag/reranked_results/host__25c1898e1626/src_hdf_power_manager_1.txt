@@ -1,0 +1,310 @@
+C_Code: 
+ExceptionErrorCode CJRequestEvent::PauseExec(const CJRequestTask *task)
+{
+    return (ExceptionErrorCode)RequestManager::GetInstance()->Pause(task->GetTidStr(), Version::API10);
+}
+Function: 
+pub(crate) fn publish_state_change_event(
+    bundle_name: &str,
+    task_id: u32,
+    state: i32,
+    uid: u64,
+) -> Result<(), ()> {
+    match crate::utils::PublishStateChangeEvent(bundle_name, task_id, state, uid as i32) {
+        true => Ok(()),
+        false => Err(()),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__etp_submit__idx29267_rank4.c", "source_rust_file": "Partial__etp_submit__idx29267_rank4.rs", "c_fragment": "if (!reqq_push (&res_queue, req) && want_poll_cb)\n        want_poll_cb ();", "rust_fragment": "if let Some(mut src) = src {\n                    // The src_hash needs to be computed on the pre-normalized src.\n                    if self.src_hash.matches(&src) {\n                        normalize_src(&mut src, BytePos::from_usize(0));\n                        *src_kind = ExternalSourceKind::Present(Lrc::new(src));\n                        return true;\n                    }\n                } else {\n                    *src_kind = ExternalSourceKind::AbsentErr;\n                }", "description": "Both involve conditional checks followed by actions based on the result of a push/operation.", "reasoning": "[Task Analysis] C function 'etp_submit' manages request priority and queues requests with locking, while Rust function 'add_external_src' handles external source management with borrowing and conditional logic. [Similarity] No full structural similarity due to different domains (request queuing vs source management) and different control flow patterns. [Knowledge Extraction] No full match, but partial structural fragments and API mappings can be identified based on shared patterns like locking and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__etp_submit__idx29267_rank4.c", "source_rust_file": "Partial__etp_submit__idx29267_rank4.rs", "c_api": "X_LOCK", "rust_api": "self.external_src.borrow_mut()", "mapping_type": "function", "description": "Resource locking mechanism", "reasoning": "[Task Analysis] C function 'etp_submit' manages request priority and queues requests with locking, while Rust function 'add_external_src' handles external source management with borrowing and conditional logic. [Similarity] No full structural similarity due to different domains (request queuing vs source management) and different control flow patterns. [Knowledge Extraction] No full match, but partial structural fragments and API mappings can be identified based on shared patterns like locking and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__etp_submit__idx29267_rank4.c", "source_rust_file": "Partial__etp_submit__idx29267_rank4.rs", "c_api": "reqq_push", "rust_api": "if let Some(mut src) = src", "mapping_type": "function", "description": "Push operation with conditional handling", "reasoning": "[Task Analysis] C function 'etp_submit' manages request priority and queues requests with locking, while Rust function 'add_external_src' handles external source management with borrowing and conditional logic. [Similarity] No full structural similarity due to different domains (request queuing vs source management) and different control flow patterns. [Knowledge Extraction] No full match, but partial structural fragments and API mappings can be identified based on shared patterns like locking and conditional logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__etp_submit__idx29267_rank4.c", "source_rust_file": "Partial__etp_submit__idx29267_rank4.rs", "c_fragment": "X_LOCK (reqlock);\n      ++nreqs;\n      X_UNLOCK (reqlock);", "rust_fragment": "let mut external_src = self.external_src.borrow_mut();", "description": "Both involve acquiring a lock/resource and performing an increment/operation before releasing it.", "reasoning": "[Task Analysis] C function 'etp_submit' manages request priority and queues requests with locking, while Rust function 'add_external_src' handles external source management with borrowing and conditional logic. [Similarity] No full structural similarity due to different domains (request queuing vs source management) and different control flow patterns. [Knowledge Extraction] No full match, but partial structural fragments and API mappings can be identified based on shared patterns like locking and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__etp_submit__idx29267_rank4.c", "source_rust_file": "Partial__etp_submit__idx29267_rank4.rs", "c_api": "X_UNLOCK", "rust_api": "borrow_mut()", "mapping_type": "function", "description": "Resource unlocking mechanism", "reasoning": "[Task Analysis] C function 'etp_submit' manages request priority and queues requests with locking, while Rust function 'add_external_src' handles external source management with borrowing and conditional logic. [Similarity] No full structural similarity due to different domains (request queuing vs source management) and different control flow patterns. [Knowledge Extraction] No full match, but partial structural fragments and API mappings can be identified based on shared patterns like locking and conditional logic."}]
+Unixcoder Score: 0.03712009638547897
+--------------------------------------------------
+C_Code: 
+static void idle_callback(uv_idle_t* handle, int status) {
+  rust_task *task = reinterpret_cast<rust_task*>(handle->data);
+  task->yield();
+}
+Function: 
+pub unsafe fn tcp_connect(connect_ptr: *uv_connect_t,
+                      tcp_handle_ptr: *uv_tcp_t,
+                      addr_ptr: *sockaddr_in,
+                      after_connect_cb: *u8)
+-> libc::c_int {
+    log(debug, fmt!("b4 foreign tcp_connect--addr port: %u cb: %u",
+                    (*addr_ptr).sin_port as uint, after_connect_cb as uint));
+    return rustrt::rust_uv_tcp_connect(connect_ptr, tcp_handle_ptr,
+                                    after_connect_cb, addr_ptr);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__cleanup_task__idx129990_rank3.c", "source_rust_file": "Partial__cleanup_task__idx129990_rank3.rs", "c_fragment": "if (task->killed && !threw_exception) {\n            LOG(task, task, \"Task killed during termination\");\n            threw_exception = true;\n        }", "rust_fragment": "if newstate.is_some() {\n        let group = option::unwrap(move newstate);\n        for taskset_each(&group.members) |+sibling| {\n            // Skip self - killing ourself won't do much good.\n            if sibling != me {\n                rt::rust_task_kill_other(sibling);\n            }\n        }\n        for taskset_each(&group.descendants) |+child| {\n            assert child != me;\n            rt::rust_task_kill_other(child);\n        }", "description": "Both handle conditional task termination logic, though C checks for killed flag and exception, while Rust checks for group state and iterates over members.", "reasoning": "[Task Analysis] The C function 'cleanup_task' handles task cleanup including TLS cleanup and calling Rust stack functions, while the Rust function 'kill_taskgroup' manages killing a task group and its members. [Similarity] Names don't match but both handle task lifecycle management; however, domains differ: C focuses on individual task cleanup with exception handling and TLS, while Rust handles group-level task killing. [Knowledge Extraction] No full structural match due to domain mismatch and different scopes. However, partial matching exists in the general pattern of task lifecycle management and cleanup. API mappings are found in the pattern of calling cleanup functions and managing task states."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__cleanup_task__idx129990_rank3.c", "source_rust_file": "Partial__cleanup_task__idx129990_rank3.rs", "c_api": "task->die()", "rust_api": "rt::rust_task_kill_other(child)", "mapping_type": "function", "description": "Task death/termination function", "reasoning": "[Task Analysis] The C function 'cleanup_task' handles task cleanup including TLS cleanup and calling Rust stack functions, while the Rust function 'kill_taskgroup' manages killing a task group and its members. [Similarity] Names don't match but both handle task lifecycle management; however, domains differ: C focuses on individual task cleanup with exception handling and TLS, while Rust handles group-level task killing. [Knowledge Extraction] No full structural match due to domain mismatch and different scopes. However, partial matching exists in the general pattern of task lifecycle management and cleanup. API mappings are found in the pattern of calling cleanup functions and managing task states."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__cleanup_task__idx129990_rank3.c", "source_rust_file": "Partial__cleanup_task__idx129990_rank3.rs", "c_api": "task->task_local_data_cleanup(task->task_local_data)", "rust_api": "rt::rust_task_kill_other(sibling)", "mapping_type": "function", "description": "Task cleanup/termination function call", "reasoning": "[Task Analysis] The C function 'cleanup_task' handles task cleanup including TLS cleanup and calling Rust stack functions, while the Rust function 'kill_taskgroup' manages killing a task group and its members. [Similarity] Names don't match but both handle task lifecycle management; however, domains differ: C focuses on individual task cleanup with exception handling and TLS, while Rust handles group-level task killing. [Knowledge Extraction] No full structural match due to domain mismatch and different scopes. However, partial matching exists in the general pattern of task lifecycle management and cleanup. API mappings are found in the pattern of calling cleanup functions and managing task states."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__cleanup_task__idx129990_rank3.c", "source_rust_file": "Partial__cleanup_task__idx129990_rank3.rs", "c_api": "task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()))", "rust_api": "rt::rust_task_kill_all(me)", "mapping_type": "function", "description": "Calling Rust stack function for task termination", "reasoning": "[Task Analysis] The C function 'cleanup_task' handles task cleanup including TLS cleanup and calling Rust stack functions, while the Rust function 'kill_taskgroup' manages killing a task group and its members. [Similarity] Names don't match but both handle task lifecycle management; however, domains differ: C focuses on individual task cleanup with exception handling and TLS, while Rust handles group-level task killing. [Knowledge Extraction] No full structural match due to domain mismatch and different scopes. However, partial matching exists in the general pattern of task lifecycle management and cleanup. API mappings are found in the pattern of calling cleanup functions and managing task states."}]
+Unixcoder Score: 0.016620684415102005
+--------------------------------------------------
+C_Code: 
+struct task_notification {
+    rust_task_id id;
+    task_result result; // task_result
+}
+Function: 
+pub struct HomeHandle {
+    priv queue: Queue,
+    priv id: uint,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx65145_rank4.c", "source_rust_file": "API_Mapping__etp_submit__idx65145_rank4.rs", "c_api": "reqq_push (&req_queue, req)", "rust_api": "self.push(value)", "mapping_type": "function", "description": "Push element to a queue/collection", "reasoning": "[Task Analysis] C function 'etp_submit' handles request priority adjustment and queueing logic with locking mechanisms; Rust function 'add' is a simple wrapper that delegates to 'push'. [Similarity] Names do not refer to the same concept ('etp_submit' vs 'add'), and the domains are different: C deals with system-level request handling and threading, while Rust just pushes to a container. [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve adding elements to collections, so API mapping is extracted."}]
+Unixcoder Score: 0.01541727315634489
+--------------------------------------------------
+C_Code: 
+Queue() = default;
+Function: 
+fn new(verbs: &'a mut Vec<u8>, points: &'a mut Vec<FfiPoint>) -> Self {
+        verbs.clear();
+        points.clear();
+        verbs.reserve(PATH_EXTRACTION_RESERVE);
+        points.reserve(PATH_EXTRACTION_RESERVE);
+        Self {
+            verbs,
+            points,
+            started: false,
+            current: FfiPoint::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__maybe_cc__idx14535_rank2.c", "source_rust_file": "API_Mapping__maybe_cc__idx14535_rank2.rs", "c_api": "do_cc(task)", "rust_api": "err.emit()", "mapping_type": "function", "description": "Error reporting and handling", "reasoning": "[Task Analysis] C function 'maybe_cc' is a conditional wrapper that calls 'do_cc' based on a debug flag, while Rust function 'make_items' is a loop-based item parser with error handling and collection logic. [Similarity] No structural similarity at the function level due to different domains (debug control vs parsing logic). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and loop control patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__maybe_cc__idx14535_rank2.c", "source_rust_file": "API_Mapping__maybe_cc__idx14535_rank2.rs", "c_api": "break;", "rust_api": "break;", "mapping_type": "pattern", "description": "Loop termination control", "reasoning": "[Task Analysis] C function 'maybe_cc' is a conditional wrapper that calls 'do_cc' based on a debug flag, while Rust function 'make_items' is a loop-based item parser with error handling and collection logic. [Similarity] No structural similarity at the function level due to different domains (debug control vs parsing logic). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and loop control patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__maybe_cc__idx14535_rank2.c", "source_rust_file": "API_Mapping__maybe_cc__idx14535_rank2.rs", "c_api": "if (*zeal)", "rust_api": "match self.p.parse_item(ForceCollect::No)", "mapping_type": "pattern", "description": "Conditional execution based on a flag or state", "reasoning": "[Task Analysis] C function 'maybe_cc' is a conditional wrapper that calls 'do_cc' based on a debug flag, while Rust function 'make_items' is a loop-based item parser with error handling and collection logic. [Similarity] No structural similarity at the function level due to different domains (debug control vs parsing logic). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and loop control patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__maybe_cc__idx14535_rank2.c", "source_rust_file": "API_Mapping__maybe_cc__idx14535_rank2.rs", "c_api": "return;", "rust_api": "break;", "mapping_type": "pattern", "description": "Early exit from function/block", "reasoning": "[Task Analysis] C function 'maybe_cc' is a conditional wrapper that calls 'do_cc' based on a debug flag, while Rust function 'make_items' is a loop-based item parser with error handling and collection logic. [Similarity] No structural similarity at the function level due to different domains (debug control vs parsing logic). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and loop control patterns."}]
+Unixcoder Score: 0.007503742352128029
+--------------------------------------------------
+C_Code: 
+void FwkIRunningTaskObserver::UpdateRunningTaskCount()
+{
+    pInnerOb_->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+}
+Function: 
+fn change_run_count(&mut self, new_count: usize) {
+        if self.count == new_count {
+            return;
+        }
+        self.count = new_count;
+        self.remotes
+            .retain(|_, remote| remote.notify_run_count(self.count as i64).is_ok());
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx111876_rank4.c", "source_rust_file": "API_Mapping__etp_submit__idx111876_rank4.rs", "c_api": "X_UNLOCK (reqlock)", "rust_api": "mutex unlock", "mapping_type": "pattern", "description": "Release a mutex lock for request queue access", "reasoning": "[FFI Check] -> C and Rust code do not contain FFI calls. -> [Task Analysis] -> C code is a function that manages request priority and dispatches requests using locks and queues; Rust code is a function that expands a format string using a stack and state machine. -> [Similarity] -> No structural similarity at the function level due to different domains (request management vs string formatting). -> [Knowledge Extraction] -> No full or partial match. However, both use locking mechanisms (X_LOCK/X_UNLOCK) and stack operations (stack.push/pop), which can be mapped as API patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx111876_rank4.c", "source_rust_file": "API_Mapping__etp_submit__idx111876_rank4.rs", "c_api": "X_LOCK (reqlock)", "rust_api": "mutex lock", "mapping_type": "pattern", "description": "Acquire a mutex lock for request queue access", "reasoning": "[FFI Check] -> C and Rust code do not contain FFI calls. -> [Task Analysis] -> C code is a function that manages request priority and dispatches requests using locks and queues; Rust code is a function that expands a format string using a stack and state machine. -> [Similarity] -> No structural similarity at the function level due to different domains (request management vs string formatting). -> [Knowledge Extraction] -> No full or partial match. However, both use locking mechanisms (X_LOCK/X_UNLOCK) and stack operations (stack.push/pop), which can be mapped as API patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx111876_rank4.c", "source_rust_file": "API_Mapping__etp_submit__idx111876_rank4.rs", "c_api": "stack_.pop_back()", "rust_api": "stack.pop()", "mapping_type": "method", "description": "Pop an element from a stack", "reasoning": "[FFI Check] -> C and Rust code do not contain FFI calls. -> [Task Analysis] -> C code is a function that manages request priority and dispatches requests using locks and queues; Rust code is a function that expands a format string using a stack and state machine. -> [Similarity] -> No structural similarity at the function level due to different domains (request management vs string formatting). -> [Knowledge Extraction] -> No full or partial match. However, both use locking mechanisms (X_LOCK/X_UNLOCK) and stack operations (stack.push/pop), which can be mapped as API patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx111876_rank4.c", "source_rust_file": "API_Mapping__etp_submit__idx111876_rank4.rs", "c_api": "stack_.push_back(Value(b))", "rust_api": "stack.push(...)", "mapping_type": "method", "description": "Push an element onto a stack", "reasoning": "[FFI Check] -> C and Rust code do not contain FFI calls. -> [Task Analysis] -> C code is a function that manages request priority and dispatches requests using locks and queues; Rust code is a function that expands a format string using a stack and state machine. -> [Similarity] -> No structural similarity at the function level due to different domains (request management vs string formatting). -> [Knowledge Extraction] -> No full or partial match. However, both use locking mechanisms (X_LOCK/X_UNLOCK) and stack operations (stack.push/pop), which can be mapped as API patterns."}]
+Unixcoder Score: 0.002442730125039816
+--------------------------------------------------
+C_Code: 
+static void idle_callback(uv_idle_t* handle, int status) {
+  rust_task *task = reinterpret_cast<rust_task*>(handle->data);
+  task->yield();
+}
+Function: 
+fn impl_uv_tcp_request(ip: &str, port: int, req_str: &str,
+                          client_chan: SharedChan<~str>) {
+        unsafe {
+            let test_loop = loop_new();
+            let tcp_handle = tcp_t();
+            let tcp_handle_ptr = ptr::addr_of(&tcp_handle);
+            let connect_handle = connect_t();
+            let connect_req_ptr = ptr::addr_of(&connect_handle);
+
+            // this is the persistent payload of data that we
+            // need to pass around to get this example to work.
+            // In C, this would be a malloc'd or stack-allocated
+            // struct that we'd cast to a void* and store as the
+            // data field in our uv_connect_t struct
+            let req_str_bytes = str::to_bytes(req_str);
+            let req_msg_ptr: *u8 = vec::raw::to_ptr(req_str_bytes);
+            log(debug, fmt!("req_msg ptr: %u", req_msg_ptr as uint));
+            let req_msg = ~[
+                buf_init(req_msg_ptr, vec::len(req_str_bytes))
+            ];
+            // this is the enclosing record, we'll pass a ptr to
+            // this to C..
+            let write_handle = write_t();
+            let write_handle_ptr = ptr::addr_of(&write_handle);
+            log(debug, fmt!("tcp req: tcp stream: %d write_handle: %d",
+                             tcp_handle_ptr as int,
+                             write_handle_ptr as int));
+            let client_data = request_wrapper {
+                write_req: write_handle_ptr,
+                req_buf: ptr::addr_of(&req_msg),
+                read_chan: client_chan
+            };
+
+            let tcp_init_result = tcp_init(
+                test_loop as *libc::c_void, tcp_handle_ptr);
+            if (tcp_init_result == 0i32) {
+                log(debug, ~"sucessful tcp_init_result");
+
+                log(debug, ~"building addr...");
+                let addr = ip4_addr(ip, port);
+                // FIXME ref #2064
+                let addr_ptr = ptr::addr_of(&addr);
+                log(debug, fmt!("after build addr in rust. port: %u",
+                                 addr.sin_port as uint));
+
+                // this should set up the connection request..
+                log(debug, fmt!("b4 call tcp_connect connect cb: %u ",
+                                on_connect_cb as uint));
+                let tcp_connect_result = tcp_connect(
+                    connect_req_ptr, tcp_handle_ptr,
+                    addr_ptr, on_connect_cb);
+                if (tcp_connect_result == 0i32) {
+                    // not set the data on the connect_req
+                    // until its initialized
+                    set_data_for_req(
+                        connect_req_ptr as *libc::c_void,
+                        ptr::addr_of(&client_data) as *libc::c_void);
+                    set_data_for_uv_handle(
+                        tcp_handle_ptr as *libc::c_void,
+                        ptr::addr_of(&client_data) as *libc::c_void);
+                    log(debug, ~"before run tcp req loop");
+                    run(test_loop);
+                    log(debug, ~"after run tcp req loop");
+                }
+                else {
+                   log(debug, ~"tcp_connect() failure");
+                   fail_unless!(false);
+                }
+            }
+            else {
+                log(debug, ~"tcp_init() failure");
+                fail_unless!(false);
+            }
+            loop_delete(test_loop);
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx89372_rank2.c", "source_rust_file": "API_Mapping__cleanup_task__idx89372_rank2.rs", "c_api": "task->die()", "rust_api": "assert_eq!(*y, 10)", "mapping_type": "function", "description": "Task termination and assertion", "reasoning": "[Task Analysis] C function 'cleanup_task' is a cleanup handler with locking, exception handling, and task lifecycle management; Rust function 'main' initializes a Box and performs a simple assertion. [Similarity] No structural similarity at the function level due to different domains (C cleanup logic vs Rust initialization/assertion). [Knowledge Extraction] No full match, no partial match, but API mapping possible between C's task cleanup and Rust's Box allocation/deallocation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx89372_rank2.c", "source_rust_file": "API_Mapping__cleanup_task__idx89372_rank2.rs", "c_api": "task->task_local_data_cleanup(task->task_local_data)", "rust_api": "Box::new(10)", "mapping_type": "function", "description": "Memory cleanup and allocation", "reasoning": "[Task Analysis] C function 'cleanup_task' is a cleanup handler with locking, exception handling, and task lifecycle management; Rust function 'main' initializes a Box and performs a simple assertion. [Similarity] No structural similarity at the function level due to different domains (C cleanup logic vs Rust initialization/assertion). [Knowledge Extraction] No full match, no partial match, but API mapping possible between C's task cleanup and Rust's Box allocation/deallocation patterns."}]
+Unixcoder Score: 0.001860379008576274
+--------------------------------------------------
+C_Code: 
+inline void DisableTaskNotification(rust::str taskId)
+{
+    std::vector<std::string> tids = { std::string(taskId) };
+    auto w = std::unordered_map<std::string, ExceptionErrorCode>();
+    RequestAction::GetInstance()->DisableTaskNotification(tids, w);
+    for (auto &elem : w) {
+        std::cout << "task" << elem.first << static_cast<int32_t>(elem.second) << std::endl;
+    }
+Function: 
+fn main() {
+    SetAccessTokenPermission();
+    println!("Please Input Test CASE");
+    println!("1. Disable Task Notification Bar");
+    println!("2. Set Task Mode");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    match input.trim() {
+        "1" => loop {
+            println!("please input TaskId");
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            DisableTaskNotification(input.trim());
+        },
+        "2" => loop {
+            println!("please input TaskId");
+            let mut task_id = String::new();
+            std::io::stdin().read_line(&mut task_id).unwrap();
+            println!("please input Mode 0 for background 1 for foreground");
+            let mut mode = String::new();
+            std::io::stdin().read_line(&mut mode).unwrap();
+            let mode = match mode.trim() {
+                "0" => 0,
+                "1" => 1,
+                _ => {
+                    println!("invalid mode");
+                    continue;
+                }
+            };
+            SetMode(task_id.trim(), mode);
+        },
+        _ => {
+            println!("invalid inpu");
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx129951_rank1.c", "source_rust_file": "API_Mapping__cleanup_task__idx129951_rank1.rs", "c_api": "task->die()", "rust_api": "do map.consume |name, value| { ... }", "mapping_type": "function", "description": "Finalization of task state", "reasoning": "[Task Analysis] C function 'cleanup_task' handles task cleanup including TLS and lifecycle management; Rust function 'consume_cache' manages local variable cache consumption. [Similarity] No structural similarity at the function level due to different domains (task lifecycle vs local cache). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data access and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx129951_rank1.c", "source_rust_file": "API_Mapping__cleanup_task__idx129951_rank1.rs", "c_api": "task->fail_sched_loop()", "rust_api": "fail!(\"unknown variable %s\", name)", "mapping_type": "function", "description": "Error handling for invalid state", "reasoning": "[Task Analysis] C function 'cleanup_task' handles task cleanup including TLS and lifecycle management; Rust function 'consume_cache' manages local variable cache consumption. [Similarity] No structural similarity at the function level due to different domains (task lifecycle vs local cache). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data access and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx129951_rank1.c", "source_rust_file": "API_Mapping__cleanup_task__idx129951_rank1.rs", "c_api": "task->task_local_data_cleanup(task->task_local_data)", "rust_api": "local_data::local_data_pop(tls_key).expect(\"tls is empty\")", "mapping_type": "function", "description": "Cleanup of thread-local storage data", "reasoning": "[Task Analysis] C function 'cleanup_task' handles task cleanup including TLS and lifecycle management; Rust function 'consume_cache' manages local variable cache consumption. [Similarity] No structural similarity at the function level due to different domains (task lifecycle vs local cache). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data access and error handling patterns."}]
+Unixcoder Score: -0.00028801540611311793
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTaskTime(uint32_t taskId, uint64_t taskTime)
+{
+    REQUEST_HILOGD("update request task time");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("task_time", taskTime);
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update request task time failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn update_task(&self, task_id: u32, update_info: UpdateInfo) {
+        debug!("Update task in database, task_id: {}", task_id);
+        if !self.contains_task(task_id) {
+            return;
+        }
+        let sizes = format!("{:?}", update_info.progress.sizes);
+        let processed = format!("{:?}", update_info.progress.processed);
+        let extras = hashmap_to_string(&update_info.progress.extras);
+        let c_update_info = update_info.to_c_struct(&sizes, &processed, &extras);
+        let ret = unsafe { UpdateRequestTask(task_id, &c_update_info) };
+        debug!("Update task in database, ret is {}", ret);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__cleanup_task__idx78823_rank4.c", "source_rust_file": "Partial__cleanup_task__idx78823_rank4.rs", "c_fragment": "if (task->killed && !threw_exception) {\n            LOG(task, task, \"Task killed during termination\");\n            threw_exception = true;\n        }", "rust_fragment": "match local_data_lookup(map, key) {\n        Some((index, _old_data_ptr)) => {\n            // Key already had a value set, _old_data_ptr, whose reference\n            // will get dropped when the local_data box is overwritten.\n            (*map).set_elt(index, new_entry);\n        }\n        None => {\n            // Find an empty slot. If not, grow the vector.\n            match (*map).position(|x| x.is_none()) {\n                Some(empty_index) => (*map).set_elt(empty_index, new_entry),\n                None => (*map).push(new_entry)\n            }\n        }\n    }", "description": "Both blocks contain conditional logic for handling existing or missing entries, with actions to update or insert data.", "reasoning": "[Task Analysis] C function 'cleanup_task' handles task cleanup including TLS and stack unwinding; Rust function 'local_set' manages local task data storage. [Similarity] Names refer to different concepts ('cleanup' vs 'local_set'), and domains differ (task lifecycle vs local data management). [Knowledge Extraction] No full structural match due to domain mismatch and different function purposes. However, both involve task-related operations and data manipulation, allowing for partial structural fragments and API mappings based on shared patterns like data access and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__cleanup_task__idx78823_rank4.c", "source_rust_file": "Partial__cleanup_task__idx78823_rank4.rs", "c_api": "task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()))", "rust_api": "let data_box = data as LocalData", "mapping_type": "function", "description": "Calling a function on the Rust stack in C maps to boxing data in Rust.", "reasoning": "[Task Analysis] C function 'cleanup_task' handles task cleanup including TLS and stack unwinding; Rust function 'local_set' manages local task data storage. [Similarity] Names refer to different concepts ('cleanup' vs 'local_set'), and domains differ (task lifecycle vs local data management). [Knowledge Extraction] No full structural match due to domain mismatch and different function purposes. However, both involve task-related operations and data manipulation, allowing for partial structural fragments and API mappings based on shared patterns like data access and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__cleanup_task__idx78823_rank4.c", "source_rust_file": "Partial__cleanup_task__idx78823_rank4.rs", "c_api": "task->task_local_data_cleanup(task->task_local_data)", "rust_api": "(*map).set_elt(index, new_entry)", "mapping_type": "function", "description": "Cleanup of task-local data in C maps to updating an entry in a Rust map.", "reasoning": "[Task Analysis] C function 'cleanup_task' handles task cleanup including TLS and stack unwinding; Rust function 'local_set' manages local task data storage. [Similarity] Names refer to different concepts ('cleanup' vs 'local_set'), and domains differ (task lifecycle vs local data management). [Knowledge Extraction] No full structural match due to domain mismatch and different function purposes. However, both involve task-related operations and data manipulation, allowing for partial structural fragments and API mappings based on shared patterns like data access and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__cleanup_task__idx78823_rank4.c", "source_rust_file": "Partial__cleanup_task__idx78823_rank4.rs", "c_api": "task->fail_sched_loop()", "rust_api": "(*map).push(new_entry)", "mapping_type": "function", "description": "Failure handling in C maps to pushing a new entry in Rust.", "reasoning": "[Task Analysis] C function 'cleanup_task' handles task cleanup including TLS and stack unwinding; Rust function 'local_set' manages local task data storage. [Similarity] Names refer to different concepts ('cleanup' vs 'local_set'), and domains differ (task lifecycle vs local data management). [Knowledge Extraction] No full structural match due to domain mismatch and different function purposes. However, both involve task-related operations and data manipulation, allowing for partial structural fragments and API mappings based on shared patterns like data access and conditional logic."}]
+Unixcoder Score: -0.0019235459621995687
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTaskTime(uint32_t taskId, uint64_t taskTime)
+{
+    REQUEST_HILOGD("update request task time");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("task_time", taskTime);
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update request task time failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn update_task_time(&self, task_id: u32, task_time: u64) {
+        let ret = unsafe { UpdateRequestTaskTime(task_id, task_time) };
+        debug!("Update task time in database, ret is {}", ret);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx86589_rank4.c", "source_rust_file": "API_Mapping__cleanup_task__idx86589_rank4.rs", "c_api": "iter.nth(0).unwrap()", "rust_api": "iter2.nth(0).unwrap()", "mapping_type": "method", "description": "Safe unwrap of nth iterator element in C maps to safe unwrap of nth iterator element in Rust", "reasoning": "[Task Analysis] C function 'cleanup_task' is a cleanup handler with locking, exception handling, and task-local data cleanup; Rust function 'main' is a test function with HashSet operations and iterator usage. [Similarity] No structural similarity at the function level due to different domains (task lifecycle vs hashset iteration). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's task cleanup and Rust's iterator usage patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx86589_rank4.c", "source_rust_file": "API_Mapping__cleanup_task__idx86589_rank4.rs", "c_api": "task->task_local_data_cleanup(task->task_local_data)", "rust_api": "s.insert(1)", "mapping_type": "function", "description": "Cleanup of task-local data in C maps to insertion into a HashSet in Rust", "reasoning": "[Task Analysis] C function 'cleanup_task' is a cleanup handler with locking, exception handling, and task-local data cleanup; Rust function 'main' is a test function with HashSet operations and iterator usage. [Similarity] No structural similarity at the function level due to different domains (task lifecycle vs hashset iteration). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's task cleanup and Rust's iterator usage patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx86589_rank4.c", "source_rust_file": "API_Mapping__cleanup_task__idx86589_rank4.rs", "c_api": "iter.nth(0)", "rust_api": "iter2.nth(0)", "mapping_type": "method", "description": "Iterator nth access in C maps to iterator nth access in Rust", "reasoning": "[Task Analysis] C function 'cleanup_task' is a cleanup handler with locking, exception handling, and task-local data cleanup; Rust function 'main' is a test function with HashSet operations and iterator usage. [Similarity] No structural similarity at the function level due to different domains (task lifecycle vs hashset iteration). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's task cleanup and Rust's iterator usage patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx86589_rank4.c", "source_rust_file": "API_Mapping__cleanup_task__idx86589_rank4.rs", "c_api": "task->die()", "rust_api": "s3.insert(3)", "mapping_type": "function", "description": "Marking task as dead in C maps to insertion into a HashSet in Rust", "reasoning": "[Task Analysis] C function 'cleanup_task' is a cleanup handler with locking, exception handling, and task-local data cleanup; Rust function 'main' is a test function with HashSet operations and iterator usage. [Similarity] No structural similarity at the function level due to different domains (task lifecycle vs hashset iteration). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's task cleanup and Rust's iterator usage patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__cleanup_task__idx86589_rank4.c", "source_rust_file": "API_Mapping__cleanup_task__idx86589_rank4.rs", "c_api": "task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()))", "rust_api": "s2.insert(2)", "mapping_type": "function", "description": "Calling a function on the Rust stack in C maps to insertion into a HashSet in Rust", "reasoning": "[Task Analysis] C function 'cleanup_task' is a cleanup handler with locking, exception handling, and task-local data cleanup; Rust function 'main' is a test function with HashSet operations and iterator usage. [Similarity] No structural similarity at the function level due to different domains (task lifecycle vs hashset iteration). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's task cleanup and Rust's iterator usage patterns."}]
+Unixcoder Score: -0.003916294779628515
+--------------------------------------------------
+C_Code: 
+void FwkIRunningTaskObserver::UpdateRunningTaskCount()
+{
+    pInnerOb_->OnRunningTaskCountUpdate(FwkRunningTaskCountManager::GetInstance()->GetCount());
+}
+Function: 
+pub(crate) fn task_unload() {
+    let instance = RequestTaskCount::get_instance();
+    let mut task_count = instance.lock().unwrap();
+    if task_count.load_state {
+        let completed = task_count.completed_task_count;
+        let failed = task_count.failed_task_count;
+        sys_event!(
+            ExecError,
+            DfxCode::TASK_STATISTICS,
+            &format!("Task Completed {}, failed {}", completed, failed)
+        );
+        task_count.completed_task_count = 0;
+        task_count.failed_task_count = 0;
+        task_count.load_state = false;
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx32689_rank1.c", "source_rust_file": "API_Mapping__etp_submit__idx32689_rank1.rs", "c_api": "reqq_push (&req_queue, req)", "rust_api": "self.graph.add_node(node)", "mapping_type": "function", "description": "Adding an item to a queue/data structure", "reasoning": "[Task Analysis] C function `etp_submit` handles request priority adjustment and queueing logic with locking, while Rust function `push` manages dependency graph node insertion and edge creation. [Similarity] Names and domains differ significantly (ETP request handling vs dependency graph management), and the control flow and data structures are fundamentally different. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both involve locking mechanisms and queueing operations which may have API mappings."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx32689_rank1.c", "source_rust_file": "API_Mapping__etp_submit__idx32689_rank1.rs", "c_api": "X_LOCK (reqlock)", "rust_api": "mutex lock/unlock pattern (implied by &mut self)", "mapping_type": "pattern", "description": "Thread synchronization via locking mechanism", "reasoning": "[Task Analysis] C function `etp_submit` handles request priority adjustment and queueing logic with locking, while Rust function `push` manages dependency graph node insertion and edge creation. [Similarity] Names and domains differ significantly (ETP request handling vs dependency graph management), and the control flow and data structures are fundamentally different. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both involve locking mechanisms and queueing operations which may have API mappings."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx32689_rank1.c", "source_rust_file": "API_Mapping__etp_submit__idx32689_rank1.rs", "c_api": "reqq_push (&res_queue, req)", "rust_api": "self.graph.add_node(node)", "mapping_type": "function", "description": "Adding an item to a queue/data structure", "reasoning": "[Task Analysis] C function `etp_submit` handles request priority adjustment and queueing logic with locking, while Rust function `push` manages dependency graph node insertion and edge creation. [Similarity] Names and domains differ significantly (ETP request handling vs dependency graph management), and the control flow and data structures are fundamentally different. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both involve locking mechanisms and queueing operations which may have API mappings."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_submit__idx32689_rank1.c", "source_rust_file": "API_Mapping__etp_submit__idx32689_rank1.rs", "c_api": "X_UNLOCK (reqlock)", "rust_api": "mutex lock/unlock pattern (implied by &mut self)", "mapping_type": "pattern", "description": "Thread synchronization via unlocking mechanism", "reasoning": "[Task Analysis] C function `etp_submit` handles request priority adjustment and queueing logic with locking, while Rust function `push` manages dependency graph node insertion and edge creation. [Similarity] Names and domains differ significantly (ETP request handling vs dependency graph management), and the control flow and data structures are fundamentally different. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both involve locking mechanisms and queueing operations which may have API mappings."}]
+Unixcoder Score: -0.009174728766083717
+--------------------------------------------------

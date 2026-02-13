@@ -1,0 +1,512 @@
+C_Code: 
+struct PhysicalDeviceVertexAttributeDivisorFeatures
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx12860_rank1.c", "source_rust_file": "API_Mapping__fromRust__idx12860_rank1.rs", "c_api": "return Attribute::XXX", "rust_api": "attr.has_name(name)", "mapping_type": "function", "description": "Attribute name checking", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind enum values; Rust function filters a slice of attributes by name. [Similarity] Names do not refer to the same concept (fromRust vs filter_by_name), and domains are different (enum mapping vs filtering). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve attribute processing logic, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx12860_rank1.c", "source_rust_file": "API_Mapping__fromRust__idx12860_rank1.rs", "c_api": "switch (Kind)", "rust_api": "attrs.iter().filter", "mapping_type": "pattern", "description": "Attribute filtering based on condition", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind enum values; Rust function filters a slice of attributes by name. [Similarity] Names do not refer to the same concept (fromRust vs filter_by_name), and domains are different (enum mapping vs filtering). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve attribute processing logic, so API mappings are extracted."}]
+Unixcoder Score: -0.061688151210546494
+--------------------------------------------------
+C_Code: 
+static inline void AddAttributes(T *t, unsigned Index,
+                                                      LLVMAttributeRef *Attrs, size_t AttrsLen) {
+  AttributeList PAL = t->getAttributes();
+  AttrBuilder B(t->getContext());
+  for (LLVMAttributeRef Attr : ArrayRef<LLVMAttributeRef>(Attrs, AttrsLen))
+    B.addAttribute(unwrap(Attr));
+  AttributeList PALNew = PAL.addAttributesAtIndex(t->getContext(), Index, B);
+  t->setAttributes(PALNew);
+}
+Function: 
+pub fn apply_to_callsite(callsite: &Value, idx: AttributePlace, attrs: &[&Attribute]) {
+    if !attrs.is_empty() {
+        llvm::AddCallSiteAttributes(callsite, idx, attrs);
+    }
+}
+Unixcoder Score: -0.07573708891868591
+--------------------------------------------------
+C_Code: 
+static inline void AddAttributes(T *t, unsigned Index,
+                                                      LLVMAttributeRef *Attrs, size_t AttrsLen) {
+  AttributeList PAL = t->getAttributes();
+  AttrBuilder B(t->getContext());
+  for (LLVMAttributeRef Attr : ArrayRef<LLVMAttributeRef>(Attrs, AttrsLen))
+    B.addAttribute(unwrap(Attr));
+  AttributeList PALNew = PAL.addAttributesAtIndex(t->getContext(), Index, B);
+  t->setAttributes(PALNew);
+}
+Function: 
+pub fn visit_attrs<T: MutVisitor>(attrs: &mut AttrVec, vis: &mut T) {
+    for attr in attrs.iter_mut() {
+        vis.visit_attribute(attr);
+    }
+}
+Unixcoder Score: -0.0918998122215271
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceMultiviewPerViewAttributesPropertiesNVX
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__fromRust__idx107632_rank1.c", "source_rust_file": "Partial__fromRust__idx107632_rank1.rs", "c_fragment": "switch (Kind) {\n  case AlwaysInline:\n    return Attribute::AlwaysInline;\n  case ByVal:\n    return Attribute::ByVal;\n  case Cold:\n    return Attribute::Cold;\n  case InlineHint:\n    return Attribute::InlineHint;\n  case MinSize:\n    return Attribute::MinSize;\n  case Naked:\n    return Attribute::Naked;\n  case NoAlias:\n    return Attribute::NoAlias;\n  case NoCapture:\n    return Attribute::NoCapture;\n  case NoCfCheck:\n    return Attribute::NoCfCheck;\n  case NoInline:\n    return Attribute::NoInline;\n  case NonNull:\n    return Attribute::NonNull;\n  case NoRedZone:\n    return Attribute::NoRedZone;\n  case NoReturn:\n    return Attribute::NoReturn;\n  case NoUnwind:\n    return Attribute::NoUnwind;\n  case OptimizeForSize:\n    return Attribute::OptimizeForSize;\n  case ReadOnly:\n    return Attribute::ReadOnly;\n  case SExt:\n    return Attribute::SExt;\n  case StructRet:\n    return Attribute::StructRet;\n  case UWTable:\n    return Attribute::UWTable;\n  case ZExt:\n    return Attribute::ZExt;\n  case InReg:\n    return Attribute::InReg;\n  case SanitizeThread:\n    return Attribute::SanitizeThread;\n  case SanitizeAddress:\n    return Attribute::SanitizeAddress;\n  case SanitizeMemory:\n    return Attribute::SanitizeMemory;\n  case NonLazyBind:\n    return Attribute::NonLazyBind;\n  case OptimizeNone:\n    return Attribute::OptimizeNone;\n  case ReturnsTwice:\n    return Attribute::ReturnsTwice;\n  case ReadNone:\n    return Attribute::ReadNone;\n  case SanitizeHWAddress:\n    return Attribute::SanitizeHWAddress;\n  case WillReturn:\n    return Attribute::WillReturn;\n  case StackProtectReq:\n    return Attribute::StackProtectReq;\n  case StackProtectStrong:\n    return Attribute::StackProtectStrong;\n  case StackProtect:\n    return Attribute::StackProtect;\n  case NoUndef:\n    return Attribute::NoUndef;\n  case SanitizeMemTag:\n    return Attribute::SanitizeMemTag;\n  case ShadowCallStack:\n    return Attribute::ShadowCallStack;\n  case AllocSize:\n    return Attribute::AllocSize;\n#if LLVM_VERSION_GE(15, 0)\n  case AllocatedPointer:\n    return Attribute::AllocatedPointer;\n  case AllocAlign:\n    return Attribute::AllocAlign;\n#endif\n  case SanitizeSafeStack:\n    return Attribute::SafeStack;\n  }\n  report_fatal_error(\"bad AttributeKind\");", "rust_fragment": "attrs\n        .iter()\n        .any(|a| a.meta().map_or(false, |a| is_skip(&a)))", "description": "Both process attribute collections, though with different logic: C maps enum values, Rust filters for specific attributes.", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function checks if any attribute is a 'skip' attribute. [Similarity] Names don't match ('fromRust' vs 'contains_skip'), but both involve attribute processing. [Knowledge Extraction] No full structural match due to different domains (LLVM enum mapping vs attribute filtering). However, both involve processing collections of attributes. Extract API mappings for attribute processing patterns and partial match for iteration logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx107632_rank1.c", "source_rust_file": "Partial__fromRust__idx107632_rank1.rs", "c_api": "return Attribute::X", "rust_api": "is_skip(&a)", "mapping_type": "function", "description": "Attribute value mapping vs attribute filtering function", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function checks if any attribute is a 'skip' attribute. [Similarity] Names don't match ('fromRust' vs 'contains_skip'), but both involve attribute processing. [Knowledge Extraction] No full structural match due to different domains (LLVM enum mapping vs attribute filtering). However, both involve processing collections of attributes. Extract API mappings for attribute processing patterns and partial match for iteration logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx107632_rank1.c", "source_rust_file": "Partial__fromRust__idx107632_rank1.rs", "c_api": "switch (Kind)", "rust_api": "attrs.iter().any(...)", "mapping_type": "pattern", "description": "Enumeration-based attribute mapping vs iteration with predicate check", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function checks if any attribute is a 'skip' attribute. [Similarity] Names don't match ('fromRust' vs 'contains_skip'), but both involve attribute processing. [Knowledge Extraction] No full structural match due to different domains (LLVM enum mapping vs attribute filtering). However, both involve processing collections of attributes. Extract API mappings for attribute processing patterns and partial match for iteration logic."}]
+Unixcoder Score: -0.10116562247276306
+--------------------------------------------------
+C_Code: 
+struct VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT {
+    VkStructureType    sType;
+    void*              pNext;
+    VkBool32           legacyVertexAttributes;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx88380_rank2.c", "source_rust_file": "API_Mapping__fromRust__idx88380_rank2.rs", "c_api": "report_fatal_error(\"bad AttributeKind\")", "rust_api": "panic!() or error handling in parse_attrs", "mapping_type": "pattern", "description": "Error handling for invalid attribute kind", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function pushes parsed attributes to a stack. [Similarity] Names don't match but both perform attribute processing; C has switch-case for mapping, Rust has a callback-based push. [Knowledge Extraction] No full structural match due to different logic patterns and domains (enum mapping vs attribute parsing). However, there are API mappings for attribute handling and stack operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx88380_rank2.c", "source_rust_file": "API_Mapping__fromRust__idx88380_rank2.rs", "c_api": "stack->push(val)", "rust_api": "stack.push(val)", "mapping_type": "method", "description": "Pushing parsed attribute values onto a stack", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function pushes parsed attributes to a stack. [Similarity] Names don't match but both perform attribute processing; C has switch-case for mapping, Rust has a callback-based push. [Knowledge Extraction] No full structural match due to different logic patterns and domains (enum mapping vs attribute parsing). However, there are API mappings for attribute handling and stack operations."}]
+Unixcoder Score: -0.1036754697561264
+--------------------------------------------------
+C_Code: 
+PhysicalDeviceVertexAttributeDivisorPropertiesEXT( VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT const & rhs ) VULKAN_HPP_NOEXCEPT
+      : PhysicalDeviceVertexAttributeDivisorPropertiesEXT( *reinterpret_cast<PhysicalDeviceVertexAttributeDivisorPropertiesEXT const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::BufferSizes) -> Self {
+        Self {
+            path_reduced: src.path_reduced.size_in_bytes(),
+            path_reduced2: src.path_reduced2.size_in_bytes(),
+            path_reduced_scan: src.path_reduced_scan.size_in_bytes(),
+            path_monoids: src.path_monoids.size_in_bytes(),
+            path_bboxes: src.path_bboxes.size_in_bytes(),
+            draw_reduced: src.draw_reduced.size_in_bytes(),
+            draw_monoids: src.draw_monoids.size_in_bytes(),
+            info: src.info.size_in_bytes(),
+            clip_inps: src.clip_inps.size_in_bytes(),
+            clip_els: src.clip_els.size_in_bytes(),
+            clip_bics: src.clip_bics.size_in_bytes(),
+            clip_bboxes: src.clip_bboxes.size_in_bytes(),
+            draw_bboxes: src.draw_bboxes.size_in_bytes(),
+            bump_alloc: src.bump_alloc.size_in_bytes(),
+            indirect_count: src.indirect_count.size_in_bytes(),
+            bin_headers: src.bin_headers.size_in_bytes(),
+            paths: src.paths.size_in_bytes(),
+            lines: src.lines.size_in_bytes(),
+            bin_data: src.bin_data.size_in_bytes(),
+            tiles: src.tiles.size_in_bytes(),
+            seg_counts: src.seg_counts.size_in_bytes(),
+            segments: src.segments.size_in_bytes(),
+            ptcl: src.ptcl.size_in_bytes(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx80836_rank5.c", "source_rust_file": "API_Mapping__fromRust__idx80836_rank5.rs", "c_api": "return Attribute::XXX", "rust_api": "span_lint_and_then(...)", "mapping_type": "function", "description": "Attribute validation and reporting", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function checks for #[inline] attribute and lints if it's on a trait method without a body. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to attribute handling and checking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx80836_rank5.c", "source_rust_file": "API_Mapping__fromRust__idx80836_rank5.rs", "c_api": "switch (Kind)", "rust_api": "for attr in attrs", "mapping_type": "pattern", "description": "Enumeration dispatch pattern", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function checks for #[inline] attribute and lints if it's on a trait method without a body. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to attribute handling and checking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx80836_rank5.c", "source_rust_file": "API_Mapping__fromRust__idx80836_rank5.rs", "c_api": "report_fatal_error(\"bad AttributeKind\")", "rust_api": "continue;", "mapping_type": "pattern", "description": "Error handling for invalid attribute", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function checks for #[inline] attribute and lints if it's on a trait method without a body. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to attribute handling and checking."}]
+Unixcoder Score: -0.10858747363090515
+--------------------------------------------------
+C_Code: 
+static Attribute::AttrKind fromRust(LLVMRustAttribute Kind) {
+  switch (Kind) {
+  case AlwaysInline:
+    return Attribute::AlwaysInline;
+  case ByVal:
+    return Attribute::ByVal;
+  case Cold:
+    return Attribute::Cold;
+  case InlineHint:
+    return Attribute::InlineHint;
+  case MinSize:
+    return Attribute::MinSize;
+  case Naked:
+    return Attribute::Naked;
+  case NoAlias:
+    return Attribute::NoAlias;
+  case NoCapture:
+    return Attribute::NoCapture;
+  case NoCfCheck:
+    return Attribute::NoCfCheck;
+  case NoInline:
+    return Attribute::NoInline;
+  case NonNull:
+    return Attribute::NonNull;
+  case NoRedZone:
+    return Attribute::NoRedZone;
+  case NoReturn:
+    return Attribute::NoReturn;
+  case NoUnwind:
+    return Attribute::NoUnwind;
+  case OptimizeForSize:
+    return Attribute::OptimizeForSize;
+  case ReadOnly:
+    return Attribute::ReadOnly;
+  case SExt:
+    return Attribute::SExt;
+  case StructRet:
+    return Attribute::StructRet;
+  case UWTable:
+    return Attribute::UWTable;
+  case ZExt:
+    return Attribute::ZExt;
+  case InReg:
+    return Attribute::InReg;
+  case SanitizeThread:
+    return Attribute::SanitizeThread;
+  case SanitizeAddress:
+    return Attribute::SanitizeAddress;
+  case SanitizeMemory:
+    return Attribute::SanitizeMemory;
+  case NonLazyBind:
+    return Attribute::NonLazyBind;
+  case OptimizeNone:
+    return Attribute::OptimizeNone;
+  case ReturnsTwice:
+    return Attribute::ReturnsTwice;
+  case ReadNone:
+    return Attribute::ReadNone;
+  case SanitizeHWAddress:
+    return Attribute::SanitizeHWAddress;
+  case WillReturn:
+    return Attribute::WillReturn;
+  case StackProtectReq:
+    return Attribute::StackProtectReq;
+  case StackProtectStrong:
+    return Attribute::StackProtectStrong;
+  case StackProtect:
+    return Attribute::StackProtect;
+  case NoUndef:
+    return Attribute::NoUndef;
+  case SanitizeMemTag:
+    return Attribute::SanitizeMemTag;
+  case ShadowCallStack:
+    return Attribute::ShadowCallStack;
+  case AllocSize:
+    return Attribute::AllocSize;
+#if LLVM_VERSION_GE(15, 0)
+  case AllocatedPointer:
+    return Attribute::AllocatedPointer;
+  case AllocAlign:
+    return Attribute::AllocAlign;
+#endif
+  case SanitizeSafeStack:
+    return Attribute::SafeStack;
+  }
+  report_fatal_error("bad AttributeKind");
+}
+Function: 
+fn check_attrs(cx: &LateContext<'_>, name: Symbol, attrs: &[Attribute]) {
+    for attr in attrs {
+        if !attr.has_name(sym::inline) {
+            continue;
+        }
+
+        span_lint_and_then(
+            cx,
+            INLINE_FN_WITHOUT_BODY,
+            attr.span,
+            &format!("use of `#[inline]` on trait method `{name}` which has no body"),
+            |diag| {
+                diag.suggest_remove_item(cx, attr.span, "remove", Applicability::MachineApplicable);
+            },
+        );
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx12758_rank1.c", "source_rust_file": "Partial__fromRust__idx12758_rank1.rs", "c_api": "switch (Kind)", "rust_api": "match &attr.kind", "mapping_type": "pattern", "description": "Enum dispatch pattern in C switch vs Rust match expression", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function walks an Attribute enum and dispatches based on kind. [Similarity] Names don't match (fromRust vs walk_attribute), but both perform enum-to-enum mapping/logic dispatch. [Knowledge Extraction] Full classification blocked by name mismatch and different domains (LLVM FFI vs general Rust enum walking). However, partial structural match exists in switch/match logic. API mappings found for equivalent operations in enum handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__fromRust__idx12758_rank1.c", "source_rust_file": "Partial__fromRust__idx12758_rank1.rs", "c_fragment": "switch (Kind) {\n  case AlwaysInline:\n    return Attribute::AlwaysInline;\n  case ByVal:\n    return Attribute::ByVal;\n  case Cold:\n    return Attribute::Cold;\n  case InlineHint:\n    return Attribute::InlineHint;\n  case MinSize:\n    return Attribute::MinSize;\n  case Naked:\n    return Attribute::Naked;\n  case NoAlias:\n    return Attribute::NoAlias;\n  case NoCapture:\n    return Attribute::NoCapture;\n  case NoCfCheck:\n    return Attribute::NoCfCheck;\n  case NoInline:\n    return Attribute::NoInline;\n  case NonNull:\n    return Attribute::NonNull;\n  case NoRedZone:\n    return Attribute::NoRedZone;\n  case NoReturn:\n    return Attribute::NoReturn;\n  case NoUnwind:\n    return Attribute::NoUnwind;\n  case OptimizeForSize:\n    return Attribute::OptimizeForSize;\n  case ReadOnly:\n    return Attribute::ReadOnly;\n  case SExt:\n    return Attribute::SExt;\n  case StructRet:\n    return Attribute::StructRet;\n  case UWTable:\n    return Attribute::UWTable;\n  case ZExt:\n    return Attribute::ZExt;\n  case InReg:\n    return Attribute::InReg;\n  case SanitizeThread:\n    return Attribute::SanitizeThread;\n  case SanitizeAddress:\n    return Attribute::SanitizeAddress;\n  case SanitizeMemory:\n    return Attribute::SanitizeMemory;\n  case NonLazyBind:\n    return Attribute::NonLazyBind;\n  case OptimizeNone:\n    return Attribute::OptimizeNone;\n  case ReturnsTwice:\n    return Attribute::ReturnsTwice;\n  case ReadNone:\n    return Attribute::ReadNone;\n  case SanitizeHWAddress:\n    return Attribute::SanitizeHWAddress;\n  case WillReturn:\n    return Attribute::WillReturn;\n  case StackProtectReq:\n    return Attribute::StackProtectReq;\n  case StackProtectStrong:\n    return Attribute::StackProtectStrong;\n  case StackProtect:\n    return Attribute::StackProtect;\n  case NoUndef:\n    return Attribute::NoUndef;\n  case SanitizeMemTag:\n    return Attribute::SanitizeMemTag;\n  case ShadowCallStack:\n    return Attribute::ShadowCallStack;\n  case AllocSize:\n    return Attribute::AllocSize;\n#if LLVM_VERSION_GE(15, 0)\n  case AllocatedPointer:\n    return Attribute::AllocatedPointer;\n  case AllocAlign:\n    return Attribute::AllocAlign;\n#endif\n  case SanitizeSafeStack:\n    return Attribute::SafeStack;\n  }", "rust_fragment": "match &attr.kind {\n        AttrKind::Normal(normal) => walk_attr_args(visitor, &normal.item.args),\n        AttrKind::DocComment(..) => {}\n    }", "description": "Both perform enum-based dispatch logic to handle different attribute kinds.", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function walks an Attribute enum and dispatches based on kind. [Similarity] Names don't match (fromRust vs walk_attribute), but both perform enum-to-enum mapping/logic dispatch. [Knowledge Extraction] Full classification blocked by name mismatch and different domains (LLVM FFI vs general Rust enum walking). However, partial structural match exists in switch/match logic. API mappings found for equivalent operations in enum handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx12758_rank1.c", "source_rust_file": "Partial__fromRust__idx12758_rank1.rs", "c_api": "return Attribute::ByVal;", "rust_api": "AttrKind::DocComment(..) => {}", "mapping_type": "function", "description": "Mapping of attribute kind to no-op or processing logic", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function walks an Attribute enum and dispatches based on kind. [Similarity] Names don't match (fromRust vs walk_attribute), but both perform enum-to-enum mapping/logic dispatch. [Knowledge Extraction] Full classification blocked by name mismatch and different domains (LLVM FFI vs general Rust enum walking). However, partial structural match exists in switch/match logic. API mappings found for equivalent operations in enum handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx12758_rank1.c", "source_rust_file": "Partial__fromRust__idx12758_rank1.rs", "c_api": "return Attribute::AlwaysInline;", "rust_api": "AttrKind::Normal(normal) => walk_attr_args(visitor, &normal.item.args)", "mapping_type": "function", "description": "Mapping of attribute kind to processing logic", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function walks an Attribute enum and dispatches based on kind. [Similarity] Names don't match (fromRust vs walk_attribute), but both perform enum-to-enum mapping/logic dispatch. [Knowledge Extraction] Full classification blocked by name mismatch and different domains (LLVM FFI vs general Rust enum walking). However, partial structural match exists in switch/match logic. API mappings found for equivalent operations in enum handling."}]
+Unixcoder Score: -0.11181987822055817
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceMultiviewPerViewAttributesPropertiesNVX
+Function: 
+struct FfiPoint {
+        x: f32,
+        y: f32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx88386_rank5.c", "source_rust_file": "API_Mapping__fromRust__idx88386_rank5.rs", "c_api": "switch (Kind)", "rust_api": "attrs.iter().filter(|attr| attr.has_name(sym::doc))", "mapping_type": "pattern", "description": "Attribute enumeration and filtering logic", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function checks if doc(hidden) attribute is present. [Similarity] Names don't match (LLVMRustAttribute vs ast::Attribute), but both involve attribute processing. [Knowledge Extraction] No full structural match due to different domains (LLVM attribute mapping vs Rust doc attribute checking). However, both perform enum/attribute lookup and conditional filtering logic. Extract API mappings for attribute processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx88386_rank5.c", "source_rust_file": "API_Mapping__fromRust__idx88386_rank5.rs", "c_api": "return Attribute::XXX", "rust_api": "attr::list_contains_name(&l, sym::hidden)", "mapping_type": "function", "description": "Attribute value resolution and condition checking", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum to LLVM Attribute::AttrKind; Rust function checks if doc(hidden) attribute is present. [Similarity] Names don't match (LLVMRustAttribute vs ast::Attribute), but both involve attribute processing. [Knowledge Extraction] No full structural match due to different domains (LLVM attribute mapping vs Rust doc attribute checking). However, both perform enum/attribute lookup and conditional filtering logic. Extract API mappings for attribute processing patterns."}]
+Unixcoder Score: -0.11515502631664276
+--------------------------------------------------
+C_Code: 
+static Attribute::AttrKind fromRust(LLVMRustAttribute Kind) {
+  switch (Kind) {
+  case AlwaysInline:
+    return Attribute::AlwaysInline;
+  case ByVal:
+    return Attribute::ByVal;
+  case Cold:
+    return Attribute::Cold;
+  case InlineHint:
+    return Attribute::InlineHint;
+  case MinSize:
+    return Attribute::MinSize;
+  case Naked:
+    return Attribute::Naked;
+  case NoAlias:
+    return Attribute::NoAlias;
+  case NoCapture:
+    return Attribute::NoCapture;
+  case NoCfCheck:
+    return Attribute::NoCfCheck;
+  case NoInline:
+    return Attribute::NoInline;
+  case NonNull:
+    return Attribute::NonNull;
+  case NoRedZone:
+    return Attribute::NoRedZone;
+  case NoReturn:
+    return Attribute::NoReturn;
+  case NoUnwind:
+    return Attribute::NoUnwind;
+  case OptimizeForSize:
+    return Attribute::OptimizeForSize;
+  case ReadOnly:
+    return Attribute::ReadOnly;
+  case SExt:
+    return Attribute::SExt;
+  case StructRet:
+    return Attribute::StructRet;
+  case UWTable:
+    return Attribute::UWTable;
+  case ZExt:
+    return Attribute::ZExt;
+  case InReg:
+    return Attribute::InReg;
+  case SanitizeThread:
+    return Attribute::SanitizeThread;
+  case SanitizeAddress:
+    return Attribute::SanitizeAddress;
+  case SanitizeMemory:
+    return Attribute::SanitizeMemory;
+  case NonLazyBind:
+    return Attribute::NonLazyBind;
+  case OptimizeNone:
+    return Attribute::OptimizeNone;
+  case ReturnsTwice:
+    return Attribute::ReturnsTwice;
+  case ReadNone:
+    return Attribute::ReadNone;
+  case SanitizeHWAddress:
+    return Attribute::SanitizeHWAddress;
+  case WillReturn:
+    return Attribute::WillReturn;
+  case StackProtectReq:
+    return Attribute::StackProtectReq;
+  case StackProtectStrong:
+    return Attribute::StackProtectStrong;
+  case StackProtect:
+    return Attribute::StackProtect;
+  case NoUndef:
+    return Attribute::NoUndef;
+  case SanitizeMemTag:
+    return Attribute::SanitizeMemTag;
+  case ShadowCallStack:
+    return Attribute::ShadowCallStack;
+  case AllocSize:
+    return Attribute::AllocSize;
+#if LLVM_VERSION_GE(15, 0)
+  case AllocatedPointer:
+    return Attribute::AllocatedPointer;
+  case AllocAlign:
+    return Attribute::AllocAlign;
+#endif
+  case SanitizeSafeStack:
+    return Attribute::SafeStack;
+  }
+  report_fatal_error("bad AttributeKind");
+}
+Function: 
+fn is_macro_export(attr: &Attribute) -> bool {
+    if_chain! {
+        if let AttrKind::Normal(normal) = &attr.kind;
+        if let [segment] = normal.item.path.segments.as_slice();
+        then {
+            segment.ident.name == sym::macro_export
+        } else {
+            false
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx15151_rank1.c", "source_rust_file": "API_Mapping__fromRust__idx15151_rank1.rs", "c_api": "Attribute::AttrKind", "rust_api": "tcx.get_attrs", "mapping_type": "function", "description": "Retrieving attribute information from a type context", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind, while Rust function checks for inline attributes and emits an error. [Similarity] Names don't match (fromRust vs check_inline), and domains are different (LLVM attribute mapping vs Rust attribute checking). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to attribute handling in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx15151_rank1.c", "source_rust_file": "API_Mapping__fromRust__idx15151_rank1.rs", "c_api": "report_fatal_error", "rust_api": "tcx.sess.emit_err", "mapping_type": "function", "description": "Error reporting mechanism for invalid attribute usage", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind, while Rust function checks for inline attributes and emits an error. [Similarity] Names don't match (fromRust vs check_inline), and domains are different (LLVM attribute mapping vs Rust attribute checking). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to attribute handling in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx15151_rank1.c", "source_rust_file": "API_Mapping__fromRust__idx15151_rank1.rs", "c_api": "switch (Kind)", "rust_api": "for attr in attrs", "mapping_type": "pattern", "description": "Iterating over attribute values to process them", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind, while Rust function checks for inline attributes and emits an error. [Similarity] Names don't match (fromRust vs check_inline), and domains are different (LLVM attribute mapping vs Rust attribute checking). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to attribute handling in both languages."}]
+Unixcoder Score: -0.13054955005645752
+--------------------------------------------------
+C_Code: 
+static Attribute::AttrKind fromRust(LLVMRustAttribute Kind) {
+  switch (Kind) {
+  case AlwaysInline:
+    return Attribute::AlwaysInline;
+  case ByVal:
+    return Attribute::ByVal;
+  case Cold:
+    return Attribute::Cold;
+  case InlineHint:
+    return Attribute::InlineHint;
+  case MinSize:
+    return Attribute::MinSize;
+  case Naked:
+    return Attribute::Naked;
+  case NoAlias:
+    return Attribute::NoAlias;
+  case NoCapture:
+    return Attribute::NoCapture;
+  case NoCfCheck:
+    return Attribute::NoCfCheck;
+  case NoInline:
+    return Attribute::NoInline;
+  case NonNull:
+    return Attribute::NonNull;
+  case NoRedZone:
+    return Attribute::NoRedZone;
+  case NoReturn:
+    return Attribute::NoReturn;
+  case NoUnwind:
+    return Attribute::NoUnwind;
+  case OptimizeForSize:
+    return Attribute::OptimizeForSize;
+  case ReadOnly:
+    return Attribute::ReadOnly;
+  case SExt:
+    return Attribute::SExt;
+  case StructRet:
+    return Attribute::StructRet;
+  case UWTable:
+    return Attribute::UWTable;
+  case ZExt:
+    return Attribute::ZExt;
+  case InReg:
+    return Attribute::InReg;
+  case SanitizeThread:
+    return Attribute::SanitizeThread;
+  case SanitizeAddress:
+    return Attribute::SanitizeAddress;
+  case SanitizeMemory:
+    return Attribute::SanitizeMemory;
+  case NonLazyBind:
+    return Attribute::NonLazyBind;
+  case OptimizeNone:
+    return Attribute::OptimizeNone;
+  case ReturnsTwice:
+    return Attribute::ReturnsTwice;
+  case ReadNone:
+    return Attribute::ReadNone;
+  case SanitizeHWAddress:
+    return Attribute::SanitizeHWAddress;
+  case WillReturn:
+    return Attribute::WillReturn;
+  case StackProtectReq:
+    return Attribute::StackProtectReq;
+  case StackProtectStrong:
+    return Attribute::StackProtectStrong;
+  case StackProtect:
+    return Attribute::StackProtect;
+  case NoUndef:
+    return Attribute::NoUndef;
+  case SanitizeMemTag:
+    return Attribute::SanitizeMemTag;
+  case ShadowCallStack:
+    return Attribute::ShadowCallStack;
+  case AllocSize:
+    return Attribute::AllocSize;
+#if LLVM_VERSION_GE(15, 0)
+  case AllocatedPointer:
+    return Attribute::AllocatedPointer;
+  case AllocAlign:
+    return Attribute::AllocAlign;
+#endif
+  case SanitizeSafeStack:
+    return Attribute::SafeStack;
+  }
+  report_fatal_error("bad AttributeKind");
+}
+Function: 
+pub fn check_builtin_meta_item(
+    sess: &ParseSess,
+    meta: &MetaItem,
+    style: ast::AttrStyle,
+    name: Symbol,
+    template: AttributeTemplate,
+) {
+    // Some special attributes like `cfg` must be checked
+    // before the generic check, so we skip them here.
+    let should_skip = |name| name == sym::cfg;
+
+    if !should_skip(name) && !is_attr_template_compatible(&template, &meta.kind) {
+        emit_malformed_attribute(sess, style, meta.span, name, template);
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx12858_rank1.c", "source_rust_file": "Partial__fromRust__idx12858_rank1.rs", "c_api": "Attribute::InlineHint", "rust_api": "mk_attr(g, style, path, attr_args, span)", "mapping_type": "function", "description": "Final attribute construction function call", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind, while Rust function constructs an Attribute with nested tokens and path. [Similarity] Names don't match but both perform enum/attribute mapping logic. [Knowledge Extraction] No full structural match due to different domains (LLVM IR vs Rust AST), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx12858_rank1.c", "source_rust_file": "Partial__fromRust__idx12858_rank1.rs", "c_api": "Attribute::Cold", "rust_api": "Path::from_ident(outer_ident)", "mapping_type": "pattern", "description": "Mapping of attribute kind to AST path construction", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind, while Rust function constructs an Attribute with nested tokens and path. [Similarity] Names don't match but both perform enum/attribute mapping logic. [Knowledge Extraction] No full structural match due to different domains (LLVM IR vs Rust AST), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx12858_rank1.c", "source_rust_file": "Partial__fromRust__idx12858_rank1.rs", "c_api": "Attribute::AlwaysInline", "rust_api": "Token::from_ast_ident(Ident::new(inner, span))", "mapping_type": "pattern", "description": "Mapping of attribute kind to AST token representation", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind, while Rust function constructs an Attribute with nested tokens and path. [Similarity] Names don't match but both perform enum/attribute mapping logic. [Knowledge Extraction] No full structural match due to different domains (LLVM IR vs Rust AST), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__fromRust__idx12858_rank1.c", "source_rust_file": "Partial__fromRust__idx12858_rank1.rs", "c_fragment": "case AlwaysInline:\n    return Attribute::AlwaysInline;", "rust_fragment": "let inner_tokens = TokenStream::new(vec![TokenTree::Token(\n        Token::from_ast_ident(Ident::new(inner, span)),\n        Spacing::Alone,\n    )]);", "description": "Both perform mapping of input to output value, though different domains (LLVM attribute kind vs Rust token stream construction).", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind, while Rust function constructs an Attribute with nested tokens and path. [Similarity] Names don't match but both perform enum/attribute mapping logic. [Knowledge Extraction] No full structural match due to different domains (LLVM IR vs Rust AST), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx12858_rank1.c", "source_rust_file": "Partial__fromRust__idx12858_rank1.rs", "c_api": "Attribute::ByVal", "rust_api": "TokenStream::new(vec![TokenTree::Token(\n        Token::from_ast_ident(Ident::new(inner, span)),\n        Spacing::Alone,\n    )])", "mapping_type": "pattern", "description": "Mapping of attribute kind to AST token stream construction", "reasoning": "[Task Analysis] C function maps LLVMRustAttribute enum values to LLVM Attribute::AttrKind, while Rust function constructs an Attribute with nested tokens and path. [Similarity] Names don't match but both perform enum/attribute mapping logic. [Knowledge Extraction] No full structural match due to different domains (LLVM IR vs Rust AST), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.1337154656648636
+--------------------------------------------------

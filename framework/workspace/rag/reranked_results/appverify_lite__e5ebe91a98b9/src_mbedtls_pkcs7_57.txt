@@ -1,0 +1,431 @@
+C_Code: 
+int sampleCnt() const { return fSampleCnt; }
+Function: 
+fn num_color_stops(color_stops: &BridgeColorStops) -> usize {
+    color_stops.num_stops
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__prof_ctx_s__idx7697_rank1.h", "source_rust_file": "Partial__prof_ctx_s__idx7697_rank1.rs", "c_fragment": "struct prof_ctx_s {\n\t/* Associated backtrace. */\n\tprof_bt_t\t\t*bt;\n\n\t/* Protects nlimbo, cnt_merged, and cnts_ql. */\n\tmalloc_mutex_t\t\t*lock;\n\n\t/*\n\t * Number of threads that currently cause this ctx to be in a state of\n\t * limbo due to one of:\n\t *   - Initializing per thread counters associated with this ctx.\n\t *   - Preparing to destroy this ctx.\n\t * nlimbo must be 1 (single destroyer) in order to safely destroy the\n\t * ctx.\n\t */\n\tunsigned\t\tnlimbo;\n\n\t/* Temporary storage for summation during dump. */\n\tprof_cnt_t\t\tcnt_summed;\n\n\t/* When threads exit, they merge their stats into cnt_merged. */\n\tprof_cnt_t\t\tcnt_merged;\n\n\t/*\n\t * List of profile counters, one for each thread that has allocated in\n\t * this context.\n\t */\n\tql_head(prof_thr_cnt_t)\t\tcnts_ql;\n}", "rust_fragment": "struct Context;", "description": "C struct definition with fields for profiling context, mutex, thread counters, and linked list; Rust defines a placeholder struct named Context.", "reasoning": "[Filter 1] Names do not refer to the same concept ('prof_ctx_s' vs 'Context') but API mapping extraction is still possible. [Filter 2] Neither code block is empty. [Filter 3] No FFI call detected. [Filter 4] Domain is memory management/profiling, which is consistent. [Filter 5] C has fields, Rust struct is declared but empty; however, this is a structural match for a type definition. [Filter 6] This is a type definition vs usage asymmetry, but since it's a struct definition, we proceed. [Task Analysis] C defines a struct with fields related to profiling and locking, Rust defines a struct named Context. [Similarity] The Rust struct is a placeholder for the C struct, indicating a type mapping. [Knowledge Extraction] Extract structural and API mappings."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__prof_ctx_s__idx7697_rank1.h", "source_rust_file": "Partial__prof_ctx_s__idx7697_rank1.rs", "c_api": "malloc_mutex_t", "rust_api": "Mutex", "mapping_type": "type", "description": "C malloc_mutex_t used for thread synchronization, Rust uses Mutex for similar purpose.", "reasoning": "[Filter 1] Names do not refer to the same concept ('prof_ctx_s' vs 'Context') but API mapping extraction is still possible. [Filter 2] Neither code block is empty. [Filter 3] No FFI call detected. [Filter 4] Domain is memory management/profiling, which is consistent. [Filter 5] C has fields, Rust struct is declared but empty; however, this is a structural match for a type definition. [Filter 6] This is a type definition vs usage asymmetry, but since it's a struct definition, we proceed. [Task Analysis] C defines a struct with fields related to profiling and locking, Rust defines a struct named Context. [Similarity] The Rust struct is a placeholder for the C struct, indicating a type mapping. [Knowledge Extraction] Extract structural and API mappings."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__prof_ctx_s__idx7697_rank1.h", "source_rust_file": "Partial__prof_ctx_s__idx7697_rank1.rs", "c_api": "ql_head(prof_thr_cnt_t)", "rust_api": "LinkedList or Vec", "mapping_type": "type", "description": "C ql_head represents a linked list head, Rust likely uses Vec or LinkedList for similar functionality.", "reasoning": "[Filter 1] Names do not refer to the same concept ('prof_ctx_s' vs 'Context') but API mapping extraction is still possible. [Filter 2] Neither code block is empty. [Filter 3] No FFI call detected. [Filter 4] Domain is memory management/profiling, which is consistent. [Filter 5] C has fields, Rust struct is declared but empty; however, this is a structural match for a type definition. [Filter 6] This is a type definition vs usage asymmetry, but since it's a struct definition, we proceed. [Task Analysis] C defines a struct with fields related to profiling and locking, Rust defines a struct named Context. [Similarity] The Rust struct is a placeholder for the C struct, indicating a type mapping. [Knowledge Extraction] Extract structural and API mappings."}]
+Unixcoder Score: 0.08326976001262665
+--------------------------------------------------
+C_Code: 
+int sampleCnt() const { return fSampleCnt; }
+Function: 
+fn num_color_stops(color_stops: &BridgeColorStops) -> usize {
+    color_stops.num_stops
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__prof_ctx_s__idx7550_rank2.h", "source_rust_file": "Partial__prof_ctx_s__idx7550_rank2.rs", "c_fragment": "struct prof_ctx_s {\n\t/* Associated backtrace. */\n\tprof_bt_t\t\t*bt;\n\n\t/* Protects nlimbo, cnt_merged, and cnts_ql. */\n\tmalloc_mutex_t\t\t*lock;\n\n\t/*\n\t * Number of threads that currently cause this ctx to be in a state of\n\t * limbo due to one of:\n\t *   - Initializing per thread counters associated with this ctx.\n\t *   - Preparing to destroy this ctx.\n\t * nlimbo must be 1 (single destroyer) in order to safely destroy the\n\t * ctx.\n\t */\n\tunsigned\t\tnlimbo;\n\n\t/* Temporary storage for summation during dump. */\n\tprof_cnt_t\t\tcnt_summed;\n\n\t/* When threads exit, they merge their stats into cnt_merged. */\n\tprof_cnt_t\t\tcnt_merged;\n\n\t/*\n\t * List of profile counters, one for each thread that has allocated in\n\t * this context.\n\t */\n\tql_head(prof_thr_cnt_t)\t\tcnts_ql;\n}", "rust_fragment": "struct Context;", "description": "C defines a complex profiling context struct with fields for backtrace, lock, thread counters, and linked list of thread counters; Rust defines a simple Context struct.", "reasoning": "[Filter 1] Names do not refer to the same concept ('prof_ctx_s' vs 'Context') but API mappings may still exist. [Filter 2] Neither code block is empty. [Filter 3] Not an FFI wrapper. [Filter 4] Semantic domains appear related (profiling/memory context structures), not mismatched. [Filter 5] C defines a struct with fields, Rust defines a struct type without fields; however, this is a structural match in definition. [Filter 6] This is a definition vs definition match (struct definition). [Task Analysis] Both sides define a context-related structure. [Similarity] The C struct has fields representing profiling context data, while the Rust side defines a struct type named Context. [Knowledge Extraction] Extract structural fragment and potential API mapping for struct definition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__prof_ctx_s__idx7550_rank2.h", "source_rust_file": "Partial__prof_ctx_s__idx7550_rank2.rs", "c_api": "struct prof_ctx_s", "rust_api": "struct Context", "mapping_type": "type", "description": "Struct definition for profiling context", "reasoning": "[Filter 1] Names do not refer to the same concept ('prof_ctx_s' vs 'Context') but API mappings may still exist. [Filter 2] Neither code block is empty. [Filter 3] Not an FFI wrapper. [Filter 4] Semantic domains appear related (profiling/memory context structures), not mismatched. [Filter 5] C defines a struct with fields, Rust defines a struct type without fields; however, this is a structural match in definition. [Filter 6] This is a definition vs definition match (struct definition). [Task Analysis] Both sides define a context-related structure. [Similarity] The C struct has fields representing profiling context data, while the Rust side defines a struct type named Context. [Knowledge Extraction] Extract structural fragment and potential API mapping for struct definition pattern."}]
+Unixcoder Score: 0.08225927501916885
+--------------------------------------------------
+C_Code: 
+struct prof_thr_cnt_s {
+	/* Linkage into prof_ctx_t's cnts_ql. */
+	ql_elm(prof_thr_cnt_t)	cnts_link;
+
+	/* Linkage into thread's LRU. */
+	ql_elm(prof_thr_cnt_t)	lru_link;
+
+	/*
+	 * Associated context.  If a thread frees an object that it did not
+	 * allocate, it is possible that the context is not cached in the
+	 * thread's hash table, in which case it must be able to look up the
+	 * context, insert a new prof_thr_cnt_t into the thread's hash table,
+	 * and link it into the prof_ctx_t's cnts_ql.
+	 */
+	prof_ctx_t		*ctx;
+
+	/*
+	 * Threads use memory barriers to update the counters.  Since there is
+	 * only ever one writer, the only challenge is for the reader to get a
+	 * consistent read of the counters.
+	 *
+	 * The writer uses this series of operations:
+	 *
+	 * 1) Increment epoch to an odd number.
+	 * 2) Update counters.
+	 * 3) Increment epoch to an even number.
+	 *
+	 * The reader must assure 1) that the epoch is even while it reads the
+	 * counters, and 2) that the epoch doesn't change between the time it
+	 * starts and finishes reading the counters.
+	 */
+	unsigned		epoch;
+
+	/* Profiling counters. */
+	prof_cnt_t		cnts;
+}
+Function: 
+struct A10(u32, u32, u16);
+Unixcoder Score: 0.017031267285346985
+--------------------------------------------------
+C_Code: 
+int32_t AddAsset(const AssetAttr *attributes, uint32_t attrCnt)
+{
+    return AddAssetC2Rust(attributes, attrCnt);
+}
+Function: 
+pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetAttr, attr_cnt: u32) -> i32 {
+    loge!("[YZT] enter AddAssetC2Rust!");
+    if attributes.is_null() || attr_cnt == 0 {
+        loge!("[YZT] null pointer");
+        return ErrCode::InvalidArgument as i32;
+    }
+
+    let mut map = AssetMap::with_capacity(attr_cnt as usize);
+    for i in 0..attr_cnt {
+        let attr = attributes.offset(i as isize);
+        let attr_tag = match Tag::try_from((*attr).tag) {
+            Ok(tag) => tag,
+            Err(err_code) => return err_code as i32,
+        };
+        match attr_tag.data_type() {
+            DataType::Bool => {
+                map.insert(attr_tag, Value::Bool((*attr).value.boolean));
+            }
+            DataType::Uint32 => {
+                map.insert(attr_tag, Value::Number((*attr).value.uint32));
+            },
+            DataType::Bytes => {
+                let blob_slice = slice::from_raw_parts((*attr).value.blob.data, (*attr).value.blob.size as usize);
+                let blob_vec = blob_slice.to_vec();
+                map.insert(attr_tag, Value::Bytes(blob_vec));
+            },
+        }
+    }
+    loge!("[YZT] end AddAssetC2Rust!");
+    match Manager::build() {
+        Ok(manager) => {
+            if let Err(e) = manager.add(&map) {
+                e as i32
+            } else {
+                0
+            }
+        },
+        Err(e) => e as i32
+    }
+}
+Unixcoder Score: 0.014291725121438503
+--------------------------------------------------
+C_Code: 
+struct prof_thr_cnt_s {
+	/* Linkage into prof_ctx_t's cnts_ql. */
+	ql_elm(prof_thr_cnt_t)	cnts_link;
+
+	/* Linkage into thread's LRU. */
+	ql_elm(prof_thr_cnt_t)	lru_link;
+
+	/*
+	 * Associated context.  If a thread frees an object that it did not
+	 * allocate, it is possible that the context is not cached in the
+	 * thread's hash table, in which case it must be able to look up the
+	 * context, insert a new prof_thr_cnt_t into the thread's hash table,
+	 * and link it into the prof_ctx_t's cnts_ql.
+	 */
+	prof_ctx_t		*ctx;
+
+	/*
+	 * Threads use memory barriers to update the counters.  Since there is
+	 * only ever one writer, the only challenge is for the reader to get a
+	 * consistent read of the counters.
+	 *
+	 * The writer uses this series of operations:
+	 *
+	 * 1) Increment epoch to an odd number.
+	 * 2) Update counters.
+	 * 3) Increment epoch to an even number.
+	 *
+	 * The reader must assure 1) that the epoch is even while it reads the
+	 * counters, and 2) that the epoch doesn't change between the time it
+	 * starts and finishes reading the counters.
+	 */
+	unsigned		epoch;
+
+	/* Profiling counters. */
+	prof_cnt_t		cnts;
+}
+Function: 
+struct ARCRW<'a>(Arc<RwLock<ARCRWData<'a>>>);
+Unixcoder Score: 0.01130065880715847
+--------------------------------------------------
+C_Code: 
+static int
+imemalign(void **memptr, size_t alignment, size_t size,
+    size_t min_alignment)
+{
+	int ret;
+	size_t usize;
+	void *result;
+	prof_thr_cnt_t *cnt JEMALLOC_CC_SILENCE_INIT(NULL);
+
+	assert(min_alignment != 0);
+
+	if (malloc_init())
+		result = NULL;
+	else {
+		if (size == 0)
+			size = 1;
+
+		/* Make sure that alignment is a large enough power of 2. */
+		if (((alignment - 1) & alignment) != 0
+		    || (alignment < min_alignment)) {
+			if (config_xmalloc && opt_xmalloc) {
+				malloc_write("<jemalloc>: Error allocating "
+				    "aligned memory: invalid alignment\n");
+				abort();
+			}
+			result = NULL;
+			ret = EINVAL;
+			goto label_return;
+		}
+
+		usize = sa2u(size, alignment);
+		if (usize == 0) {
+			result = NULL;
+			ret = ENOMEM;
+			goto label_return;
+		}
+
+		if (config_prof && opt_prof) {
+			PROF_ALLOC_PREP(2, usize, cnt);
+			if (cnt == NULL) {
+				result = NULL;
+				ret = EINVAL;
+			} else {
+				if (prof_promote && (uintptr_t)cnt !=
+				    (uintptr_t)1U && usize <= SMALL_MAXCLASS) {
+					assert(sa2u(SMALL_MAXCLASS+1,
+					    alignment) != 0);
+					result = ipalloc(sa2u(SMALL_MAXCLASS+1,
+					    alignment), alignment, false);
+					if (result != NULL) {
+						arena_prof_promoted(result,
+						    usize);
+					}
+				} else {
+					result = ipalloc(usize, alignment,
+					    false);
+				}
+			}
+		} else
+			result = ipalloc(usize, alignment, false);
+	}
+
+	if (result == NULL) {
+		if (config_xmalloc && opt_xmalloc) {
+			malloc_write("<jemalloc>: Error allocating aligned "
+			    "memory: out of memory\n");
+			abort();
+		}
+		ret = ENOMEM;
+		goto label_return;
+	}
+
+	*memptr = result;
+	ret = 0;
+
+label_return:
+	if (config_stats && result != NULL) {
+		assert(usize == isalloc(result, config_prof));
+		thread_allocated_tsd_get()->allocated += usize;
+	}
+	if (config_prof && opt_prof && result != NULL)
+		prof_malloc(result, usize, cnt);
+	UTRACE(0, size, result);
+	return (ret);
+}
+Function: 
+unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // jemalloc provides alignment less than MIN_ALIGN for small allocations.
+        // So only rely on MIN_ALIGN if size >= align.
+        // Also see <https://github.com/rust-lang/rust/issues/45955> and
+        // <https://github.com/rust-lang/rust/issues/62251#issuecomment-507580914>.
+        if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+            unsafe { libc::malloc(layout.size()) as *mut u8 }
+        } else {
+            // `posix_memalign` returns a non-aligned value if supplied a very
+            // large alignment on older versions of Apple's platforms (unknown
+            // exactly which version range, but the issue is definitely
+            // present in macOS 10.14 and iOS 13.3).
+            //
+            // <https://github.com/rust-lang/rust/issues/30170>
+            #[cfg(target_vendor = "apple")]
+            {
+                if layout.align() > (1 << 31) {
+                    return ptr::null_mut();
+                }
+            }
+            unsafe { aligned_malloc(&layout) }
+        }
+    }
+Unixcoder Score: 0.01059010811150074
+--------------------------------------------------
+C_Code: 
+static int
+imemalign(void **memptr, size_t alignment, size_t size,
+    size_t min_alignment)
+{
+	int ret;
+	size_t usize;
+	void *result;
+	prof_thr_cnt_t *cnt JEMALLOC_CC_SILENCE_INIT(NULL);
+
+	assert(min_alignment != 0);
+
+	if (malloc_init())
+		result = NULL;
+	else {
+		if (size == 0)
+			size = 1;
+
+		/* Make sure that alignment is a large enough power of 2. */
+		if (((alignment - 1) & alignment) != 0
+		    || (alignment < min_alignment)) {
+			if (config_xmalloc && opt_xmalloc) {
+				malloc_write("<jemalloc>: Error allocating "
+				    "aligned memory: invalid alignment\n");
+				abort();
+			}
+			result = NULL;
+			ret = EINVAL;
+			goto label_return;
+		}
+
+		usize = sa2u(size, alignment);
+		if (usize == 0) {
+			result = NULL;
+			ret = ENOMEM;
+			goto label_return;
+		}
+
+		if (config_prof && opt_prof) {
+			PROF_ALLOC_PREP(2, usize, cnt);
+			if (cnt == NULL) {
+				result = NULL;
+				ret = EINVAL;
+			} else {
+				if (prof_promote && (uintptr_t)cnt !=
+				    (uintptr_t)1U && usize <= SMALL_MAXCLASS) {
+					assert(sa2u(SMALL_MAXCLASS+1,
+					    alignment) != 0);
+					result = ipalloc(sa2u(SMALL_MAXCLASS+1,
+					    alignment), alignment, false);
+					if (result != NULL) {
+						arena_prof_promoted(result,
+						    usize);
+					}
+				} else {
+					result = ipalloc(usize, alignment,
+					    false);
+				}
+			}
+		} else
+			result = ipalloc(usize, alignment, false);
+	}
+
+	if (result == NULL) {
+		if (config_xmalloc && opt_xmalloc) {
+			malloc_write("<jemalloc>: Error allocating aligned "
+			    "memory: out of memory\n");
+			abort();
+		}
+		ret = ENOMEM;
+		goto label_return;
+	}
+
+	*memptr = result;
+	ret = 0;
+
+label_return:
+	if (config_stats && result != NULL) {
+		assert(usize == isalloc(result, config_prof));
+		thread_allocated_tsd_get()->allocated += usize;
+	}
+	if (config_prof && opt_prof && result != NULL)
+		prof_malloc(result, usize, cnt);
+	UTRACE(0, size, result);
+	return (ret);
+}
+Function: 
+pub fn variant_a(input: &[(usize, usize, usize, usize)]) -> usize {
+    input.iter().filter(|(a, b, c, d)| a <= c && d <= b || c <= a && b <= d).count()
+}
+Unixcoder Score: -0.0045699309557676315
+--------------------------------------------------
+C_Code: 
+int32_t AssetPostQuery(const AssetAttr *handle, uint32_t handleCnt)
+{
+    return post_query_asset(handle, handleCnt);
+}
+Function: 
+pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) -> i32 {
+    let map = match into_map(handle, handle_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let mut manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e.code as i32,
+    };
+
+    if let Err(e) = manager.post_query(&map) {
+        e.code as i32
+    } else {
+        RESULT_CODE_SUCCESS
+    }
+}
+Unixcoder Score: -0.007722341921180487
+--------------------------------------------------
+C_Code: 
+int32_t AssetRemove(const AssetAttr *query, uint32_t queryCnt)
+{
+    return remove_asset(query, queryCnt);
+}
+Function: 
+pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, result_set: *mut AssetResultSet) -> i32 {
+    let map = match into_map(query, query_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    if result_set.is_null() {
+        loge!("[FATAL][RUST SDK]result set is null");
+        return ErrCode::InvalidArgument as i32;
+    }
+
+    let mut manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e.code as i32,
+    };
+
+    let res = match manager.query(&map) {
+        Err(e) => return e.code as i32,
+        Ok(res) => res,
+    };
+
+    match AssetResultSet::try_from(&res) {
+        Err(e) => e.code as i32,
+        Ok(s) => {
+            *result_set = s;
+            RESULT_CODE_SUCCESS
+        },
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetAdd__idx4367_rank1.c", "source_rust_file": "API_Mapping__AssetAdd__idx4367_rank1.rs", "c_api": "add_asset(attributes, attrCnt)", "rust_api": "db.insert_datas(attributes)", "mapping_type": "function", "description": "Adding assets to a database", "reasoning": "[Task Analysis] C function `AssetAdd` is a wrapper that delegates to `add_asset`, while Rust function `add` is a method performing database operations. [Similarity] Names do not refer to the same concept (`AssetAdd` vs `add`), and domains differ: C appears to be a simple delegation, while Rust involves complex logic with error handling and database interaction. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic scope. However, both perform an 'add' operation with similar input/output patterns, so API mapping is extracted."}]
+Unixcoder Score: -0.007806987967342138
+--------------------------------------------------
+C_Code: 
+int32_t AssetPostQuery(const AssetAttr *handle, uint32_t handleCnt)
+{
+    return post_query_asset(handle, handleCnt);
+}
+Function: 
+pub fn pre_query(&mut self, query: &AssetMap) -> Result<Vec<u8>> {
+        let mut reply = self.process_one_agr_request(query, IpcCode::PreQuery)?;
+        let res = reply.read::<Vec<u8>>().map_err(ipc_err_handle)?;
+        Ok(res)
+    }
+Unixcoder Score: -0.009078888222575188
+--------------------------------------------------

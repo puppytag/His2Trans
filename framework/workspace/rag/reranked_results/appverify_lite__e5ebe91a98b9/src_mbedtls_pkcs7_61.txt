@@ -1,0 +1,278 @@
+C_Code: 
+uint8_t slice_elem(struct ByteSlice bs, size_t idx) {
+        return bs.data[idx];
+}
+Function: 
+fn main() {
+    let data = [1, 2, 3, 4, 5];
+
+    unsafe {
+        assert_eq!(data.len(), slice_len(&data) as usize);
+        assert_eq!(data[0], slice_elem(&data, 0));
+        assert_eq!(data[1], slice_elem(&data, 1));
+        assert_eq!(data[2], slice_elem(&data, 2));
+        assert_eq!(data[3], slice_elem(&data, 3));
+        assert_eq!(data[4], slice_elem(&data, 4));
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx486_rank2.c", "source_rust_file": "Partial__GetTaskInfoInner__idx486_rank2.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(...).Query(...)", "rust_api": "self.get_task_info(...)", "mapping_type": "function", "description": "Database query operation to retrieve task information", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetTaskInfoInner__idx486_rank2.c", "source_rust_file": "Partial__GetTaskInfoInner__idx486_rank2.rs", "c_fragment": "resultSet->Close();\n    return OHOS::Request::QUERY_OK;", "rust_fragment": "match RequestTask::new_by_info(\n            config,\n            #[cfg(feature = \"oh\")]\n            system,\n            task_info,\n            client_manager.clone(),\n            upload_resume,\n        ) {\n            Ok(task) => Ok(Arc::new(task)),\n            Err(e) => {\n                error!(\"new RequestTask failed {}, err: {:?}\", task_id, e);\n                sys_event!(\n                    ExecFault,\n                    DfxCode::RDB_FAULT_06,\n                    &format!(\"new RequestTask failed {}, err: {:?}\", task_id, e)\n                );\n                Err(e)\n            }\n        }", "description": "Both perform finalization logic after data processing, with error handling and return of a constructed object.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx486_rank2.c", "source_rust_file": "Partial__GetTaskInfoInner__idx486_rank2.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "error!(...)", "mapping_type": "function", "description": "Logging of error messages", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetTaskInfoInner__idx486_rank2.c", "source_rust_file": "Partial__GetTaskInfoInner__idx486_rank2.rs", "c_fragment": "if (resultSet == nullptr || resultSet->GoToFirstRow() != OHOS::NativeRdb::E_OK) {\n        REQUEST_HILOGE(\"result set is nullptr or go to first row failed\");\n        return OHOS::Request::QUERY_ERR;\n    }", "rust_fragment": "let task_info = match self.get_task_info(task_id) {\n            Some(info) => info,\n            None => return Err(ErrorCode::TaskNotFound),\n        };", "description": "Both handle cases where data retrieval fails and return an error code.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx486_rank2.c", "source_rust_file": "Partial__GetTaskInfoInner__idx486_rank2.rs", "c_api": "resultSet->Close()", "rust_api": "match RequestTask::new_by_info(...)", "mapping_type": "method", "description": "Resource cleanup after data processing", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx486_rank2.c", "source_rust_file": "Partial__GetTaskInfoInner__idx486_rank2.rs", "c_api": "resultSet->GoToFirstRow()", "rust_api": "self.get_task_info(...)", "mapping_type": "method", "description": "Navigation to first row in result set", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [API Mappings] -> [Structural Fragments]"}]
+Unixcoder Score: 0.03137124702334404
+--------------------------------------------------
+C_Code: 
+void upb_Array_Move(upb_Array* arr, size_t dst_idx, size_t src_idx,
+                    size_t count) {
+  UPB_ASSERT(!upb_Array_IsFrozen(arr));
+  const int lg2 = UPB_PRIVATE(_upb_Array_ElemSizeLg2)(arr);
+  char* data = upb_Array_MutableDataPtr(arr);
+  memmove(&data[dst_idx << lg2], &data[src_idx << lg2], count << lg2);
+}
+Function: 
+fn array_ffi_test() {
+        // SAFETY: FFI unit test uses C API under expected patterns.
+        unsafe {
+            let arena = Arena::new();
+            let raw_arena = arena.raw();
+            let array = upb_Array_New(raw_arena, CType::Float);
+
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 7.0 }, raw_arena));
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 42.0 }, raw_arena));
+            assert_eq!(upb_Array_Size(array), 2);
+            assert!(matches!(upb_Array_Get(array, 1), upb_MessageValue { float_val: 42.0 }));
+
+            assert!(upb_Array_Resize(array, 3, raw_arena));
+            assert_eq!(upb_Array_Size(array), 3);
+            assert!(matches!(upb_Array_Get(array, 2), upb_MessageValue { float_val: 0.0 }));
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.rs", "c_api": "FillCommonTaskInfo(resultSet, taskInfo)", "rust_api": "database.get_task_info(task_id)", "mapping_type": "function", "description": "Populate common task information", "reasoning": "[Filter 1: Entity Name Check] Names do not refer to the same concept; C function is about querying task info, Rust function is about handling a failed task. [Filter 2: Empty/Trivial Code] Neither side is empty. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on database query and task info filling, while Rust handles task failure logic and state updates. These are different domains. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] Not applicable as both are implementations, not calls. -> [Classification] No full or partial match due to domain mismatch. However, there are API mappings related to database operations and task state management. -> [Knowledge Extraction] Extract API mappings for database query and task state update operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.rs", "c_api": "resultSet->GoToFirstRow()", "rust_api": "database.get_task_qos_info(task_id)", "mapping_type": "method", "description": "Move to first row in result set", "reasoning": "[Filter 1: Entity Name Check] Names do not refer to the same concept; C function is about querying task info, Rust function is about handling a failed task. [Filter 2: Empty/Trivial Code] Neither side is empty. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on database query and task info filling, while Rust handles task failure logic and state updates. These are different domains. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] Not applicable as both are implementations, not calls. -> [Classification] No full or partial match due to domain mismatch. However, there are API mappings related to database operations and task state management. -> [Knowledge Extraction] Extract API mappings for database query and task state update operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(...).Query(...)", "rust_api": "RequestDb::get_instance().get_task_qos_info(...)", "mapping_type": "function", "description": "Database query operation", "reasoning": "[Filter 1: Entity Name Check] Names do not refer to the same concept; C function is about querying task info, Rust function is about handling a failed task. [Filter 2: Empty/Trivial Code] Neither side is empty. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on database query and task info filling, while Rust handles task failure logic and state updates. These are different domains. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] Not applicable as both are implementations, not calls. -> [Classification] No full or partial match due to domain mismatch. However, there are API mappings related to database operations and task state management. -> [Knowledge Extraction] Extract API mappings for database query and task state update operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "info!(...)", "mapping_type": "function", "description": "Logging error message", "reasoning": "[Filter 1: Entity Name Check] Names do not refer to the same concept; C function is about querying task info, Rust function is about handling a failed task. [Filter 2: Empty/Trivial Code] Neither side is empty. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on database query and task info filling, while Rust handles task failure logic and state updates. These are different domains. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] Not applicable as both are implementations, not calls. -> [Classification] No full or partial match due to domain mismatch. However, there are API mappings related to database operations and task state management. -> [Knowledge Extraction] Extract API mappings for database query and task state update operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.rs", "c_api": "FillOtherTaskInfo(resultSet, taskInfo)", "rust_api": "Scheduler::notify_fail(...)", "mapping_type": "function", "description": "Populate other task information and notify failure", "reasoning": "[Filter 1: Entity Name Check] Names do not refer to the same concept; C function is about querying task info, Rust function is about handling a failed task. [Filter 2: Empty/Trivial Code] Neither side is empty. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on database query and task info filling, while Rust handles task failure logic and state updates. These are different domains. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] Not applicable as both are implementations, not calls. -> [Classification] No full or partial match due to domain mismatch. However, there are API mappings related to database operations and task state management. -> [Knowledge Extraction] Extract API mappings for database query and task state update operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx575_rank3.rs", "c_api": "resultSet->Close()", "rust_api": "database.update_task_state(...)", "mapping_type": "method", "description": "Close result set and update task state", "reasoning": "[Filter 1: Entity Name Check] Names do not refer to the same concept; C function is about querying task info, Rust function is about handling a failed task. [Filter 2: Empty/Trivial Code] Neither side is empty. [Filter 3: FFI Wrapper] No FFI call detected. [Filter 4: Semantic Domain Mismatch] C operates on database query and task info filling, while Rust handles task failure logic and state updates. These are different domains. [Filter 5: Empty Structs] Not applicable. [Filter 6: Definition vs Usage Asymmetry] Not applicable as both are implementations, not calls. -> [Classification] No full or partial match due to domain mismatch. However, there are API mappings related to database operations and task state management. -> [Knowledge Extraction] Extract API mappings for database query and task state update operations."}]
+Unixcoder Score: 0.030151139944791794
+--------------------------------------------------
+C_Code: 
+uint8_t slice_elem(struct ByteSlice bs, size_t idx) {
+        return bs.data[idx];
+}
+Function: 
+fn main() {
+    let data = [1, 2, 3, 4, 5];
+
+    unsafe {
+        assert_eq!(data.len(), slice_len(&data) as usize);
+        assert_eq!(data[0], slice_elem(&data, 0));
+        assert_eq!(data[1], slice_elem(&data, 1));
+        assert_eq!(data[2], slice_elem(&data, 2));
+        assert_eq!(data[3], slice_elem(&data, 3));
+        assert_eq!(data[4], slice_elem(&data, 4));
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx608_rank4.c", "source_rust_file": "Partial__GetTaskInfoInner__idx608_rank4.rs", "c_api": "resultSet->Close()", "rust_api": "app.insert(task)", "mapping_type": "method", "description": "Task insertion into container", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('GetTaskInfoInner' vs 'insert_task'), but both represent task-related logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are implementations (not calls), so valid for matching. [Full Blockers] -> No code length mismatch, both are implementation functions, no domain mismatch, not trivial. [Partial/Full Classification] -> Full match not possible due to different logic scopes (query vs insert), but partial fragments exist. [API Mappings] -> Extract API mappings based on similar operations like task insertion, data access, and control flow patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetTaskInfoInner__idx608_rank4.c", "source_rust_file": "Partial__GetTaskInfoInner__idx608_rank4.rs", "c_fragment": "if (resultSet == nullptr || resultSet->GoToFirstRow() != OHOS::NativeRdb::E_OK) {\n        REQUEST_HILOGE(\"result set is nullptr or go to first row failed\");\n        return OHOS::Request::QUERY_ERR;\n    }", "rust_fragment": "if let Some(app) = self.inner.iter_mut().find(|app| app.uid == uid) {\n            app.insert(task);\n            return;\n        }", "description": "Both handle early exit conditions when data is invalid or not found.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('GetTaskInfoInner' vs 'insert_task'), but both represent task-related logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are implementations (not calls), so valid for matching. [Full Blockers] -> No code length mismatch, both are implementation functions, no domain mismatch, not trivial. [Partial/Full Classification] -> Full match not possible due to different logic scopes (query vs insert), but partial fragments exist. [API Mappings] -> Extract API mappings based on similar operations like task insertion, data access, and control flow patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetTaskInfoInner__idx608_rank4.c", "source_rust_file": "Partial__GetTaskInfoInner__idx608_rank4.rs", "c_fragment": "FillCommonTaskInfo(resultSet, taskInfo);\n    FillOtherTaskInfo(resultSet, taskInfo);", "rust_fragment": "let task = Task {\n            uid,\n            task_id: task.task_id,\n            mode: Mode::from(task.mode),\n            action: Action::from(task.action),\n            priority: task.priority,\n        };", "description": "Both extract and process task information from a data source.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('GetTaskInfoInner' vs 'insert_task'), but both represent task-related logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are implementations (not calls), so valid for matching. [Full Blockers] -> No code length mismatch, both are implementation functions, no domain mismatch, not trivial. [Partial/Full Classification] -> Full match not possible due to different logic scopes (query vs insert), but partial fragments exist. [API Mappings] -> Extract API mappings based on similar operations like task insertion, data access, and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx608_rank4.c", "source_rust_file": "Partial__GetTaskInfoInner__idx608_rank4.rs", "c_api": "resultSet->GoToFirstRow()", "rust_api": "self.inner.iter_mut().find(|app| app.uid == uid)", "mapping_type": "method", "description": "Data navigation to first valid entry", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('GetTaskInfoInner' vs 'insert_task'), but both represent task-related logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are implementations (not calls), so valid for matching. [Full Blockers] -> No code length mismatch, both are implementation functions, no domain mismatch, not trivial. [Partial/Full Classification] -> Full match not possible due to different logic scopes (query vs insert), but partial fragments exist. [API Mappings] -> Extract API mappings based on similar operations like task insertion, data access, and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx608_rank4.c", "source_rust_file": "Partial__GetTaskInfoInner__idx608_rank4.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "return", "mapping_type": "pattern", "description": "Error reporting and early return", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('GetTaskInfoInner' vs 'insert_task'), but both represent task-related logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are implementations (not calls), so valid for matching. [Full Blockers] -> No code length mismatch, both are implementation functions, no domain mismatch, not trivial. [Partial/Full Classification] -> Full match not possible due to different logic scopes (query vs insert), but partial fragments exist. [API Mappings] -> Extract API mappings based on similar operations like task insertion, data access, and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx608_rank4.c", "source_rust_file": "Partial__GetTaskInfoInner__idx608_rank4.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(...).Query(...)", "rust_api": "self.inner.push(app)", "mapping_type": "function", "description": "Data retrieval and storage", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('GetTaskInfoInner' vs 'insert_task'), but both represent task-related logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task management logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are implementations (not calls), so valid for matching. [Full Blockers] -> No code length mismatch, both are implementation functions, no domain mismatch, not trivial. [Partial/Full Classification] -> Full match not possible due to different logic scopes (query vs insert), but partial fragments exist. [API Mappings] -> Extract API mappings based on similar operations like task insertion, data access, and control flow patterns."}]
+Unixcoder Score: 0.01876172050833702
+--------------------------------------------------
+C_Code: 
+uint8_t slice_elem(struct ByteSlice bs, size_t idx) {
+        return bs.data[idx];
+}
+Function: 
+pub fn f0(idx: usize, buf: &[u8; 10]) -> u8 {
+    if idx < 8 { buf[idx + 1] } else { 0 }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx483_rank3.c", "source_rust_file": "Partial__GetTaskInfoInner__idx483_rank3.rs", "c_api": "resultSet->GoToFirstRow()", "rust_api": "rows.next().map(|info| info.unwrap())", "mapping_type": "method", "description": "Move to first result row", "reasoning": "[FFI Check] -> [Task Analysis] The C code performs a database query using OHOS RDB APIs and fills task info, while Rust code executes a SQL query and maps results to a struct. [Similarity] Names don't match exactly but both perform database query and data extraction. [Knowledge Extraction] Found partial structural match in data retrieval logic and API mappings for database query operations and result mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx483_rank3.c", "source_rust_file": "Partial__GetTaskInfoInner__idx483_rank3.rs", "c_api": "resultSet->Close()", "rust_api": "rows.next().map(|info| info.unwrap())", "mapping_type": "method", "description": "Close result set/iterator", "reasoning": "[FFI Check] -> [Task Analysis] The C code performs a database query using OHOS RDB APIs and fills task info, while Rust code executes a SQL query and maps results to a struct. [Similarity] Names don't match exactly but both perform database query and data extraction. [Knowledge Extraction] Found partial structural match in data retrieval logic and API mappings for database query operations and result mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx483_rank3.c", "source_rust_file": "Partial__GetTaskInfoInner__idx483_rank3.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(...).Query(...)", "rust_api": "self.inner.prepare(&sql).unwrap()", "mapping_type": "function", "description": "Database query initialization", "reasoning": "[FFI Check] -> [Task Analysis] The C code performs a database query using OHOS RDB APIs and fills task info, while Rust code executes a SQL query and maps results to a struct. [Similarity] Names don't match exactly but both perform database query and data extraction. [Knowledge Extraction] Found partial structural match in data retrieval logic and API mappings for database query operations and result mapping."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetTaskInfoInner__idx483_rank3.c", "source_rust_file": "Partial__GetTaskInfoInner__idx483_rank3.rs", "c_fragment": "auto resultSet =\n        OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true)\n            .Query(rdbPredicates, { \"task_id\", \"uid\", \"action\", \"mode\", \"ctime\", \"mtime\", \"reason\", \"gauge\", \"retry\",\n                                      \"tries\", \"version\", \"priority\", \"bundle\", \"url\", \"data\", \"token\", \"title\",\n                                      \"description\", \"mime_type\", \"state\", \"idx\", \"total_processed\", \"sizes\",\n                                      \"processed\", \"extras\", \"form_items\", \"file_specs\", \"max_speed\", \"task_time\" });\n    if (resultSet == nullptr || resultSet->GoToFirstRow() != OHOS::NativeRdb::E_OK) {\n        REQUEST_HILOGE(\"result set is nullptr or go to first row failed\");\n        return OHOS::Request::QUERY_ERR;\n    }\n    FillCommonTaskInfo(resultSet, taskInfo);\n    FillOtherTaskInfo(resultSet, taskInfo);\n    resultSet->Close();\n    return OHOS::Request::QUERY_OK;", "rust_fragment": "let sql = format!(\n            \"SELECT action, mode, state, priority FROM request_task WHERE task_id = {}\",\n            task_id,\n        );\n        let mut stmt = self.inner.prepare(&sql).unwrap();\n        let mut rows = stmt\n            .query_map([], |row| {\n                Ok(TaskQosInfo {\n                    task_id: task_id,\n                    action: row.get::<_, u8>(0).unwrap().into(),\n                    mode: row.get::<_, u8>(1).unwrap().into(),\n                    state: row.get(2).unwrap(),\n                    priority: row.get(3).unwrap(),\n                })\n            })\n            .unwrap();\n        rows.next().map(|info| info.unwrap())", "description": "Both perform database query operations and extract data from results", "reasoning": "[FFI Check] -> [Task Analysis] The C code performs a database query using OHOS RDB APIs and fills task info, while Rust code executes a SQL query and maps results to a struct. [Similarity] Names don't match exactly but both perform database query and data extraction. [Knowledge Extraction] Found partial structural match in data retrieval logic and API mappings for database query operations and result mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx483_rank3.c", "source_rust_file": "Partial__GetTaskInfoInner__idx483_rank3.rs", "c_api": "FillCommonTaskInfo(resultSet, taskInfo)", "rust_api": "row.get::<_, u8>(0).unwrap().into()", "mapping_type": "function", "description": "Extract and map data fields from result set", "reasoning": "[FFI Check] -> [Task Analysis] The C code performs a database query using OHOS RDB APIs and fills task info, while Rust code executes a SQL query and maps results to a struct. [Similarity] Names don't match exactly but both perform database query and data extraction. [Knowledge Extraction] Found partial structural match in data retrieval logic and API mappings for database query operations and result mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx483_rank3.c", "source_rust_file": "Partial__GetTaskInfoInner__idx483_rank3.rs", "c_api": "FillOtherTaskInfo(resultSet, taskInfo)", "rust_api": "row.get(2).unwrap()", "mapping_type": "function", "description": "Extract and map additional data fields from result set", "reasoning": "[FFI Check] -> [Task Analysis] The C code performs a database query using OHOS RDB APIs and fills task info, while Rust code executes a SQL query and maps results to a struct. [Similarity] Names don't match exactly but both perform database query and data extraction. [Knowledge Extraction] Found partial structural match in data retrieval logic and API mappings for database query operations and result mapping."}]
+Unixcoder Score: 0.018104026094079018
+--------------------------------------------------
+C_Code: 
+void upb_Array_Move(upb_Array* arr, size_t dst_idx, size_t src_idx,
+                    size_t count) {
+  UPB_ASSERT(!upb_Array_IsFrozen(arr));
+  const int lg2 = UPB_PRIVATE(_upb_Array_ElemSizeLg2)(arr);
+  char* data = upb_Array_MutableDataPtr(arr);
+  memmove(&data[dst_idx << lg2], &data[src_idx << lg2], count << lg2);
+}
+Function: 
+fn array_ffi_test() {
+        // SAFETY: FFI unit test uses C API under expected patterns.
+        unsafe {
+            let arena = Arena::new();
+            let raw_arena = arena.raw();
+            let array = upb_Array_New(raw_arena, CType::Float);
+
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 7.0 }, raw_arena));
+            assert!(upb_Array_Append(array, upb_MessageValue { float_val: 42.0 }, raw_arena));
+            assert_eq!(upb_Array_Size(array), 2);
+            assert!(matches!(upb_Array_Get(array, 1), upb_MessageValue { float_val: 42.0 }));
+
+            assert!(upb_Array_Resize(array, 3, raw_arena));
+            assert_eq!(upb_Array_Size(array), 3);
+            assert!(matches!(upb_Array_Get(array, 2), upb_MessageValue { float_val: 0.0 }));
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx518_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx518_rank3.rs", "c_api": "Query", "rust_api": "get_task_config", "mapping_type": "function", "description": "Database lookup", "reasoning": "[Task Analysis] C function queries database and fills task info; Rust function retrieves task config from DB. [Similarity] Names don't match but both involve database access and task retrieval. [Knowledge Extraction] No full structural match due to different logic flow and domains (C: query + fill, Rust: get + validate). However, both perform database lookup and task data access. [API Mappings] C's Query() and Rust's get_task_config() both perform database lookup. C's FillCommonTaskInfo/FillOtherTaskInfo and Rust's config.token.eq() both handle task data validation. [Structural Fragments] None due to domain mismatch. [API Mappings] Extracted two mappings: 1. Query() ↔ get_task_config() (database lookup), 2. FillCommonTaskInfo/FillOtherTaskInfo ↔ config.token.eq() (data validation)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx518_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx518_rank3.rs", "c_api": "FillCommonTaskInfo", "rust_api": "config.token.eq", "mapping_type": "function", "description": "Task data validation", "reasoning": "[Task Analysis] C function queries database and fills task info; Rust function retrieves task config from DB. [Similarity] Names don't match but both involve database access and task retrieval. [Knowledge Extraction] No full structural match due to different logic flow and domains (C: query + fill, Rust: get + validate). However, both perform database lookup and task data access. [API Mappings] C's Query() and Rust's get_task_config() both perform database lookup. C's FillCommonTaskInfo/FillOtherTaskInfo and Rust's config.token.eq() both handle task data validation. [Structural Fragments] None due to domain mismatch. [API Mappings] Extracted two mappings: 1. Query() ↔ get_task_config() (database lookup), 2. FillCommonTaskInfo/FillOtherTaskInfo ↔ config.token.eq() (data validation)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx518_rank3.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx518_rank3.rs", "c_api": "FillOtherTaskInfo", "rust_api": "config.token.eq", "mapping_type": "function", "description": "Task data validation", "reasoning": "[Task Analysis] C function queries database and fills task info; Rust function retrieves task config from DB. [Similarity] Names don't match but both involve database access and task retrieval. [Knowledge Extraction] No full structural match due to different logic flow and domains (C: query + fill, Rust: get + validate). However, both perform database lookup and task data access. [API Mappings] C's Query() and Rust's get_task_config() both perform database lookup. C's FillCommonTaskInfo/FillOtherTaskInfo and Rust's config.token.eq() both handle task data validation. [Structural Fragments] None due to domain mismatch. [API Mappings] Extracted two mappings: 1. Query() ↔ get_task_config() (database lookup), 2. FillCommonTaskInfo/FillOtherTaskInfo ↔ config.token.eq() (data validation)."}]
+Unixcoder Score: 0.017360469326376915
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx519_rank1.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx519_rank1.rs", "c_api": "rdbPredicates", "rust_api": "TaskFilter", "mapping_type": "type", "description": "Query filter type", "reasoning": "[Task Analysis] C function queries a database and fills task info; Rust function searches tasks using a filter and method. [Similarity] Names don't match, domains differ (database query vs search), and logic is not structurally equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different control flow. However, both involve data retrieval from a database, so API mappings may exist for database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx519_rank1.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx519_rank1.rs", "c_api": "resultSet->Close()", "rust_api": "Vec<u32>", "mapping_type": "type", "description": "Result set closing and returning IDs", "reasoning": "[Task Analysis] C function queries a database and fills task info; Rust function searches tasks using a filter and method. [Similarity] Names don't match, domains differ (database query vs search), and logic is not structurally equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different control flow. However, both involve data retrieval from a database, so API mappings may exist for database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx519_rank1.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx519_rank1.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance", "rust_api": "RequestDb::get_instance", "mapping_type": "function", "description": "Database instance retrieval", "reasoning": "[Task Analysis] C function queries a database and fills task info; Rust function searches tasks using a filter and method. [Similarity] Names don't match, domains differ (database query vs search), and logic is not structurally equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different control flow. However, both involve data retrieval from a database, so API mappings may exist for database operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx519_rank1.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx519_rank1.rs", "c_api": "resultSet->GoToFirstRow()", "rust_api": "database.search_task", "mapping_type": "method", "description": "Move to first result row", "reasoning": "[Task Analysis] C function queries a database and fills task info; Rust function searches tasks using a filter and method. [Similarity] Names don't match, domains differ (database query vs search), and logic is not structurally equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different control flow. However, both involve data retrieval from a database, so API mappings may exist for database operations."}]
+Unixcoder Score: 0.0056130061857402325
+--------------------------------------------------
+C_Code: 
+uint8_t slice_elem(struct ByteSlice bs, size_t idx) {
+        return bs.data[idx];
+}
+Function: 
+pub fn f2(idx: usize, buf: &[u8; 10]) -> u8 {
+    if idx > 5 && idx < 8 { buf[idx] } else { 0 }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetTaskInfoInner__idx521_rank1.c", "source_rust_file": "Partial__GetTaskInfoInner__idx521_rank1.rs", "c_fragment": "auto resultSet =\n        OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true)\n            .Query(rdbPredicates, { \"task_id\", \"uid\", \"action\", \"mode\", \"ctime\", \"mtime\", \"reason\", \"gauge\", \"retry\",\n                                      \"tries\", \"version\", \"priority\", \"bundle\", \"url\", \"data\", \"token\", \"title\",\n                                      \"description\", \"mime_type\", \"state\", \"idx\", \"total_processed\", \"sizes\",\n                                      \"processed\", \"extras\", \"form_items\", \"file_specs\", \"max_speed\", \"task_time\" });\n    if (resultSet == nullptr || resultSet->GoToFirstRow() != OHOS::NativeRdb::E_OK) {\n        REQUEST_HILOGE(\"result set is nullptr or go to first row failed\");\n        return OHOS::Request::QUERY_ERR;\n    }", "rust_fragment": "match RequestDb::get_instance().get_task_info(task_id) {\n            Some(info) if info.uid() == uid => Some(info),\n            _ => {\n                info!(\"TaskManger Show: no task found\");\n                None\n            }\n        }", "description": "Both perform database lookup for task information with error handling and return early on failure.", "reasoning": "[Task Analysis] C function queries database and fills task info; Rust function retrieves task info from scheduler and DB. [Similarity] Names don't match but both perform task lookup and retrieval logic. [Knowledge Extraction] Found partial structural match in task retrieval pattern and API mapping for database query/lookup operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx521_rank1.c", "source_rust_file": "Partial__GetTaskInfoInner__idx521_rank1.rs", "c_api": "resultSet->GoToFirstRow()", "rust_api": "info!(\"TaskManger Show: no task found\")", "mapping_type": "function", "description": "Error handling for missing data - C checks row existence, Rust logs missing task", "reasoning": "[Task Analysis] C function queries database and fills task info; Rust function retrieves task info from scheduler and DB. [Similarity] Names don't match but both perform task lookup and retrieval logic. [Knowledge Extraction] Found partial structural match in task retrieval pattern and API mapping for database query/lookup operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetTaskInfoInner__idx521_rank1.c", "source_rust_file": "Partial__GetTaskInfoInner__idx521_rank1.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(...).Query(...)", "rust_api": "RequestDb::get_instance().get_task_info(...)", "mapping_type": "function", "description": "Database query operation for retrieving task information", "reasoning": "[Task Analysis] C function queries database and fills task info; Rust function retrieves task info from scheduler and DB. [Similarity] Names don't match but both perform task lookup and retrieval logic. [Knowledge Extraction] Found partial structural match in task retrieval pattern and API mapping for database query/lookup operations."}]
+Unixcoder Score: 0.00490386551246047
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn build_task_certificate_pins(
+    config: &TaskConfig,
+) -> Result<Option<PubKeyPins>, Box<dyn Error + Send + Sync>> {
+    if config.certificate_pins.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(cvt_res_error!(
+        PubKeyPins::builder()
+            .add(&config.url, &config.certificate_pins)
+            .build()
+            .map_err(Box::new),
+        "Create task certificate pinned_key failed",
+    )))
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx478_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx478_rank4.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(...).Query(...)", "rust_api": "self.query_integer(&sql)", "mapping_type": "function", "description": "Database query operation", "reasoning": "[Task Analysis] C function queries task info from DB, Rust function queries task state from DB. [Similarity] Names don't match but both involve database query logic. [Knowledge Extraction] No full structural match due to different domains (task info vs task state), but API mapping found for database query pattern."}]
+Unixcoder Score: 0.0034318072721362114
+--------------------------------------------------
+C_Code: 
+int32_t RequestCertManager::InitCertInfo(struct CertInfo *certInfo)
+{
+    certInfo->certInfo.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(...).Query(...)", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Database query operation", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function queries database and fills task info; Rust function handles async upload logic with multipart support and file iteration. -> [Similarity] -> No full structural similarity due to different domains (database query vs async file upload). -> [Knowledge Extraction] -> Extract API mappings related to database query and task info filling, but no partial structural fragments or full match."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.rs", "c_api": "resultSet->GoToFirstRow()", "rust_api": "task.progress.lock().unwrap().common_data.index", "mapping_type": "function", "description": "Move to first row in result set", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function queries database and fills task info; Rust function handles async upload logic with multipart support and file iteration. -> [Similarity] -> No full structural similarity due to different domains (database query vs async file upload). -> [Knowledge Extraction] -> Extract API mappings related to database query and task info filling, but no partial structural fragments or full match."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.rs", "c_api": "resultSet->Close()", "rust_api": "task.notify_header_receive()", "mapping_type": "function", "description": "Close result set", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function queries database and fills task info; Rust function handles async upload logic with multipart support and file iteration. -> [Similarity] -> No full structural similarity due to different domains (database query vs async file upload). -> [Knowledge Extraction] -> Extract API mappings related to database query and task info filling, but no partial structural fragments or full match."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.rs", "c_api": "FillCommonTaskInfo(resultSet, taskInfo)", "rust_api": "task.conf.file_specs.len()", "mapping_type": "function", "description": "Fill common task info from result set", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function queries database and fills task info; Rust function handles async upload logic with multipart support and file iteration. -> [Similarity] -> No full structural similarity due to different domains (database query vs async file upload). -> [Knowledge Extraction] -> Extract API mappings related to database query and task info filling, but no partial structural fragments or full match."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx361_rank5.rs", "c_api": "FillOtherTaskInfo(resultSet, taskInfo)", "rust_api": "task.conf.headers.get(\"Content-Type\")", "mapping_type": "function", "description": "Fill other task info from result set", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function queries database and fills task info; Rust function handles async upload logic with multipart support and file iteration. -> [Similarity] -> No full structural similarity due to different domains (database query vs async file upload). -> [Knowledge Extraction] -> Extract API mappings related to database query and task info filling, but no partial structural fragments or full match."}]
+Unixcoder Score: 0.0015795980580151081
+--------------------------------------------------
+C_Code: 
+uint8_t slice_elem(struct ByteSlice bs, size_t idx) {
+        return bs.data[idx];
+}
+Function: 
+pub fn f0(idx: usize, buf: &[u8; 10]) -> u8 {
+    if idx < 8 { buf[idx + 1] } else { 0 }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.rs", "c_api": "FillOtherTaskInfo(...)", "rust_api": "new_state.repr", "mapping_type": "function", "description": "Populate additional task information from database result", "reasoning": "[Task Analysis] C function retrieves task info from DB and fills it; Rust function updates task status and executes SQL. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve database operations and state management, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.rs", "c_api": "resultSet->GoToFirstRow()", "rust_api": "get_task_info(...).ok_or(...)", "mapping_type": "function", "description": "Navigation to first row/result in database query", "reasoning": "[Task Analysis] C function retrieves task info from DB and fills it; Rust function updates task status and executes SQL. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve database operations and state management, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.rs", "c_api": "resultSet->Close()", "rust_api": "NotificationDispatcher::get_instance().unregister_task(...)", "mapping_type": "function", "description": "Cleanup after database operation", "reasoning": "[Task Analysis] C function retrieves task info from DB and fills it; Rust function updates task status and executes SQL. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve database operations and state management, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.rs", "c_api": "return OHOS::Request::QUERY_OK", "rust_api": "Ok(())", "mapping_type": "function", "description": "Successful completion of operation", "reasoning": "[Task Analysis] C function retrieves task info from DB and fills it; Rust function updates task status and executes SQL. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve database operations and state management, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.rs", "c_api": "FillCommonTaskInfo(...)", "rust_api": "info.progress.common_data.state", "mapping_type": "function", "description": "Populate common task information from database result", "reasoning": "[Task Analysis] C function retrieves task info from DB and fills it; Rust function updates task status and executes SQL. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve database operations and state management, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.rs", "c_api": "REQUEST_HILOGE(...)", "rust_api": "Err(ErrorCode::TaskNotFound)", "mapping_type": "function", "description": "Error logging and handling for invalid result set", "reasoning": "[Task Analysis] C function retrieves task info from DB and fills it; Rust function updates task status and executes SQL. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve database operations and state management, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(...).Query(...)", "rust_api": "RequestDb::get_instance().get_task_info(...)", "mapping_type": "function", "description": "Database query operation to retrieve task information", "reasoning": "[Task Analysis] C function retrieves task info from DB and fills it; Rust function updates task status and executes SQL. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve database operations and state management, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.c", "source_rust_file": "API_Mapping__GetTaskInfoInner__idx588_rank4.rs", "c_api": "return OHOS::Request::QUERY_ERR", "rust_api": "Err(ErrorCode::TaskStateErr)", "mapping_type": "function", "description": "Return error code for failed query or state transition", "reasoning": "[Task Analysis] C function retrieves task info from DB and fills it; Rust function updates task status and executes SQL. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but both involve database operations and state management, so API mappings are extracted."}]
+Unixcoder Score: -0.010841045528650284
+--------------------------------------------------

@@ -1,0 +1,144 @@
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.061396799981594086
+--------------------------------------------------
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.053534843027591705
+--------------------------------------------------
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.03684308007359505
+--------------------------------------------------
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.03127751126885414
+--------------------------------------------------
+C_Code: 
+void FuncB()
+{
+    cout << "funcB" << endl;
+    usleep(USLEEP_HALF_SECOND);
+}
+Function: 
+fn func_b() {
+    println!("funcB!!!");
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SystemAbilityManagerStub__idx4898_rank4.c", "source_rust_file": "API_Mapping__SystemAbilityManagerStub__idx4898_rank4.rs", "c_api": "memberFuncMap_[static_cast<uint32_t>(SamgrInterfaceCode::GET_COMMON_EVENT_EXTRA_ID_LIST_TRANSCATION)] = SystemAbilityManagerStub::LocalGetCommonEventExtraDataIdlist;", "rust_api": "GetCommonEventExtraDataIdlist(said, extraids, &event_name)", "mapping_type": "function", "description": "Mapping of common event extra data ID list retrieval", "reasoning": "[Task Analysis] C code is a constructor initializing a stub with function mappings; Rust code is a wrapper function calling an FFI function. [Similarity] Names do not refer to the same concept (constructor vs function), and domains are different (system ability management vs FFI call). [Knowledge Extraction] No full or partial match due to domain mismatch and different roles (constructor vs wrapper). However, there is an API mapping between the FFI call in Rust and a similar operation in C (function registration via map assignment)."}]
+Unixcoder Score: 0.028352411463856697
+--------------------------------------------------
+C_Code: 
+void simplest_func_thunk (int revents, void *arg)
+    {
+      (*cb)
+        ();
+    }
+Function: 
+fn f() -> impl Fn() -> impl Sized { || () }
+Unixcoder Score: 0.027922313660383224
+--------------------------------------------------
+C_Code: 
+void simplest_func_thunk (int revents, void *arg)
+    {
+      (*cb)
+        ();
+    }
+Function: 
+pub fn start(&mut self, timeout: u64, repeat: u64, cb: TimerCallback) {
+        {
+            let data = self.get_watcher_data();
+            data.timer_cb = Some(cb);
+        }
+
+        unsafe {
+            uvll::timer_start(self.native_handle(), timer_cb, timeout, repeat);
+        }
+
+        extern fn timer_cb(handle: *uvll::uv_timer_t, status: c_int) {
+            let mut watcher: TimerWatcher = NativeHandle::from_native_handle(handle);
+            let data = watcher.get_watcher_data();
+            let cb = data.timer_cb.get_ref();
+            let status = status_to_maybe_uv_error(handle, status);
+            (*cb)(watcher, status);
+        }
+    }
+Unixcoder Score: 0.02366880141198635
+--------------------------------------------------
+C_Code: 
+void simplest_func_thunk (int revents, void *arg)
+    {
+      (*cb)
+        ();
+    }
+Function: 
+extern fn timer_cb(handle: *uvll::uv_timer_t, status: c_int) {
+            let mut watcher: TimerWatcher = NativeHandle::from_native_handle(handle);
+            let data = watcher.get_watcher_data();
+            let cb = data.timer_cb.get_ref();
+            let status = status_to_maybe_uv_error(status);
+            (*cb)(watcher, status);
+        }
+Unixcoder Score: 0.023298630490899086
+--------------------------------------------------
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.022845087572932243
+--------------------------------------------------
+C_Code: 
+void simplest_func_thunk (int revents, void *arg)
+    {
+      (*cb)
+        ();
+    }
+Function: 
+pub fn start(&mut self, timeout: u64, repeat: u64, cb: TimerCallback) {
+        {
+            let data = self.get_watcher_data();
+            data.timer_cb = Some(cb);
+        }
+
+        unsafe {
+            uvll::timer_start(self.native_handle(), timer_cb, timeout, repeat);
+        }
+
+        extern fn timer_cb(handle: *uvll::uv_timer_t, status: c_int) {
+            let mut watcher: TimerWatcher = NativeHandle::from_native_handle(handle);
+            let data = watcher.get_watcher_data();
+            let cb = data.timer_cb.get_ref();
+            let status = status_to_maybe_uv_error(handle, status);
+            (*cb)(watcher, status);
+        }
+    }
+Unixcoder Score: 0.02118339203298092
+--------------------------------------------------

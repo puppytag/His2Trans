@@ -1,0 +1,353 @@
+C_Code: 
+uint64_t SelfTokenID()
+{
+    return IPCSkeleton::GetSelfTokenID();
+}
+Function: 
+fn skeleton() {
+    unsafe {
+        assert_eq!(
+            Skeleton::calling_device_id(),
+            (*GetCallingDeviceID()).to_string()
+        );
+        assert_eq!(Skeleton::calling_full_token_id(), GetCallingFullTokenID());
+        assert_eq!(Skeleton::calling_pid(), GetCallingPid());
+        assert_eq!(Skeleton::calling_real_pid(), GetCallingRealPid());
+        assert_eq!(Skeleton::calling_token_id(), GetCallingTokenID());
+        assert_eq!(Skeleton::calling_uid(), GetCallingUid());
+        assert_eq!(Skeleton::first_full_token_id(), GetFirstFullTokenID());
+        assert_eq!(Skeleton::first_token_id(), GetFirstTokenID());
+        assert_eq!(Skeleton::self_token_id(), SelfTokenID());
+        assert_eq!(Skeleton::is_local_calling(), IsLocalCalling());
+        assert_eq!(Skeleton::local_device_id(), (*LocalDeviceID()).to_string());
+        assert_eq!(
+            Skeleton::reset_calling_identity(),
+            (*ResetCallingIdentity()).to_string()
+        );
+    }
+}
+Unixcoder Score: 0.03733616694808006
+--------------------------------------------------
+C_Code: 
+CDECL uintptr_t
+rust_try(rust_try_fn f, void *fptr, void *env) {
+    try {
+        f(fptr, env);
+    } catch (uintptr_t token) {
+        assert(token != 0);
+        return token;
+    }
+    return 0;
+}
+Function: 
+fn parse_inner_attrs_and_next(p: parser) ->
+   {inner: [ast::attribute], next: [ast::attribute]} {
+    let mut inner_attrs: [ast::attribute] = [];
+    let mut next_outer_attrs: [ast::attribute] = [];
+    while p.token == token::POUND {
+        if p.look_ahead(1u) != token::LBRACKET {
+            // This is an extension
+            break;
+        }
+        let attr = parse_attribute(p, ast::attr_inner);
+        if p.token == token::SEMI {
+            p.bump();
+            inner_attrs += [attr];
+        } else {
+            // It's not really an inner attribute
+            let outer_attr =
+                spanned(attr.span.lo, attr.span.hi,
+                        {style: ast::attr_outer, value: attr.node.value});
+            next_outer_attrs += [outer_attr];
+            break;
+        }
+    }
+    ret {inner: inner_attrs, next: next_outer_attrs};
+}
+Unixcoder Score: 0.015426349826157093
+--------------------------------------------------
+C_Code: 
+int GrantSelfPermission()
+{
+    const char *permissions[] = {
+        "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS"
+    };
+    NativeTokenInfoParams info = {
+        .dcapsNum = 0,
+        .permsNum = 1,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = permissions,
+        .acls = nullptr,
+        .processName = "asset_bin_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&info);
+    return SetSelfTokenID(tokenId);
+}
+Function: 
+fn grant_self_permission() -> i32 {
+    let perms_str = CString::new("ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS").unwrap();
+    let name = CString::new("asset_bin_test").unwrap();
+    let apl = CString::new("system_basic").unwrap();
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 1,
+        acls_num: 0,
+        dcaps: null(),
+        perms: &perms_str.as_ptr(),
+        acls: null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id)
+    }
+}
+Unixcoder Score: 0.009028091095387936
+--------------------------------------------------
+C_Code: 
+CDECL uintptr_t
+rust_try(rust_try_fn f, void *fptr, void *env) {
+    try {
+        f(fptr, env);
+    } catch (uintptr_t token) {
+        assert(token != 0);
+        return token;
+    }
+    return 0;
+}
+Function: 
+fn main() -> Result<(), !> {
+    let _x: Option<_> = try {
+        4
+    };
+
+    try {}
+}
+Unixcoder Score: 0.0078499186784029
+--------------------------------------------------
+C_Code: 
+CDECL uintptr_t
+rust_try(rust_try_fn f, void *fptr, void *env) {
+    try {
+        f(fptr, env);
+    } catch (uintptr_t token) {
+        assert(token != 0);
+        return token;
+    }
+    return 0;
+}
+Function: 
+extern "C" fn cb(data: libc::uintptr_t) -> libc::uintptr_t {
+    if data == 1 { data } else { count(data - 1) + 1 }
+}
+Unixcoder Score: 0.0011262879706919193
+--------------------------------------------------
+C_Code: 
+int GrantSelfPermission()
+{
+    const char *permissions[] = {
+        "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS"
+    };
+    NativeTokenInfoParams info = {
+        .dcapsNum = 0,
+        .permsNum = 1,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = permissions,
+        .acls = nullptr,
+        .processName = "asset_bin_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&info);
+    return SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn init_key(&mut self) -> Result<&Vec<u8>> {
+        let key_alias = HksBlob { size: self.key.alias().len() as u32, data: self.key.alias().as_ptr() };
+        let mut challenge = OutBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
+        let mut handle = OutBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
+        let key_id = KeyId::new(self.key.user_id(), key_alias, self.key.access_type());
+
+        let ret = unsafe {
+            InitKey(
+                &key_id as *const KeyId,
+                self.valid_time,
+                &mut challenge as *mut OutBlob,
+                &mut handle as *mut OutBlob,
+            )
+        };
+        match ret {
+            SUCCESS => Ok(&self.challenge),
+            _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),
+        }
+    }
+Unixcoder Score: -0.006479022558778524
+--------------------------------------------------
+C_Code: 
+CDECL uintptr_t
+rust_try(rust_try_fn f, void *fptr, void *env) {
+    try {
+        f(fptr, env);
+    } catch (uintptr_t token) {
+        assert(token != 0);
+        return token;
+    }
+    return 0;
+}
+Function: 
+pub fn map_children(
+        &mut self,
+        input: impl Iterator<Item = SyntaxNode>,
+        output: impl Iterator<Item = SyntaxNode>,
+    ) {
+        for pairs in input.zip_longest(output) {
+            let (input, output) = match pairs {
+                itertools::EitherOrBoth::Both(l, r) => (l, r),
+                itertools::EitherOrBoth::Left(_) => {
+                    unreachable!("mapping more input nodes than there are output nodes")
+                }
+                itertools::EitherOrBoth::Right(_) => break,
+            };
+
+            self.map_node(input, output);
+        }
+    }
+Unixcoder Score: -0.00818250235170126
+--------------------------------------------------
+C_Code: 
+uint64_t RpcGetFirstCallerTokenID(void)
+{
+    uint64_t token = INVAL_TOKEN_ID;
+    FILE *fp = fopen(TOKENID_DEVNODE, "r+");
+    if (fp == NULL) {
+        return INVAL_TOKEN_ID;
+    }
+    int fd = fileno(fp);
+    if (fd < 0) {
+        (void)fclose(fp);
+        return INVAL_TOKEN_ID;
+    }
+    int ret = ioctl(fd, ACCESS_TOKENID_GET_FTOKENID, &token);
+    if (ret != 0) {
+        (void)fclose(fp);
+        return INVAL_TOKEN_ID;
+    }
+
+    (void)fclose(fp);
+    return token;
+}
+Function: 
+pub fn first_token_id() -> u32 {
+        GetFirstTokenID()
+    }
+Unixcoder Score: -0.010065308772027493
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn self_token_id() -> u64 {
+        GetSelfTokenID()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_try__idx10846_rank3.c", "source_rust_file": "API_Mapping__rust_try__idx10846_rank3.rs", "c_api": "try { f(fptr, env); } catch (uintptr_t token) { assert(token != 0); return token; }", "rust_api": "while p.token == token::POUND { ... }", "mapping_type": "pattern", "description": "Exception handling pattern in C vs loop pattern in Rust", "reasoning": "[Task Analysis] C function wraps a try/catch block, Rust function parses attributes with loops and conditionals. [Similarity] No structural similarity at the function level due to different domains (exception handling vs parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to control flow and attribute handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_try__idx10846_rank3.c", "source_rust_file": "API_Mapping__rust_try__idx10846_rank3.rs", "c_api": "assert(token != 0);", "rust_api": "break;", "mapping_type": "pattern", "description": "Error handling assertion in C vs breaking out of loop in Rust", "reasoning": "[Task Analysis] C function wraps a try/catch block, Rust function parses attributes with loops and conditionals. [Similarity] No structural similarity at the function level due to different domains (exception handling vs parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to control flow and attribute handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_try__idx10846_rank3.c", "source_rust_file": "API_Mapping__rust_try__idx10846_rank3.rs", "c_api": "f(fptr, env);", "rust_api": "parse_attribute(p, ast::attr_inner);", "mapping_type": "function", "description": "Function call in C vs function call in Rust", "reasoning": "[Task Analysis] C function wraps a try/catch block, Rust function parses attributes with loops and conditionals. [Similarity] No structural similarity at the function level due to different domains (exception handling vs parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to control flow and attribute handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_try__idx10846_rank3.c", "source_rust_file": "API_Mapping__rust_try__idx10846_rank3.rs", "c_api": "return 0;", "rust_api": "ret {inner: inner_attrs, next: next_outer_attrs};", "mapping_type": "pattern", "description": "Successful return in C vs return statement in Rust", "reasoning": "[Task Analysis] C function wraps a try/catch block, Rust function parses attributes with loops and conditionals. [Similarity] No structural similarity at the function level due to different domains (exception handling vs parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to control flow and attribute handling."}]
+Unixcoder Score: -0.0219641774892807
+--------------------------------------------------
+C_Code: 
+int32_t DownloadServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    DOWNLOAD_HILOGE("request code = %{public}d", code);
+    auto descriptorToken = data.ReadInterfaceToken();
+    if (descriptorToken != GetDescriptor()) {
+        DOWNLOAD_HILOGE("remote descriptor not the same as local descriptor");
+        return E_DOWNLOAD_TRANSACT_ERROR;
+    }
+    switch (code) {
+        case CMD_REQUEST: {
+            uint32_t taskId = 0;
+            int32_t ret = OnRequest(data, taskId);
+            if (!(reply.WriteUint32(taskId) && reply.WriteInt32(ret))) {
+                DOWNLOAD_HILOGE("Write reply failed");
+            }
+            break;
+        }
+        case CMD_PAUSE:
+            return OnPause(data, reply);
+        case CMD_QUERY:
+            return OnQuery(data, reply);
+        case CMD_QUERYMIMETYPE:
+            return OnQueryMimeType(data, reply);
+        case CMD_REMOVE:
+            return OnRemove(data, reply);
+        case CMD_RESUME:
+            return OnResume(data, reply);
+        case CMD_ON:
+            return OnEventOn(data, reply);
+        case CMD_OFF:
+            return OnEventOff(data, reply);
+        case CMD_CHECKPERMISSION:
+            return OnCheckPermission(data, reply);
+        default:
+            DOWNLOAD_HILOGE("Default value received, check needed.");
+            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+    return E_DOWNLOAD_OK;
+}
+Function: 
+fn on_remote_request(
+    stub: &dyn RequestServiceInterface,
+    code: u32,
+    data: &BorrowedMsgParcel,
+    reply: &mut BorrowedMsgParcel,
+) -> IpcResult<()> {
+    info!(LOG_LABEL, "on_remote_request code {}", @public(code));
+    let service_token: InterfaceToken =
+        InterfaceToken::new("OHOS.Download.RequestServiceInterface");
+    let token: InterfaceToken = match data.read::<InterfaceToken>() {
+        Ok(i) => i,
+        _ => InterfaceToken::new("token error"),
+    };
+    if service_token.get_token() != token.get_token() {
+        error!(LOG_LABEL, "token error");
+        return Err(IpcStatusCode::Failed);
+    }
+    match code.try_into()? {
+        RequestCode::Construct => stub.construct(data, reply),
+        RequestCode::Pause => stub.pause(data, reply),
+        RequestCode::Query => stub.show(data, reply),
+        RequestCode::QueryMimeType => stub.query_mime_type(data, reply),
+        RequestCode::Remove => stub.remove(data, reply),
+        RequestCode::Resume => stub.resume(data, reply),
+        RequestCode::On => stub.on(data, reply),
+        RequestCode::Off => stub.off(data, reply),
+        RequestCode::Start => stub.start(data, reply),
+        RequestCode::Stop => stub.stop(data, reply),
+        RequestCode::Show => stub.show(data, reply),
+        RequestCode::Touch => stub.touch(data, reply),
+        RequestCode::Search => stub.search(data, reply),
+        RequestCode::Clear => stub.clear(data, reply),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.rs", "c_api": "std::make_unique<const char *[]>(permissions.size())", "rust_api": "Box::new(...)", "mapping_type": "function", "description": "Heap allocation", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function is a test initializer that calls the C function. [Similarity] The C function has real logic with vector operations, memory allocation, and API calls; the Rust function is a trivial wrapper calling the C function. [Knowledge Extraction] Filter 6 blocks Full/Partial due to Definition vs Usage mismatch (C impl vs Rust test call). However, API mappings can be extracted from the C code's logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.rs", "c_api": "permissions.push_back(\"ohos.permission.GET_NETWORK_INFO\");", "rust_api": "permissions.push(...)", "mapping_type": "method", "description": "Append to collection", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function is a test initializer that calls the C function. [Similarity] The C function has real logic with vector operations, memory allocation, and API calls; the Rust function is a trivial wrapper calling the C function. [Knowledge Extraction] Filter 6 blocks Full/Partial due to Definition vs Usage mismatch (C impl vs Rust test call). However, API mappings can be extracted from the C code's logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.rs", "c_api": "permissions.push_back(\"ohos.permission.INTERNET\");", "rust_api": "permissions.push(...)", "mapping_type": "method", "description": "Append to collection", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function is a test initializer that calls the C function. [Similarity] The C function has real logic with vector operations, memory allocation, and API calls; the Rust function is a trivial wrapper calling the C function. [Knowledge Extraction] Filter 6 blocks Full/Partial due to Definition vs Usage mismatch (C impl vs Rust test call). However, API mappings can be extracted from the C code's logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.rs", "c_api": "REQUEST_HILOGI(...)", "rust_api": "info!(...)", "mapping_type": "function", "description": "Logging", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function is a test initializer that calls the C function. [Similarity] The C function has real logic with vector operations, memory allocation, and API calls; the Rust function is a trivial wrapper calling the C function. [Knowledge Extraction] Filter 6 blocks Full/Partial due to Definition vs Usage mismatch (C impl vs Rust test call). However, API mappings can be extracted from the C code's logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.rs", "c_api": "GetAccessTokenId(&infoInstance)", "rust_api": "GetAccessTokenId(...)", "mapping_type": "function", "description": "Get access token ID", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function is a test initializer that calls the C function. [Similarity] The C function has real logic with vector operations, memory allocation, and API calls; the Rust function is a trivial wrapper calling the C function. [Knowledge Extraction] Filter 6 blocks Full/Partial due to Definition vs Usage mismatch (C impl vs Rust test call). However, API mappings can be extracted from the C code's logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.rs", "c_api": "SetSelfTokenID(tokenId)", "rust_api": "SetSelfTokenID(...)", "mapping_type": "function", "description": "Set self token ID", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function is a test initializer that calls the C function. [Similarity] The C function has real logic with vector operations, memory allocation, and API calls; the Rust function is a trivial wrapper calling the C function. [Knowledge Extraction] Filter 6 blocks Full/Partial due to Definition vs Usage mismatch (C impl vs Rust test call). However, API mappings can be extracted from the C code's logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.c", "source_rust_file": "API_Mapping__SetAccessTokenPermission__idx273_rank1.rs", "c_api": "OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo()", "rust_api": "ReloadNativeTokenInfo(...)", "mapping_type": "function", "description": "Reload native token info", "reasoning": "[Task Analysis] C function sets up token permissions and calls native APIs; Rust function is a test initializer that calls the C function. [Similarity] The C function has real logic with vector operations, memory allocation, and API calls; the Rust function is a trivial wrapper calling the C function. [Knowledge Extraction] Filter 6 blocks Full/Partial due to Definition vs Usage mismatch (C impl vs Rust test call). However, API mappings can be extracted from the C code's logic."}]
+Unixcoder Score: -0.026265107095241547
+--------------------------------------------------

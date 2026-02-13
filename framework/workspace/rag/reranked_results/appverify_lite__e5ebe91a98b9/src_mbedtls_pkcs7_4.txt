@@ -1,0 +1,495 @@
+C_Code: 
+static uint32_t
+read_uint32 (struct dwarf_buf *buf)
+{
+  const unsigned char *p = buf->buf;
+
+  if (!advance (buf, 4))
+    return 0;
+  if (buf->is_bigendian)
+    return (((uint32_t) p[0] << 24) | ((uint32_t) p[1] << 16)
+	    | ((uint32_t) p[2] << 8) | (uint32_t) p[3]);
+  else
+    return (((uint32_t) p[3] << 24) | ((uint32_t) p[2] << 16)
+	    | ((uint32_t) p[1] << 8) | (uint32_t) p[0]);
+}
+Function: 
+pub unsafe fn read<T: Copy>(&mut self) -> T {
+        let Unaligned(result) = *(self.ptr as *const Unaligned<T>);
+        self.ptr = self.ptr.add(mem::size_of::<T>());
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx43568_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx43568_rank5.rs", "c_api": "utf8_getchars(buf, ch)", "rust_api": "ch.encode_utf8(&mut bytes).into()", "mapping_type": "function", "description": "Convert character to UTF-8 byte sequence", "reasoning": "[Task Analysis] C function manipulates UTF-8 buffer and character insertion logic; Rust function converts char to UTF-8 string. [Similarity] No full structural match due to different domains (buffer manipulation vs string conversion). [Knowledge Extraction] Extract API mappings for UTF-8 encoding operations."}]
+Unixcoder Score: 0.13198187947273254
+--------------------------------------------------
+C_Code: 
+inline int32_t ReadVarintZigZag32(const char** p) {
+  uint64_t tmp;
+  *p = VarintParse(*p, &tmp);
+  return WireFormatLite::ZigZagDecode32(static_cast<uint32_t>(tmp));
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx103814_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx103814_rank1.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "elements.insert(0, ws.into())", "mapping_type": "pattern", "description": "Buffer shifting operation in C vs inserting an element at index in Rust", "reasoning": "[Filter 1: Entity Name Check] -> Names 'insert_char' vs 'insert_all' refer to different concepts (character insertion vs element insertion), so not Full/Partial. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code manipulates UTF-8 character buffers and positions, while Rust code handles syntax elements and whitespace insertion; domains are different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function inserts a character into a buffer at a given position, handling UTF-8 encoding and buffer shifting. Rust function inserts elements with surrounding whitespace into a syntax tree. [Similarity] -> No high-level structural or semantic similarity. [Knowledge Extraction] -> No full match, no partial match, but there are some low-level API patterns that could be mapped (e.g., buffer manipulation in C vs vector manipulation in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx103814_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx103814_rank1.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "elements.push(ws.into())", "mapping_type": "pattern", "description": "Memory copy in C vs pushing an element to the end in Rust", "reasoning": "[Filter 1: Entity Name Check] -> Names 'insert_char' vs 'insert_all' refer to different concepts (character insertion vs element insertion), so not Full/Partial. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code manipulates UTF-8 character buffers and positions, while Rust code handles syntax elements and whitespace insertion; domains are different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function inserts a character into a buffer at a given position, handling UTF-8 encoding and buffer shifting. Rust function inserts elements with surrounding whitespace into a syntax tree. [Similarity] -> No high-level structural or semantic similarity. [Knowledge Extraction] -> No full match, no partial match, but there are some low-level API patterns that could be mapped (e.g., buffer manipulation in C vs vector manipulation in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx103814_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx103814_rank1.rs", "c_api": "current->len += n", "rust_api": "insert_all_raw(position, elements)", "mapping_type": "function", "description": "Length update in C buffer vs invoking raw insertion function in Rust", "reasoning": "[Filter 1: Entity Name Check] -> Names 'insert_char' vs 'insert_all' refer to different concepts (character insertion vs element insertion), so not Full/Partial. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code manipulates UTF-8 character buffers and positions, while Rust code handles syntax elements and whitespace insertion; domains are different. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage calls. [Task Analysis] -> C function inserts a character into a buffer at a given position, handling UTF-8 encoding and buffer shifting. Rust function inserts elements with surrounding whitespace into a syntax tree. [Similarity] -> No high-level structural or semantic similarity. [Knowledge Extraction] -> No full match, no partial match, but there are some low-level API patterns that could be mapped (e.g., buffer manipulation in C vs vector manipulation in Rust)."}]
+Unixcoder Score: 0.09883943200111389
+--------------------------------------------------
+C_Code: 
+static int
+getv4(const char *src, unsigned char *dst, int *bitsp)
+{
+  static const char digits[] = "0123456789";
+  unsigned char *odst = dst;
+  int n;
+  unsigned int val;
+  char ch;
+
+  val = 0;
+  n = 0;
+  while ((ch = *src++) != '\0') {
+    const char *pch;
+
+    pch = strchr(digits, ch);
+    if (pch != NULL) {
+      if (n++ != 0 && val == 0)       /* no leading zeros */
+        return (0);
+      val *= 10;
+      val += aresx_sztoui(pch - digits);
+      if (val > 255)                  /* range */
+        return (0);
+      continue;
+    }
+    if (ch == '.' || ch == '/') {
+      if (dst - odst > 3)             /* too many octets? */
+        return (0);
+      *dst++ = (unsigned char)val;
+      if (ch == '/')
+        return (getbits(src, bitsp));
+      val = 0;
+      n = 0;
+      continue;
+    }
+    return (0);
+  }
+  if (n == 0)
+    return (0);
+  if (dst - odst > 3)             /* too many octets? */
+    return (0);
+  *dst = (unsigned char)val;
+  return 1;
+}
+Function: 
+fn parse_addr(ip: str) -> ip_addr {
+        let parts = vec::map(str::split_char(ip, '.'), {|s|
+            alt uint::from_str(s) {
+              some(n) if n <= 255u { n }
+              _ { fail "Invalid IP Address part." }
+            }
+        });
+        if vec::len(parts) != 4u { fail "Too many dots in IP address"; }
+        ipv4(parts[0] as u8, parts[1] as u8, parts[2] as u8, parts[3] as u8)
+    }
+Unixcoder Score: 0.07204973697662354
+--------------------------------------------------
+C_Code: 
+static int
+getv4(const char *src, unsigned char *dst, int *bitsp)
+{
+  static const char digits[] = "0123456789";
+  unsigned char *odst = dst;
+  int n;
+  unsigned int val;
+  char ch;
+
+  val = 0;
+  n = 0;
+  while ((ch = *src++) != '\0') {
+    const char *pch;
+
+    pch = strchr(digits, ch);
+    if (pch != NULL) {
+      if (n++ != 0 && val == 0)       /* no leading zeros */
+        return (0);
+      val *= 10;
+      val += aresx_sztoui(pch - digits);
+      if (val > 255)                  /* range */
+        return (0);
+      continue;
+    }
+    if (ch == '.' || ch == '/') {
+      if (dst - odst > 3)             /* too many octets? */
+        return (0);
+      *dst++ = (unsigned char)val;
+      if (ch == '/')
+        return (getbits(src, bitsp));
+      val = 0;
+      n = 0;
+      continue;
+    }
+    return (0);
+  }
+  if (n == 0)
+    return (0);
+  if (dst - odst > 3)             /* too many octets? */
+    return (0);
+  *dst = (unsigned char)val;
+  return 1;
+}
+Function: 
+fn read_ipv4_addr(&mut self) -> Option<Ipv4Addr> {
+        self.read_atomically(|p| {
+            let mut groups = [0; 4];
+
+            for (i, slot) in groups.iter_mut().enumerate() {
+                *slot = p.read_separator('.', i, |p| {
+                    // Disallow octal number in IP string.
+                    // https://tools.ietf.org/html/rfc6943#section-3.1.1
+                    p.read_number(10, Some(3), false)
+                })?;
+            }
+
+            Some(groups.into())
+        })
+    }
+Unixcoder Score: 0.062260277569293976
+--------------------------------------------------
+C_Code: 
+static int
+getv4(const char *src, unsigned char *dst, int *bitsp)
+{
+  static const char digits[] = "0123456789";
+  unsigned char *odst = dst;
+  int n;
+  unsigned int val;
+  char ch;
+
+  val = 0;
+  n = 0;
+  while ((ch = *src++) != '\0') {
+    const char *pch;
+
+    pch = strchr(digits, ch);
+    if (pch != NULL) {
+      if (n++ != 0 && val == 0)       /* no leading zeros */
+        return (0);
+      val *= 10;
+      val += aresx_sztoui(pch - digits);
+      if (val > 255)                  /* range */
+        return (0);
+      continue;
+    }
+    if (ch == '.' || ch == '/') {
+      if (dst - odst > 3)             /* too many octets? */
+        return (0);
+      *dst++ = (unsigned char)val;
+      if (ch == '/')
+        return (getbits(src, bitsp));
+      val = 0;
+      n = 0;
+      continue;
+    }
+    return (0);
+  }
+  if (n == 0)
+    return (0);
+  if (dst - odst > 3)             /* too many octets? */
+    return (0);
+  *dst = (unsigned char)val;
+  return 1;
+}
+Function: 
+fn from_str(s: &str) -> Result<SocketAddrV4, AddrParseError> {
+        Self::parse_ascii(s.as_bytes())
+    }
+Unixcoder Score: 0.06210804730653763
+--------------------------------------------------
+C_Code: 
+static int
+getv4(const char *src, unsigned char *dst, int *bitsp)
+{
+  static const char digits[] = "0123456789";
+  unsigned char *odst = dst;
+  int n;
+  unsigned int val;
+  char ch;
+
+  val = 0;
+  n = 0;
+  while ((ch = *src++) != '\0') {
+    const char *pch;
+
+    pch = strchr(digits, ch);
+    if (pch != NULL) {
+      if (n++ != 0 && val == 0)       /* no leading zeros */
+        return (0);
+      val *= 10;
+      val += aresx_sztoui(pch - digits);
+      if (val > 255)                  /* range */
+        return (0);
+      continue;
+    }
+    if (ch == '.' || ch == '/') {
+      if (dst - odst > 3)             /* too many octets? */
+        return (0);
+      *dst++ = (unsigned char)val;
+      if (ch == '/')
+        return (getbits(src, bitsp));
+      val = 0;
+      n = 0;
+      continue;
+    }
+    return (0);
+  }
+  if (n == 0)
+    return (0);
+  if (dst - odst > 3)             /* too many octets? */
+    return (0);
+  *dst = (unsigned char)val;
+  return 1;
+}
+Function: 
+fn parse_addr(ip: str) -> ip_addr {
+        let parts = vec::map(str::split_char(ip, '.'), {|s|
+            alt uint::from_str(s) {
+              some(n) if n <= 255u { n }
+              _ { fail "Invalid IP Address part." }
+            }
+        });
+        if vec::len(parts) != 4u { fail "Too many dots in IP address"; }
+        ipv4(parts[0] as u8, parts[1] as u8, parts[2] as u8, parts[3] as u8)
+    }
+Unixcoder Score: 0.06135447695851326
+--------------------------------------------------
+C_Code: 
+static int
+getv4(const char *src, unsigned char *dst, int *bitsp)
+{
+  static const char digits[] = "0123456789";
+  unsigned char *odst = dst;
+  int n;
+  unsigned int val;
+  char ch;
+
+  val = 0;
+  n = 0;
+  while ((ch = *src++) != '\0') {
+    const char *pch;
+
+    pch = strchr(digits, ch);
+    if (pch != NULL) {
+      if (n++ != 0 && val == 0)       /* no leading zeros */
+        return (0);
+      val *= 10;
+      val += aresx_sztoui(pch - digits);
+      if (val > 255)                  /* range */
+        return (0);
+      continue;
+    }
+    if (ch == '.' || ch == '/') {
+      if (dst - odst > 3)             /* too many octets? */
+        return (0);
+      *dst++ = (unsigned char)val;
+      if (ch == '/')
+        return (getbits(src, bitsp));
+      val = 0;
+      n = 0;
+      continue;
+    }
+    return (0);
+  }
+  if (n == 0)
+    return (0);
+  if (dst - odst > 3)             /* too many octets? */
+    return (0);
+  *dst = (unsigned char)val;
+  return 1;
+}
+Function: 
+fn from_str(s: &str) -> Result<Ipv4Addr, AddrParseError> {
+        Self::parse_ascii(s.as_bytes())
+    }
+Unixcoder Score: 0.059373218566179276
+--------------------------------------------------
+C_Code: 
+static int
+getv4(const char *src, unsigned char *dst, int *bitsp)
+{
+  static const char digits[] = "0123456789";
+  unsigned char *odst = dst;
+  int n;
+  unsigned int val;
+  char ch;
+
+  val = 0;
+  n = 0;
+  while ((ch = *src++) != '\0') {
+    const char *pch;
+
+    pch = strchr(digits, ch);
+    if (pch != NULL) {
+      if (n++ != 0 && val == 0)       /* no leading zeros */
+        return (0);
+      val *= 10;
+      val += aresx_sztoui(pch - digits);
+      if (val > 255)                  /* range */
+        return (0);
+      continue;
+    }
+    if (ch == '.' || ch == '/') {
+      if (dst - odst > 3)             /* too many octets? */
+        return (0);
+      *dst++ = (unsigned char)val;
+      if (ch == '/')
+        return (getbits(src, bitsp));
+      val = 0;
+      n = 0;
+      continue;
+    }
+    return (0);
+  }
+  if (n == 0)
+    return (0);
+  if (dst - odst > 3)             /* too many octets? */
+    return (0);
+  *dst = (unsigned char)val;
+  return 1;
+}
+Function: 
+pub fn parse_ascii(b: &[u8]) -> Result<Self, AddrParseError> {
+        Parser::new(b).parse_with(|p| p.read_ip_addr(), AddrKind::Ip)
+    }
+Unixcoder Score: 0.05829012021422386
+--------------------------------------------------
+C_Code: 
+static int
+getv4(const char *src, unsigned char *dst, int *bitsp)
+{
+  static const char digits[] = "0123456789";
+  unsigned char *odst = dst;
+  int n;
+  unsigned int val;
+  char ch;
+
+  val = 0;
+  n = 0;
+  while ((ch = *src++) != '\0') {
+    const char *pch;
+
+    pch = strchr(digits, ch);
+    if (pch != NULL) {
+      if (n++ != 0 && val == 0)       /* no leading zeros */
+        return (0);
+      val *= 10;
+      val += aresx_sztoui(pch - digits);
+      if (val > 255)                  /* range */
+        return (0);
+      continue;
+    }
+    if (ch == '.' || ch == '/') {
+      if (dst - odst > 3)             /* too many octets? */
+        return (0);
+      *dst++ = (unsigned char)val;
+      if (ch == '/')
+        return (getbits(src, bitsp));
+      val = 0;
+      n = 0;
+      continue;
+    }
+    return (0);
+  }
+  if (n == 0)
+    return (0);
+  if (dst - odst > 3)             /* too many octets? */
+    return (0);
+  *dst = (unsigned char)val;
+  return 1;
+}
+Function: 
+fn parse_addr(ip: str) -> ip_addr {
+        let parts = vec::map(str::split_char(ip, '.'), {|s|
+            alt uint::from_str(s) {
+              some(n) if n <= 255u { n }
+              _ { fail "Invalid IP Address part." }
+            }
+        });
+        if vec::len(parts) != 4u { fail "Too many dots in IP address"; }
+        ipv4(parts[0] as u8, parts[1] as u8, parts[2] as u8, parts[3] as u8)
+    }
+Unixcoder Score: 0.054490432143211365
+--------------------------------------------------
+C_Code: 
+static int
+getv4(const char *src, unsigned char *dst, int *bitsp)
+{
+  static const char digits[] = "0123456789";
+  unsigned char *odst = dst;
+  int n;
+  unsigned int val;
+  char ch;
+
+  val = 0;
+  n = 0;
+  while ((ch = *src++) != '\0') {
+    const char *pch;
+
+    pch = strchr(digits, ch);
+    if (pch != NULL) {
+      if (n++ != 0 && val == 0)       /* no leading zeros */
+        return (0);
+      val *= 10;
+      val += aresx_sztoui(pch - digits);
+      if (val > 255)                  /* range */
+        return (0);
+      continue;
+    }
+    if (ch == '.' || ch == '/') {
+      if (dst - odst > 3)             /* too many octets? */
+        return (0);
+      *dst++ = (unsigned char)val;
+      if (ch == '/')
+        return (getbits(src, bitsp));
+      val = 0;
+      n = 0;
+      continue;
+    }
+    return (0);
+  }
+  if (n == 0)
+    return (0);
+  if (dst - odst > 3)             /* too many octets? */
+    return (0);
+  *dst = (unsigned char)val;
+  return 1;
+}
+Function: 
+pub fn parse_ascii(b: &[u8]) -> Result<Self, AddrParseError> {
+        // don't try to parse if too long
+        if b.len() > 15 {
+            Err(AddrParseError(AddrKind::Ipv4))
+        } else {
+            Parser::new(b).parse_with(|p| p.read_ipv4_addr(), AddrKind::Ipv4)
+        }
+    }
+Unixcoder Score: 0.053999707102775574
+--------------------------------------------------

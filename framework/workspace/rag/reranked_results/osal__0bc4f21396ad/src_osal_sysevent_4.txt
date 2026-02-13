@@ -1,0 +1,213 @@
+C_Code: 
+void HiSysEventRecycleWatcher(HiSysEventRustWatcherC* watcher)
+{
+    if (watcher == nullptr) {
+        return;
+    }
+    auto watcherKey = std::make_pair(watcher->onEventRustCb, watcher->onServiceDiedRustCb);
+    auto watcherIter = g_watchers.find(watcherKey);
+    if (watcherIter == g_watchers.end()) {
+        return;
+    }
+    auto listener = watcherIter->second;
+    if (listener != nullptr) {
+        listener->RecycleWatcher(watcher);
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_watchersMutex);
+        g_watchers.erase(watcherIter->first);
+    }
+}
+Function: 
+pub fn add_watcher(watcher: &Watcher, watch_rules: &[WatchRule]) -> i32 {
+    sys_event_manager::add_watcher(watcher, watch_rules)
+}
+Unixcoder Score: 0.07375244051218033
+--------------------------------------------------
+C_Code: 
+void HiSysEventRecycleWatcher(HiSysEventRustWatcherC* watcher)
+{
+    if (watcher == nullptr) {
+        return;
+    }
+    auto watcherKey = std::make_pair(watcher->onEventRustCb, watcher->onServiceDiedRustCb);
+    auto watcherIter = g_watchers.find(watcherKey);
+    if (watcherIter == g_watchers.end()) {
+        return;
+    }
+    auto listener = watcherIter->second;
+    if (listener != nullptr) {
+        listener->RecycleWatcher(watcher);
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_watchersMutex);
+        g_watchers.erase(watcherIter->first);
+    }
+}
+Function: 
+pub fn remove_watcher(watcher: &Watcher) -> i32 {
+    sys_event_manager::remove_watcher(watcher)
+}
+Unixcoder Score: 0.06743763387203217
+--------------------------------------------------
+C_Code: 
+struct NotifyDataPtr {
+    std::shared_ptr<NotifyData> notifyData;
+}
+Function: 
+pub struct NotifyData {
+    pub progress: Progress,
+    pub action: Action,
+    pub version: Version,
+    pub upload_status: Vec<(String, Reason, String)>, // (path, each_file_state, reason)
+    pub task_id: u32,
+    pub uid: u64,
+    pub bundle: String,
+}
+Unixcoder Score: 0.049893781542778015
+--------------------------------------------------
+C_Code: 
+int32_t InvokerListenThreadStub(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option, OnRemoteRequest func)
+{
+    (void)code;
+    (void)data;
+    (void)reply;
+    (void)option;
+    (void)func;
+    return ERR_NONE;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+        R::on_remote_request(self, code, data, reply)
+    }
+Unixcoder Score: 0.032982271164655685
+--------------------------------------------------
+C_Code: 
+int32_t InvokerListenThreadStub(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option, OnRemoteRequest func)
+{
+    (void)code;
+    (void)data;
+    (void)reply;
+    (void)option;
+    (void)func;
+    return ERR_NONE;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+            0
+        }
+Unixcoder Score: 0.029044272378087044
+--------------------------------------------------
+C_Code: 
+struct ev_io
+{
+  EV_WATCHER_LIST (ev_io)
+
+  int fd;     /* ro */
+  int events; /* ro */
+}
+Function: 
+struct FileDesc {
+    fd: c_int,
+}
+Unixcoder Score: 0.01810866966843605
+--------------------------------------------------
+C_Code: 
+void FwkRunningTaskCountManager::NotifyAllObservers()
+{
+    REQUEST_HILOGD("Notify runcount to %{public}d observers.", static_cast<int32_t>(observers_.size()));
+    std::lock_guard<std::mutex> observer_lock(observersLock_);
+    auto it = observers_.begin();
+    while (it != observers_.end()) {
+        (*it)->UpdateRunningTaskCount();
+        it++;
+    }
+}
+Function: 
+fn change_run_count(&mut self, new_count: usize) {
+        if self.count == new_count {
+            return;
+        }
+        self.count = new_count;
+        self.remotes
+            .retain(|_, remote| remote.notify_run_count(self.count as i64).is_ok());
+    }
+Unixcoder Score: 0.003008038504049182
+--------------------------------------------------
+C_Code: 
+int32_t InvokerListenThreadStub(uint32_t code, IpcIo *data, IpcIo *reply, MessageOption option, OnRemoteRequest func)
+{
+    (void)code;
+    (void)data;
+    (void)reply;
+    (void)option;
+    (void)func;
+    return ERR_NONE;
+}
+Function: 
+pub fn on_remote_request(
+        &mut self,
+        code: u32,
+        data: Pin<&mut MessageParcel>,
+        reply: Pin<&mut MessageParcel>,
+    ) -> i32 {
+        unsafe {
+            let mut data = MsgParcel::from_ptr(data.get_unchecked_mut() as *mut MessageParcel);
+            let mut reply = MsgParcel::from_ptr(reply.get_unchecked_mut() as *mut MessageParcel);
+            self.inner.on_remote_request(code, &mut data, &mut reply)
+        }
+    }
+Unixcoder Score: 0.001818940625526011
+--------------------------------------------------
+C_Code: 
+void RunCountNotifyStub::OnCallBack(MessageParcel &data)
+{
+    REQUEST_HILOGD("Receive callback");
+    int runCount = data.ReadInt64();
+    REQUEST_HILOGD("RunCount num %{public}d", runCount);
+
+    FwkRunningTaskCountManager::GetInstance()->SetCount(runCount);
+    FwkRunningTaskCountManager::GetInstance()->NotifyAllObservers();
+}
+Function: 
+fn on_remote_request(
+        &self,
+        _code: u32,
+        data: &mut ipc::parcel::MsgParcel,
+        _reply: &mut ipc::parcel::MsgParcel,
+    ) -> i32 {
+        let token = data.read_interface_token().unwrap();
+        assert_eq!(token, "OHOS.Download.NotifyInterface");
+        let run_count: i64 = data.read().unwrap();
+        println!("Run count: {}", run_count);
+        0
+    }
+Unixcoder Score: -0.00791232194751501
+--------------------------------------------------
+C_Code: 
+int HiSysEventRemoveWatcher(HiSysEventRustWatcherC* watcher)
+{
+    if (watcher == nullptr || watcher->status != STATUS_NORMAL) {
+        return ERR_LISTENER_NOT_EXIST;
+    }
+    auto watcherKey = std::make_pair(watcher->onEventRustCb, watcher->onServiceDiedRustCb);
+    auto watcherIter = g_baseWatchers.find(watcherKey);
+    if (watcherIter == g_baseWatchers.end()) {
+        return ERR_LISTENER_NOT_EXIST;
+    }
+    auto ret = HiSysEventBaseManager::RemoveListener(watcherIter->second);
+    if (ret != IPC_CALL_SUCCEED) {
+        return ret;
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_baseWatchersMutex);
+        g_baseWatchers.erase(watcherIter->first);
+    }
+    return ret;
+}
+Function: 
+pub fn remove_watcher(watcher: &Watcher) -> i32 {
+    sys_event_manager::remove_watcher(watcher)
+}
+Unixcoder Score: -0.00852733664214611
+--------------------------------------------------

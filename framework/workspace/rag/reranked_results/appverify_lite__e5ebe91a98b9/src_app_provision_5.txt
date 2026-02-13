@@ -1,0 +1,366 @@
+C_Code: 
+JEMALLOC_INLINE bool
+prof_sample_accum_update(size_t size)
+{
+	prof_tdata_t *prof_tdata;
+
+	cassert(config_prof);
+	/* Sampling logic is unnecessary if the interval is 1. */
+	assert(opt_lg_prof_sample != 0);
+
+	prof_tdata = prof_tdata_get(false);
+	if ((uintptr_t)prof_tdata <= (uintptr_t)PROF_TDATA_STATE_MAX)
+		return (true);
+
+	/* Take care to avoid integer overflow. */
+	if (size >= prof_tdata->threshold - prof_tdata->accum) {
+		prof_tdata->accum -= (prof_tdata->threshold - size);
+		/* Compute new sample threshold. */
+		prof_sample_threshold_update(prof_tdata);
+		while (prof_tdata->accum >= prof_tdata->threshold) {
+			prof_tdata->accum -= prof_tdata->threshold;
+			prof_sample_threshold_update(prof_tdata);
+		}
+		return (false);
+	} else {
+		prof_tdata->accum += size;
+		return (true);
+	}
+}
+Function: 
+pub(crate) fn new(spec: &str) -> impl Layer<S> {
+        let (write_filter, allowed_names) = WriteFilter::from_spec(spec);
+
+        // this filter the first pass for `tracing`: these are all the "profiling" spans, but things like
+        // span depth or duration are not filtered here: that only occurs at write time.
+        let profile_filter = filter::filter_fn(move |metadata| {
+            let allowed = match &allowed_names {
+                Some(names) => names.contains(metadata.name()),
+                None => true,
+            };
+
+            allowed
+                && metadata.is_span()
+                && metadata.level() >= &Level::INFO
+                && !metadata.target().starts_with("salsa")
+                && metadata.name() != "compute_exhaustiveness_and_usefulness"
+                && !metadata.target().starts_with("chalk")
+        });
+
+        Self { aggregate: true, write_filter, _inner: PhantomData }.with_filter(profile_filter)
+    }
+Unixcoder Score: 0.004464149009436369
+--------------------------------------------------
+C_Code: 
+int32_t CommonEventCollect::GetSaExtraDataIdList(int32_t saId, std::vector<int64_t>& extraDataidList,
+    const std::string& eventName)
+{
+    std::list<int64_t> temp;
+    {
+        std::lock_guard<samgr::mutex> autoLock(saExtraDataIdLock_);
+        if (saExtraDataIdMap_.count(saId) == 0) {
+            HILOGD("NF exId SA:%{public}d", saId);
+            return ERR_OK;
+        }
+        HILOGD("get exId SA:%{public}d event:%{public}s", saId, eventName.c_str());
+        temp = saExtraDataIdMap_[saId];
+    }
+    if (eventName == "") {
+        std::copy(temp.begin(), temp.end(), std::back_inserter(extraDataidList));
+        return ERR_OK;
+    }
+    for (auto& item : temp) {
+        OnDemandReasonExtraData extraData;
+        if (!GetOnDemandReasonExtraData(item, extraData)) {
+            HILOGD("NF exId:%{public}d", static_cast<int32_t>(item));
+            continue;
+        }
+        std::map<std::string, std::string> want = extraData.GetWant();
+        std::string extraEventName = want[COMMON_EVENT_ACTION_NAME];
+        if (extraEventName != eventName) {
+            HILOGD("exId:%{public}d event:%{public}s not match extra:%{public}s", static_cast<int32_t>(item),
+                eventName.c_str(), extraEventName.c_str());
+            continue;
+        }
+        HILOGD("get exId:%{public}d", static_cast<int32_t>(item));
+        extraDataidList.push_back(item);
+    }
+    return ERR_OK;
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Unixcoder Score: 0.0014318478060886264
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE bool
+prof_sample_accum_update(size_t size)
+{
+	prof_tdata_t *prof_tdata;
+
+	cassert(config_prof);
+	/* Sampling logic is unnecessary if the interval is 1. */
+	assert(opt_lg_prof_sample != 0);
+
+	prof_tdata = prof_tdata_get(false);
+	if ((uintptr_t)prof_tdata <= (uintptr_t)PROF_TDATA_STATE_MAX)
+		return (true);
+
+	/* Take care to avoid integer overflow. */
+	if (size >= prof_tdata->threshold - prof_tdata->accum) {
+		prof_tdata->accum -= (prof_tdata->threshold - size);
+		/* Compute new sample threshold. */
+		prof_sample_threshold_update(prof_tdata);
+		while (prof_tdata->accum >= prof_tdata->threshold) {
+			prof_tdata->accum -= prof_tdata->threshold;
+			prof_sample_threshold_update(prof_tdata);
+		}
+		return (false);
+	} else {
+		prof_tdata->accum += size;
+		return (true);
+	}
+}
+Function: 
+fn fold<B, F>(self, init: B, f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        let separator = self.separator;
+        intersperse_fold(self.iter, init, f, move || separator.clone(), self.needs_sep)
+    }
+Unixcoder Score: -0.001394690596498549
+--------------------------------------------------
+C_Code: 
+int32_t ReadFileDescriptor(IpcIo *io)
+{
+    if (io == NULL) {
+        return -1;
+    }
+    struct flat_binder_object *obj = IpcIoPopRef(io);
+    if (obj == NULL) {
+        RPC_LOG_ERROR("ReadFileDescriptor failed: obj is null");
+        return -1;
+    }
+    if (obj->type == BINDER_TYPE_FD) {
+        return obj->handle;
+    }
+    RPC_LOG_ERROR("ReadFileDescriptor failed: type:%d", obj->type);
+    return -1;
+}
+Function: 
+pub fn read_file(&mut self) -> IpcResult<File> {
+        let fd = self.as_msg_parcel_mut().ReadFileDescriptor();
+        unsafe { Ok(File::from_raw_fd(fd)) }
+    }
+Unixcoder Score: -0.005273633170872927
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE bool
+prof_sample_accum_update(size_t size)
+{
+	prof_tdata_t *prof_tdata;
+
+	cassert(config_prof);
+	/* Sampling logic is unnecessary if the interval is 1. */
+	assert(opt_lg_prof_sample != 0);
+
+	prof_tdata = prof_tdata_get(false);
+	if ((uintptr_t)prof_tdata <= (uintptr_t)PROF_TDATA_STATE_MAX)
+		return (true);
+
+	/* Take care to avoid integer overflow. */
+	if (size >= prof_tdata->threshold - prof_tdata->accum) {
+		prof_tdata->accum -= (prof_tdata->threshold - size);
+		/* Compute new sample threshold. */
+		prof_sample_threshold_update(prof_tdata);
+		while (prof_tdata->accum >= prof_tdata->threshold) {
+			prof_tdata->accum -= prof_tdata->threshold;
+			prof_sample_threshold_update(prof_tdata);
+		}
+		return (false);
+	} else {
+		prof_tdata->accum += size;
+		return (true);
+	}
+}
+Function: 
+pub fn next_round(&mut self) -> bool {
+        if let Some(round) = self.rounds.last_mut() {
+            round.finish();
+        }
+        if self.rounds.iter().any(|it| it.linear) || self.rounds.len() == 4 {
+            return false;
+        }
+        self.rounds.push(Round::default());
+        true
+    }
+Unixcoder Score: -0.009486909955739975
+--------------------------------------------------
+C_Code: 
+int32_t ReadFileDescriptor(IpcIo *io)
+{
+    if (io == NULL) {
+        return -1;
+    }
+    struct flat_binder_object *obj = IpcIoPopRef(io);
+    if (obj == NULL) {
+        RPC_LOG_ERROR("ReadFileDescriptor failed: obj is null");
+        return -1;
+    }
+    if (obj->type == BINDER_TYPE_FD) {
+        return obj->handle;
+    }
+    RPC_LOG_ERROR("ReadFileDescriptor failed: type:%d", obj->type);
+    return -1;
+}
+Function: 
+pub unsafe fn read_raw_fd(&mut self) -> RawFd {
+        self.as_msg_parcel_mut().ReadFileDescriptor()
+    }
+Unixcoder Score: -0.013397335074841976
+--------------------------------------------------
+C_Code: 
+int32_t CommonEventCollect::GetSaExtraDataIdList(int32_t saId, std::vector<int64_t>& extraDataidList,
+    const std::string& eventName)
+{
+    std::list<int64_t> temp;
+    {
+        std::lock_guard<samgr::mutex> autoLock(saExtraDataIdLock_);
+        if (saExtraDataIdMap_.count(saId) == 0) {
+            HILOGD("NF exId SA:%{public}d", saId);
+            return ERR_OK;
+        }
+        HILOGD("get exId SA:%{public}d event:%{public}s", saId, eventName.c_str());
+        temp = saExtraDataIdMap_[saId];
+    }
+    if (eventName == "") {
+        std::copy(temp.begin(), temp.end(), std::back_inserter(extraDataidList));
+        return ERR_OK;
+    }
+    for (auto& item : temp) {
+        OnDemandReasonExtraData extraData;
+        if (!GetOnDemandReasonExtraData(item, extraData)) {
+            HILOGD("NF exId:%{public}d", static_cast<int32_t>(item));
+            continue;
+        }
+        std::map<std::string, std::string> want = extraData.GetWant();
+        std::string extraEventName = want[COMMON_EVENT_ACTION_NAME];
+        if (extraEventName != eventName) {
+            HILOGD("exId:%{public}d event:%{public}s not match extra:%{public}s", static_cast<int32_t>(item),
+                eventName.c_str(), extraEventName.c_str());
+            continue;
+        }
+        HILOGD("get exId:%{public}d", static_cast<int32_t>(item));
+        extraDataidList.push_back(item);
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn get_common_event_extra_data_id_list(said: i32, extraids: &mut Vec<i64>, event_name: &str) -> i32 {
+        let_cxx_string!(event_name = event_name);
+        GetCommonEventExtraDataIdlist(said, extraids, &event_name)
+    }
+Unixcoder Score: -0.021139219403266907
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::GetSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t systemAbilityId = -1;
+    bool ret = data.ReadInt32(systemAbilityId);
+    if (!ret) {
+        return ERR_NULL_OBJECT;
+    }
+    if (!CheckInputSysAbilityId(systemAbilityId)) {
+        HILOGW("GetSystemAbilityInner read SAId failed!");
+        return ERR_NULL_OBJECT;
+    }
+
+#ifdef SUPPORT_PENGLAI_MODE
+    if (isPengLai_ && !SamgrUtil::CheckPengLaiPermission(systemAbilityId)) {
+        HILOGW("GetSA CheckPengLaiPermission denied! SA:%{public}d,callUid:%{public}d",
+            systemAbilityId, OHOS::IPCSkeleton::GetCallingUid());
+        return ERR_PERMISSION_DENIED;
+    }
+#endif
+
+    if (!CheckGetSAPermission(systemAbilityId)) {
+        HILOGE("GetSystemAbilityInner selinux permission denied! SA:%{public}d,callSid:%{public}s",
+            systemAbilityId, OHOS::IPCSkeleton::GetCallingSid().c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+    sptr<IRemoteObject> remoteObject = GetSystemAbility(systemAbilityId);
+    if (remoteObject == nullptr) {
+        HILOGD("GetSystemAbilityInner SA:%{public}d GetSystemAbility failed.", systemAbilityId);
+        return ERR_NULL_OBJECT;
+    }
+    ret = reply.WriteRemoteObject(remoteObject);
+    if (!ret) {
+        HILOGE("GetSystemAbilityInner SA:%{public}d write reply failed.", systemAbilityId);
+        return ERR_FLATTEN_OBJECT;
+    }
+    return ERR_NONE;
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: -0.02323286607861519
+--------------------------------------------------
+C_Code: 
+static int WriteIPCRemoteObject(OHIPCParcel *parcel, const T *object)
+{
+    if (!IsIPCParcelValid(parcel, __func__) || object == nullptr) {
+        return OH_IPC_CHECK_PARAM_ERROR;
+    }
+    if (!parcel->msgParcel->WriteRemoteObject(object->remote)) {
+        ZLOGE(LOG_LABEL, "write remote object failed!");
+        return OH_IPC_PARCEL_WRITE_ERROR;
+    }
+    return OH_IPC_SUCCESS;
+}
+Function: 
+pub fn write_remote(&mut self, remote: RemoteObj) -> IpcResult<()> {
+        self.write_process(remote.inner, WriteRemoteObject)
+    }
+Unixcoder Score: -0.023297220468521118
+--------------------------------------------------
+C_Code: 
+uoffset_t StartTable() {
+    NotNested();
+    nested = true;
+    return GetSizeRelative32BitRegion();
+  }
+Function: 
+pub fn start_table(&mut self) -> WIPOffset<TableUnfinishedWIPOffset> {
+        self.assert_not_nested(
+            "start_table can not be called when a table or vector is under construction",
+        );
+        self.nested = true;
+
+        WIPOffset::new(self.used_space() as UOffsetT)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5012_rank3.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5012_rank3.rs", "c_api": "OhCloudExtVectorGetLength", "rust_api": "OhCloudExtVector::get_inner_ref", "mapping_type": "function", "description": "Validates and retrieves inner reference of a vector", "reasoning": "[Task Analysis] The C function 'ConvertBucket' performs hashmap iteration and key-value extraction into a Rust-compatible DBVBucket, while the Rust function 'OhCloudExtVectorGetLength' is a low-level FFI wrapper for getting vector length. [Similarity] Names do not refer to the same concept ('ConvertBucket' vs 'OhCloudExtVectorGetLength'), and the domains are different: C does data conversion/logic, Rust does FFI/low-level operations. [Knowledge Extraction] No full or partial structural match. However, there are API mappings between C's 'OhCloudExtVectorGetLength' and Rust's 'OhCloudExtVector::get_inner_ref' and 'vec.len()', which both handle vector length retrieval. These are functionally equivalent in their purpose despite different names and contexts."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5012_rank3.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5012_rank3.rs", "c_api": "OhCloudExtVectorGetLength", "rust_api": "vec.len()", "mapping_type": "function", "description": "Retrieves the length of a vector", "reasoning": "[Task Analysis] The C function 'ConvertBucket' performs hashmap iteration and key-value extraction into a Rust-compatible DBVBucket, while the Rust function 'OhCloudExtVectorGetLength' is a low-level FFI wrapper for getting vector length. [Similarity] Names do not refer to the same concept ('ConvertBucket' vs 'OhCloudExtVectorGetLength'), and the domains are different: C does data conversion/logic, Rust does FFI/low-level operations. [Knowledge Extraction] No full or partial structural match. However, there are API mappings between C's 'OhCloudExtVectorGetLength' and Rust's 'OhCloudExtVector::get_inner_ref' and 'vec.len()', which both handle vector length retrieval. These are functionally equivalent in their purpose despite different names and contexts."}]
+Unixcoder Score: -0.027831336483359337
+--------------------------------------------------

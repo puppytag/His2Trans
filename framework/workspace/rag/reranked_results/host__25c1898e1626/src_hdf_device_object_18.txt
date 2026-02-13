@@ -1,0 +1,280 @@
+C_Code: 
+struct DeviceCreateInfo
+Function: 
+struct FfiPoint {
+        x: f32,
+        y: f32,
+    }
+Unixcoder Score: 0.04906587302684784
+--------------------------------------------------
+C_Code: 
+struct VkDescriptorBufferInfo {
+    VkBuffer        buffer;
+    VkDeviceSize    offset;
+    VkDeviceSize    range;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: 0.03332012519240379
+--------------------------------------------------
+C_Code: 
+struct SmapsHeadInfo {
+    std::string startAddrStr;
+    std::string endAddrStr;
+    std::string permission;
+    std::string path;
+    int64_t iNode = -1;
+}
+Function: 
+struct VmStruct {
+    name:   String,
+    start:  u64,
+    end:    u64,
+    off:    u64,
+    perm:   String,
+    dev:    String,
+    inode:  u64,
+    counts: usize,
+    value:  HashMap<String, u64>
+}
+Unixcoder Score: 0.007120812777429819
+--------------------------------------------------
+C_Code: 
+struct DeviceGroupSubmitInfo
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: -0.020505882799625397
+--------------------------------------------------
+C_Code: 
+struct BindBufferMemoryDeviceGroupInfo
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: -0.021292582154273987
+--------------------------------------------------
+C_Code: 
+bool CloudInfo::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(user), user);
+    GetValue(node, GET_NAME(id), id);
+    GetValue(node, GET_NAME(totalSpace), totalSpace);
+    GetValue(node, GET_NAME(remainSpace), remainSpace);
+    GetValue(node, GET_NAME(enableCloud), enableCloud);
+    GetValue(node, GET_NAME(apps), apps);
+    if (!GetValue(node, GET_NAME(maxNumber), maxNumber) || maxNumber == 0) {
+        maxNumber = DEFAULT_BATCH_NUMBER;
+    }
+    if (!GetValue(node, GET_NAME(maxSize), maxSize) || maxSize == 0) {
+        maxSize = DEFAULT_BATCH_SIZE;
+    }
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::ServiceInfo) -> Self {
+        CloudInfo {
+            user: value.user,
+            id: value.account_id.clone(),
+            total_space: value.total_space,
+            remain_space: value.remain_space,
+            enable_cloud: value.enable_cloud,
+            apps: Default::default(),
+        }
+    }
+Unixcoder Score: -0.02343476191163063
+--------------------------------------------------
+C_Code: 
+struct DeviceFaultInfoEXT
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Unixcoder Score: -0.024839874356985092
+--------------------------------------------------
+C_Code: 
+struct DeviceImageSubresourceInfo
+Function: 
+struct BitmapMetrics {
+        // Outer glyph bearings that affect the computed bounds. We distinguish
+        // those here from `inner_bearing_*` to account for CoreText behavior in
+        // SBIX placement. Where the sbix originOffsetX/Y are applied only
+        // within the bounds. Specified in font units.
+        // 0 for CBDT, CBLC.
+        bearing_x: f32,
+        bearing_y: f32,
+        // Scale factors to scale image to 1em.
+        ppem_x: f32,
+        ppem_y: f32,
+        // Account for the fact that Sbix and CBDT/CBLC have a different origin
+        // definition.
+        placement_origin_bottom_left: bool,
+        // Specified as a pixel value, to be scaled by `ppem_*` as an
+        // offset applied to placing the image within the bounds rectangle.
+        inner_bearing_x: f32,
+        inner_bearing_y: f32,
+        // Some, but not all, bitmap glyphs have a special bitmap advance
+        advance: f32,
+    }
+Unixcoder Score: -0.025646500289440155
+--------------------------------------------------
+C_Code: 
+struct DeviceDiagnosticsConfigCreateInfoNV
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: -0.026215719059109688
+--------------------------------------------------
+C_Code: 
+struct DeviceImageSubresourceInfo
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: -0.029234394431114197
+--------------------------------------------------

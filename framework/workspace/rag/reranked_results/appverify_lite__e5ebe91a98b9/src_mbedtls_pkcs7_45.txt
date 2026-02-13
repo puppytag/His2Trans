@@ -1,0 +1,155 @@
+C_Code: 
+CURLcode VerifyRootCaSslCtxFunction(CURL *curl, void *sslCtx, void *context)
+{
+#ifdef HTTP_ONLY_VERIFY_ROOT_CA_ENABLE
+    SSL_CTX *ctx = static_cast<SSL_CTX *>(sslCtx);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, VerifyCallback);
+    SSL_CTX_set_ex_data(ctx, SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX, context);
+#endif
+    return CURLE_OK;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Unixcoder Score: 0.07986900955438614
+--------------------------------------------------
+C_Code: 
+CURLcode VerifyRootCaSslCtxFunction(CURL *curl, void *sslCtx, void *context)
+{
+#ifdef HTTP_ONLY_VERIFY_ROOT_CA_ENABLE
+    SSL_CTX *ctx = static_cast<SSL_CTX *>(sslCtx);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, VerifyCallback);
+    SSL_CTX_set_ex_data(ctx, SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX, context);
+#endif
+    return CURLE_OK;
+}
+Function: 
+pub fn tls_built_in_root_certs(self, tls_built_in_root_certs: bool) -> ClientBuilder {
+        Self(self.0.tls_built_in_root_certs(tls_built_in_root_certs))
+    }
+Unixcoder Score: 0.0500129759311676
+--------------------------------------------------
+C_Code: 
+static int VerifyCallback(int preverifyOk, X509_STORE_CTX *ctx)
+{
+    X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+    int err = X509_STORE_CTX_get_error(ctx);
+    int depth = X509_STORE_CTX_get_error_depth(ctx);
+
+    NETSTACK_LOGI("X509_STORE_CTX error code %{public}d, depth %{public}d", err, depth);
+
+    SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+    SSL_CTX *sslctx = SSL_get_SSL_CTX(ssl);
+    RequestContext *requestContext = static_cast<RequestContext *>(SSL_CTX_get_ex_data(sslctx,
+        SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX));
+    if (requestContext == nullptr) {
+        NETSTACK_LOGE("creat requestContext instance failed");
+        return 0;
+    }
+    if (requestContext->IsRootCaVerifiedOk()) {
+        // root CA hash verified, normal procedure.
+        return preverifyOk;
+    }
+
+    int verifyResult = VerifyCertPubkey(cert, requestContext->GetPinnedPubkey());
+    if (!requestContext->IsRootCaVerified()) {
+        // not verified yet, so this is the root CA verifying.
+        NETSTACK_LOGD("Verifying Root CA.");
+        requestContext->SetRootCaVerifiedOk(verifyResult == CURLE_OK);
+        requestContext->SetRootCaVerified();
+    }
+    if (verifyResult != CURLE_OK && depth == 0) {
+        // peer site certificate, since root ca verify not ok, and peer site is also not ok
+        // return failed.
+        return 0;
+    }
+    return preverifyOk;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "free", "rust_api": "free", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_fragment": "for (uint32_t i = 0; i < certs->len; i++) {\n        FreeCertData(certs->certDataList[i]);\n    }\n    free(certs->certDataList);\n    free(certs);", "rust_fragment": "for item in c_cert_list_ptr.iter() {\n            let cert = unsafe { &**item };\n            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };\n            match Certificate::from_pem(cert_slice) {\n                Ok(cert) => {\n                    certificates.push(cert);\n                }\n                Err(e) => {\n                    error!(\"parse security cert path failed, error is {:?}\", e);\n                    return;\n                }\n            };\n        }\n        unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Both iterate over a list of certificate data and free memory, though Rust also includes parsing logic.", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory deallocation of certificate data list", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertData", "rust_api": "FreeCertData", "mapping_type": "function", "description": "Free individual certificate data", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}]
+Unixcoder Score: 0.04802510514855385
+--------------------------------------------------
+C_Code: 
+struct CRequestCert {
+    uint32_t size;
+    uint8_t *data;
+}
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Unixcoder Score: 0.016034847125411034
+--------------------------------------------------
+C_Code: 
+struct CRequestCert
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.rs", "c_api": "memset(result, 0, (size_t)degree * sizeof(result[0]))", "rust_api": "vec![0u8; degree - 1]", "mapping_type": "pattern", "description": "Initialize array/vector with zeros", "reasoning": "[Task Analysis] C and Rust functions both implement Reed-Solomon divisor computation for QR codes. [Similarity] High structural similarity in loop structure, variable usage, and algorithmic logic. [Knowledge Extraction] Full match in algorithmic flow, with minor syntax/type differences (int vs usize, array vs Vec, memset vs vec![0u8; n]). API mappings identified for core operations like polynomial multiplication and vector initialization."}, {"knowledge_type": "Partial", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.rs", "c_fragment": "uint8_t root = 1;\n\tint i, j;\n\tfor (i = 0; i < degree; i++) {\n\t\t// Multiply the current product by (x - r^i)\n\t\tfor (j = 0; j < degree; j++) {\n\t\t\tresult[j] = reedSolomonMultiply(result[j], root);\n\t\t\tif (j + 1 < degree)\n\t\t\t\tresult[j] ^= result[j + 1];\n\t\t}\n\t\troot = reedSolomonMultiply(root, 0x02);\n\t}", "rust_fragment": "let mut root: u8 = 1;\n\tfor _ in 0 .. degree {  // Unused variable i\n\t\t// Multiply the current product by (x - r^i)\n\t\tfor j in 0 .. degree {\n\t\t\tresult[j] = QrCode::reed_solomon_multiply(result[j], root);\n\t\t\tif j + 1 < result.len() {\n\t\t\t\tresult[j] ^= result[j + 1];\n\t\t\t}\n\t\t}\n\t\troot = QrCode::reed_solomon_multiply(root, 0x02);\n\t}", "description": "Main loop computing Reed-Solomon polynomial coefficients", "reasoning": "[Task Analysis] C and Rust functions both implement Reed-Solomon divisor computation for QR codes. [Similarity] High structural similarity in loop structure, variable usage, and algorithmic logic. [Knowledge Extraction] Full match in algorithmic flow, with minor syntax/type differences (int vs usize, array vs Vec, memset vs vec![0u8; n]). API mappings identified for core operations like polynomial multiplication and vector initialization."}, {"knowledge_type": "Partial", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.rs", "c_fragment": "if (!(1 <= degree && degree <= qrcodegen_REED_SOLOMON_DEGREE_MAX)) {\n\t\treturn;\n\t}", "rust_fragment": "assert!((1 ..= 255).contains(&degree), \"Degree out of range\");", "description": "Input validation for degree range", "reasoning": "[Task Analysis] C and Rust functions both implement Reed-Solomon divisor computation for QR codes. [Similarity] High structural similarity in loop structure, variable usage, and algorithmic logic. [Knowledge Extraction] Full match in algorithmic flow, with minor syntax/type differences (int vs usize, array vs Vec, memset vs vec![0u8; n]). API mappings identified for core operations like polynomial multiplication and vector initialization."}, {"knowledge_type": "Partial", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.rs", "c_fragment": "memset(result, 0, (size_t)degree * sizeof(result[0]));\n\tresult[degree - 1] = 1;", "rust_fragment": "let mut result = vec![0u8; degree - 1];\n\tresult.push(1);", "description": "Initialize result vector with zeros and set last element to 1", "reasoning": "[Task Analysis] C and Rust functions both implement Reed-Solomon divisor computation for QR codes. [Similarity] High structural similarity in loop structure, variable usage, and algorithmic logic. [Knowledge Extraction] Full match in algorithmic flow, with minor syntax/type differences (int vs usize, array vs Vec, memset vs vec![0u8; n]). API mappings identified for core operations like polynomial multiplication and vector initialization."}, {"knowledge_type": "Full", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.rs", "reasoning": "[Task Analysis] C and Rust functions both implement Reed-Solomon divisor computation for QR codes. [Similarity] High structural similarity in loop structure, variable usage, and algorithmic logic. [Knowledge Extraction] Full match in algorithmic flow, with minor syntax/type differences (int vs usize, array vs Vec, memset vs vec![0u8; n]). API mappings identified for core operations like polynomial multiplication and vector initialization.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.rs", "c_api": "result[degree - 1] = 1", "rust_api": "result.push(1)", "mapping_type": "pattern", "description": "Set last element of result to 1", "reasoning": "[Task Analysis] C and Rust functions both implement Reed-Solomon divisor computation for QR codes. [Similarity] High structural similarity in loop structure, variable usage, and algorithmic logic. [Knowledge Extraction] Full match in algorithmic flow, with minor syntax/type differences (int vs usize, array vs Vec, memset vs vec![0u8; n]). API mappings identified for core operations like polynomial multiplication and vector initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.c", "source_rust_file": "Full__reedSolomonComputeDivisor__idx144381_rank2.rs", "c_api": "reedSolomonMultiply", "rust_api": "QrCode::reed_solomon_multiply", "mapping_type": "function", "description": "Finite field multiplication operation", "reasoning": "[Task Analysis] C and Rust functions both implement Reed-Solomon divisor computation for QR codes. [Similarity] High structural similarity in loop structure, variable usage, and algorithmic logic. [Knowledge Extraction] Full match in algorithmic flow, with minor syntax/type differences (int vs usize, array vs Vec, memset vs vec![0u8; n]). API mappings identified for core operations like polynomial multiplication and vector initialization."}]
+Unixcoder Score: 0.013487746939063072
+--------------------------------------------------
+C_Code: 
+struct NetStack_CertBlob
+Function: 
+pub struct Certificate {
+    inner: Vec<reqwest::Certificate>,
+}
+Unixcoder Score: 0.010353169403970242
+--------------------------------------------------
+C_Code: 
+struct CRequestCert
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyRootCaSslCtxFunction__idx5357_rank3.c", "source_rust_file": "API_Mapping__VerifyRootCaSslCtxFunction__idx5357_rank3.rs", "c_api": "SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, VerifyCallback)", "rust_api": "self.0.add_root_certificate(cert)", "mapping_type": "function", "description": "Setting up SSL verification and certificate handling", "reasoning": "[Task Analysis] C function handles SSL context verification setup; Rust function adds root certificates to a builder. [Similarity] Names don't match but both involve certificate handling logic. [Knowledge Extraction] No full structural match due to different domains (SSL setup vs certificate builder). However, both involve certificate-related operations. [API Mappings] Found mapping between certificate addition in both languages."}]
+Unixcoder Score: 0.009439312852919102
+--------------------------------------------------
+C_Code: 
+struct CRequestCert
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__reedSolomonComputeDivisor__idx144444_rank3.c", "source_rust_file": "API_Mapping__reedSolomonComputeDivisor__idx144444_rank3.rs", "c_api": "reedSolomonMultiply", "rust_api": "Self::multiply", "mapping_type": "function", "description": "Finite field multiplication operation", "reasoning": "[Task Analysis] C function computes Reed-Solomon divisor polynomial; Rust function performs polynomial division with a divisor. [Similarity] Both involve finite field arithmetic and polynomial manipulation, but the operations are different (divisor computation vs remainder calculation). [Knowledge Extraction] No full structural match due to different domains (divisor generation vs remainder computation). However, there are API mappings for finite field multiplication and polynomial operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__reedSolomonComputeDivisor__idx144444_rank3.c", "source_rust_file": "API_Mapping__reedSolomonComputeDivisor__idx144444_rank3.rs", "c_api": "result[degree - 1] = 1", "rust_api": "result[result.len() - 1] = 0", "mapping_type": "pattern", "description": "Set last element of result array", "reasoning": "[Task Analysis] C function computes Reed-Solomon divisor polynomial; Rust function performs polynomial division with a divisor. [Similarity] Both involve finite field arithmetic and polynomial manipulation, but the operations are different (divisor computation vs remainder calculation). [Knowledge Extraction] No full structural match due to different domains (divisor generation vs remainder computation). However, there are API mappings for finite field multiplication and polynomial operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__reedSolomonComputeDivisor__idx144444_rank3.c", "source_rust_file": "API_Mapping__reedSolomonComputeDivisor__idx144444_rank3.rs", "c_api": "memset(result, 0, (size_t)degree * sizeof(result[0]))", "rust_api": "result.fill(0)", "mapping_type": "function", "description": "Initialize array with zeros", "reasoning": "[Task Analysis] C function computes Reed-Solomon divisor polynomial; Rust function performs polynomial division with a divisor. [Similarity] Both involve finite field arithmetic and polynomial manipulation, but the operations are different (divisor computation vs remainder calculation). [Knowledge Extraction] No full structural match due to different domains (divisor generation vs remainder computation). However, there are API mappings for finite field multiplication and polynomial operations."}]
+Unixcoder Score: 0.0038755310233682394
+--------------------------------------------------
+C_Code: 
+struct CRequestCert
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__do_cc__idx76852_rank5.c", "source_rust_file": "API_Mapping__do_cc__idx76852_rank5.rs", "c_api": "std::set<rust_opaque_box*> marked", "rust_api": "let data_box = data as LocalData", "mapping_type": "type", "description": "Data structure for tracking marked objects", "reasoning": "[Task Analysis] C function 'do_cc' performs garbage collection operations (IRC computation, root finding, marking, sweeping) while Rust function 'local_set' manages local task data storage in a map. [Similarity] Names refer to different concepts ('do_cc' vs 'local_set'), and domains are different (GC vs local data management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, both involve data structure manipulation (vector/set in C, map/vector in Rust) and control flow patterns (match/option handling). API mappings can be extracted for similar operations like map lookup and vector push."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__do_cc__idx76852_rank5.c", "source_rust_file": "API_Mapping__do_cc__idx76852_rank5.rs", "c_api": "std::vector<rust_opaque_box*> roots", "rust_api": "let new_entry = Some((keyval, data_ptr, data_box))", "mapping_type": "type", "description": "Container for root objects", "reasoning": "[Task Analysis] C function 'do_cc' performs garbage collection operations (IRC computation, root finding, marking, sweeping) while Rust function 'local_set' manages local task data storage in a map. [Similarity] Names refer to different concepts ('do_cc' vs 'local_set'), and domains are different (GC vs local data management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, both involve data structure manipulation (vector/set in C, map/vector in Rust) and control flow patterns (match/option handling). API mappings can be extracted for similar operations like map lookup and vector push."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__do_cc__idx76852_rank5.c", "source_rust_file": "API_Mapping__do_cc__idx76852_rank5.rs", "c_api": "irc::compute_ircs(task, ircs)", "rust_api": "let map = get_task_local_map(task)", "mapping_type": "function", "description": "Computation of IRCs and retrieval of local map", "reasoning": "[Task Analysis] C function 'do_cc' performs garbage collection operations (IRC computation, root finding, marking, sweeping) while Rust function 'local_set' manages local task data storage in a map. [Similarity] Names refer to different concepts ('do_cc' vs 'local_set'), and domains are different (GC vs local data management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, both involve data structure manipulation (vector/set in C, map/vector in Rust) and control flow patterns (match/option handling). API mappings can be extracted for similar operations like map lookup and vector push."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__do_cc__idx76852_rank5.c", "source_rust_file": "API_Mapping__do_cc__idx76852_rank5.rs", "c_api": "find_roots(task, ircs, roots)", "rust_api": "let data_ptr = cast::reinterpret_cast(&data)", "mapping_type": "function", "description": "Root finding and data pointer casting", "reasoning": "[Task Analysis] C function 'do_cc' performs garbage collection operations (IRC computation, root finding, marking, sweeping) while Rust function 'local_set' manages local task data storage in a map. [Similarity] Names refer to different concepts ('do_cc' vs 'local_set'), and domains are different (GC vs local data management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, both involve data structure manipulation (vector/set in C, map/vector in Rust) and control flow patterns (match/option handling). API mappings can be extracted for similar operations like map lookup and vector push."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__do_cc__idx76852_rank5.c", "source_rust_file": "API_Mapping__do_cc__idx76852_rank5.rs", "c_api": "mark::do_mark(task, roots, marked)", "rust_api": "match local_data_lookup(map, key)", "mapping_type": "function", "description": "Marking and lookup operations", "reasoning": "[Task Analysis] C function 'do_cc' performs garbage collection operations (IRC computation, root finding, marking, sweeping) while Rust function 'local_set' manages local task data storage in a map. [Similarity] Names refer to different concepts ('do_cc' vs 'local_set'), and domains are different (GC vs local data management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, both involve data structure manipulation (vector/set in C, map/vector in Rust) and control flow patterns (match/option handling). API mappings can be extracted for similar operations like map lookup and vector push."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__do_cc__idx76852_rank5.c", "source_rust_file": "API_Mapping__do_cc__idx76852_rank5.rs", "c_api": "do_sweep(task, marked)", "rust_api": "(*map).set_elt(index, new_entry)", "mapping_type": "function", "description": "Sweeping and element setting in map", "reasoning": "[Task Analysis] C function 'do_cc' performs garbage collection operations (IRC computation, root finding, marking, sweeping) while Rust function 'local_set' manages local task data storage in a map. [Similarity] Names refer to different concepts ('do_cc' vs 'local_set'), and domains are different (GC vs local data management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, both involve data structure manipulation (vector/set in C, map/vector in Rust) and control flow patterns (match/option handling). API mappings can be extracted for similar operations like map lookup and vector push."}]
+Unixcoder Score: 0.0013326447224244475
+--------------------------------------------------
+C_Code: 
+struct CRequestCerts
+Function: 
+pub(crate) struct CRequestCerts {
+    pub(crate) cert_data_list: *const *const CRequestCert,
+    pub(crate) len: u32,
+}
+Unixcoder Score: 0.0009643834782764316
+--------------------------------------------------

@@ -1,0 +1,507 @@
+C_Code: 
+void BuildRequestTaskConfigWithBlob(std::shared_ptr<OHOS::NativeRdb::ResultSet> set, TaskConfig &config)
+{
+    std::vector<uint8_t> formItemsBlob;
+    std::vector<uint8_t> formSpecsBlob;
+    std::vector<uint8_t> bodyFileNamesBlob;
+    std::vector<uint8_t> certsPathsBlob;
+
+    set->GetBlob(28, formItemsBlob); // Line 28 is 'form_items'
+    config.formItems = VecToFormItem(BlobToCFormItem(formItemsBlob));
+    set->GetBlob(29, formSpecsBlob); // Line 29 is 'file_specs'
+    config.fileSpecs = VecToFileSpec(BlobToCFileSpec(formSpecsBlob));
+    set->GetBlob(30, bodyFileNamesBlob); // Line 30 is 'body_file_names'
+    config.bodyFileNames = BlobToStringVec(bodyFileNamesBlob);
+    set->GetBlob(31, certsPathsBlob); // Line 31 is 'certs_paths'
+    config.certsPath = BlobToStringVec(certsPathsBlob);
+}
+Function: 
+async fn upload_inner(
+    task: Arc<RequestTask>,
+    abort_flag: Arc<AtomicBool>,
+) -> Result<(), TaskError> {
+    info!("upload task {} running", task.task_id());
+
+    #[cfg(feature = "oh")]
+    let _trace = Trace::new(&format!(
+        "exec upload task:{} file num:{}",
+        task.task_id(),
+        task.conf.file_specs.len()
+    ));
+
+    let size = task.conf.file_specs.len();
+    let start = task.progress.lock().unwrap().common_data.index;
+
+    let start_time = get_current_duration().as_secs() as u64;
+    task.start_time.store(start_time as u64, Ordering::SeqCst);
+
+    if task.conf.common_data.multipart {
+        #[cfg(feature = "oh")]
+        let _trace = Trace::new(&format!("upload file:{} index:{}", task.task_id(), start));
+
+        if !task.prepare_batch_upload(start, size).await {
+            return Err(TaskError::Failed(Reason::OthersError));
+        }
+
+        upload_one_file(
+            task.clone(),
+            start,
+            abort_flag.clone(),
+            build_batch_multipart_request,
+        )
+        .await?
+    } else {
+        let is_multipart = match task.conf.headers.get("Content-Type") {
+            Some(s) => s.eq("multipart/form-data"),
+            None => task.conf.method.to_uppercase().eq("POST"),
+        };
+        for index in start..size {
+            #[cfg(feature = "oh")]
+            let _trace = Trace::new(&format!("upload file:{} index:{}", task.task_id(), index));
+
+            if !task.prepare_single_upload(index).await {
+                return Err(TaskError::Failed(Reason::OthersError));
+            }
+
+            let func = match is_multipart {
+                true => build_multipart_request,
+                false => build_stream_request,
+            };
+            upload_one_file(task.clone(), index, abort_flag.clone(), func).await?;
+            task.notify_header_receive();
+        }
+    }
+
+    info!("{} uploaded", task.task_id());
+    Ok(())
+}
+Unixcoder Score: 0.02868710644543171
+--------------------------------------------------
+C_Code: 
+void SystemAbilityMgrStubUnLoadTest::TearDown()
+{
+    DTEST_LOG << "TearDown" << std::endl;
+}
+Function: 
+pub fn unload_system_ability(said: i32) -> i32 {
+        debug!("unload system ability {}", said);
+        UnloadSystemAbility(said)
+    }
+Unixcoder Score: 0.020133934915065765
+--------------------------------------------------
+C_Code: 
+void BuildRequestTaskConfigWithBlob(std::shared_ptr<OHOS::NativeRdb::ResultSet> set, TaskConfig &config)
+{
+    std::vector<uint8_t> formItemsBlob;
+    std::vector<uint8_t> formSpecsBlob;
+    std::vector<uint8_t> bodyFileNamesBlob;
+    std::vector<uint8_t> certsPathsBlob;
+
+    set->GetBlob(28, formItemsBlob); // Line 28 is 'form_items'
+    config.formItems = VecToFormItem(BlobToCFormItem(formItemsBlob));
+    set->GetBlob(29, formSpecsBlob); // Line 29 is 'file_specs'
+    config.fileSpecs = VecToFileSpec(BlobToCFileSpec(formSpecsBlob));
+    set->GetBlob(30, bodyFileNamesBlob); // Line 30 is 'body_file_names'
+    config.bodyFileNames = BlobToStringVec(bodyFileNamesBlob);
+    set->GetBlob(31, certsPathsBlob); // Line 31 is 'certs_paths'
+    config.certsPath = BlobToStringVec(certsPathsBlob);
+}
+Function: 
+fn build_multipart_request(
+    task: Arc<RequestTask>,
+    index: usize,
+    abort_flag: Arc<AtomicBool>,
+) -> Option<Request> {
+    debug!("build multipart request");
+    let task_reader = TaskReader::new(task.clone(), index);
+    let task_operator = TaskOperator::new(task.clone(), abort_flag);
+    let mut multi_part = MultiPart::new();
+    for item in task.conf.form_items.iter() {
+        let part = Part::new()
+            .name(item.name.as_str())
+            .body(item.value.as_str());
+        multi_part = multi_part.part(part);
+    }
+    let upload_length;
+    {
+        let progress = task.progress.lock().unwrap();
+        upload_length = progress.sizes[index] as u64 - progress.processed[index] as u64;
+    }
+    debug!("upload length is {}", upload_length);
+    let part = Part::new()
+        .name(task.conf.file_specs[index].name.as_str())
+        .file_name(task.conf.file_specs[index].file_name.as_str())
+        .mime(task.conf.file_specs[index].mime_type.as_str())
+        .length(Some(upload_length))
+        .stream(task_reader);
+
+    multi_part = multi_part.part(part);
+    let uploader = Uploader::builder()
+        .multipart(multi_part)
+        .operator(task_operator)
+        .build();
+
+    match task.build_request_builder() {
+        Ok(request_builder) => {
+            let request: Result<Request, HttpClientError> =
+                request_builder.body(Body::multipart(uploader));
+            build_request_common(&task, index, request)
+        }
+        Err(err) => build_request_common(&task, index, Err(err)),
+    }
+}
+Unixcoder Score: 0.016014225780963898
+--------------------------------------------------
+C_Code: 
+static void LoadCaCertFromMemory(X509_STORE *store, const std::string &pemCerts)
+{
+    if (!store || pemCerts.empty() || pemCerts.size() > static_cast<size_t>(INT_MAX)) {
+        return;
+    }
+
+    auto cbio = BIO_new_mem_buf(pemCerts.data(), static_cast<int>(pemCerts.size()));
+    if (!cbio) {
+        return;
+    }
+
+    auto inf = PEM_X509_INFO_read_bio(cbio, nullptr, nullptr, nullptr);
+    if (!inf) {
+        BIO_free(cbio);
+        return;
+    }
+
+    /* add each entry from PEM file to x509_store */
+    for (int i = 0; i < static_cast<int>(sk_X509_INFO_num(inf)); ++i) {
+        auto itmp = sk_X509_INFO_value(inf, i);
+        if (!itmp) {
+            continue;
+        }
+        if (itmp->x509) {
+            X509_STORE_add_cert(store, itmp->x509);
+        }
+        if (itmp->crl) {
+            X509_STORE_add_crl(store, itmp->crl);
+        }
+    }
+
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    BIO_free(cbio);
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "free", "rust_api": "free", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_fragment": "for (uint32_t i = 0; i < certs->len; i++) {\n        FreeCertData(certs->certDataList[i]);\n    }\n    free(certs->certDataList);\n    free(certs);", "rust_fragment": "for item in c_cert_list_ptr.iter() {\n            let cert = unsafe { &**item };\n            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };\n            match Certificate::from_pem(cert_slice) {\n                Ok(cert) => {\n                    certificates.push(cert);\n                }\n                Err(e) => {\n                    error!(\"parse security cert path failed, error is {:?}\", e);\n                    return;\n                }\n            };\n        }\n        unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Both iterate over a list of certificate data and free memory, though Rust also includes parsing logic.", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory deallocation of certificate data list", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertData", "rust_api": "FreeCertData", "mapping_type": "function", "description": "Free individual certificate data", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}]
+Unixcoder Score: 0.01577257364988327
+--------------------------------------------------
+C_Code: 
+void BuildRequestTaskConfigWithBlob(std::shared_ptr<OHOS::NativeRdb::ResultSet> set, TaskConfig &config)
+{
+    std::vector<uint8_t> formItemsBlob;
+    std::vector<uint8_t> formSpecsBlob;
+    std::vector<uint8_t> bodyFileNamesBlob;
+    std::vector<uint8_t> certsPathsBlob;
+
+    set->GetBlob(28, formItemsBlob); // Line 28 is 'form_items'
+    config.formItems = VecToFormItem(BlobToCFormItem(formItemsBlob));
+    set->GetBlob(29, formSpecsBlob); // Line 29 is 'file_specs'
+    config.fileSpecs = VecToFileSpec(BlobToCFileSpec(formSpecsBlob));
+    set->GetBlob(30, bodyFileNamesBlob); // Line 30 is 'body_file_names'
+    config.bodyFileNames = BlobToStringVec(bodyFileNamesBlob);
+    set->GetBlob(31, certsPathsBlob); // Line 31 is 'certs_paths'
+    config.certsPath = BlobToStringVec(certsPathsBlob);
+}
+Function: 
+pub(crate) fn create(&mut self, mut config: TaskConfig) -> Result<u32, ErrorCode> {
+        let task_id = TaskIdGenerator::generate();
+        config.common_data.task_id = task_id;
+
+        let uid = config.common_data.uid;
+        let version = config.version;
+
+        debug!(
+            "TaskManager construct uid{} tid{}, version:{:?}",
+            uid, task_id, version
+        );
+
+        let (frontend, background) = self
+            .task_count
+            .entry(config.common_data.uid)
+            .or_insert((0, 0));
+
+        let (task_count, limit) = match config.common_data.mode {
+            Mode::FrontEnd => (frontend, MAX_FRONTEND_TASK),
+            _ => (background, MAX_BACKGROUND_TASK),
+        };
+
+        // The loop starts counting from 0 and ends at limit, not exceeding limit.
+        if *task_count >= limit {
+            error!(
+                "{} task count {} exceeds the limit {}",
+                uid, task_count, limit
+            );
+            return Err(ErrorCode::TaskEnqueueErr);
+        } else {
+            *task_count += 1;
+        }
+
+        #[cfg(feature = "oh")]
+        let system_config = unsafe { SYSTEM_CONFIG_MANAGER.assume_init_ref().system_config() };
+
+        let rest_time = get_rest_time(&config, 0);
+        let (files, client) = check_config(
+            &config,
+            rest_time,
+            #[cfg(feature = "oh")]
+            system_config,
+        )?;
+        let task = RequestTask::new(
+            config,
+            files,
+            client,
+            self.client_manager.clone(),
+            false,
+            rest_time,
+        );
+        // New task: State::Initialized, Reason::Default
+        RequestDb::get_instance().insert_task(task);
+        Ok(task_id)
+    }
+Unixcoder Score: 0.015378622338175774
+--------------------------------------------------
+C_Code: 
+void BuildRequestTaskConfigWithBlob(std::shared_ptr<OHOS::NativeRdb::ResultSet> set, TaskConfig &config)
+{
+    std::vector<uint8_t> formItemsBlob;
+    std::vector<uint8_t> formSpecsBlob;
+    std::vector<uint8_t> bodyFileNamesBlob;
+    std::vector<uint8_t> certsPathsBlob;
+
+    set->GetBlob(28, formItemsBlob); // Line 28 is 'form_items'
+    config.formItems = VecToFormItem(BlobToCFormItem(formItemsBlob));
+    set->GetBlob(29, formSpecsBlob); // Line 29 is 'file_specs'
+    config.fileSpecs = VecToFileSpec(BlobToCFileSpec(formSpecsBlob));
+    set->GetBlob(30, bodyFileNamesBlob); // Line 30 is 'body_file_names'
+    config.bodyFileNames = BlobToStringVec(bodyFileNamesBlob);
+    set->GetBlob(31, certsPathsBlob); // Line 31 is 'certs_paths'
+    config.certsPath = BlobToStringVec(certsPathsBlob);
+}
+Function: 
+fn build_batch_multipart_request(
+    task: Arc<RequestTask>,
+    _index: usize,
+    abort_flag: Arc<AtomicBool>,
+) -> Option<Request> {
+    let mut multi_part = MultiPart::new();
+    let task_operator = TaskOperator::new(task.clone(), abort_flag);
+    let start = task.progress.lock().unwrap().common_data.index;
+    info!("multi part upload task {}", task.task_id());
+
+    for item in task.conf.form_items.iter() {
+        let part = Part::new()
+            .name(item.name.as_str())
+            .body(item.value.as_str());
+
+        multi_part = multi_part.part(part);
+    }
+    for index in start..task.conf.file_specs.len() {
+        let task_reader = TaskReader::new(task.clone(), index);
+        let upload_length = {
+            let progress = task.progress.lock().unwrap();
+            progress.sizes[index] as u64 - progress.processed[index] as u64
+        };
+        let part = Part::new()
+            .name(task.conf.file_specs[index].name.as_str())
+            .file_name(task.conf.file_specs[index].file_name.as_str())
+            .mime(task.conf.file_specs[index].mime_type.as_str())
+            .length(Some(upload_length))
+            .stream(task_reader);
+
+        multi_part = multi_part.part(part);
+    }
+
+    let uploader = Uploader::builder()
+        .multipart(multi_part)
+        .operator(task_operator)
+        .build();
+
+    match task.build_request_builder() {
+        Ok(request_builder) => {
+            let request: Result<Request, HttpClientError> =
+                request_builder.body(Body::multipart(uploader));
+            build_request_common(&task, 0, request)
+        }
+        Err(err) => build_request_common(&task, 0, Err(err)),
+    }
+}
+Unixcoder Score: 0.01195710152387619
+--------------------------------------------------
+C_Code: 
+void BuildRequestTaskConfigWithBlob(std::shared_ptr<OHOS::NativeRdb::ResultSet> set, TaskConfig &config)
+{
+    std::vector<uint8_t> formItemsBlob;
+    std::vector<uint8_t> formSpecsBlob;
+    std::vector<uint8_t> bodyFileNamesBlob;
+    std::vector<uint8_t> certsPathsBlob;
+
+    set->GetBlob(28, formItemsBlob); // Line 28 is 'form_items'
+    config.formItems = VecToFormItem(BlobToCFormItem(formItemsBlob));
+    set->GetBlob(29, formSpecsBlob); // Line 29 is 'file_specs'
+    config.fileSpecs = VecToFileSpec(BlobToCFileSpec(formSpecsBlob));
+    set->GetBlob(30, bodyFileNamesBlob); // Line 30 is 'body_file_names'
+    config.bodyFileNames = BlobToStringVec(bodyFileNamesBlob);
+    set->GetBlob(31, certsPathsBlob); // Line 31 is 'certs_paths'
+    config.certsPath = BlobToStringVec(certsPathsBlob);
+}
+Function: 
+pub(crate) fn get_task_config(&self, task_id: u32) -> Option<TaskConfig> {
+        debug!("query single task config in database");
+        let c_task_config = unsafe { QueryTaskConfig(task_id) };
+        if c_task_config.is_null() {
+            error!("can not find task in database, task id: {}", task_id);
+            sys_event!(
+                ExecFault,
+                DfxCode::RDB_FAULT_06,
+                &format!("can not find task in database, task id: {}", task_id)
+            );
+            None
+        } else {
+            let task_config = TaskConfig::from_c_struct(unsafe { &*c_task_config });
+            unsafe { DeleteCTaskConfig(c_task_config) };
+            Some(task_config)
+        }
+    }
+Unixcoder Score: 0.003624100238084793
+--------------------------------------------------
+C_Code: 
+bool WriteMutableData(OHOS::NativeRdb::ValuesBucket &insertValues, CTaskInfo *taskInfo, CTaskConfig *taskConfig)
+{
+    insertValues.PutLong("mtime", taskInfo->commonData.mtime);
+    insertValues.PutInt("reason", taskInfo->commonData.reason);
+    insertValues.PutLong("tries", taskInfo->commonData.tries);
+    if (!WriteUpdateData(insertValues, taskInfo)) {
+        return false;
+    }
+    // write vectors
+    insertValues.PutBlob("form_items", CFormItemToBlob(taskConfig->formItemsPtr, taskConfig->formItemsLen));
+    insertValues.PutBlob("file_specs", CFileSpecToBlob(taskConfig->fileSpecsPtr, taskConfig->fileSpecsLen));
+    insertValues.PutBlob("body_file_names", CStringToBlob(taskConfig->bodyFileNamesPtr, taskConfig->bodyFileNamesLen));
+    insertValues.PutBlob("certs_paths", CStringToBlob(taskConfig->certsPathPtr, taskConfig->certsPathLen));
+    return true;
+}
+Function: 
+async fn upload_inner(
+    task: Arc<RequestTask>,
+    abort_flag: Arc<AtomicBool>,
+) -> Result<(), TaskError> {
+    info!("upload task {} running", task.task_id());
+
+    #[cfg(feature = "oh")]
+    let _trace = Trace::new(&format!(
+        "exec upload task:{} file num:{}",
+        task.task_id(),
+        task.conf.file_specs.len()
+    ));
+
+    let size = task.conf.file_specs.len();
+    let start = task.progress.lock().unwrap().common_data.index;
+
+    let start_time = get_current_duration().as_secs() as u64;
+    task.start_time.store(start_time as u64, Ordering::SeqCst);
+
+    if task.conf.common_data.multipart {
+        #[cfg(feature = "oh")]
+        let _trace = Trace::new(&format!("upload file:{} index:{}", task.task_id(), start));
+
+        if !task.prepare_batch_upload(start, size).await {
+            return Err(TaskError::Failed(Reason::OthersError));
+        }
+
+        upload_one_file(
+            task.clone(),
+            start,
+            abort_flag.clone(),
+            build_batch_multipart_request,
+        )
+        .await?
+    } else {
+        let is_multipart = match task.conf.headers.get("Content-Type") {
+            Some(s) => s.eq("multipart/form-data"),
+            None => task.conf.method.to_uppercase().eq("POST"),
+        };
+        for index in start..size {
+            #[cfg(feature = "oh")]
+            let _trace = Trace::new(&format!("upload file:{} index:{}", task.task_id(), index));
+
+            if !task.prepare_single_upload(index).await {
+                return Err(TaskError::Failed(Reason::OthersError));
+            }
+
+            let func = match is_multipart {
+                true => build_multipart_request,
+                false => build_stream_request,
+            };
+            upload_one_file(task.clone(), index, abort_flag.clone(), func).await?;
+            task.notify_header_receive();
+        }
+    }
+
+    info!("{} uploaded", task.task_id());
+    Ok(())
+}
+Unixcoder Score: 0.0032615126110613346
+--------------------------------------------------
+C_Code: 
+struct CRequestCert {
+    uint32_t size;
+    uint8_t *data;
+}
+Function: 
+pub(crate) struct CRequestCert {
+    pub(crate) size: u32,
+    pub(crate) data: *const u8,
+}
+Unixcoder Score: 0.0008688222151249647
+--------------------------------------------------
+C_Code: 
+struct NetStack_CertBlob
+Function: 
+pub struct Certificate {
+    inner: Vec<reqwest::Certificate>,
+}
+Unixcoder Score: -0.0010930354474112391
+--------------------------------------------------

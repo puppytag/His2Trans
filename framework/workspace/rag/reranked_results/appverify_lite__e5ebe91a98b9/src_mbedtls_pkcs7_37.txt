@@ -1,0 +1,244 @@
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn main() {
+    unsafe { assert_eq!(S, *(S as *const *const u8)); }
+
+    let mut test_vec = Vec::new();
+    let mut cur = &L1;
+    loop {
+        test_vec.push(cur.data);
+        cur = cur.next;
+        if cur.head { break }
+    }
+    assert_eq!(&test_vec, &[1,2,3]);
+
+    let mut test_vec = Vec::new();
+    let mut cur = &L1;
+    loop {
+        cur = cur.prev;
+        test_vec.push(cur.data);
+        if cur.head { break }
+    }
+    assert_eq!(&test_vec, &[3,2,1]);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx117655_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx117655_rank4.rs", "c_api": "compare_and_swap(&this->head, &head, pointer_t(next.node, head.count + 1))", "rust_api": "self.compare_exchange(current, new, order, strongest_failure_ordering(order))", "mapping_type": "function", "description": "Atomic compare-and-swap operation for thread-safe queue management", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap (CAS) primitives; Rust code implements a wrapper around atomic compare-and-swap with ordering. [Similarity] Names do not match but both involve atomic CAS operations. [Knowledge Extraction] No full structural match due to different domains (C memory management vs Rust atomic operations), but API mapping exists for CAS logic."}]
+Unixcoder Score: 0.006213415879756212
+--------------------------------------------------
+C_Code: 
+inline_size void
+wlist_del (WL *head, WL elem)
+{
+  while (*head)
+    {
+      if (expect_true (*head == elem))
+        {
+          *head = elem->next;
+          break;
+        }
+
+      head = &(*head)->next;
+    }
+}
+Function: 
+fn pop_front_node(&mut self) -> Option<Box<Node<T>, &A>> {
+        // This method takes care not to create mutable references to whole nodes,
+        // to maintain validity of aliasing pointers into `element`.
+        self.head.map(|node| unsafe {
+            let node = Box::from_raw_in(node.as_ptr(), &self.alloc);
+            self.head = node.next;
+
+            match self.head {
+                None => self.tail = None,
+                // Not creating new mutable (unique!) references overlapping `element`.
+                Some(head) => (*head.as_ptr()).prev = None,
+            }
+
+            self.len -= 1;
+            node
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ares__is_list_empty__idx113790_rank2.c", "source_rust_file": "API_Mapping__ares__is_list_empty__idx113790_rank2.rs", "c_api": "head->next == head && head->prev == head", "rust_api": "self.head.is_none()", "mapping_type": "pattern", "description": "Check if list is empty", "reasoning": "[Task Analysis] C function checks if a circular doubly-linked list is empty by comparing next and prev pointers to the head node. Rust function checks if a list's head is None, indicating an empty list. [Similarity] Names do not match ('is_list_empty' vs 'is_empty'), but both represent the same logical operation of checking list emptiness. However, the data structures differ fundamentally: C uses a circular doubly-linked list with sentinel node, while Rust uses an Option-based linked list. [Knowledge Extraction] This is a domain mismatch (pointer-based vs Option-based list) and semantic mismatch (different list implementations), so it fails Full classification. However, both perform the same logical operation of checking for emptiness, so API mapping is extracted."}]
+Unixcoder Score: -0.0196848101913929
+--------------------------------------------------
+C_Code: 
+inline_size void
+wlist_add (WL *head, WL elem)
+{
+  elem->next = *head;
+  *head = elem;
+}
+Function: 
+fn test_dlist_insert_before_head() {
+        let l = create::<int>();
+        l.assert_consistent(); let one = l.push_n(1);
+        l.assert_consistent(); let _two = l.push_n(2);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); l.insert_before(3, one);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); assert l.head() == 3;
+        l.assert_consistent(); assert l.tail() == 2;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 2;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Unixcoder Score: -0.02329946868121624
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        self.head.is_none()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx117674_rank3.h", "source_rust_file": "API_Mapping__dequeue__idx117674_rank3.rs", "c_api": "compare_and_swap(&this->head, &head, pointer_t(next.node, head.count + 1))", "rust_api": "atomic_swap(self.p.get(), ptr, order)", "mapping_type": "function", "description": "Atomic compare-and-swap operation for concurrent memory updates", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap (CAS) and pointer manipulation; Rust code implements an atomic swap function using unsafe operations. [Similarity] Names and domains do not match (C: queue dequeue logic, Rust: atomic swap); no structural similarity at function level. [Knowledge Extraction] No full/partial match due to domain mismatch (memory management vs atomic operations). However, both involve low-level concurrency primitives and memory access patterns. API mapping identified between CAS-like behavior in C and atomic swap in Rust."}]
+Unixcoder Score: -0.027946028858423233
+--------------------------------------------------
+C_Code: 
+inline_size void
+wlist_add (WL *head, WL elem)
+{
+  elem->next = *head;
+  *head = elem;
+}
+Function: 
+pub unsafe fn remove(&mut self, entry: &mut UnsafeListEntry<T>) {
+        rtassert!(!self.is_empty());
+        // BEFORE:
+        //     /----\ next ---> /-----\ next ---> /----\
+        // ... |prev|           |entry|           |next| ...
+        //     \----/ <--- prev \-----/ <--- prev \----/
+        //
+        // AFTER:
+        //     /----\ next ---> /----\
+        // ... |prev|           |next| ...
+        //     \----/ <--- prev \----/
+        let mut prev = entry.prev;
+        let mut next = entry.next;
+        // SAFETY: `prev` and `next` must meet all requirements for a mutable reference.entry
+        unsafe { prev.as_mut() }.next = next;
+        unsafe { next.as_mut() }.prev = prev;
+        entry.next = NonNull::dangling();
+        entry.prev = NonNull::dangling();
+    }
+Unixcoder Score: -0.027946114540100098
+--------------------------------------------------
+C_Code: 
+inline_size void
+wlist_add (WL *head, WL elem)
+{
+  elem->next = *head;
+  *head = elem;
+}
+Function: 
+pub fn push_front(&mut self, value: T) {
+        if self.is_full() {
+            self.grow();
+        }
+
+        self.head = self.wrap_sub(self.head, 1);
+        self.len += 1;
+
+        unsafe {
+            self.buffer_write(self.head, value);
+        }
+    }
+Unixcoder Score: -0.03615415841341019
+--------------------------------------------------
+C_Code: 
+inline_size void
+wlist_add (WL *head, WL elem)
+{
+  elem->next = *head;
+  *head = elem;
+}
+Function: 
+pub fn insert(self, value: V) -> &'a mut V {
+        self.base.insert(value)
+    }
+Unixcoder Score: -0.04613688588142395
+--------------------------------------------------
+C_Code: 
+inline_size void
+wlist_add (WL *head, WL elem)
+{
+  elem->next = *head;
+  *head = elem;
+}
+Function: 
+pub fn push_front(&mut self, elt: T) {
+        let node = Box::new_in(Node::new(elt), &self.alloc);
+        let node_ptr = Unique::from(Box::leak(node));
+        // SAFETY: node_ptr is a unique pointer to a node we boxed with self.alloc
+        unsafe {
+            self.push_front_node(node_ptr);
+        }
+    }
+Unixcoder Score: -0.04728374257683754
+--------------------------------------------------
+C_Code: 
+inline_size void
+wlist_add (WL *head, WL elem)
+{
+  elem->next = *head;
+  *head = elem;
+}
+Function: 
+fn link(+before: dlist_link<T>, +after: dlist_link<T>) {
+        alt before {
+            some(neighbour) { neighbour.next = after; }
+            none            { self.hd        = after; }
+Unixcoder Score: -0.04782037436962128
+--------------------------------------------------
+C_Code: 
+bool dequeue(T *value) {
+        pointer_t head;
+
+        // Keep trying until dequeue is done.
+        while(true) {
+            head = this->head;
+            pointer_t tail = this->tail;
+            pointer_t next = head.node->next;
+
+            if (head.equals(this->head) == false) {
+                continue;
+            }
+
+            // If queue is empty, or if tail is falling behind.
+            if (head.node == tail.node) {
+                // If queue is empty.
+                if (next.node == NULL) {
+                    return false;
+                }
+                // Tail is falling behind, advance it.
+                compare_and_swap(&this->tail,
+                    &tail,
+                    pointer_t(next.node, tail.count + 1));
+            } else {
+                // Read value before CAS, otherwise another
+                // dequeue might advance it.
+                *value = next.node->value;
+                if (compare_and_swap(&this->head, &head,
+                    pointer_t(next.node, head.count + 1))) {
+                    break;
+                }
+            }
+        }
+        delete head.node;
+        return true;
+    }
+Function: 
+pub fn pop(&mut self) -> Option<T> {
+        unsafe { (*self.state.get()).pop() }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx79446_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx79446_rank4.rs", "c_api": "delete head.node", "rust_api": "w.pop()", "mapping_type": "function", "description": "Dequeue operation from a concurrent queue", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code implements a thread pool with work-stealing deque and atomic operations. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs thread pool with work stealing). [Knowledge Extraction] No full match, no partial match, but both involve atomic operations and concurrent data structures, so API mappings may exist for shared patterns like atomic operations and queue/deque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx79446_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx79446_rank4.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(next.node, tail.count + 1))", "rust_api": "slot.load(SeqCst)", "mapping_type": "function", "description": "Atomic load operation", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code implements a thread pool with work-stealing deque and atomic operations. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs thread pool with work stealing). [Knowledge Extraction] No full match, no partial match, but both involve atomic operations and concurrent data structures, so API mappings may exist for shared patterns like atomic operations and queue/deque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx79446_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx79446_rank4.rs", "c_api": "compare_and_swap(&this->head, &head, pointer_t(next.node, head.count + 1))", "rust_api": "(*thread_box).fetch_add(1, SeqCst)", "mapping_type": "function", "description": "Atomic compare-and-swap operation", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code implements a thread pool with work-stealing deque and atomic operations. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs thread pool with work stealing). [Knowledge Extraction] No full match, no partial match, but both involve atomic operations and concurrent data structures, so API mappings may exist for shared patterns like atomic operations and queue/deque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx79446_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx79446_rank4.rs", "c_api": "this->tail", "rust_api": "s", "mapping_type": "field_access", "description": "Reference to shared queue state", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code implements a thread pool with work-stealing deque and atomic operations. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs thread pool with work stealing). [Knowledge Extraction] No full match, no partial match, but both involve atomic operations and concurrent data structures, so API mappings may exist for shared patterns like atomic operations and queue/deque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx79446_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx79446_rank4.rs", "c_api": "this->head", "rust_api": "s", "mapping_type": "field_access", "description": "Reference to shared queue state", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code implements a thread pool with work-stealing deque and atomic operations. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs thread pool with work stealing). [Knowledge Extraction] No full match, no partial match, but both involve atomic operations and concurrent data structures, so API mappings may exist for shared patterns like atomic operations and queue/deque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx79446_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx79446_rank4.rs", "c_api": "w.push((1, 2))", "rust_api": "s.steal()", "mapping_type": "function", "description": "Enqueue operation to a concurrent queue", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code implements a thread pool with work-stealing deque and atomic operations. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs thread pool with work stealing). [Knowledge Extraction] No full match, no partial match, but both involve atomic operations and concurrent data structures, so API mappings may exist for shared patterns like atomic operations and queue/deque operations."}]
+Unixcoder Score: -0.04919303581118584
+--------------------------------------------------

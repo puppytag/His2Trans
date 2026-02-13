@@ -1,0 +1,500 @@
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: 0.21194103360176086
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: 0.210429847240448
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = unsafe { self.read::<u8>() };
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Unixcoder Score: 0.19446556270122528
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Unixcoder Score: 0.17319175601005554
+--------------------------------------------------
+C_Code: 
+inline int32_t ReadVarintZigZag32(const char** p) {
+  uint64_t tmp;
+  *p = VarintParse(*p, &tmp);
+  return WireFormatLite::ZigZagDecode32(static_cast<uint32_t>(tmp));
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "ParseBegins(env, jsConfig)", "rust_api": "get_rest_time(&config, 0)", "mapping_type": "function", "description": "Parsing begin times from JS config", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "ParseIndex(env, jsConfig, config, errInfo)", "rust_api": "check_config(...)", "mapping_type": "function", "description": "Parsing index from JS config", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "config.files = ...", "rust_api": "let (files, client) = check_config(...)", "mapping_type": "pattern", "description": "Assigning parsed config values to struct fields", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "NapiUtils::Convert2RequestDataVector(env, jsData)", "rust_api": "check_config(...)", "mapping_type": "function", "description": "Converting JS data to C++ request data vector", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "config.forms = ...", "rust_api": "let (files, client) = check_config(...)", "mapping_type": "pattern", "description": "Assigning parsed form data to struct fields", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "NapiUtils::GetNamedProperty(env, jsConfig, PARAM_KEY_FILES)", "rust_api": "check_config(&config, rest_time, ...)", "mapping_type": "function", "description": "Extracting named property from JS config object", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "return true", "rust_api": "task", "mapping_type": "pattern", "description": "Successful completion and return", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "Arc::new(RequestTask::new(...))", "rust_api": "Arc::new(RequestTask::new(...))", "mapping_type": "function", "description": "Creating and returning new request task", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "config.begins = ...", "rust_api": "get_rest_time(&config, 0)", "mapping_type": "pattern", "description": "Assigning parsed begin times to struct fields", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "inner.notify_online(...)", "rust_api": "inner.notify_online(...)", "mapping_type": "function", "description": "Notifying network online status", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "REQUEST_HILOGD(\"ParseUploadConfig in\")", "rust_api": "info!(\"...\")", "mapping_type": "function", "description": "Logging entry point", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "return false", "rust_api": ".unwrap()", "mapping_type": "pattern", "description": "Error handling and early return", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "NapiUtils::Convert2FileVector(env, jsFiles, \"API8\")", "rust_api": "check_config(...).unwrap()", "mapping_type": "function", "description": "Converting JS file list to C++ vector", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "ParseEnds(env, jsConfig)", "rust_api": "get_rest_time(&config, 0)", "mapping_type": "function", "description": "Parsing end times from JS config", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "NapiUtils::GetNamedProperty(env, jsConfig, PARAM_KEY_DATA)", "rust_api": "check_config(...)", "mapping_type": "function", "description": "Extracting data property from JS config", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "NetworkInner::new()", "rust_api": "NetworkInner::new()", "mapping_type": "function", "description": "Creating network inner instance", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ParseUploadConfig__idx101_rank5.c", "source_rust_file": "API_Mapping__ParseUploadConfig__idx101_rank5.rs", "c_api": "config.ends = ...", "rust_api": "get_rest_time(&config, 0)", "mapping_type": "pattern", "description": "Assigning parsed end times to struct fields", "reasoning": "[Task Analysis] C function parses JavaScript config into C++ structs; Rust function builds a task from config. [Similarity] Names refer to different concepts (ParseUploadConfig vs build_task), domains differ (JS parsing vs task building), and code lengths are vastly different (>3x). [Knowledge Extraction] No full or partial match due to domain mismatch and length difference. However, both involve config parsing and task creation logic, but with different structures and APIs. Extract API mappings for similar operations like config handling and task creation."}]
+Unixcoder Score: 0.06213528662919998
+--------------------------------------------------
+C_Code: 
+void MessageClearAndParse(Context& ctx, const Descriptor& msg) {
+  switch (ctx.opts().kernel) {
+    case Kernel::kCpp:
+      ctx.Emit({},
+               R"rs(
+          let success = unsafe {
+            // SAFETY: `data.as_ptr()` is valid to read for `data.len()`.
+            let data = $pbr$::SerializedData::from_raw_parts(
+              $NonNull$::new(data.as_ptr() as *mut _).unwrap(),
+              data.len(),
+            );
+
+            $pbr$::proto2_rust_Message_parse(self.raw_msg(), data)
+          };
+          success.then_some(()).ok_or($pb$::ParseError)
+        )rs");
+      return;
+
+    case Kernel::kUpb:
+      ctx.Emit(
+          R"rs(
+        let mut msg = Self::new();
+
+        // SAFETY:
+        // - `data.as_ptr()` is valid to read for `data.len()`
+        // - `mini_table` is the one used to construct `msg.raw_msg()`
+        // - `msg.arena().raw()` is held for the same lifetime as `msg`.
+        let status = unsafe {
+          $pbr$::wire::decode(
+              data,
+              msg.raw_msg(),
+              <Self as $pbr$::AssociatedMiniTable>::mini_table(),
+              msg.arena())
+        };
+        match status {
+          Ok(_) => {
+            //~ This swap causes the old self.inner.arena to be moved into `msg`
+            //~ which we immediately drop, which will release any previous
+            //~ message that was held here.
+            $std$::mem::swap(self, &mut msg);
+            Ok(())
+          }
+          Err(_) => Err($pb$::ParseError)
+        }
+      )rs");
+      return;
+  }
+
+  ABSL_LOG(FATAL) << "unreachable";
+}
+Function: 
+pub fn into_vec(self) -> Vec<u8> {
+        // We need to prevent self from being dropped, because we are going to transfer
+        // ownership of self.data to the Vec<u8>.
+        let s = ManuallyDrop::new(self);
+
+        unsafe {
+            // SAFETY:
+            // - `data` was allocated by the Rust global allocator.
+            // - `data` was allocated with an alignment of 1 for u8.
+            // - The allocated size was `len`.
+            // - The length and capacity are equal.
+            // - All `len` bytes are initialized.
+            // - The capacity (`len` in this case) is the size the pointer was allocated
+            //   with.
+            // - The allocated size is no more than isize::MAX, because the protobuf
+            //   serializer will refuse to serialize a message if the output would exceed
+            //   2^31 - 1 bytes.
+            Vec::<u8>::from_raw_parts(s.data.as_ptr(), s.len, s.len)
+        }
+    }
+Unixcoder Score: -0.011368022300302982
+--------------------------------------------------
+C_Code: 
+void MessageClearAndParse(Context& ctx, const Descriptor& msg) {
+  switch (ctx.opts().kernel) {
+    case Kernel::kCpp:
+      ctx.Emit({},
+               R"rs(
+          let success = unsafe {
+            // SAFETY: `data.as_ptr()` is valid to read for `data.len()`.
+            let data = $pbr$::SerializedData::from_raw_parts(
+              $NonNull$::new(data.as_ptr() as *mut _).unwrap(),
+              data.len(),
+            );
+
+            $pbr$::proto2_rust_Message_parse(self.raw_msg(), data)
+          };
+          success.then_some(()).ok_or($pb$::ParseError)
+        )rs");
+      return;
+
+    case Kernel::kUpb:
+      ctx.Emit(
+          R"rs(
+        let mut msg = Self::new();
+
+        // SAFETY:
+        // - `data.as_ptr()` is valid to read for `data.len()`
+        // - `mini_table` is the one used to construct `msg.raw_msg()`
+        // - `msg.arena().raw()` is held for the same lifetime as `msg`.
+        let status = unsafe {
+          $pbr$::wire::decode(
+              data,
+              msg.raw_msg(),
+              <Self as $pbr$::AssociatedMiniTable>::mini_table(),
+              msg.arena())
+        };
+        match status {
+          Ok(_) => {
+            //~ This swap causes the old self.inner.arena to be moved into `msg`
+            //~ which we immediately drop, which will release any previous
+            //~ message that was held here.
+            $std$::mem::swap(self, &mut msg);
+            Ok(())
+          }
+          Err(_) => Err($pb$::ParseError)
+        }
+      )rs");
+      return;
+  }
+
+  ABSL_LOG(FATAL) << "unreachable";
+}
+Function: 
+pub fn into_vec(self) -> Vec<u8> {
+        // We need to prevent self from being dropped, because we are going to transfer
+        // ownership of self.data to the Vec<u8>.
+        let s = ManuallyDrop::new(self);
+
+        unsafe {
+            // SAFETY:
+            // - `data` was allocated by the Rust global allocator.
+            // - `data` was allocated with an alignment of 1 for u8.
+            // - The allocated size was `len`.
+            // - The length and capacity are equal.
+            // - All `len` bytes are initialized.
+            // - The capacity (`len` in this case) is the size the pointer was allocated
+            //   with.
+            // - The allocated size is no more than isize::MAX, because the protobuf
+            //   serializer will refuse to serialize a message if the output would exceed
+            //   2^31 - 1 bytes.
+            Vec::<u8>::from_raw_parts(s.data.as_ptr(), s.len, s.len)
+        }
+    }
+Unixcoder Score: -0.01266191340982914
+--------------------------------------------------
+C_Code: 
+void MessageClearAndParse(Context& ctx, const Descriptor& msg) {
+  switch (ctx.opts().kernel) {
+    case Kernel::kCpp:
+      ctx.Emit({},
+               R"rs(
+          let success = unsafe {
+            // SAFETY: `data.as_ptr()` is valid to read for `data.len()`.
+            let data = $pbr$::SerializedData::from_raw_parts(
+              $NonNull$::new(data.as_ptr() as *mut _).unwrap(),
+              data.len(),
+            );
+
+            $pbr$::proto2_rust_Message_parse(self.raw_msg(), data)
+          };
+          success.then_some(()).ok_or($pb$::ParseError)
+        )rs");
+      return;
+
+    case Kernel::kUpb:
+      ctx.Emit(
+          R"rs(
+        let mut msg = Self::new();
+
+        // SAFETY:
+        // - `data.as_ptr()` is valid to read for `data.len()`
+        // - `mini_table` is the one used to construct `msg.raw_msg()`
+        // - `msg.arena().raw()` is held for the same lifetime as `msg`.
+        let status = unsafe {
+          $pbr$::wire::decode(
+              data,
+              msg.raw_msg(),
+              <Self as $pbr$::AssociatedMiniTable>::mini_table(),
+              msg.arena())
+        };
+        match status {
+          Ok(_) => {
+            //~ This swap causes the old self.inner.arena to be moved into `msg`
+            //~ which we immediately drop, which will release any previous
+            //~ message that was held here.
+            $std$::mem::swap(self, &mut msg);
+            Ok(())
+          }
+          Err(_) => Err($pb$::ParseError)
+        }
+      )rs");
+      return;
+  }
+
+  ABSL_LOG(FATAL) << "unreachable";
+}
+Function: 
+fn from(slice: &[u8]) -> Self {
+        Self { ptr: slice.as_ptr(), len: slice.len() }
+    }
+Unixcoder Score: -0.020631184801459312
+--------------------------------------------------
+C_Code: 
+void MessageClearAndParse(Context& ctx, const Descriptor& msg) {
+  switch (ctx.opts().kernel) {
+    case Kernel::kCpp:
+      ctx.Emit({},
+               R"rs(
+          let success = unsafe {
+            // SAFETY: `data.as_ptr()` is valid to read for `data.len()`.
+            let data = $pbr$::SerializedData::from_raw_parts(
+              $NonNull$::new(data.as_ptr() as *mut _).unwrap(),
+              data.len(),
+            );
+
+            $pbr$::proto2_rust_Message_parse(self.raw_msg(), data)
+          };
+          success.then_some(()).ok_or($pb$::ParseError)
+        )rs");
+      return;
+
+    case Kernel::kUpb:
+      ctx.Emit(
+          R"rs(
+        let mut msg = Self::new();
+
+        // SAFETY:
+        // - `data.as_ptr()` is valid to read for `data.len()`
+        // - `mini_table` is the one used to construct `msg.raw_msg()`
+        // - `msg.arena().raw()` is held for the same lifetime as `msg`.
+        let status = unsafe {
+          $pbr$::wire::decode(
+              data,
+              msg.raw_msg(),
+              <Self as $pbr$::AssociatedMiniTable>::mini_table(),
+              msg.arena())
+        };
+        match status {
+          Ok(_) => {
+            //~ This swap causes the old self.inner.arena to be moved into `msg`
+            //~ which we immediately drop, which will release any previous
+            //~ message that was held here.
+            $std$::mem::swap(self, &mut msg);
+            Ok(())
+          }
+          Err(_) => Err($pb$::ParseError)
+        }
+      )rs");
+      return;
+  }
+
+  ABSL_LOG(FATAL) << "unreachable";
+}
+Function: 
+pub fn into_vec(self) -> Vec<u8> {
+        // We need to prevent self from being dropped, because we are going to transfer
+        // ownership of self.data to the Vec<u8>.
+        let s = ManuallyDrop::new(self);
+
+        unsafe {
+            // SAFETY:
+            // - `data` was allocated by the Rust global allocator.
+            // - `data` was allocated with an alignment of 1 for u8.
+            // - The allocated size was `len`.
+            // - The length and capacity are equal.
+            // - All `len` bytes are initialized.
+            // - The capacity (`len` in this case) is the size the pointer was allocated
+            //   with.
+            // - The allocated size is no more than isize::MAX, because the protobuf
+            //   serializer will refuse to serialize a message if the output would exceed
+            //   2^31 - 1 bytes.
+            Vec::<u8>::from_raw_parts(s.data.as_ptr(), s.len, s.len)
+        }
+    }
+Unixcoder Score: -0.022276591509580612
+--------------------------------------------------
+C_Code: 
+void MessageClearAndParse(Context& ctx, const Descriptor& msg) {
+  switch (ctx.opts().kernel) {
+    case Kernel::kCpp:
+      ctx.Emit({},
+               R"rs(
+          let success = unsafe {
+            // SAFETY: `data.as_ptr()` is valid to read for `data.len()`.
+            let data = $pbr$::SerializedData::from_raw_parts(
+              $NonNull$::new(data.as_ptr() as *mut _).unwrap(),
+              data.len(),
+            );
+
+            $pbr$::proto2_rust_Message_parse(self.raw_msg(), data)
+          };
+          success.then_some(()).ok_or($pb$::ParseError)
+        )rs");
+      return;
+
+    case Kernel::kUpb:
+      ctx.Emit(
+          R"rs(
+        let mut msg = Self::new();
+
+        // SAFETY:
+        // - `data.as_ptr()` is valid to read for `data.len()`
+        // - `mini_table` is the one used to construct `msg.raw_msg()`
+        // - `msg.arena().raw()` is held for the same lifetime as `msg`.
+        let status = unsafe {
+          $pbr$::wire::decode(
+              data,
+              msg.raw_msg(),
+              <Self as $pbr$::AssociatedMiniTable>::mini_table(),
+              msg.arena())
+        };
+        match status {
+          Ok(_) => {
+            //~ This swap causes the old self.inner.arena to be moved into `msg`
+            //~ which we immediately drop, which will release any previous
+            //~ message that was held here.
+            $std$::mem::swap(self, &mut msg);
+            Ok(())
+          }
+          Err(_) => Err($pb$::ParseError)
+        }
+      )rs");
+      return;
+  }
+
+  ABSL_LOG(FATAL) << "unreachable";
+}
+Function: 
+fn from(slice: &[u8]) -> Self {
+        Self { ptr: slice.as_ptr(), len: slice.len() }
+    }
+Unixcoder Score: -0.02341851219534874
+--------------------------------------------------

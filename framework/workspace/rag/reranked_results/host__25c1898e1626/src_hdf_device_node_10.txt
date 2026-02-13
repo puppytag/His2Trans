@@ -1,0 +1,296 @@
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+unsafe fn unlink_node(&mut self, mut node: NonNull<Node<T>>) {
+        let node = unsafe { node.as_mut() }; // this one is ours now, we can create an &mut.
+
+        // Not creating new mutable (unique!) references overlapping `element`.
+        match node.prev {
+            Some(prev) => unsafe { (*prev.as_ptr()).next = node.next },
+            // this node is the head node
+            None => self.head = node.next,
+        };
+
+        match node.next {
+            Some(next) => unsafe { (*next.as_ptr()).prev = node.prev },
+            // this node is the tail node
+            None => self.tail = node.prev,
+        };
+
+        self.len -= 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134553_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134553_rank3.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "l.remove(two);", "description": "Both perform removal of a node from a doubly-linked list structure.", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests a doubly-linked list implementation by pushing and removing elements. [Similarity] Names do not refer to the same concept (ares__remove_from_list vs test_dlist_remove_mid), and the Rust code is a test case calling list operations rather than implementing them. [Knowledge Extraction] No full structural match. Partial match exists in the removal logic pattern (both manipulate prev/next pointers), but not in the complete function. API mappings found for list node removal and list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134553_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134553_rank3.rs", "c_api": "node->prev->next = node->next", "rust_api": "l.remove(two)", "mapping_type": "function", "description": "Removal of a node from a doubly-linked list", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests a doubly-linked list implementation by pushing and removing elements. [Similarity] Names do not refer to the same concept (ares__remove_from_list vs test_dlist_remove_mid), and the Rust code is a test case calling list operations rather than implementing them. [Knowledge Extraction] No full structural match. Partial match exists in the removal logic pattern (both manipulate prev/next pointers), but not in the complete function. API mappings found for list node removal and list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134553_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134553_rank3.rs", "c_api": "node->next->prev = node->prev", "rust_api": "l.remove(two)", "mapping_type": "function", "description": "Removal of a node from a doubly-linked list", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests a doubly-linked list implementation by pushing and removing elements. [Similarity] Names do not refer to the same concept (ares__remove_from_list vs test_dlist_remove_mid), and the Rust code is a test case calling list operations rather than implementing them. [Knowledge Extraction] No full structural match. Partial match exists in the removal logic pattern (both manipulate prev/next pointers), but not in the complete function. API mappings found for list node removal and list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134553_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134553_rank3.rs", "c_api": "node->next = NULL", "rust_api": "l.remove(two)", "mapping_type": "function", "description": "Clearing node pointers after removal", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests a doubly-linked list implementation by pushing and removing elements. [Similarity] Names do not refer to the same concept (ares__remove_from_list vs test_dlist_remove_mid), and the Rust code is a test case calling list operations rather than implementing them. [Knowledge Extraction] No full structural match. Partial match exists in the removal logic pattern (both manipulate prev/next pointers), but not in the complete function. API mappings found for list node removal and list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134553_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134553_rank3.rs", "c_api": "node->prev = NULL", "rust_api": "l.remove(two)", "mapping_type": "function", "description": "Clearing node pointers after removal", "reasoning": "[Task Analysis] C function removes a node from a doubly-linked list; Rust function tests a doubly-linked list implementation by pushing and removing elements. [Similarity] Names do not refer to the same concept (ares__remove_from_list vs test_dlist_remove_mid), and the Rust code is a test case calling list operations rather than implementing them. [Knowledge Extraction] No full structural match. Partial match exists in the removal logic pattern (both manipulate prev/next pointers), but not in the complete function. API mappings found for list node removal and list operations."}]
+Unixcoder Score: -0.018938081339001656
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+unsafe fn unlink_node(&mut self, mut node: NonNull<Node<T>>) {
+        let node = unsafe { node.as_mut() }; // this one is ours now, we can create an &mut.
+
+        // Not creating new mutable (unique!) references overlapping `element`.
+        match node.prev {
+            Some(prev) => unsafe { (*prev.as_ptr()).next = node.next },
+            // this node is the head node
+            None => self.head = node.next,
+        };
+
+        match node.next {
+            Some(next) => unsafe { (*next.as_ptr()).prev = node.prev },
+            // this node is the tail node
+            None => self.tail = node.prev,
+        };
+
+        self.len -= 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__enqueue__idx113800_rank2.h", "source_rust_file": "Partial__enqueue__idx113800_rank2.rs", "c_fragment": "node_t *node = new node_t();\n        node->value = value;\n        node->next.node = NULL;", "rust_fragment": "let node = Box::new_in(Node::new(elt), &self.alloc);\n        let node_ptr = Unique::from(Box::leak(node));", "description": "Creation of a new node with value assignment and initialization of next pointer.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__enqueue__idx113800_rank2.h", "source_rust_file": "Partial__enqueue__idx113800_rank2.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(node, tail.count + 1))", "rust_api": "self.push_back_node(node_ptr)", "mapping_type": "function", "description": "Atomic update of the tail pointer in a lock-free linked list.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__enqueue__idx113800_rank2.h", "source_rust_file": "Partial__enqueue__idx113800_rank2.rs", "c_api": "compare_and_swap(&tail.node->next, &next, pointer_t(node, next.count + 1))", "rust_api": "self.push_back_node(node_ptr)", "mapping_type": "function", "description": "Atomic operation to insert a node at the end of a lock-free linked list.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__enqueue__idx113800_rank2.h", "source_rust_file": "Partial__enqueue__idx113800_rank2.rs", "c_api": "new node_t()", "rust_api": "Box::new_in(Node::new(elt), &self.alloc)", "mapping_type": "function", "description": "Memory allocation and initialization of a new node in a linked list.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__enqueue__idx113800_rank2.h", "source_rust_file": "Partial__enqueue__idx113800_rank2.rs", "c_fragment": "while (true) {\n            // Read the current tail which may either point to the last node\n            // or to the second to last node (not sure why second to last,\n            // and not any other node).\n            tail = this->tail;\n\n            // Reads the next node after the tail which will be the last node\n            // if null.\n            pointer_t next;\n            if (tail.node != NULL) {\n                next = tail.node->next;\n            }\n\n            // Loop if another thread changed the tail since we last read it.\n            if (tail.equals(this->tail) == false) {\n                continue;\n            }\n\n            // If next is not pointing to the last node try to swing tail to\n            // the last node and loop.\n            if (next.node != NULL) {\n                compare_and_swap(&this->tail, &tail,\n                    pointer_t(next.node, tail.count + 1));\n                continue;\n            }\n\n            // Try to link node at the end of the linked list.\n            if (compare_and_swap(&tail.node->next, &next,\n                    pointer_t(node, next.count + 1))) {\n                // Enqueueing is done.\n                break;\n            }\n        }", "rust_fragment": "unsafe {\n            self.push_back_node(node_ptr);\n        }", "description": "Lock-free enqueue logic involving atomic compare-and-swap operations and node insertion in a linked list.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full/Partial/API Analysis]"}]
+Unixcoder Score: -0.036082297563552856
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn test_dlist_remove_one_two() {
+        let l = create::<int>();
+        l.assert_consistent(); let one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let _three = l.push_n(3);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); l.remove(one);
+        l.assert_consistent(); l.remove(two);
+        // and through and through, the vorpal blade went snicker-snack
+        l.assert_consistent(); assert l.len() == 1;
+        l.assert_consistent(); assert l.head() == 3;
+        l.assert_consistent(); assert l.tail() == 3;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx122566_rank3.h", "source_rust_file": "API_Mapping__enqueue__idx122566_rank3.rs", "c_api": "enqueue", "rust_api": "send", "mapping_type": "function", "description": "Queue insertion operation", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('enqueue' vs 'send'), but both refer to queueing logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C uses linked list with atomic operations; Rust uses a channel send. These are different domains (lock-free queue vs message passing). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions. [Task Analysis] -> C implements a lock-free queue enqueue with CAS loops; Rust wraps a channel send. [Similarity] -> No full structural similarity due to domain mismatch and different implementation patterns. [Knowledge Extraction] -> No full match, but there's a partial semantic alignment in terms of 'putting data into a queue' and API mapping in terms of 'enqueue' vs 'send'."}]
+Unixcoder Score: -0.03971007466316223
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn remove(nobe: dlist_node<T>) { self.unlink(nobe); }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx26313_rank2.h", "source_rust_file": "API_Mapping__enqueue__idx26313_rank2.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(next.node, tail.count + 1))", "rust_api": "IntervalSet::<u32>::new(10000)", "mapping_type": "function", "description": "Data structure initialization with capacity", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements a lock-free linked list enqueue operation using atomic compare-and-swap operations; Rust code implements interval set insertion and merging. -> [Similarity] -> No structural similarity at the function level due to different domains (concurrent data structure vs interval management). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to data structure operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx26313_rank2.h", "source_rust_file": "API_Mapping__enqueue__idx26313_rank2.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(node, tail.count + 1))", "rust_api": "set.insert_range(43..=9830)", "mapping_type": "function", "description": "Inserting a range into an interval set", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements a lock-free linked list enqueue operation using atomic compare-and-swap operations; Rust code implements interval set insertion and merging. -> [Similarity] -> No structural similarity at the function level due to different domains (concurrent data structure vs interval management). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to data structure operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx26313_rank2.h", "source_rust_file": "API_Mapping__enqueue__idx26313_rank2.rs", "c_api": "compare_and_swap(&tail.node->next, &next, pointer_t(node, next.count + 1))", "rust_api": "set.insert_range(9831..=9837)", "mapping_type": "function", "description": "Inserting a range into an interval set", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements a lock-free linked list enqueue operation using atomic compare-and-swap operations; Rust code implements interval set insertion and merging. -> [Similarity] -> No structural similarity at the function level due to different domains (concurrent data structure vs interval management). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to data structure operations."}]
+Unixcoder Score: -0.040861908346414566
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn pop_n() -> option<dlist_node<T>> {
+        let hd = self.peek_n();
+        hd.map(|nobe| self.unlink(nobe));
+        hd
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx140373_rank5.h", "source_rust_file": "API_Mapping__enqueue__idx140373_rank5.rs", "c_api": "node->next.node", "rust_api": "c.next.get().unwrap_unchecked()", "mapping_type": "field_access", "description": "Accessing next node pointer in linked list", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code finds the tail of a linked list and sets backlinks. [Similarity] Names do not refer to the same concept (enqueue vs add_backlinks_and_find_tail), and domains are different (concurrent queue operation vs list traversal with backlinking). [Knowledge Extraction] No full structural match, but both involve linked list manipulation and pointer handling. Extract API mappings for similar pointer/linked list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx140373_rank5.h", "source_rust_file": "API_Mapping__enqueue__idx140373_rank5.rs", "c_api": "compare_and_swap(&tail.node->next, &next, pointer_t(node, next.count + 1))", "rust_api": "c.tail.set(Some(tail))", "mapping_type": "function", "description": "Updating tail pointer in linked list", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code finds the tail of a linked list and sets backlinks. [Similarity] Names do not refer to the same concept (enqueue vs add_backlinks_and_find_tail), and domains are different (concurrent queue operation vs list traversal with backlinking). [Knowledge Extraction] No full structural match, but both involve linked list manipulation and pointer handling. Extract API mappings for similar pointer/linked list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx140373_rank5.h", "source_rust_file": "API_Mapping__enqueue__idx140373_rank5.rs", "c_api": "tail.node->next", "rust_api": "c.next.get().unwrap_unchecked()", "mapping_type": "field_access", "description": "Accessing next node pointer in linked list", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code finds the tail of a linked list and sets backlinks. [Similarity] Names do not refer to the same concept (enqueue vs add_backlinks_and_find_tail), and domains are different (concurrent queue operation vs list traversal with backlinking). [Knowledge Extraction] No full structural match, but both involve linked list manipulation and pointer handling. Extract API mappings for similar pointer/linked list operations."}]
+Unixcoder Score: -0.04196774587035179
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn test_dlist_remove_one_two() {
+        let l = create::<int>();
+        l.assert_consistent(); let one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let _three = l.push_n(3);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); l.remove(one);
+        l.assert_consistent(); l.remove(two);
+        // and through and through, the vorpal blade went snicker-snack
+        l.assert_consistent(); assert l.len() == 1;
+        l.assert_consistent(); assert l.head() == 3;
+        l.assert_consistent(); assert l.tail() == 3;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx79430_rank2.h", "source_rust_file": "API_Mapping__enqueue__idx79430_rank2.rs", "c_api": "compare_and_swap(&tail.node->next, &next, pointer_t(node, next.count + 1))", "rust_api": "self.top.compare_and_swap(t, t + ss, SeqCst)", "mapping_type": "function", "description": "Atomic compare-and-swap operation for thread-safe updates", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using compare-and-swap (CAS) for thread safety; Rust code performs buffer swapping with atomic operations and memory management. [Similarity] Names and domains do not refer to the same concept (C: linked list enqueue, Rust: buffer swap), and the semantic domains are different (memory synchronization vs memory management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both use atomic operations and CAS-like patterns, which can be mapped as API correspondences."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx79430_rank2.h", "source_rust_file": "API_Mapping__enqueue__idx79430_rank2.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(node, tail.count + 1))", "rust_api": "self.top.compare_and_swap(t, t + ss, SeqCst)", "mapping_type": "function", "description": "Atomic compare-and-swap operation for thread-safe updates", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using compare-and-swap (CAS) for thread safety; Rust code performs buffer swapping with atomic operations and memory management. [Similarity] Names and domains do not refer to the same concept (C: linked list enqueue, Rust: buffer swap), and the semantic domains are different (memory synchronization vs memory management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both use atomic operations and CAS-like patterns, which can be mapped as API correspondences."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx79430_rank2.h", "source_rust_file": "API_Mapping__enqueue__idx79430_rank2.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(next.node, tail.count + 1))", "rust_api": "self.top.compare_and_swap(t, t + ss, SeqCst)", "mapping_type": "function", "description": "Atomic compare-and-swap operation for thread-safe updates", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using compare-and-swap (CAS) for thread safety; Rust code performs buffer swapping with atomic operations and memory management. [Similarity] Names and domains do not refer to the same concept (C: linked list enqueue, Rust: buffer swap), and the semantic domains are different (memory synchronization vs memory management). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different logic. However, both use atomic operations and CAS-like patterns, which can be mapped as API correspondences."}]
+Unixcoder Score: -0.04241294786334038
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+unsafe fn unlink_node(&mut self, mut node: NonNull<Node<T>>) {
+        let node = unsafe { node.as_mut() }; // this one is ours now, we can create an &mut.
+
+        // Not creating new mutable (unique!) references overlapping `element`.
+        match node.prev {
+            Some(prev) => unsafe { (*prev.as_ptr()).next = node.next },
+            // this node is the head node
+            None => self.head = node.next,
+        };
+
+        match node.next {
+            Some(next) => unsafe { (*next.as_ptr()).prev = node.prev },
+            // this node is the tail node
+            None => self.tail = node.prev,
+        };
+
+        self.len -= 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__enqueue__idx114899_rank3.h", "source_rust_file": "Partial__enqueue__idx114899_rank3.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(next.node, tail.count + 1))", "rust_api": "VecDeque::append", "mapping_type": "function", "description": "Atomic update of tail pointer in C corresponds to appending one deque to another in Rust.", "reasoning": "[Task Analysis] C code implements a lock-free queue enqueue operation using atomic compare-and-swap and linked list manipulation; Rust code demonstrates VecDeque usage with push/pop operations and append. [Similarity] Names do not refer to the same concept (enqueue vs VecDeque operations), and domains differ (low-level atomic memory management vs high-level collection operations). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, partial matching exists in the loop structure and atomic operation patterns. API mappings are found between C's compare_and_swap and Rust's atomic operations, and between C's node creation and Rust's Box allocation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__enqueue__idx114899_rank3.h", "source_rust_file": "Partial__enqueue__idx114899_rank3.rs", "c_api": "new node_t()", "rust_api": "Box::new(1)", "mapping_type": "function", "description": "Dynamic allocation of a new node in C corresponds to heap allocation of a boxed value in Rust.", "reasoning": "[Task Analysis] C code implements a lock-free queue enqueue operation using atomic compare-and-swap and linked list manipulation; Rust code demonstrates VecDeque usage with push/pop operations and append. [Similarity] Names do not refer to the same concept (enqueue vs VecDeque operations), and domains differ (low-level atomic memory management vs high-level collection operations). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, partial matching exists in the loop structure and atomic operation patterns. API mappings are found between C's compare_and_swap and Rust's atomic operations, and between C's node creation and Rust's Box allocation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__enqueue__idx114899_rank3.h", "source_rust_file": "Partial__enqueue__idx114899_rank3.rs", "c_api": "compare_and_swap(&tail.node->next, &next, pointer_t(node, next.count + 1))", "rust_api": "VecDeque::push_front", "mapping_type": "function", "description": "Atomic linking of a new node in C corresponds to pushing an element to the front of a VecDeque in Rust.", "reasoning": "[Task Analysis] C code implements a lock-free queue enqueue operation using atomic compare-and-swap and linked list manipulation; Rust code demonstrates VecDeque usage with push/pop operations and append. [Similarity] Names do not refer to the same concept (enqueue vs VecDeque operations), and domains differ (low-level atomic memory management vs high-level collection operations). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, partial matching exists in the loop structure and atomic operation patterns. API mappings are found between C's compare_and_swap and Rust's atomic operations, and between C's node creation and Rust's Box allocation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__enqueue__idx114899_rank3.h", "source_rust_file": "Partial__enqueue__idx114899_rank3.rs", "c_fragment": "while (true) {\n            // Read the current tail which may either point to the last node\n            // or to the second to last node (not sure why second to last,\n            // and not any other node).\n            tail = this->tail;\n\n            // Reads the next node after the tail which will be the last node\n            // if null.\n            pointer_t next;\n            if (tail.node != NULL) {\n                next = tail.node->next;\n            }\n\n            // Loop if another thread changed the tail since we last read it.\n            if (tail.equals(this->tail) == false) {\n                continue;\n            }\n\n            // If next is not pointing to the last node try to swing tail to\n            // the last node and loop.\n            if (next.node != NULL) {\n                compare_and_swap(&this->tail, &tail,\n                    pointer_t(next.node, tail.count + 1));\n                continue;\n            }\n\n            // Try to link node at the end of the linked list.\n            if (compare_and_swap(&tail.node->next, &next,\n                    pointer_t(node, next.count + 1))) {\n                // Enqueueing is done.\n                break;\n            }\n        }", "rust_fragment": "let mut dst = VecDeque::new();\n    dst.push_front(Box::new(1));\n    dst.push_front(Box::new(2));\n    assert_eq!(*dst.pop_back().unwrap(), 1);\n\n    let mut src = VecDeque::new();\n    src.push_front(Box::new(2));\n    dst.append(&mut src);", "description": "Both code blocks involve concurrent data structure manipulation with retry loops and atomic-like operations, though the specific data structures and APIs differ.", "reasoning": "[Task Analysis] C code implements a lock-free queue enqueue operation using atomic compare-and-swap and linked list manipulation; Rust code demonstrates VecDeque usage with push/pop operations and append. [Similarity] Names do not refer to the same concept (enqueue vs VecDeque operations), and domains differ (low-level atomic memory management vs high-level collection operations). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, partial matching exists in the loop structure and atomic operation patterns. API mappings are found between C's compare_and_swap and Rust's atomic operations, and between C's node creation and Rust's Box allocation."}]
+Unixcoder Score: -0.043989501893520355
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+pub fn remove(&mut self, at: usize) -> T {
+        let len = self.len();
+        assert!(at < len, "Cannot remove at an index outside of the list bounds");
+
+        // Below, we iterate towards the node at the given index, either from
+        // the start or the end, depending on which would be faster.
+        let offset_from_end = len - at - 1;
+        if at <= offset_from_end {
+            let mut cursor = self.cursor_front_mut();
+            for _ in 0..at {
+                cursor.move_next();
+            }
+            cursor.remove_current().unwrap()
+        } else {
+            let mut cursor = self.cursor_back_mut();
+            for _ in 0..offset_from_end {
+                cursor.move_prev();
+            }
+            cursor.remove_current().unwrap()
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx134549_rank4.h", "source_rust_file": "API_Mapping__enqueue__idx134549_rank4.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(node, tail.count + 1))", "rust_api": "l.push(3)", "mapping_type": "method", "description": "Adding a value to a list structure", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation with atomic operations; Rust code is a unit test for a doubly-linked list with push and assertion operations. [Similarity] Names do not refer to the same concept (enqueue vs push, test_dlist_push vs actual implementation), and domains are mismatched (low-level concurrent data structure vs high-level testing logic). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different conceptual tasks. However, there are API mappings between the enqueue operation and push operation, both representing adding elements to a list structure."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx134549_rank4.h", "source_rust_file": "API_Mapping__enqueue__idx134549_rank4.rs", "c_api": "compare_and_swap(&tail.node->next, &next, pointer_t(node, next.count + 1))", "rust_api": "l.push(2)", "mapping_type": "method", "description": "Adding a value to a list structure", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation with atomic operations; Rust code is a unit test for a doubly-linked list with push and assertion operations. [Similarity] Names do not refer to the same concept (enqueue vs push, test_dlist_push vs actual implementation), and domains are mismatched (low-level concurrent data structure vs high-level testing logic). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different conceptual tasks. However, there are API mappings between the enqueue operation and push operation, both representing adding elements to a list structure."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx134549_rank4.h", "source_rust_file": "API_Mapping__enqueue__idx134549_rank4.rs", "c_api": "node->value = value", "rust_api": "l.push(1)", "mapping_type": "method", "description": "Adding a value to a list structure", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation with atomic operations; Rust code is a unit test for a doubly-linked list with push and assertion operations. [Similarity] Names do not refer to the same concept (enqueue vs push, test_dlist_push vs actual implementation), and domains are mismatched (low-level concurrent data structure vs high-level testing logic). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different conceptual tasks. However, there are API mappings between the enqueue operation and push operation, both representing adding elements to a list structure."}]
+Unixcoder Score: -0.044733572751283646
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+unsafe fn splice_nodes(
+        &mut self,
+        existing_prev: Option<NonNull<Node<T>>>,
+        existing_next: Option<NonNull<Node<T>>>,
+        mut splice_start: NonNull<Node<T>>,
+        mut splice_end: NonNull<Node<T>>,
+        splice_length: usize,
+    ) {
+        // This method takes care not to create multiple mutable references to whole nodes at the same time,
+        // to maintain validity of aliasing pointers into `element`.
+        if let Some(mut existing_prev) = existing_prev {
+            unsafe {
+                existing_prev.as_mut().next = Some(splice_start);
+            }
+        } else {
+            self.head = Some(splice_start);
+        }
+        if let Some(mut existing_next) = existing_next {
+            unsafe {
+                existing_next.as_mut().prev = Some(splice_end);
+            }
+        } else {
+            self.tail = Some(splice_end);
+        }
+        unsafe {
+            splice_start.as_mut().prev = existing_prev;
+            splice_end.as_mut().next = existing_next;
+        }
+
+        self.len += splice_length;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx125953_rank4.h", "source_rust_file": "API_Mapping__enqueue__idx125953_rank4.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(node, tail.count + 1))", "rust_api": "list.push(&mut node1)", "mapping_type": "function", "description": "Atomic operation to update tail pointer", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code tests a concurrent list with push, pop, and remove operations. [Similarity] Names do not refer to the same concept (enqueue vs push_remove_pop), and domains are mismatched (low-level atomic operations vs high-level testing). [Knowledge Extraction] No full or partial structural match. However, both involve linked list node manipulation and atomic operations, so API mappings are extracted for similar patterns like node creation and linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx125953_rank4.h", "source_rust_file": "API_Mapping__enqueue__idx125953_rank4.rs", "c_api": "node_t *node = new node_t();", "rust_api": "let mut node1 = UnsafeListEntry::new(11);", "mapping_type": "function", "description": "Node creation in a linked list", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code tests a concurrent list with push, pop, and remove operations. [Similarity] Names do not refer to the same concept (enqueue vs push_remove_pop), and domains are mismatched (low-level atomic operations vs high-level testing). [Knowledge Extraction] No full or partial structural match. However, both involve linked list node manipulation and atomic operations, so API mappings are extracted for similar patterns like node creation and linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx125953_rank4.h", "source_rust_file": "API_Mapping__enqueue__idx125953_rank4.rs", "c_api": "compare_and_swap(&tail.node->next, &next, pointer_t(node, next.count + 1))", "rust_api": "list.push(&mut node1)", "mapping_type": "function", "description": "Atomic operation to link node at end of list", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code tests a concurrent list with push, pop, and remove operations. [Similarity] Names do not refer to the same concept (enqueue vs push_remove_pop), and domains are mismatched (low-level atomic operations vs high-level testing). [Knowledge Extraction] No full or partial structural match. However, both involve linked list node manipulation and atomic operations, so API mappings are extracted for similar patterns like node creation and linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx125953_rank4.h", "source_rust_file": "API_Mapping__enqueue__idx125953_rank4.rs", "c_api": "node->next.node = NULL;", "rust_api": "UnsafeListEntry::new(11)", "mapping_type": "pattern", "description": "Initialization of node next pointer to null", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code tests a concurrent list with push, pop, and remove operations. [Similarity] Names do not refer to the same concept (enqueue vs push_remove_pop), and domains are mismatched (low-level atomic operations vs high-level testing). [Knowledge Extraction] No full or partial structural match. However, both involve linked list node manipulation and atomic operations, so API mappings are extracted for similar patterns like node creation and linking."}]
+Unixcoder Score: -0.04518386349081993
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn test_dlist_remove_mid() {
+        let l = create::<int>();
+        l.assert_consistent(); let _one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let _three = l.push_n(3);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); l.remove(two);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 3;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx112457_rank3.h", "source_rust_file": "API_Mapping__enqueue__idx112457_rank3.rs", "c_api": "compare_and_swap(&tail.node->next, &next, pointer_t(node, next.count + 1))", "rust_api": "d.push_back('a')", "mapping_type": "function", "description": "Atomic compare-and-swap on next pointer vs push operation in VecDeque", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code tests VecDeque equality and push operations. [Similarity] No structural similarity at the function level due to different data structures (linked list vs VecDeque) and different domains (low-level concurrent data structure vs high-level collection testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's linked list node operations and Rust's VecDeque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx112457_rank3.h", "source_rust_file": "API_Mapping__enqueue__idx112457_rank3.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(node, tail.count + 1))", "rust_api": "d.push_back('a')", "mapping_type": "function", "description": "Atomic compare-and-swap operation in linked list vs push operation in VecDeque", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code tests VecDeque equality and push operations. [Similarity] No structural similarity at the function level due to different data structures (linked list vs VecDeque) and different domains (low-level concurrent data structure vs high-level collection testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's linked list node operations and Rust's VecDeque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx112457_rank3.h", "source_rust_file": "API_Mapping__enqueue__idx112457_rank3.rs", "c_api": "node->value = value", "rust_api": "d.push_back('a')", "mapping_type": "method", "description": "Assign value to node in linked list vs push value to back of VecDeque", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code tests VecDeque equality and push operations. [Similarity] No structural similarity at the function level due to different data structures (linked list vs VecDeque) and different domains (low-level concurrent data structure vs high-level collection testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's linked list node operations and Rust's VecDeque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx112457_rank3.h", "source_rust_file": "API_Mapping__enqueue__idx112457_rank3.rs", "c_api": "node->next.node = NULL", "rust_api": "d.push_back('a')", "mapping_type": "method", "description": "Set next pointer to NULL in linked list node vs push value to back of VecDeque", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code tests VecDeque equality and push operations. [Similarity] No structural similarity at the function level due to different data structures (linked list vs VecDeque) and different domains (low-level concurrent data structure vs high-level collection testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between C's linked list node operations and Rust's VecDeque operations."}]
+Unixcoder Score: -0.04521701857447624
+--------------------------------------------------

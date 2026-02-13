@@ -1,0 +1,350 @@
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn self_token_id() -> u64 {
+        GetSelfTokenID()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ReadWriteInterfaceTokenCpp__idx4674_rank4.c", "source_rust_file": "Partial__ReadWriteInterfaceTokenCpp__idx4674_rank4.rs", "c_fragment": "dataCpp.WriteInterfaceToken(u16Token.c_str());", "rust_fragment": "self.write_process(name, WriteInterfaceToken)", "description": "Writing an interface token to a parcel/data structure.", "reasoning": "[Task Analysis] C function is a unit test for IPC parcel interface token read/write; Rust function is a public method for writing interface tokens. [Similarity] Names don't match but both involve interface token handling. [Knowledge Extraction] No full structural match due to different scopes (test vs implementation). Partial match in logic flow (write/read token). API mapping found between C's WriteInterfaceToken and Rust's write_interface_token."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ReadWriteInterfaceTokenCpp__idx4674_rank4.c", "source_rust_file": "Partial__ReadWriteInterfaceTokenCpp__idx4674_rank4.rs", "c_api": "dataCpp.WriteInterfaceToken", "rust_api": "self.write_process", "mapping_type": "function", "description": "Writing an interface token to a parcel/data structure.", "reasoning": "[Task Analysis] C function is a unit test for IPC parcel interface token read/write; Rust function is a public method for writing interface tokens. [Similarity] Names don't match but both involve interface token handling. [Knowledge Extraction] No full structural match due to different scopes (test vs implementation). Partial match in logic flow (write/read token). API mapping found between C's WriteInterfaceToken and Rust's write_interface_token."}]
+Unixcoder Score: 0.05507967993617058
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn init_access_token()
+{
+    let name = CString::new("com.ipc.calc").expect("process name is invalid");
+    let apl = CString::new("normal").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: ptr::null(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "REQUEST_HILOGI(\"RegisterAppState Out\")", "rust_api": "info!(\"ability init succeed\")", "mapping_type": "function", "description": "Logging completion message", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "REQUEST_HILOGI(\"RegisterAppState In\")", "rust_api": "info!(\"ability init\")", "mapping_type": "function", "description": "Logging initialization message", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager()", "rust_api": "SystemAbilityManager::subscribe_system_ability", "mapping_type": "function", "description": "System ability manager access and subscription", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "REQUEST_HILOGE(\"get SystemAbilityManager failed.\")", "rust_api": "error!(\"app manager service died\")", "mapping_type": "function", "description": "Error logging for system service failure", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "systemAbilityManager->GetSystemAbility(APP_MGR_SERVICE_ID)", "rust_api": "SystemAbilityManager::subscribe_system_ability", "mapping_type": "function", "description": "Retrieving system ability by ID", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}]
+Unixcoder Score: 0.05155423656105995
+--------------------------------------------------
+C_Code: 
+uint64_t SelfTokenID()
+{
+    return IPCSkeleton::GetSelfTokenID();
+}
+Function: 
+fn skeleton() {
+    unsafe {
+        assert_eq!(
+            Skeleton::calling_device_id(),
+            (*GetCallingDeviceID()).to_string()
+        );
+        assert_eq!(Skeleton::calling_full_token_id(), GetCallingFullTokenID());
+        assert_eq!(Skeleton::calling_pid(), GetCallingPid());
+        assert_eq!(Skeleton::calling_real_pid(), GetCallingRealPid());
+        assert_eq!(Skeleton::calling_token_id(), GetCallingTokenID());
+        assert_eq!(Skeleton::calling_uid(), GetCallingUid());
+        assert_eq!(Skeleton::first_full_token_id(), GetFirstFullTokenID());
+        assert_eq!(Skeleton::first_token_id(), GetFirstTokenID());
+        assert_eq!(Skeleton::self_token_id(), SelfTokenID());
+        assert_eq!(Skeleton::is_local_calling(), IsLocalCalling());
+        assert_eq!(Skeleton::local_device_id(), (*LocalDeviceID()).to_string());
+        assert_eq!(
+            Skeleton::reset_calling_identity(),
+            (*ResetCallingIdentity()).to_string()
+        );
+    }
+}
+Unixcoder Score: 0.04393954202532768
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn init_access_token()
+{
+    let name = CString::new("com.ipc.calc").expect("process name is invalid");
+    let apl = CString::new("normal").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: ptr::null(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ReadWriteInterfaceTokenCpp__idx4675_rank4.c", "source_rust_file": "API_Mapping__ReadWriteInterfaceTokenCpp__idx4675_rank4.rs", "c_api": "dataCpp.ReadInterfaceToken()", "rust_api": "ReadInterfaceToken(parcel)", "mapping_type": "function", "description": "Read interface token from parcel", "reasoning": "[Task Analysis] C function performs IPC parcel read/write operations with timing, Rust function reads interface token from parcel. [Similarity] Names don't match but both involve reading interface tokens; C uses WriteInterfaceToken and ReadInterfaceToken, Rust has read_interface_token. [Knowledge Extraction] Found API mapping for interface token read operation, no full or partial structural match due to domain mismatch (C: timing + validation, Rust: just token read)."}]
+Unixcoder Score: 0.040453944355249405
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn init_access_token()
+{
+    let name = CString::new("com.ipc.calc").expect("process name is invalid");
+    let apl = CString::new("normal").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: ptr::null(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ReadWriteInterfaceTokenCpp__idx4626_rank2.c", "source_rust_file": "Partial__ReadWriteInterfaceTokenCpp__idx4626_rank2.rs", "c_api": "WriteInterfaceToken", "rust_api": "write_interface_token", "mapping_type": "method", "description": "Writing an interface token to a message parcel.", "reasoning": "[Task Analysis] C function tests WriteInterfaceToken and ReadInterfaceToken operations, while Rust function tests send_request with write_interface_token and read operations. [Similarity] Both involve interface token handling and data serialization, but the domains are different: C uses IPC parcel with explicit token read/write, Rust uses a higher-level context-based messaging system. [Knowledge Extraction] No full structural match due to domain mismatch (IPC vs Messaging), but partial matching in data flow patterns and API mappings in interface token handling and data writing."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ReadWriteInterfaceTokenCpp__idx4626_rank2.c", "source_rust_file": "Partial__ReadWriteInterfaceTokenCpp__idx4626_rank2.rs", "c_fragment": "dataCpp.WriteInterfaceToken(u16Token.c_str());", "rust_fragment": "data.write_interface_token(\"ohos.samgr.accessToken\");", "description": "Both write an interface token to a message parcel.", "reasoning": "[Task Analysis] C function tests WriteInterfaceToken and ReadInterfaceToken operations, while Rust function tests send_request with write_interface_token and read operations. [Similarity] Both involve interface token handling and data serialization, but the domains are different: C uses IPC parcel with explicit token read/write, Rust uses a higher-level context-based messaging system. [Knowledge Extraction] No full structural match due to domain mismatch (IPC vs Messaging), but partial matching in data flow patterns and API mappings in interface token handling and data writing."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ReadWriteInterfaceTokenCpp__idx4626_rank2.c", "source_rust_file": "Partial__ReadWriteInterfaceTokenCpp__idx4626_rank2.rs", "c_api": "ReadInterfaceToken", "rust_api": "read_remote", "mapping_type": "method", "description": "Reading a remote object from a message reply.", "reasoning": "[Task Analysis] C function tests WriteInterfaceToken and ReadInterfaceToken operations, while Rust function tests send_request with write_interface_token and read operations. [Similarity] Both involve interface token handling and data serialization, but the domains are different: C uses IPC parcel with explicit token read/write, Rust uses a higher-level context-based messaging system. [Knowledge Extraction] No full structural match due to domain mismatch (IPC vs Messaging), but partial matching in data flow patterns and API mappings in interface token handling and data writing."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ReadWriteInterfaceTokenCpp__idx4626_rank2.c", "source_rust_file": "Partial__ReadWriteInterfaceTokenCpp__idx4626_rank2.rs", "c_fragment": "dataCpp.ReadInterfaceToken();", "rust_fragment": "let remote = reply.read_remote().unwrap();", "description": "Both involve reading data from a message parcel, though Rust reads a remote object.", "reasoning": "[Task Analysis] C function tests WriteInterfaceToken and ReadInterfaceToken operations, while Rust function tests send_request with write_interface_token and read operations. [Similarity] Both involve interface token handling and data serialization, but the domains are different: C uses IPC parcel with explicit token read/write, Rust uses a higher-level context-based messaging system. [Knowledge Extraction] No full structural match due to domain mismatch (IPC vs Messaging), but partial matching in data flow patterns and API mappings in interface token handling and data writing."}]
+Unixcoder Score: 0.017228398472070694
+--------------------------------------------------
+C_Code: 
+static void InitTokenId(void)
+{
+    uint64_t tokenId;
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 0,
+        .aclsNum = 0,
+        .dcaps = NULL,
+        .perms = NULL,
+        .acls = NULL,
+        .processName = "com.ipc.test",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+}
+Function: 
+pub fn init_access_token()
+{
+    let name = CString::new("com.ipc.calc").expect("process name is invalid");
+    let apl = CString::new("normal").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: ptr::null(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShieldPath__idx1556_rank5.c", "source_rust_file": "Partial__ShieldPath__idx1556_rank5.rs", "c_api": "token.empty()", "rust_api": "!s.is_empty()", "mapping_type": "function", "description": "Checking if a string segment is empty", "reasoning": "[Task Analysis] C function processes a path string by splitting on '/' and applying ShieldStr to each segment; Rust function validates a path string for standardization. [Similarity] Names refer to different concepts (ShieldPath vs check_standardized_path), and domains differ (path processing vs path validation). [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both use string splitting and iteration over path segments, so partial match and API mappings are extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ShieldPath__idx1556_rank5.c", "source_rust_file": "Partial__ShieldPath__idx1556_rank5.rs", "c_fragment": "while (std::getline(iss, token, '/')) {\n        if (token.empty()) {\n            continue;\n        }\n        result += '/';\n        result += ShieldStr(token);\n    }", "rust_fragment": "for segment in path.split('/').filter(|s| !s.is_empty()) {\n        if NOT_ALLOWED.contains(&segment) {\n            return false;\n        }\n    }", "description": "Both iterate over path segments after filtering out empty ones, though C applies a transformation (ShieldStr) while Rust checks against a list of forbidden segments.", "reasoning": "[Task Analysis] C function processes a path string by splitting on '/' and applying ShieldStr to each segment; Rust function validates a path string for standardization. [Similarity] Names refer to different concepts (ShieldPath vs check_standardized_path), and domains differ (path processing vs path validation). [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both use string splitting and iteration over path segments, so partial match and API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShieldPath__idx1556_rank5.c", "source_rust_file": "Partial__ShieldPath__idx1556_rank5.rs", "c_api": "ShieldStr(token)", "rust_api": "NOT_ALLOWED.contains(&segment)", "mapping_type": "function", "description": "Validation of path segment (C applies transformation, Rust checks against forbidden list)", "reasoning": "[Task Analysis] C function processes a path string by splitting on '/' and applying ShieldStr to each segment; Rust function validates a path string for standardization. [Similarity] Names refer to different concepts (ShieldPath vs check_standardized_path), and domains differ (path processing vs path validation). [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both use string splitting and iteration over path segments, so partial match and API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ShieldPath__idx1556_rank5.c", "source_rust_file": "Partial__ShieldPath__idx1556_rank5.rs", "c_api": "std::getline(iss, token, '/')", "rust_api": "path.split('/')", "mapping_type": "function", "description": "Splitting a string by delimiter ('/')", "reasoning": "[Task Analysis] C function processes a path string by splitting on '/' and applying ShieldStr to each segment; Rust function validates a path string for standardization. [Similarity] Names refer to different concepts (ShieldPath vs check_standardized_path), and domains differ (path processing vs path validation). [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both use string splitting and iteration over path segments, so partial match and API mappings are extracted."}]
+Unixcoder Score: 0.01156157348304987
+--------------------------------------------------
+C_Code: 
+uint64_t RpcGetFirstCallerTokenID(void)
+{
+    uint64_t token = INVAL_TOKEN_ID;
+    FILE *fp = fopen(TOKENID_DEVNODE, "r+");
+    if (fp == NULL) {
+        return INVAL_TOKEN_ID;
+    }
+    int fd = fileno(fp);
+    if (fd < 0) {
+        (void)fclose(fp);
+        return INVAL_TOKEN_ID;
+    }
+    int ret = ioctl(fd, ACCESS_TOKENID_GET_FTOKENID, &token);
+    if (ret != 0) {
+        (void)fclose(fp);
+        return INVAL_TOKEN_ID;
+    }
+
+    (void)fclose(fp);
+    return token;
+}
+Function: 
+pub fn first_full_token_id() -> u64 {
+        GetFirstFullTokenID()
+    }
+Unixcoder Score: -0.0016205428401008248
+--------------------------------------------------
+C_Code: 
+CDECL uintptr_t
+rust_try(rust_try_fn f, void *fptr, void *env) {
+    try {
+        f(fptr, env);
+    } catch (uintptr_t token) {
+        assert(token != 0);
+        return token;
+    }
+    return 0;
+}
+Function: 
+fn main() {
+    assert!(task::try(proc() int::MIN / -1).is_err());
+    assert!(task::try(proc() i8::MIN / -1).is_err());
+    assert!(task::try(proc() i16::MIN / -1).is_err());
+    assert!(task::try(proc() i32::MIN / -1).is_err());
+    assert!(task::try(proc() i64::MIN / -1).is_err());
+    assert!(task::try(proc() 1i / 0).is_err());
+    assert!(task::try(proc() 1i8 / 0).is_err());
+    assert!(task::try(proc() 1i16 / 0).is_err());
+    assert!(task::try(proc() 1i32 / 0).is_err());
+    assert!(task::try(proc() 1i64 / 0).is_err());
+    assert!(task::try(proc() int::MIN % -1).is_err());
+    assert!(task::try(proc() i8::MIN % -1).is_err());
+    assert!(task::try(proc() i16::MIN % -1).is_err());
+    assert!(task::try(proc() i32::MIN % -1).is_err());
+    assert!(task::try(proc() i64::MIN % -1).is_err());
+    assert!(task::try(proc() 1i % 0).is_err());
+    assert!(task::try(proc() 1i8 % 0).is_err());
+    assert!(task::try(proc() 1i16 % 0).is_err());
+    assert!(task::try(proc() 1i32 % 0).is_err());
+    assert!(task::try(proc() 1i64 % 0).is_err());
+}
+Unixcoder Score: -0.004245812073349953
+--------------------------------------------------
+C_Code: 
+CDECL uintptr_t
+rust_try(rust_try_fn f, void *fptr, void *env) {
+    try {
+        f(fptr, env);
+    } catch (uintptr_t token) {
+        assert(token != 0);
+        return token;
+    }
+    return 0;
+}
+Function: 
+pub unsafe extern fn __rust_maybe_catch_panic(f: fn(*mut u8),
+                                              data: *mut u8,
+                                              data_ptr: *mut usize,
+                                              vtable_ptr: *mut usize)
+                                              -> u32 {
+    let mut payload = imp::payload();
+    if intrinsics::try(f, data, &mut payload as *mut _ as *mut _) == 0 {
+        0
+    } else {
+        let obj = mem::transmute::<_, raw::TraitObject>(imp::cleanup(payload));
+        *data_ptr = obj.data as usize;
+        *vtable_ptr = obj.vtable as usize;
+        1
+    }
+}
+Unixcoder Score: -0.011072534136474133
+--------------------------------------------------
+C_Code: 
+CDECL uintptr_t
+rust_try(rust_try_fn f, void *fptr, void *env) {
+    try {
+        f(fptr, env);
+    } catch (uintptr_t token) {
+        assert(token != 0);
+        return token;
+    }
+    return 0;
+}
+Function: 
+fn baz() -> Option<i32> {
+    if (1 == 1) {
+        return try {
+            5
+        };
+    }
+
+    // test
+    let x: Option<()> = try {
+        // try blocks are great
+    };
+
+    let y: Option<i32> = try {
+        6
+    }; // comment
+
+    let x: Option<i32> = try { baz()?; baz()?; baz()?; 7 };
+
+    return None;
+}
+Unixcoder Score: -0.012403975240886211
+--------------------------------------------------

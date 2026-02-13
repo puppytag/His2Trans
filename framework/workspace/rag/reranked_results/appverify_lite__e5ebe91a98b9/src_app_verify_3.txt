@@ -1,0 +1,340 @@
+C_Code: 
+static void append_cubic(SkScalar ctl1X, SkScalar ctl1Y,
+                         SkScalar ctl2X, SkScalar ctl2Y,
+                         SkScalar dstX, SkScalar dstY, SkWStream* content) {
+    SkString cmd("y\n");
+    SkPDFUtils::AppendScalar(ctl1X, content);
+    content->writeText(" ");
+    SkPDFUtils::AppendScalar(ctl1Y, content);
+    content->writeText(" ");
+    if (ctl2X != dstX || ctl2Y != dstY) {
+        cmd.set("c\n");
+        SkPDFUtils::AppendScalar(ctl2X, content);
+        content->writeText(" ");
+        SkPDFUtils::AppendScalar(ctl2Y, content);
+        content->writeText(" ");
+    }
+    SkPDFUtils::AppendScalar(dstX, content);
+    content->writeText(" ");
+    SkPDFUtils::AppendScalar(dstY, content);
+    content->writeText(" ");
+    content->writeText(cmd.c_str());
+}
+Function: 
+fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
+        let pt0 = FfiPoint::new(cx0, -cy0);
+        let pt1 = FfiPoint::new(cx1, -cy1);
+        let pt2 = FfiPoint::new(x, -y);
+        if self.current_is_not(&pt0) || self.current_is_not(&pt1) || self.current_is_not(&pt2) {
+            self.going_to(&pt2);
+            self.verbs.push(PathVerb::CubicTo as u8);
+            self.points.push(pt0);
+            self.points.push(pt1);
+            self.points.push(pt2);
+        }
+    }
+Unixcoder Score: 0.04043180122971535
+--------------------------------------------------
+C_Code: 
+void SkPDFUtils::AppendLine(SkScalar x, SkScalar y, SkWStream* content) {
+    SkPDFUtils::AppendScalar(x, content);
+    content->writeText(" ");
+    SkPDFUtils::AppendScalar(y, content);
+    content->writeText(" l\n");
+}
+Function: 
+fn line_to(&mut self, x: f32, y: f32) {
+        let pt0 = FfiPoint::new(x, -y);
+        if self.current_is_not(&pt0) {
+            self.going_to(&pt0);
+            self.verbs.push(PathVerb::LineTo as u8);
+            self.points.push(pt0);
+        }
+    }
+Unixcoder Score: 0.03565862402319908
+--------------------------------------------------
+C_Code: 
+void SkPDFUtils::AppendLine(SkScalar x, SkScalar y, SkWStream* content) {
+    SkPDFUtils::AppendScalar(x, content);
+    content->writeText(" ");
+    SkPDFUtils::AppendScalar(y, content);
+    content->writeText(" l\n");
+}
+Function: 
+fn line_to(&mut self, x: f32, y: f32) {
+        let pt0 = FfiPoint::new(x, -y);
+        if self.current_is_not(&pt0) {
+            self.going_to(&pt0);
+            self.verbs.push(PathVerb::LineTo as u8);
+            self.points.push(pt0);
+        }
+    }
+Unixcoder Score: 0.027881432324647903
+--------------------------------------------------
+C_Code: 
+bool LoadStringFromFd(int fd, string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    const off_t fileLength = lseek(fd, 0, SEEK_END);
+    if (fileLength > MAX_FILE_LENGTH) {
+        UTILS_LOGE("invalid file length(%{public}jd)!", static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    // lseek is not support the linux file node
+    if (fileLength < 0) {
+        return LoadStringFromFdToFile(fd, content);
+    }
+
+    if (fileLength == 0) {
+        return true;
+    }
+
+    content.resize(fileLength);
+    off_t loc = lseek(fd, 0, SEEK_SET);
+    if (loc == -1) {
+        UTILS_LOGE("lseek file to begin failed!");
+        return false;
+    }
+
+    const ssize_t len = read(fd, content.data(), fileLength);
+    if (len != fileLength) {
+        UTILS_LOGE("the length read from file is not equal to fileLength!len:%{public}zd,fileLen:%{public}jd",
+            len, static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_load_string_from_fd_002() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename =FILE_PATH.to_string() + ".008";
+    let content = NULL_STR.to_string();
+    create_test_file(&filename, &content);
+    let file = File::open(&filename).expect("Failed to open file");
+    let fd: RawFd = file.as_raw_fd();
+    assert!(file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, content);
+}
+Unixcoder Score: 0.020463285967707634
+--------------------------------------------------
+C_Code: 
+static void append_cubic(SkScalar ctl1X, SkScalar ctl1Y,
+                         SkScalar ctl2X, SkScalar ctl2Y,
+                         SkScalar dstX, SkScalar dstY, SkWStream* content) {
+    SkString cmd("y\n");
+    SkPDFUtils::AppendScalar(ctl1X, content);
+    content->writeText(" ");
+    SkPDFUtils::AppendScalar(ctl1Y, content);
+    content->writeText(" ");
+    if (ctl2X != dstX || ctl2Y != dstY) {
+        cmd.set("c\n");
+        SkPDFUtils::AppendScalar(ctl2X, content);
+        content->writeText(" ");
+        SkPDFUtils::AppendScalar(ctl2Y, content);
+        content->writeText(" ");
+    }
+    SkPDFUtils::AppendScalar(dstX, content);
+    content->writeText(" ");
+    SkPDFUtils::AppendScalar(dstY, content);
+    content->writeText(" ");
+    content->writeText(cmd.c_str());
+}
+Function: 
+fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
+        let pt0 = FfiPoint::new(cx0, -cy0);
+        let pt1 = FfiPoint::new(cx1, -cy1);
+        let pt2 = FfiPoint::new(x, -y);
+        if self.current_is_not(&pt0) || self.current_is_not(&pt1) || self.current_is_not(&pt2) {
+            self.going_to(&pt2);
+            self.verbs.push(PathVerb::CubicTo as u8);
+            self.points.push(pt0);
+            self.points.push(pt1);
+            self.points.push(pt2);
+        }
+    }
+Unixcoder Score: 0.018158908933401108
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_003() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = CONTENT_STR.to_string();
+    let filename = FILE_PATH.to_string() + ".020";
+    let mut file = File::create_new(&filename).expect("Failed to create file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, content);
+}
+Unixcoder Score: 0.015795700252056122
+--------------------------------------------------
+C_Code: 
+static int
+toc_link(struct buf *ob, const struct buf *link, const struct buf *title, const struct buf *content, void *opaque)
+{
+	if (content && content->size)
+		bufput(ob, content->data, content->size);
+	return 1;
+}
+Function: 
+pub(crate) fn rewrite_links(db: &RootDatabase, markdown: &str, definition: Definition) -> String {
+    let mut cb = broken_link_clone_cb;
+    let doc = Parser::new_with_broken_link_callback(markdown, MARKDOWN_OPTIONS, Some(&mut cb));
+
+    let doc = map_links(doc, |target, title| {
+        // This check is imperfect, there's some overlap between valid intra-doc links
+        // and valid URLs so we choose to be too eager to try to resolve what might be
+        // a URL.
+        if target.contains("://") {
+            (Some(LinkType::Inline), target.to_string(), title.to_string())
+        } else {
+            // Two possibilities:
+            // * path-based links: `../../module/struct.MyStruct.html`
+            // * module-based links (AKA intra-doc links): `super::super::module::MyStruct`
+            if let Some((target, title)) = rewrite_intra_doc_link(db, definition, target, title) {
+                return (None, target, title);
+            }
+            if let Some(target) = rewrite_url_link(db, definition, target) {
+                return (Some(LinkType::Inline), target, title.to_string());
+            }
+
+            (None, target.to_string(), title.to_string())
+        }
+    });
+    let mut out = String::new();
+    cmark_resume_with_options(
+        doc,
+        &mut out,
+        None,
+        CMarkOptions { code_block_token_count: 3, ..Default::default() },
+    )
+    .ok();
+    out
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.rs", "c_api": "ashmem->CloseAshmem()", "rust_api": "ashmem.CloseAshmem()", "mapping_type": "method", "description": "Close Ashmem object", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `ashmem::ffi::CreateAshmemStd` and other FFI functions, which is a clear indicator of FFI usage. [Task Analysis] -> The C code is a fuzzing test function that creates and manipulates Ashmem objects, while the Rust code is a test function that also interacts with Ashmem via FFI. [Similarity] -> Although both functions perform similar high-level operations (creating Ashmem, mapping, writing, reading, closing), the Rust code is a direct FFI wrapper with no internal logic, and the C code has more complex control flow and fuzzing logic. [Knowledge Extraction] -> Despite the FFI wrapper nature of the Rust code, there are still API mappings between the C and Rust operations, particularly in the Ashmem interaction patterns, but the overall structure is not a full match due to the FFI nature and different control flows."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.rs", "c_api": "Ashmem::CreateAshmem(name.c_str(), memorySize)", "rust_api": "ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE)", "mapping_type": "function", "description": "Create Ashmem object", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `ashmem::ffi::CreateAshmemStd` and other FFI functions, which is a clear indicator of FFI usage. [Task Analysis] -> The C code is a fuzzing test function that creates and manipulates Ashmem objects, while the Rust code is a test function that also interacts with Ashmem via FFI. [Similarity] -> Although both functions perform similar high-level operations (creating Ashmem, mapping, writing, reading, closing), the Rust code is a direct FFI wrapper with no internal logic, and the C code has more complex control flow and fuzzing logic. [Knowledge Extraction] -> Despite the FFI wrapper nature of the Rust code, there are still API mappings between the C and Rust operations, particularly in the Ashmem interaction patterns, but the overall structure is not a full match due to the FFI nature and different control flows."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.rs", "c_api": "ashmem->ReadFromAshmem(memoryContent.size(), 0)", "rust_api": "ashmem::ffi::AsCharPtr(ashmem.ReadFromAshmem(MEMORY_CONTENT.len().try_into().expect(\"Invalid content size.\"), 0))", "mapping_type": "method", "description": "Read data from Ashmem", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `ashmem::ffi::CreateAshmemStd` and other FFI functions, which is a clear indicator of FFI usage. [Task Analysis] -> The C code is a fuzzing test function that creates and manipulates Ashmem objects, while the Rust code is a test function that also interacts with Ashmem via FFI. [Similarity] -> Although both functions perform similar high-level operations (creating Ashmem, mapping, writing, reading, closing), the Rust code is a direct FFI wrapper with no internal logic, and the C code has more complex control flow and fuzzing logic. [Knowledge Extraction] -> Despite the FFI wrapper nature of the Rust code, there are still API mappings between the C and Rust operations, particularly in the Ashmem interaction patterns, but the overall structure is not a full match due to the FFI nature and different control flows."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.rs", "c_api": "ashmem->WriteToAshmem(memoryContent.c_str(), memoryContent.size(), 0)", "rust_api": "ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect(\"Invalid content size.\"), 0)", "mapping_type": "method", "description": "Write data to Ashmem", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `ashmem::ffi::CreateAshmemStd` and other FFI functions, which is a clear indicator of FFI usage. [Task Analysis] -> The C code is a fuzzing test function that creates and manipulates Ashmem objects, while the Rust code is a test function that also interacts with Ashmem via FFI. [Similarity] -> Although both functions perform similar high-level operations (creating Ashmem, mapping, writing, reading, closing), the Rust code is a direct FFI wrapper with no internal logic, and the C code has more complex control flow and fuzzing logic. [Knowledge Extraction] -> Despite the FFI wrapper nature of the Rust code, there are still API mappings between the C and Rust operations, particularly in the Ashmem interaction patterns, but the overall structure is not a full match due to the FFI nature and different control flows."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.c", "source_rust_file": "API_Mapping__AshmemTestFunc__idx5427_rank1.rs", "c_api": "ashmem->MapReadAndWriteAshmem()", "rust_api": "ashmem.MapReadAndWriteAshmem()", "mapping_type": "method", "description": "Map Ashmem for read-write access", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `ashmem::ffi::CreateAshmemStd` and other FFI functions, which is a clear indicator of FFI usage. [Task Analysis] -> The C code is a fuzzing test function that creates and manipulates Ashmem objects, while the Rust code is a test function that also interacts with Ashmem via FFI. [Similarity] -> Although both functions perform similar high-level operations (creating Ashmem, mapping, writing, reading, closing), the Rust code is a direct FFI wrapper with no internal logic, and the C code has more complex control flow and fuzzing logic. [Knowledge Extraction] -> Despite the FFI wrapper nature of the Rust code, there are still API mappings between the C and Rust operations, particularly in the Ashmem interaction patterns, but the overall structure is not a full match due to the FFI nature and different control flows."}]
+Unixcoder Score: 0.01092417910695076
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_003() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = CONTENT_STR.to_string();
+    let filename = FILE_PATH.to_string() + ".020";
+    let mut file = File::create_new(&filename).expect("Failed to create file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, content);
+}
+Unixcoder Score: 0.009651712141931057
+--------------------------------------------------
+C_Code: 
+bool LoadStringFromFd(int fd, string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    const off_t fileLength = lseek(fd, 0, SEEK_END);
+    if (fileLength > MAX_FILE_LENGTH) {
+        UTILS_LOGE("invalid file length(%{public}jd)!", static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    // lseek is not support the linux file node
+    if (fileLength < 0) {
+        return LoadStringFromFdToFile(fd, content);
+    }
+
+    if (fileLength == 0) {
+        return true;
+    }
+
+    content.resize(fileLength);
+    off_t loc = lseek(fd, 0, SEEK_SET);
+    if (loc == -1) {
+        UTILS_LOGE("lseek file to begin failed!");
+        return false;
+    }
+
+    const ssize_t len = read(fd, content.data(), fileLength);
+    if (len != fileLength) {
+        UTILS_LOGE("the length read from file is not equal to fileLength!len:%{public}zd,fileLen:%{public}jd",
+            len, static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_load_string_from_fd_004() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename = FILE_PATH.to_string() + ".010";
+    let content: String = "t".repeat(MAX_FILE_LENGTH);
+    create_test_file(&filename, &content);
+    let file = File::open(&filename).expect("Failed to open file");
+    let fd: RawFd = file.as_raw_fd();
+    assert!(file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, content);
+}
+Unixcoder Score: 0.006274618674069643
+--------------------------------------------------
+C_Code: 
+bool RustSaveStringToFd(int fd, const rust::String& content)
+{
+    std::string tmpContent(content);
+    return SaveStringToFd(fd, tmpContent);
+}
+Function: 
+fn test_save_string_to_fd_001() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut content = String::new();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(0, &content);
+    assert!(!ret);
+    ret = file_ex::ffi::RustSaveStringToFd(-1, &content);
+    assert!(!ret);
+
+    content = CONTENT_STR.to_string();
+    ret = file_ex::ffi::RustSaveStringToFd(0, &content);
+    assert!(!ret);
+    ret = file_ex::ffi::RustSaveStringToFd(-1, &content);
+    assert!(!ret);
+}
+Unixcoder Score: 0.005955984350293875
+--------------------------------------------------

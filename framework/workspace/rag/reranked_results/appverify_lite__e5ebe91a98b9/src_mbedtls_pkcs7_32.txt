@@ -1,0 +1,455 @@
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_api": "certInfo->certInfo.data = nullptr", "rust_api": "*info = CertInfo { cert: Some(certificates), };", "mapping_type": "pattern", "description": "Pointer nulling vs struct initialization - both represent clearing or resetting data structures", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_fragment": "free(certInfo->certInfo.data);\ncertInfo->certInfo.data = nullptr;", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Memory deallocation pattern - both perform cleanup of allocated memory, though Rust uses FFI call while C uses standard free.", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertInfo__idx555_rank2.c", "source_rust_file": "Partial__FreeCertInfo__idx555_rank2.rs", "c_api": "free(certInfo->certInfo.data)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation - C's free() equivalent in Rust via FFI call to FreeCertDataList", "reasoning": "[Task Analysis] C function frees memory and nulls a pointer; Rust function manages certificate data from C FFI and updates Rust struct. [Similarity] No full structural similarity due to different domains (memory management vs certificate processing) and different control flow. [Knowledge Extraction] Found partial matching fragment in memory cleanup logic and API mappings for FFI calls and memory management patterns."}]
+Unixcoder Score: -0.01717275008559227
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertDataList(struct CRequestCerts *certs)
+{
+    for (uint32_t i = 0; i < certs->len; i++) {
+        FreeCertData(certs->certDataList[i]);
+    }
+    free(certs->certDataList);
+    free(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "free", "rust_api": "free", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_fragment": "for (uint32_t i = 0; i < certs->len; i++) {\n        FreeCertData(certs->certDataList[i]);\n    }\n    free(certs->certDataList);\n    free(certs);", "rust_fragment": "for item in c_cert_list_ptr.iter() {\n            let cert = unsafe { &**item };\n            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };\n            match Certificate::from_pem(cert_slice) {\n                Ok(cert) => {\n                    certificates.push(cert);\n                }\n                Err(e) => {\n                    error!(\"parse security cert path failed, error is {:?}\", e);\n                    return;\n                }\n            };\n        }\n        unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Both iterate over a list of certificate data and free memory, though Rust also includes parsing logic.", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory deallocation of certificate data list", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertData", "rust_api": "FreeCertData", "mapping_type": "function", "description": "Free individual certificate data", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}]
+Unixcoder Score: -0.054532572627067566
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertData(struct CRequestCert *cert)
+{
+    if (cert == nullptr) {
+        return;
+    }
+
+    if (cert->data != nullptr) {
+        free(cert->data);
+        cert->data = nullptr;
+    }
+    cert->size = 0;
+    free(cert);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank4.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank4.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory cleanup function for certificate data list", "reasoning": "[Task Analysis] C function FreeCertDataList calls a C++ method, Rust function update_system_cert manages certificate data and calls the same C function via FFI. [Similarity] The C function is a thin wrapper around a C++ method, while the Rust function contains the full logic including FFI call to FreeCertDataList. [Knowledge Extraction] Full structural match in the FFI call pattern, partial match in the certificate processing logic, and API mapping for FreeCertDataList between C and Rust."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank4.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank4.rs", "c_fragment": "void FreeCertDataList(struct CRequestCerts *certs)\n{\n    RequestCertManager::GetInstance().FreeCertDataList(certs);\n}", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "C function FreeCertDataList calls a C++ method, Rust function calls the same C function via FFI.", "reasoning": "[Task Analysis] C function FreeCertDataList calls a C++ method, Rust function update_system_cert manages certificate data and calls the same C function via FFI. [Similarity] The C function is a thin wrapper around a C++ method, while the Rust function contains the full logic including FFI call to FreeCertDataList. [Knowledge Extraction] Full structural match in the FFI call pattern, partial match in the certificate processing logic, and API mapping for FreeCertDataList between C and Rust."}]
+Unixcoder Score: -0.07706117630004883
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx59387_rank5.c", "source_rust_file": "API_Mapping__etp_worker_free__idx59387_rank5.rs", "c_api": "free(wrk)", "rust_api": "None", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function traverses a linked list using pattern matching on Option. [Similarity] Names do not refer to the same concept (etp_worker_free vs get), and domains are mismatched (memory management vs traversal). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve linked list operations (pointer manipulation and Option matching), so API mappings can be extracted for the core linked list traversal pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx59387_rank5.c", "source_rust_file": "API_Mapping__etp_worker_free__idx59387_rank5.rs", "c_api": "wrk->next->prev = wrk->prev;", "rust_api": "match self.next", "mapping_type": "pattern", "description": "Linked list node pointer update and option matching", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function traverses a linked list using pattern matching on Option. [Similarity] Names do not refer to the same concept (etp_worker_free vs get), and domains are mismatched (memory management vs traversal). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve linked list operations (pointer manipulation and Option matching), so API mappings can be extracted for the core linked list traversal pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx59387_rank5.c", "source_rust_file": "API_Mapping__etp_worker_free__idx59387_rank5.rs", "c_api": "wrk->prev->next = wrk->next;", "rust_api": "match self.next", "mapping_type": "pattern", "description": "Linked list node pointer update and option matching", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function traverses a linked list using pattern matching on Option. [Similarity] Names do not refer to the same concept (etp_worker_free vs get), and domains are mismatched (memory management vs traversal). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve linked list operations (pointer manipulation and Option matching), so API mappings can be extracted for the core linked list traversal pattern."}]
+Unixcoder Score: -0.08236291259527206
+--------------------------------------------------
+C_Code: 
+static void ecb_cold
+etp_start_thread (void)
+{
+  etp_worker *wrk = calloc (1, sizeof (etp_worker));
+
+  /*TODO*/
+  assert (("unable to allocate worker thread data", wrk));
+
+  X_LOCK (wrklock);
+
+  if (thread_create (&wrk->tid, etp_proc, (void *)wrk))
+    {
+      wrk->prev = &wrk_first;
+      wrk->next = wrk_first.next;
+      wrk_first.next->prev = wrk;
+      wrk_first.next = wrk;
+      ++started;
+    }
+  else
+    free (wrk);
+
+  X_UNLOCK (wrklock);
+}
+Function: 
+pub fn spawn<F, T>(self, f: F) -> std::io::Result<JoinHandle<T>>
+    where
+        F: FnOnce() -> T,
+        F: Send + 'static,
+        T: Send + 'static,
+    {
+        let inner_handle = self.inner.spawn(move || {
+            self.intent.apply_to_current_thread();
+            f()
+        })?;
+
+        Ok(JoinHandle { inner: Some(inner_handle), allow_leak: self.allow_leak })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_start_thread__idx35412_rank2.c", "source_rust_file": "API_Mapping__etp_start_thread__idx35412_rank2.rs", "c_api": "calloc (1, sizeof (etp_worker))", "rust_api": "Box::new(X { a: 32 })", "mapping_type": "pattern", "description": "Heap allocation with initialization", "reasoning": "[Task Analysis] C function allocates and initializes a thread worker, manages a linked list, and handles thread creation. Rust function creates a boxed struct and calls a method on it. [Similarity] No structural similarity at the function level due to different domains (threading/memory management vs. boxing/ownership). [Knowledge Extraction] No full or partial match. However, there is a pattern mapping between C's malloc/calloc and Rust's Box::new for heap allocation."}]
+Unixcoder Score: -0.08600848913192749
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertDataList(struct CRequestCerts *certs)
+{
+    for (uint32_t i = 0; i < certs->len; i++) {
+        FreeCertData(certs->certDataList[i]);
+    }
+    free(certs->certDataList);
+    free(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertData__idx555_rank5.c", "source_rust_file": "Partial__FreeCertData__idx555_rank5.rs", "c_fragment": "if (cert == nullptr) {\n        return;\n    }\n\n    if (cert->data != nullptr) {\n        free(cert->data);\n        cert->data = nullptr;\n    }\n    cert->size = 0;\n    free(cert);", "rust_fragment": "unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Memory deallocation pattern: freeing allocated memory for certificate data and list.", "reasoning": "[Task Analysis] C function frees memory allocated for a cert struct and its data; Rust function retrieves cert data via FFI, processes it, and updates cert info. [Similarity] No full structural match due to different domains (memory cleanup vs data processing), but partial matching fragments exist in memory handling patterns. [Knowledge Extraction] Extract API mappings for memory deallocation and data processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertData__idx555_rank5.c", "source_rust_file": "Partial__FreeCertData__idx555_rank5.rs", "c_api": "free(cert)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation for certificate struct", "reasoning": "[Task Analysis] C function frees memory allocated for a cert struct and its data; Rust function retrieves cert data via FFI, processes it, and updates cert info. [Similarity] No full structural match due to different domains (memory cleanup vs data processing), but partial matching fragments exist in memory handling patterns. [Knowledge Extraction] Extract API mappings for memory deallocation and data processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertData__idx555_rank5.c", "source_rust_file": "Partial__FreeCertData__idx555_rank5.rs", "c_api": "free(cert->data)", "rust_api": "unsafe { FreeCertDataList(c_certs_ptr) }", "mapping_type": "function", "description": "Memory deallocation for certificate data", "reasoning": "[Task Analysis] C function frees memory allocated for a cert struct and its data; Rust function retrieves cert data via FFI, processes it, and updates cert info. [Similarity] No full structural match due to different domains (memory cleanup vs data processing), but partial matching fragments exist in memory handling patterns. [Knowledge Extraction] Extract API mappings for memory deallocation and data processing patterns."}]
+Unixcoder Score: -0.09589921683073044
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113540_rank2.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113540_rank2.rs", "c_api": "free(wrk);", "rust_api": "ptr::read(old)", "mapping_type": "pattern", "description": "Memory deallocation and value reading in unsafe context", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function implements an iterator's `next` method with pointer arithmetic and unsafe operations. [Similarity] No structural similarity at the code level due to different domains (memory management vs iterator logic). [Knowledge Extraction] No full match, no partial match, but both involve pointer manipulation and memory handling patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113540_rank2.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113540_rank2.rs", "c_api": "wrk->prev->next = wrk->next;", "rust_api": "self.ptr = unsafe { self.ptr.add(1) };", "mapping_type": "pattern", "description": "Pointer traversal in a linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function implements an iterator's `next` method with pointer arithmetic and unsafe operations. [Similarity] No structural similarity at the code level due to different domains (memory management vs iterator logic). [Knowledge Extraction] No full match, no partial match, but both involve pointer manipulation and memory handling patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113540_rank2.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113540_rank2.rs", "c_api": "wrk->next->prev = wrk->prev;", "rust_api": "self.ptr = unsafe { self.ptr.add(1) };", "mapping_type": "pattern", "description": "Pointer traversal in a linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function implements an iterator's `next` method with pointer arithmetic and unsafe operations. [Similarity] No structural similarity at the code level due to different domains (memory management vs iterator logic). [Knowledge Extraction] No full match, no partial match, but both involve pointer manipulation and memory handling patterns, so API mappings are extracted."}]
+Unixcoder Score: -0.0984673872590065
+--------------------------------------------------
+C_Code: 
+static void ecb_cold
+etp_worker_free (etp_worker *wrk)
+{
+  wrk->next->prev = wrk->prev;
+  wrk->prev->next = wrk->next;
+
+  free (wrk);
+}
+Function: 
+fn get<'a>(&'a self) -> &'b T {
+        match self.next { //~ ERROR lifetime may not live long enough
+            Some(ref next) => next.get(),
+            None => &self.val
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113573_rank1.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113573_rank1.rs", "c_api": "wrk->next->prev = wrk->prev;", "rust_api": "let src: *const T = &v[i];\nlet dst: *mut T = &mut v[i - del];\nptr::copy_nonoverlapping(src, dst, 1);", "mapping_type": "pattern", "description": "Pointer-based list node re-linking and element shifting in memory", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code performs pointer manipulation and memory deallocation (free), while Rust code implements an iterator with unsafe block and element draining logic. -> [Similarity] -> No structural similarity at the function level due to different domains (memory management vs iterator logic). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to memory management and list manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113573_rank1.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113573_rank1.rs", "c_api": "free (wrk);", "rust_api": "return Some(ptr::read(&v[i]));", "mapping_type": "function", "description": "Memory deallocation and element retrieval", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code performs pointer manipulation and memory deallocation (free), while Rust code implements an iterator with unsafe block and element draining logic. -> [Similarity] -> No structural similarity at the function level due to different domains (memory management vs iterator logic). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to memory management and list manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113573_rank1.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113573_rank1.rs", "c_api": "wrk->prev->next = wrk->next;", "rust_api": "let src: *const T = &v[i];\nlet dst: *mut T = &mut v[i - del];\nptr::copy_nonoverlapping(src, dst, 1);", "mapping_type": "pattern", "description": "Pointer-based list node re-linking and element shifting in memory", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code performs pointer manipulation and memory deallocation (free), while Rust code implements an iterator with unsafe block and element draining logic. -> [Similarity] -> No structural similarity at the function level due to different domains (memory management vs iterator logic). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings related to memory management and list manipulation patterns."}]
+Unixcoder Score: -0.101780965924263
+--------------------------------------------------
+C_Code: 
+static void ecb_cold
+etp_start_thread (void)
+{
+  etp_worker *wrk = calloc (1, sizeof (etp_worker));
+
+  /*TODO*/
+  assert (("unable to allocate worker thread data", wrk));
+
+  X_LOCK (wrklock);
+
+  if (thread_create (&wrk->tid, etp_proc, (void *)wrk))
+    {
+      wrk->prev = &wrk_first;
+      wrk->next = wrk_first.next;
+      wrk_first.next->prev = wrk;
+      wrk_first.next = wrk;
+      ++started;
+    }
+  else
+    free (wrk);
+
+  X_UNLOCK (wrklock);
+}
+Function: 
+pub unsafe fn new(_stack: usize, _p: Box<dyn FnOnce()>) -> io::Result<Thread> {
+        unsupported()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__etp_start_thread__idx103638_rank3.c", "source_rust_file": "Partial__etp_start_thread__idx103638_rank3.rs", "c_fragment": "if (thread_create (&wrk->tid, etp_proc, (void *)wrk))\n    {\n      wrk->prev = &wrk_first;\n      wrk->next = wrk_first.next;\n      wrk_first.next->prev = wrk;\n      wrk_first.next = wrk;\n      ++started;\n    }\n  else\n    free (wrk);", "rust_fragment": "let thread = stdx::thread::Builder::new(stdx::thread::ThreadIntent::Worker)\n            .name(\"Flycheck\".to_owned())\n            .spawn(move || actor.run(receiver))\n            .expect(\"failed to spawn thread\");", "description": "Both attempt to create a thread and handle failure cases, though C manually manages a linked list and Rust uses a high-level thread builder.", "reasoning": "[Task Analysis] C function allocates and initializes a worker thread, then attempts to create a thread using a system call. If successful, it links the worker into a global doubly-linked list; otherwise, it frees the memory. Rust function spawns a thread with a custom actor and returns a handle. [Similarity] Names do not refer to the same concept (e.g., `etp_start_thread` vs `spawn`), and domains differ: C manipulates raw memory and linked lists, while Rust uses high-level abstractions. [Knowledge Extraction] No full structural match. Partial match in thread creation logic (both create threads), but domains are inconsistent. No API mappings due to semantic mismatch."}, {"knowledge_type": "Partial", "source_c_file": "Partial__etp_start_thread__idx103638_rank3.c", "source_rust_file": "Partial__etp_start_thread__idx103638_rank3.rs", "c_fragment": "etp_worker *wrk = calloc (1, sizeof (etp_worker));\n\n  /*TODO*/\n  assert ((\"unable to allocate worker thread data\", wrk));", "rust_fragment": "let actor = FlycheckActor::new(id, sender, config, workspace_root);", "description": "Both allocate and initialize data structures for thread management, though C uses raw memory allocation and Rust uses a structured actor pattern.", "reasoning": "[Task Analysis] C function allocates and initializes a worker thread, then attempts to create a thread using a system call. If successful, it links the worker into a global doubly-linked list; otherwise, it frees the memory. Rust function spawns a thread with a custom actor and returns a handle. [Similarity] Names do not refer to the same concept (e.g., `etp_start_thread` vs `spawn`), and domains differ: C manipulates raw memory and linked lists, while Rust uses high-level abstractions. [Knowledge Extraction] No full structural match. Partial match in thread creation logic (both create threads), but domains are inconsistent. No API mappings due to semantic mismatch."}]
+Unixcoder Score: -0.11053228378295898
+--------------------------------------------------
+C_Code: 
+static void ecb_cold
+etp_start_thread (void)
+{
+  etp_worker *wrk = calloc (1, sizeof (etp_worker));
+
+  /*TODO*/
+  assert (("unable to allocate worker thread data", wrk));
+
+  X_LOCK (wrklock);
+
+  if (thread_create (&wrk->tid, etp_proc, (void *)wrk))
+    {
+      wrk->prev = &wrk_first;
+      wrk->next = wrk_first.next;
+      wrk_first.next->prev = wrk;
+      wrk_first.next = wrk;
+      ++started;
+    }
+  else
+    free (wrk);
+
+  X_UNLOCK (wrklock);
+}
+Function: 
+pub fn spawn<F, T>(intent: ThreadIntent, f: F) -> JoinHandle<T>
+where
+    F: FnOnce() -> T,
+    F: Send + 'static,
+    T: Send + 'static,
+{
+    Builder::new(intent).spawn(f).expect("failed to spawn thread")
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__etp_start_thread__idx140689_rank1.c", "source_rust_file": "Partial__etp_start_thread__idx140689_rank1.rs", "c_api": "thread_create (&wrk->tid, etp_proc, (void *)wrk)", "rust_api": "libc::pthread_create(&mut native, &attr, thread_start, p as *mut _)", "mapping_type": "function", "description": "Thread creation", "reasoning": "[FFI Check] -> The Rust code contains multiple FFI calls to libc functions like pthread_create, pthread_attr_init, pthread_attr_setstacksize, etc. The C code also has an FFI-like call to thread_create. However, per Filter 3, if the body is ONLY one FFI call, it's considered FFI wrapper and should be marked None. But here, both sides have substantial logic beyond just FFI calls. -> [Task Analysis] -> The C function allocates memory, initializes a thread, and manages a linked list, while the Rust function creates a thread with stack size handling and error management. These are different domains: low-level thread management vs high-level thread creation with error handling. -> [Similarity] -> While both involve thread creation, the structures and logic differ significantly in scope and domain. The C code is more about linked list manipulation and basic thread creation, whereas Rust handles complex stack size logic, error handling, and FFI safety. -> [Knowledge Extraction] -> There are no full matches due to domain mismatch and structural differences, but there are partial structural fragments and API mappings related to thread creation and memory management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__etp_start_thread__idx140689_rank1.c", "source_rust_file": "Partial__etp_start_thread__idx140689_rank1.rs", "c_api": "assert ((\"unable to allocate worker thread data\", wrk))", "rust_api": "assert_eq!(libc::pthread_attr_init(&mut attr), 0)", "mapping_type": "function", "description": "Error handling for allocation failure", "reasoning": "[FFI Check] -> The Rust code contains multiple FFI calls to libc functions like pthread_create, pthread_attr_init, pthread_attr_setstacksize, etc. The C code also has an FFI-like call to thread_create. However, per Filter 3, if the body is ONLY one FFI call, it's considered FFI wrapper and should be marked None. But here, both sides have substantial logic beyond just FFI calls. -> [Task Analysis] -> The C function allocates memory, initializes a thread, and manages a linked list, while the Rust function creates a thread with stack size handling and error management. These are different domains: low-level thread management vs high-level thread creation with error handling. -> [Similarity] -> While both involve thread creation, the structures and logic differ significantly in scope and domain. The C code is more about linked list manipulation and basic thread creation, whereas Rust handles complex stack size logic, error handling, and FFI safety. -> [Knowledge Extraction] -> There are no full matches due to domain mismatch and structural differences, but there are partial structural fragments and API mappings related to thread creation and memory management."}, {"knowledge_type": "Partial", "source_c_file": "Partial__etp_start_thread__idx140689_rank1.c", "source_rust_file": "Partial__etp_start_thread__idx140689_rank1.rs", "c_fragment": "if (thread_create (&wrk->tid, etp_proc, (void *)wrk))\n    {\n      wrk->prev = &wrk_first;\n      wrk->next = wrk_first.next;\n      wrk_first.next->prev = wrk;\n      wrk_first.next = wrk;\n      ++started;\n    }\n  else\n    free (wrk);", "rust_fragment": "let ret = libc::pthread_create(&mut native, &attr, thread_start, p as *mut _);\n        // Note: if the thread creation fails and this assert fails, then p will\n        // be leaked. However, an alternative design could cause double-free\n        // which is clearly worse.\n        assert_eq!(libc::pthread_attr_destroy(&mut attr), 0);\n\n        return if ret != 0 {\n            // The thread failed to start and as a result p was not consumed. Therefore, it is\n            // safe to reconstruct the box so that it gets deallocated.\n            drop(Box::from_raw(p));\n            Err(io::Error::from_raw_os_error(ret))\n        } else {\n            Ok(Thread { id: native })\n        };", "description": "Both sides attempt to create a thread and handle failure cases, including cleanup of allocated resources.", "reasoning": "[FFI Check] -> The Rust code contains multiple FFI calls to libc functions like pthread_create, pthread_attr_init, pthread_attr_setstacksize, etc. The C code also has an FFI-like call to thread_create. However, per Filter 3, if the body is ONLY one FFI call, it's considered FFI wrapper and should be marked None. But here, both sides have substantial logic beyond just FFI calls. -> [Task Analysis] -> The C function allocates memory, initializes a thread, and manages a linked list, while the Rust function creates a thread with stack size handling and error management. These are different domains: low-level thread management vs high-level thread creation with error handling. -> [Similarity] -> While both involve thread creation, the structures and logic differ significantly in scope and domain. The C code is more about linked list manipulation and basic thread creation, whereas Rust handles complex stack size logic, error handling, and FFI safety. -> [Knowledge Extraction] -> There are no full matches due to domain mismatch and structural differences, but there are partial structural fragments and API mappings related to thread creation and memory management."}, {"knowledge_type": "Partial", "source_c_file": "Partial__etp_start_thread__idx140689_rank1.c", "source_rust_file": "Partial__etp_start_thread__idx140689_rank1.rs", "c_fragment": "etp_worker *wrk = calloc (1, sizeof (etp_worker));\n\n  /*TODO*/\n  assert ((\"unable to allocate worker thread data\", wrk));", "rust_fragment": "let p = Box::into_raw(Box::new(p));\n        let mut native: libc::pthread_t = mem::zeroed();\n        let mut attr: libc::pthread_attr_t = mem::zeroed();\n        assert_eq!(libc::pthread_attr_init(&mut attr), 0);", "description": "Both sides perform initialization of thread-related structures and handle allocation errors.", "reasoning": "[FFI Check] -> The Rust code contains multiple FFI calls to libc functions like pthread_create, pthread_attr_init, pthread_attr_setstacksize, etc. The C code also has an FFI-like call to thread_create. However, per Filter 3, if the body is ONLY one FFI call, it's considered FFI wrapper and should be marked None. But here, both sides have substantial logic beyond just FFI calls. -> [Task Analysis] -> The C function allocates memory, initializes a thread, and manages a linked list, while the Rust function creates a thread with stack size handling and error management. These are different domains: low-level thread management vs high-level thread creation with error handling. -> [Similarity] -> While both involve thread creation, the structures and logic differ significantly in scope and domain. The C code is more about linked list manipulation and basic thread creation, whereas Rust handles complex stack size logic, error handling, and FFI safety. -> [Knowledge Extraction] -> There are no full matches due to domain mismatch and structural differences, but there are partial structural fragments and API mappings related to thread creation and memory management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__etp_start_thread__idx140689_rank1.c", "source_rust_file": "Partial__etp_start_thread__idx140689_rank1.rs", "c_api": "free (wrk)", "rust_api": "drop(Box::from_raw(p))", "mapping_type": "function", "description": "Memory deallocation on thread creation failure", "reasoning": "[FFI Check] -> The Rust code contains multiple FFI calls to libc functions like pthread_create, pthread_attr_init, pthread_attr_setstacksize, etc. The C code also has an FFI-like call to thread_create. However, per Filter 3, if the body is ONLY one FFI call, it's considered FFI wrapper and should be marked None. But here, both sides have substantial logic beyond just FFI calls. -> [Task Analysis] -> The C function allocates memory, initializes a thread, and manages a linked list, while the Rust function creates a thread with stack size handling and error management. These are different domains: low-level thread management vs high-level thread creation with error handling. -> [Similarity] -> While both involve thread creation, the structures and logic differ significantly in scope and domain. The C code is more about linked list manipulation and basic thread creation, whereas Rust handles complex stack size logic, error handling, and FFI safety. -> [Knowledge Extraction] -> There are no full matches due to domain mismatch and structural differences, but there are partial structural fragments and API mappings related to thread creation and memory management."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__etp_start_thread__idx140689_rank1.c", "source_rust_file": "Partial__etp_start_thread__idx140689_rank1.rs", "c_api": "calloc (1, sizeof (etp_worker))", "rust_api": "Box::into_raw(Box::new(p))", "mapping_type": "function", "description": "Memory allocation for thread data", "reasoning": "[FFI Check] -> The Rust code contains multiple FFI calls to libc functions like pthread_create, pthread_attr_init, pthread_attr_setstacksize, etc. The C code also has an FFI-like call to thread_create. However, per Filter 3, if the body is ONLY one FFI call, it's considered FFI wrapper and should be marked None. But here, both sides have substantial logic beyond just FFI calls. -> [Task Analysis] -> The C function allocates memory, initializes a thread, and manages a linked list, while the Rust function creates a thread with stack size handling and error management. These are different domains: low-level thread management vs high-level thread creation with error handling. -> [Similarity] -> While both involve thread creation, the structures and logic differ significantly in scope and domain. The C code is more about linked list manipulation and basic thread creation, whereas Rust handles complex stack size logic, error handling, and FFI safety. -> [Knowledge Extraction] -> There are no full matches due to domain mismatch and structural differences, but there are partial structural fragments and API mappings related to thread creation and memory management."}]
+Unixcoder Score: -0.1107713133096695
+--------------------------------------------------

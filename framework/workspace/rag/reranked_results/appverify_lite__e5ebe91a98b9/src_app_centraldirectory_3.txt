@@ -1,0 +1,271 @@
+C_Code: 
+void SkBinaryWriteBuffer::writeUInt(uint32_t value) {
+    fWriter.write32(value);
+}
+Function: 
+pub fn write(&mut self, data: &[u8]) -> ffi::EncodingResult {
+        let io_result = self.0.write(data);
+        let encoding_result = io_result.map_err(|err| png::EncodingError::IoError(err));
+        encoding_result.as_ref().err().into()
+    }
+Unixcoder Score: 0.050528813153505325
+--------------------------------------------------
+C_Code: 
+inline bool CodedInputStream::ReadLittleEndian32(uint32_t* value) {
+#if defined(ABSL_IS_LITTLE_ENDIAN) && \
+    !defined(PROTOBUF_DISABLE_LITTLE_ENDIAN_OPT_FOR_TEST)
+  if (PROTOBUF_PREDICT_TRUE(BufferSize() >= static_cast<int>(sizeof(*value)))) {
+    buffer_ = ReadLittleEndian32FromArray(buffer_, value);
+    return true;
+  } else {
+    return ReadLittleEndian32Fallback(value);
+  }
+#else
+  return ReadLittleEndian32Fallback(value);
+#endif
+}
+Function: 
+fn read_little_endian_i32_from_stdin() -> Option<i32> {
+    let mut buffer = [0_u8; 4];
+    if let Err(e) = io::stdin().read_exact(&mut buffer) {
+        match e.kind() {
+            ErrorKind::UnexpectedEof => None,
+            _ => panic!("failed to read i32 from stdin"),
+        }
+    } else {
+        Some(i32::from_le_bytes(buffer))
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__appendBits__idx144475_rank4.c", "source_rust_file": "API_Mapping__appendBits__idx144475_rank4.rs", "c_api": "(val >> i) & 1", "rust_api": "(x >> i) & 1", "mapping_type": "pattern", "description": "Bit masking operation to extract least significant bit", "reasoning": "[Task Analysis] C function appends bits to a buffer; Rust function extracts a single bit. [Similarity] Names don't refer to same concept (appendBits vs get_bit), and domains are different (bit manipulation vs bit extraction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve bit shifting and masking operations, so API mappings can be extracted for the core bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__appendBits__idx144475_rank4.c", "source_rust_file": "API_Mapping__appendBits__idx144475_rank4.rs", "c_api": "val >> len != 0", "rust_api": "x >> i != 0", "mapping_type": "pattern", "description": "Check if value exceeds specified bit length using right shift", "reasoning": "[Task Analysis] C function appends bits to a buffer; Rust function extracts a single bit. [Similarity] Names don't refer to same concept (appendBits vs get_bit), and domains are different (bit manipulation vs bit extraction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve bit shifting and masking operations, so API mappings can be extracted for the core bit manipulation patterns."}]
+Unixcoder Score: 0.03127526119351387
+--------------------------------------------------
+C_Code: 
+size_t SkData::copyRange(size_t offset, size_t length, void* buffer) const {
+    size_t available = fSize;
+    if (offset >= available || 0 == length) {
+        return 0;
+    }
+    available -= offset;
+    if (length > available) {
+        length = available;
+    }
+    SkASSERT(length > 0);
+
+    if (buffer) {
+        memcpy(buffer, this->bytes() + offset, length);
+    }
+    return length;
+}
+Function: 
+fn table_data(font_ref: &BridgeFontRef, tag: u32, offset: usize, data: &mut [u8]) -> usize {
+    let table_data = font_ref
+        .with_font(|f| f.table_data(Tag::from_be_bytes(tag.to_be_bytes())))
+        .unwrap_or_default();
+    let table_data = table_data.as_ref();
+    // Remaining table data size measured from offset to end, or 0 if offset is
+    // too large.
+    let mut to_copy_length = table_data.len().saturating_sub(offset);
+    match data.len() {
+        0 => to_copy_length,
+        _ => {
+            to_copy_length = to_copy_length.min(data.len());
+            let table_offset_data = table_data
+                .get(offset..offset + to_copy_length)
+                .unwrap_or_default();
+            data.get_mut(..table_offset_data.len())
+                .map_or(0, |data_slice| {
+                    data_slice.copy_from_slice(table_offset_data);
+                    data_slice.len()
+                })
+        }
+    }
+}
+Unixcoder Score: 0.029029402881860733
+--------------------------------------------------
+C_Code: 
+static bool CParcelBytesAllocatorErr(void *stringData, char **buffer, int32_t len)
+{
+    (void)stringData;
+    (void)buffer;
+    (void)len;
+    return false;
+}
+Function: 
+fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> Result<Self> {
+        let mut vec: Option<Vec<u8>> = None;
+        let ok_status = unsafe {
+            // SAFETY: `parcel` always contains a valid pointer to a  `CParcel`
+            ipc_binding::CParcelReadInterfaceToken(
+                parcel.as_raw(), 
+                &mut vec as *mut _ as *mut c_void,
+                allocate_vec_with_buffer::<u8>
+            )
+        };
+
+        if ok_status {
+            let result = vec.map(|s| {
+                println!("read interface token from native success, s: {:?}", s);
+                match String::from_utf8(s) {
+                    Ok(val) => val,
+                    Err(_) => String::from("")
+                }
+            });
+            if let Some(val) = result {
+                Ok(Self(val))
+            } else {
+                println!("convert interface token to String fail");
+                Err(-1)
+            }
+        }else{
+            println!("read interface token from native fail");
+            Err(-1)
+        }
+    }
+Unixcoder Score: 0.014969314448535442
+--------------------------------------------------
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+pub fn append_bits(&mut self, val: u32, len: u8) {
+		assert!(len <= 31 && val >> len == 0);
+		assert!(usize::from(len) <= usize::MAX - self.length);
+		for i in (0 .. len).rev() {
+			let index: usize = self.length >> 3;
+			let shift: u8 = 7 - ((self.length as u8) & 7);
+			let bit: u8 = ((val >> i) as u8) & 1;
+			if shift == 7 {
+				self.data[index] = bit << shift;
+			} else {
+				self.data[index] |= bit << shift;
+			}
+			self.length += 1;
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "calloc(maxlen, sizeof(char))", "rust_api": "Err(super::unimpl())", "mapping_type": "function", "description": "Memory allocation (calloc) vs error return in stub", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "strstr(menv[i], \"=\")", "rust_api": "super::unimpl()", "mapping_type": "function", "description": "String search (strstr) vs unimplemented logic", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "strncmp(key, \"PATH\", maxlen)", "rust_api": "super::unimpl()", "mapping_type": "function", "description": "String comparison (strncmp) vs unimplemented logic", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "free(menv)", "rust_api": "Err(super::unimpl())", "mapping_type": "function", "description": "Memory deallocation (free) vs error return in stub", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "memcpy(p, val, *sz)", "rust_api": "super::unimpl()", "mapping_type": "function", "description": "Memory copy (memcpy) vs unimplemented logic", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx132421_rank2.c", "source_rust_file": "API_Mapping__rust_get_path__idx132421_rank2.rs", "c_api": "sysctl(mib, 4, NULL, &maxlen, NULL, 0)", "rust_api": "super::unimpl()", "mapping_type": "function", "description": "System call to retrieve system information (sysctl) vs unimplemented stub", "reasoning": "[Task Analysis] C function `rust_get_path` retrieves the PATH environment variable using sysctl calls, while Rust function `lstat` is a stub for file stat operation. [Similarity] No structural similarity: C operates on environment variables via sysctl, Rust handles file system stats. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to system calls and error handling patterns."}]
+Unixcoder Score: 0.012762753292918205
+--------------------------------------------------
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+pub fn append_bits(&mut self, val: u32, len: u8) {
+		assert!(len <= 31 && val >> len == 0);
+		assert!(usize::from(len) <= usize::MAX - self.length);
+		for i in (0 .. len).rev() {
+			let index: usize = self.length >> 3;
+			let shift: u8 = 7 - ((self.length as u8) & 7);
+			let bit: u8 = ((val >> i) as u8) & 1;
+			if shift == 7 {
+				self.data[index] = bit << shift;
+			} else {
+				self.data[index] |= bit << shift;
+			}
+			self.length += 1;
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx10107_rank1.c", "source_rust_file": "API_Mapping__rust_get_path__idx10107_rank1.rs", "c_api": "strstr(menv[i], \"=\")", "rust_api": "format!(\"{}={}\", pair.first(), pair.second())", "mapping_type": "function", "description": "String search for key-value separator", "reasoning": "[Task Analysis] C function retrieves PATH environment variable via sysctl, Rust function handles environment variable conversion for FFI. [Similarity] Names don't match, domains differ (memory management vs FFI/env handling), and control flow is not structurally similar. [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. API mappings found: sysctl vs env conversion, calloc vs vec allocation, free vs cleanup, strstr vs string search, strncmp vs string comparison, memcpy vs data copy."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx10107_rank1.c", "source_rust_file": "API_Mapping__rust_get_path__idx10107_rank1.rs", "c_api": "memcpy(p, val, *sz)", "rust_api": "data copy to output buffer", "mapping_type": "function", "description": "Data copying to output buffer", "reasoning": "[Task Analysis] C function retrieves PATH environment variable via sysctl, Rust function handles environment variable conversion for FFI. [Similarity] Names don't match, domains differ (memory management vs FFI/env handling), and control flow is not structurally similar. [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. API mappings found: sysctl vs env conversion, calloc vs vec allocation, free vs cleanup, strstr vs string search, strncmp vs string comparison, memcpy vs data copy."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx10107_rank1.c", "source_rust_file": "API_Mapping__rust_get_path__idx10107_rank1.rs", "c_api": "calloc(maxlen, sizeof(char))", "rust_api": "vec::with_capacity(env.len())", "mapping_type": "function", "description": "Memory allocation for environment buffer", "reasoning": "[Task Analysis] C function retrieves PATH environment variable via sysctl, Rust function handles environment variable conversion for FFI. [Similarity] Names don't match, domains differ (memory management vs FFI/env handling), and control flow is not structurally similar. [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. API mappings found: sysctl vs env conversion, calloc vs vec allocation, free vs cleanup, strstr vs string search, strncmp vs string comparison, memcpy vs data copy."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx10107_rank1.c", "source_rust_file": "API_Mapping__rust_get_path__idx10107_rank1.rs", "c_api": "free(menv)", "rust_api": "cleanup of temporary buffers", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function retrieves PATH environment variable via sysctl, Rust function handles environment variable conversion for FFI. [Similarity] Names don't match, domains differ (memory management vs FFI/env handling), and control flow is not structurally similar. [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. API mappings found: sysctl vs env conversion, calloc vs vec allocation, free vs cleanup, strstr vs string search, strncmp vs string comparison, memcpy vs data copy."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx10107_rank1.c", "source_rust_file": "API_Mapping__rust_get_path__idx10107_rank1.rs", "c_api": "sysctl(mib, 4, NULL, &maxlen, NULL, 0)", "rust_api": "env handling with temporary buffer", "mapping_type": "function", "description": "Environment variable retrieval via system call", "reasoning": "[Task Analysis] C function retrieves PATH environment variable via sysctl, Rust function handles environment variable conversion for FFI. [Similarity] Names don't match, domains differ (memory management vs FFI/env handling), and control flow is not structurally similar. [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. API mappings found: sysctl vs env conversion, calloc vs vec allocation, free vs cleanup, strstr vs string search, strncmp vs string comparison, memcpy vs data copy."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_get_path__idx10107_rank1.c", "source_rust_file": "API_Mapping__rust_get_path__idx10107_rank1.rs", "c_api": "strncmp(key, \"PATH\", maxlen)", "rust_api": "string comparison in env processing", "mapping_type": "function", "description": "String comparison for environment key", "reasoning": "[Task Analysis] C function retrieves PATH environment variable via sysctl, Rust function handles environment variable conversion for FFI. [Similarity] Names don't match, domains differ (memory management vs FFI/env handling), and control flow is not structurally similar. [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. API mappings found: sysctl vs env conversion, calloc vs vec allocation, free vs cleanup, strstr vs string search, strncmp vs string comparison, memcpy vs data copy."}]
+Unixcoder Score: 0.002730650594457984
+--------------------------------------------------
+C_Code: 
+int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
+{
+    if (strategy >= Strategy::STRATEGY_BUTT) {
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto hapInfo = GetHapInfo(tokenId);
+    if (hapInfo.bundleName.empty() || hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
+        ZLOGE("invalid, user:%{public}d, bundleName:%{public}s, strategy:%{public}d, values size:%{public}zu",
+            hapInfo.user, hapInfo.bundleName.c_str(), strategy, values.size());
+        return ERROR;
+    }
+    return STRATEGY_SAVERS[strategy](values, hapInfo);
+}
+Function: 
+fn from(value: ipc_conn::CloudData) -> Self {
+        let mut vec = vec![];
+        for v in value.values.0 {
+            vec.push(v);
+        }
+        CloudDbData {
+            next_cursor: value.next_cursor,
+            has_more: value.has_more,
+            values: vec,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetCloudStrategy__idx5168_rank1.c", "source_rust_file": "API_Mapping__SetCloudStrategy__idx5168_rank1.rs", "c_api": "values.push_back(...)", "rust_api": "vec.push(...)", "mapping_type": "method", "description": "Appending an element to a vector", "reasoning": "[Task Analysis] C function handles cloud strategy setting with validation and calls a strategy handler; Rust function converts IPC data to database data. [Similarity] No structural similarity at function level due to different domains (strategy management vs data conversion). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data collection and iteration."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetCloudStrategy__idx5168_rank1.c", "source_rust_file": "API_Mapping__SetCloudStrategy__idx5168_rank1.rs", "c_api": "for (auto it = values.begin(); it != values.end(); ++it)", "rust_api": "for v in value.values.0", "mapping_type": "pattern", "description": "Iterating over a collection of values", "reasoning": "[Task Analysis] C function handles cloud strategy setting with validation and calls a strategy handler; Rust function converts IPC data to database data. [Similarity] No structural similarity at function level due to different domains (strategy management vs data conversion). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data collection and iteration."}]
+Unixcoder Score: 0.0022303301375359297
+--------------------------------------------------
+C_Code: 
+void BitBuffer::appendBits(std::uint32_t val, int len) {
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+ 	if (len < 0 || len > 31 || val >> len != 0)
+		return;
+#else
+	if (len < 0 || len > 31 || val >> len != 0)
+		throw std::domain_error("Value out of range");
+#endif
+	for (int i = len - 1; i >= 0; i--)  // Append bit by bit
+		this->push_back(((val >> i) & 1) != 0);
+}
+Function: 
+pub fn make_bytes(data: &[u8]) -> Self {
+		let mut bb = BitBuffer(Vec::with_capacity(data.len() * 8));
+		for &b in data {
+			bb.append_bits(u32::from(b), 8);
+		}
+		QrSegment::new(QrSegmentMode::Byte, data.len(), bb.0)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__qrcodegen_encodeText__idx144459_rank4.c", "source_rust_file": "API_Mapping__qrcodegen_encodeText__idx144459_rank4.rs", "c_api": "qrcodegen_calcSegmentBufferSize", "rust_api": "Self::calc_bit_length", "mapping_type": "function", "description": "Calculate segment buffer size based on mode and character count", "reasoning": "[Task Analysis] C function encodes text into QR code segments, handling numeric/alphanumeric/byte modes with buffer size checks and error handling. Rust function calculates buffer size for a QR segment. [Similarity] No full structural match due to different domains (encoding vs buffer size calculation). [Knowledge Extraction] Found API mapping between C's buffer size calculation and Rust's buffer size calculation logic."}]
+Unixcoder Score: -0.004196707624942064
+--------------------------------------------------
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+fn get_bit(x: u32, i: u8) -> bool {
+	(x >> i) & 1 != 0
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1697_rank1.h", "source_rust_file": "API_Mapping__Key__idx1697_rank1.rs", "c_api": "WriteBytes(str, len + 1)", "rust_api": "value.serialize(&mut **self)", "mapping_type": "function", "description": "Serialize value into buffer", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'serialize_field' pushes a key and serializes a value. [Similarity] Names don't match but both handle key serialization logic. [Knowledge Extraction] No full structural match due to different domains (C buffer management vs Rust serialization). However, there are API mappings for key pushing and field serialization patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1697_rank1.h", "source_rust_file": "API_Mapping__Key__idx1697_rank1.rs", "c_api": "stack_.push_back(Value(static_cast<uint64_t>(sloc), FBT_KEY, BIT_WIDTH_8))", "rust_api": "self.builder.push_key(key)", "mapping_type": "method", "description": "Push key to serialization buffer", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'serialize_field' pushes a key and serializes a value. [Similarity] Names don't match but both handle key serialization logic. [Knowledge Extraction] No full structural match due to different domains (C buffer management vs Rust serialization). However, there are API mappings for key pushing and field serialization patterns."}]
+Unixcoder Score: -0.006695885676890612
+--------------------------------------------------
+C_Code: 
+testable void appendBitsToBuffer(unsigned int val, int numBits, uint8_t buffer[], int *bitLen) {
+	if(!(0 <= numBits && numBits <= 16 && (unsigned long)val >> numBits == 0))
+		return;
+	int i;
+	for (i = numBits - 1; i >= 0; i--, (*bitLen)++)
+		buffer[*bitLen >> 3] |= ((val >> i) & 1) << (7 - (*bitLen & 7));
+}
+Function: 
+pub fn append_bits(&mut self, val: u32, len: u8) {
+		assert!(len <= 31 && val >> len == 0, "Value out of range");
+		self.0.extend((0 .. i32::from(len)).rev().map(|i| get_bit(val, i)));  // Append bit by bit
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "key_pool.insert(sloc)", "rust_api": "high = i", "mapping_type": "function", "description": "Adjusting search boundaries", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "buf_.resize(sloc)", "rust_api": "low = if i == low { i + 1 } else { i }", "mapping_type": "function", "description": "Adjusting search boundaries", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "stack_.push_back(Value(static_cast<uint64_t>(sloc), FBT_KEY, BIT_WIDTH_8))", "rust_api": "return Some(i)", "mapping_type": "function", "description": "Returning a found index value", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "key_pool.find(sloc)", "rust_api": "match self.lazy_strcmp(key_address, key)", "mapping_type": "function", "description": "Comparing strings for equality", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Key__idx1790_rank4.h", "source_rust_file": "API_Mapping__Key__idx1790_rank4.rs", "c_api": "WriteBytes(str, len + 1)", "rust_api": "deref_offset(&self.buffer, key_offset_address, self.keys_width)", "mapping_type": "function", "description": "Reading data from buffer at an offset", "reasoning": "[Task Analysis] C function 'Key' serializes a string key and manages deduplication in a buffer, while Rust function 'index_key' performs a binary search for a key in a pre-built index. [Similarity] Names refer to different concepts ('Key' vs 'index_key'), and domains are different (serialization vs lookup). [Knowledge Extraction] No full or partial structural match. However, both involve key-related operations and string handling, but with different logic and data structures. Extract API mappings based on shared operations like string comparison and key indexing."}]
+Unixcoder Score: -0.007324094418436289
+--------------------------------------------------

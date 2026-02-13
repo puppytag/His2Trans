@@ -1,0 +1,352 @@
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn parse_all_token_trees(&mut self) -> PResult<'a, Vec<TokenTree>> {
+        let mut tts = Vec::new();
+        while self.token != token::Eof {
+            tts.push(self.parse_token_tree());
+        }
+        Ok(tts)
+    }
+Unixcoder Score: -0.03439003601670265
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn add(&self, rhs: & &'a str) -> ~str {
+        let amt = self.len().checked_add(&rhs.len()).expect("len overflow");
+        unsafe {
+            let ptr = alloc(amt) as *mut Vec<u8>;
+            let base = &mut (*ptr).data as *mut _;
+            ptr::copy_nonoverlapping_memory(base,
+                                            self.as_bytes().as_ptr(),
+                                            self.len());
+            let base = base.offset(self.len() as int);
+            ptr::copy_nonoverlapping_memory(base,
+                                            rhs.as_bytes().as_ptr(),
+                                            rhs.len());
+            (*ptr).fill = amt;
+            (*ptr).alloc = amt;
+            cast::transmute(ptr)
+        }
+    }
+Unixcoder Score: -0.06590281426906586
+--------------------------------------------------
+C_Code: 
+bool Database::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(alias)], alias);
+    SetValue(node[GET_NAME(tables)], tables);
+    SetValue(node[GET_NAME(version)], version);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(deviceId)], deviceId);
+    SetValue(node[GET_NAME(autoSyncType)], autoSyncType);
+    return true;
+}
+Function: 
+pub fn new(name: String, alias: String, tables: HashMap<String, Table>) -> Database {
+        Database {
+            name,
+            alias,
+            tables,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_api": "SetValue(node[GET_NAME(deviceId)], deviceId)", "rust_api": "fields", "mapping_type": "field_access", "description": "Assigning a field value from source to destination", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_api": "SetValue(node[GET_NAME(autoSyncType)], autoSyncType)", "rust_api": "fields", "mapping_type": "field_access", "description": "Assigning a field value from source to destination", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_api": "SetValue(node[GET_NAME(alias)], alias)", "rust_api": "alias: value.alias.clone()", "mapping_type": "field_access", "description": "Assigning a field value from source to destination", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_api": "SetValue(node[GET_NAME(bundleName)], bundleName)", "rust_api": "fields", "mapping_type": "field_access", "description": "Assigning a field value from source to destination", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_api": "SetValue(node[GET_NAME(version)], version)", "rust_api": "fields", "mapping_type": "field_access", "description": "Assigning a field value from source to destination", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_api": "SetValue(node[GET_NAME(tables)], tables)", "rust_api": "fields", "mapping_type": "field_access", "description": "Assigning a field value from source to destination", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_fragment": "for fd in &value.fields.0 {\n            fields.push(Field::from(fd));\n        }", "rust_fragment": "SetValue(node[GET_NAME(name)], name);\n    SetValue(node[GET_NAME(alias)], alias);\n    SetValue(node[GET_NAME(tables)], tables);\n    SetValue(node[GET_NAME(version)], version);\n    SetValue(node[GET_NAME(bundleName)], bundleName);\n    SetValue(node[GET_NAME(user)], user);\n    SetValue(node[GET_NAME(deviceId)], deviceId);\n    SetValue(node[GET_NAME(autoSyncType)], autoSyncType);", "description": "Both perform iterative processing of fields and assign values to a container.", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_api": "SetValue(node[GET_NAME(name)], name)", "rust_api": "name: value.table_name.clone()", "mapping_type": "field_access", "description": "Assigning a field value from source to destination", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5187_rank5.c", "source_rust_file": "Partial__Marshal__idx5187_rank5.rs", "c_api": "SetValue(node[GET_NAME(user)], user)", "rust_api": "fields", "mapping_type": "field_access", "description": "Assigning a field value from source to destination", "reasoning": "[Task Analysis] C function marshals database fields into a JSON node; Rust function converts an IPC order table into a Table struct. [Similarity] Names don't match but both perform data transformation/serialization. [Knowledge Extraction] Found partial structural match in loop-based field processing and API mapping for field assignment."}]
+Unixcoder Score: -0.06930237263441086
+--------------------------------------------------
+C_Code: 
+bool Table::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(sharedTableName)], sharedTableName);
+    SetValue(node[GET_NAME(alias)], alias);
+    SetValue(node[GET_NAME(fields)], fields);
+    SetValue(node[GET_NAME(deviceSyncFields)], deviceSyncFields);
+    SetValue(node[GET_NAME(cloudSyncFields)], cloudSyncFields);
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::Field) -> Self {
+        Field {
+            col_name: value.col_name.clone(),
+            alias: value.alias.clone(),
+            typ: u8::from(&value.typ),
+            primary: value.primary,
+            nullable: value.nullable,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx134523_rank1.h", "source_rust_file": "API_Mapping__enqueue__idx134523_rank1.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(node, tail.count + 1));", "rust_api": "self.add_tail(self.new_link(data))", "mapping_type": "function", "description": "Atomic update of tail pointer in a lock-free queue", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code implements a simple push using add_tail and new_link. [Similarity] Names do not refer to the same concept (enqueue vs push), and the domains are different: C uses manual pointer manipulation and atomic operations, while Rust uses higher-level abstractions. [Knowledge Extraction] No full structural match due to domain mismatch and different implementation patterns. However, there are API mappings between the core operations: C's node creation and linking with Rust's new_link and add_tail."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__enqueue__idx134523_rank1.h", "source_rust_file": "API_Mapping__enqueue__idx134523_rank1.rs", "c_api": "node_t *node = new node_t();", "rust_api": "self.new_link(data)", "mapping_type": "function", "description": "Node/link creation in a linked list", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code implements a simple push using add_tail and new_link. [Similarity] Names do not refer to the same concept (enqueue vs push), and the domains are different: C uses manual pointer manipulation and atomic operations, while Rust uses higher-level abstractions. [Knowledge Extraction] No full structural match due to domain mismatch and different implementation patterns. However, there are API mappings between the core operations: C's node creation and linking with Rust's new_link and add_tail."}]
+Unixcoder Score: -0.07037057727575302
+--------------------------------------------------
+C_Code: 
+bool Session::Unmarshal(const json &node)
+{
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(sourceDeviceId), sourceDeviceId) && ret;
+    ret = GetValue(node, GET_NAME(targetDeviceId), targetDeviceId) && ret;
+    ret = GetValue(node, GET_NAME(sourceUserId), sourceUserId) && ret;
+    ret = GetValue(node, GET_NAME(targetUserIds), targetUserIds) && ret;
+    ret = GetValue(node, GET_NAME(appId), appId) && ret;
+    ret = GetValue(node, GET_NAME(storeId), storeId) && ret;
+    ret = GetValue(node, GET_NAME(accountId), accountId) && ret;
+    return ret;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let result = Fields(vec_raw_read::<Field>(parcel)?);
+        Ok(result)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__enqueue__idx134522_rank5.h", "source_rust_file": "Partial__enqueue__idx134522_rank5.rs", "c_api": "compare_and_swap(&this->tail, &tail, pointer_t(node, tail.count + 1))", "rust_api": "self.add_head(nobe)", "mapping_type": "function", "description": "Atomic list insertion operation", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code implements a simple push to a doubly-linked list with head insertion. [Similarity] Names and domains do not match (enqueue vs push_head_n, lock-free algorithm vs simple list manipulation). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, both involve linked list node creation and insertion logic. API mappings found for node creation and insertion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__enqueue__idx134522_rank5.h", "source_rust_file": "Partial__enqueue__idx134522_rank5.rs", "c_api": "new node_t()", "rust_api": "self.new_link(data)", "mapping_type": "function", "description": "Node creation in linked list", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code implements a simple push to a doubly-linked list with head insertion. [Similarity] Names and domains do not match (enqueue vs push_head_n, lock-free algorithm vs simple list manipulation). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, both involve linked list node creation and insertion logic. API mappings found for node creation and insertion patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__enqueue__idx134522_rank5.h", "source_rust_file": "Partial__enqueue__idx134522_rank5.rs", "c_fragment": "node_t *node = new node_t();\n        node->value = value;\n        node->next.node = NULL;", "rust_fragment": "let mut nobe = self.new_link(data);", "description": "Both create a new node with data and initialize its links", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code implements a simple push to a doubly-linked list with head insertion. [Similarity] Names and domains do not match (enqueue vs push_head_n, lock-free algorithm vs simple list manipulation). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, both involve linked list node creation and insertion logic. API mappings found for node creation and insertion patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__enqueue__idx134522_rank5.h", "source_rust_file": "Partial__enqueue__idx134522_rank5.rs", "c_fragment": "this->tail\n            tail = this->tail;\n\n            // Reads the next node after the tail which will be the last node\n            // if null.\n            pointer_t next;\n            if (tail.node != NULL) {\n                next = tail.node->next;\n            }", "rust_fragment": "self.add_head(nobe);", "description": "Both perform insertion operations on a linked list structure", "reasoning": "[Task Analysis] C code implements a lock-free linked list enqueue operation using atomic compare-and-swap, while Rust code implements a simple push to a doubly-linked list with head insertion. [Similarity] Names and domains do not match (enqueue vs push_head_n, lock-free algorithm vs simple list manipulation). [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, both involve linked list node creation and insertion logic. API mappings found for node creation and insertion patterns."}]
+Unixcoder Score: -0.07139918208122253
+--------------------------------------------------
+C_Code: 
+PublishedDataNode::PublishedDataNode() : VersionData(-1) {}
+Function: 
+fn read(&mut self, msg_parcel: &mut MsgParcel) -> Result<(), Error> {
+        if msg_parcel
+            .read::<i32>()
+            .map_err(|_| Error::ReadMsgParcelFailed)?
+            == 0
+        {
+            self.version = msg_parcel
+                .read::<i32>()
+                .map_err(|_| Error::ReadMsgParcelFailed)?;
+            self.bundle_name = msg_parcel
+                .read_string16()
+                .map_err(|_| Error::ReadMsgParcelFailed)?;
+            self.databases = msg_parcel
+                .read::<Databases>()
+                .map_err(|_| Error::ReadMsgParcelFailed)?;
+            Ok(())
+        } else {
+            Err(Error::ReadMsgParcelFailed)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Unmarshal__idx5179_rank2.c", "source_rust_file": "API_Mapping__Unmarshal__idx5179_rank2.rs", "c_api": "GetValue(node, GET_NAME(name), name)", "rust_api": "name", "mapping_type": "pattern", "description": "Extracting field from JSON and assigning to struct field", "reasoning": "[Task Analysis] C function 'Unmarshal' deserializes a JSON object into a Database struct, while Rust function 'new' constructs a Database struct from fields. [Similarity] Names refer to different concepts ('Unmarshal' vs 'new'), and the logic is not structurally identical. [Knowledge Extraction] There are no full or partial structural matches. However, both involve constructing a Database from data, so we can extract API mappings for the field assignment patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Unmarshal__idx5179_rank2.c", "source_rust_file": "API_Mapping__Unmarshal__idx5179_rank2.rs", "c_api": "GetValue(node, GET_NAME(tables), tables)", "rust_api": "tables", "mapping_type": "pattern", "description": "Extracting field from JSON and assigning to struct field", "reasoning": "[Task Analysis] C function 'Unmarshal' deserializes a JSON object into a Database struct, while Rust function 'new' constructs a Database struct from fields. [Similarity] Names refer to different concepts ('Unmarshal' vs 'new'), and the logic is not structurally identical. [Knowledge Extraction] There are no full or partial structural matches. However, both involve constructing a Database from data, so we can extract API mappings for the field assignment patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Unmarshal__idx5179_rank2.c", "source_rust_file": "API_Mapping__Unmarshal__idx5179_rank2.rs", "c_api": "GetValue(node, GET_NAME(alias), alias)", "rust_api": "alias", "mapping_type": "pattern", "description": "Extracting field from JSON and assigning to struct field", "reasoning": "[Task Analysis] C function 'Unmarshal' deserializes a JSON object into a Database struct, while Rust function 'new' constructs a Database struct from fields. [Similarity] Names refer to different concepts ('Unmarshal' vs 'new'), and the logic is not structurally identical. [Knowledge Extraction] There are no full or partial structural matches. However, both involve constructing a Database from data, so we can extract API mappings for the field assignment patterns."}]
+Unixcoder Score: -0.07971109449863434
+--------------------------------------------------
+C_Code: 
+bool Table::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(sharedTableName), sharedTableName);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(fields), fields);
+    GetValue(node, GET_NAME(tableName), name);
+    GetValue(node, GET_NAME(deviceSyncFields), deviceSyncFields);
+    GetValue(node, GET_NAME(cloudSyncFields), cloudSyncFields);
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::OrderTable) -> Self {
+        let mut fields = vec![];
+        for fd in &value.fields.0 {
+            fields.push(Field::from(fd));
+        }
+        Table {
+            name: value.table_name.clone(),
+            alias: value.alias.clone(),
+            fields,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_api": "SetValue(node[GET_NAME(fields)], fields)", "rust_api": "typ: ipc_conn::FieldType::try_from(value.typ)?", "mapping_type": "pattern", "description": "Field assignment with type conversion in data transformation", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_api": "SetValue(node[GET_NAME(name)], name)", "rust_api": "col_name: value.col_name.clone()", "mapping_type": "pattern", "description": "Field assignment with cloning in data transformation", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_api": "SetValue(node[GET_NAME(alias)], alias)", "rust_api": "alias: value.alias.clone()", "mapping_type": "pattern", "description": "Field assignment with cloning in data transformation", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_fragment": "SetValue(node[GET_NAME(fields)], fields);", "rust_fragment": "typ: ipc_conn::FieldType::try_from(value.typ)?,", "description": "Copying a type field from source to destination with conversion.", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_fragment": "SetValue(node[GET_NAME(name)], name);", "rust_fragment": "col_name: value.col_name.clone(),", "description": "Copying a field value from source to destination in a data structure.", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5190_rank4.c", "source_rust_file": "Partial__Marshal__idx5190_rank4.rs", "c_fragment": "SetValue(node[GET_NAME(alias)], alias);", "rust_fragment": "alias: value.alias.clone(),", "description": "Copying an alias field from source to destination in a data structure.", "reasoning": "[Task Analysis] C function 'Table::Marshal' serializes table data into a JSON node, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match ('Marshal' vs 'try_from'), but both involve data transformation and field copying. [Knowledge Extraction] No full structural match due to different domains (serialization vs conversion), but partial fragments and API mappings can be extracted based on field copying logic and data transformation patterns."}]
+Unixcoder Score: -0.08028844743967056
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn from_iter<T: Iterator<char>>(mut iterator: T) -> ~str {
+        let (lower, _) = iterator.size_hint();
+        let mut cap = if lower == 0 {16} else {lower};
+        let mut len = 0;
+        let mut tmp = [0u8, ..4];
+
+        unsafe {
+            let mut ptr = alloc(cap) as *mut Vec<u8>;
+            let mut ret = cast::transmute(ptr);
+            for ch in iterator {
+                let amt = ch.encode_utf8(tmp);
+
+                if len + amt > cap {
+                    cap = cap.checked_mul(&2).expect("cap overflow");
+                    if cap < len + amt {
+                        cap = len + amt;
+                    }
+                    let ptr2 = alloc(cap) as *mut Vec<u8>;
+                    ptr::copy_nonoverlapping_memory(&mut (*ptr2).data,
+                                                    &(*ptr).data,
+                                                    len);
+                    free(ptr as *u8);
+                    cast::forget(ret);
+                    ret = cast::transmute(ptr2);
+                    ptr = ptr2;
+                }
+
+                let base = &mut (*ptr).data as *mut u8;
+                for byte in tmp.slice_to(amt).iter() {
+                    *base.offset(len as int) = *byte;
+                    len += 1;
+                }
+                (*ptr).fill = len;
+            }
+            ret
+        }
+    }
+Unixcoder Score: -0.08178398013114929
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn main() {
+    if env::args().len() > 1 {
+        print!("hello!");
+        exit(0);
+    } else {
+        let out = Command::new(env::args().next().unwrap()).arg("foo")
+                          .output().unwrap();
+        assert!(out.status.success());
+        assert_eq!(String::from_utf8(out.stdout).unwrap(), "hello!");
+        assert_eq!(String::from_utf8(out.stderr).unwrap(), "");
+    }
+}
+Unixcoder Score: -0.08496417850255966
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_field_name(&mut self) -> PResult<'a, Ident> {
+        if let token::Literal(token::Lit { kind: token::Integer, symbol, suffix }) = self.token.kind
+        {
+            if let Some(suffix) = suffix {
+                self.expect_no_tuple_index_suffix(self.token.span, suffix);
+            }
+            self.bump();
+            Ok(Ident::new(symbol, self.prev_token.span))
+        } else {
+            self.parse_ident_common(true)
+        }
+    }
+Unixcoder Score: -0.0849868655204773
+--------------------------------------------------

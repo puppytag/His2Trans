@@ -1,0 +1,306 @@
+C_Code: 
+struct FileInfoBlock
+Function: 
+pub struct CGlyphInfo {
+    pub codepoint: u32,
+    pub mask: u32,
+    pub cluster: u32,
+    pub var1: u32,
+    pub var2: u32,
+}
+Unixcoder Score: 0.05467693880200386
+--------------------------------------------------
+C_Code: 
+struct FileInfoBlock
+Function: 
+pub struct Blob {
+    /// Length of the blob in bytes
+    pub length: u32,
+    /// A raw pointer to the contents
+    pub data: *mut u8,
+}
+Unixcoder Score: 0.045602407306432724
+--------------------------------------------------
+C_Code: 
+FsResult<size_t> FsStream::Write(const ArrayBuffer &buf, const optional<WriteOptions> &options)
+{
+    auto fp = GetFilePtr();
+    if (!fp) {
+        HILOGE("Failed to get file ptr");
+        return FsResult<size_t>::Error(EIO);
+    }
+
+    auto [succ, retLen, offset] = ValidWriteArg(buf.length, options);
+    if (!succ) {
+        HILOGE("Invalid options");
+        return FsResult<size_t>::Error(EINVAL);
+    }
+
+    if (offset >= 0) {
+        int ret = fseek(fp.get(), static_cast<long>(offset), SEEK_SET);
+        if (ret < 0) {
+            HILOGE("Failed to set the offset location of the file stream pointer, ret: %{public}d", ret);
+            return FsResult<size_t>::Error(errno);
+        }
+    }
+
+    size_t writeLen = fwrite(buf.buf, 1, retLen, fp.get());
+    if ((writeLen == 0) && (writeLen != retLen)) {
+        HILOGE("Failed to fwrite stream");
+        return FsResult<size_t>::Error(EIO);
+    }
+    return FsResult<size_t>::Success(writeLen);
+}
+Function: 
+pub(crate) fn seek(fd: i32, offset: i64, pos: SeekPos) -> Result<u64, Error> {
+    let mut file = unsafe { File::from_raw_fd(fd as RawFd) };
+
+    let new_pos = match pos {
+        SeekPos::Start => file.seek(SeekFrom::Start(offset as u64)),
+        SeekPos::Current => file.seek(SeekFrom::Current(offset)),
+        SeekPos::End => file.seek(SeekFrom::End(offset)),
+    };
+
+    mem::forget(file);
+    new_pos
+}
+Unixcoder Score: 0.0090019591152668
+--------------------------------------------------
+C_Code: 
+size_t upb_Arena_SpaceAllocated(upb_Arena* arena) {
+  arena = _upb_Arena_FindRoot(arena).root;
+  size_t memsize = 0;
+
+  while (arena != NULL) {
+    _upb_MemBlock* block =
+        upb_Atomic_Load(&arena->blocks, memory_order_relaxed);
+    while (block != NULL) {
+      memsize += sizeof(_upb_MemBlock) + block->size;
+      block = upb_Atomic_Load(&block->next, memory_order_relaxed);
+    }
+    arena = upb_Atomic_Load(&arena->next, memory_order_relaxed);
+  }
+
+  return memsize;
+}
+Function: 
+pub unsafe fn alloc(&self, layout: Layout) -> &mut [MaybeUninit<u8>] {
+        debug_assert!(layout.align() <= UPB_MALLOC_ALIGN);
+        // SAFETY: `self.raw` is a valid UPB arena
+        let ptr = unsafe { upb_Arena_Malloc(self.raw, layout.size()) };
+        if ptr.is_null() {
+            alloc::handle_alloc_error(layout);
+        }
+
+        // SAFETY:
+        // - `upb_Arena_Malloc` promises that if the return pointer is non-null, it is
+        //   dereferencable for `size` bytes and has an alignment of `UPB_MALLOC_ALIGN`
+        //   until the arena is destroyed.
+        // - `[MaybeUninit<u8>]` has no alignment requirement, and `ptr` is aligned to a
+        //   `UPB_MALLOC_ALIGN` boundary.
+        unsafe { slice::from_raw_parts_mut(ptr.cast(), layout.size()) }
+    }
+Unixcoder Score: 0.0031672497279942036
+--------------------------------------------------
+C_Code: 
+struct BlockSplit {
+  size_t num_types;  /* Amount of distinct types */
+  size_t num_blocks;  /* Amount of values in types and length */
+  uint8_t* types;
+  uint32_t* lengths;
+
+  size_t types_alloc_size;
+  size_t lengths_alloc_size;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping___upb_Arena_AllocBlock__idx6060_rank3.c", "source_rust_file": "API_Mapping___upb_Arena_AllocBlock__idx6060_rank3.rs", "c_api": "upb_Arena_AddBlock(a, block, block_size)", "rust_api": "self.alloc(size, align)", "mapping_type": "function", "description": "Adding allocated block to arena", "reasoning": "[Task Analysis] C function allocates memory blocks for an arena, while Rust function performs checked allocation with alignment. [Similarity] Names and domains differ (C: arena memory management, Rust: checked allocation), but both involve memory allocation logic. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, both perform allocation operations with size/alignment checks, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping___upb_Arena_AllocBlock__idx6060_rank3.c", "source_rust_file": "API_Mapping___upb_Arena_AllocBlock__idx6060_rank3.rs", "c_api": "upb_malloc(_upb_ArenaInternal_BlockAlloc(ai), block_size)", "rust_api": "self.alloc(size, align)", "mapping_type": "function", "description": "Memory allocation with size and alignment parameters", "reasoning": "[Task Analysis] C function allocates memory blocks for an arena, while Rust function performs checked allocation with alignment. [Similarity] Names and domains differ (C: arena memory management, Rust: checked allocation), but both involve memory allocation logic. [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, both perform allocation operations with size/alignment checks, so API mappings are extracted."}]
+Unixcoder Score: -0.005933047272264957
+--------------------------------------------------
+C_Code: 
+struct block_info {
+    cbb_ptr block;  ///< pointer to the block
+    bb_iter iter;   ///< Iterator to the current child node being processed
+  }
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: -0.011690981686115265
+--------------------------------------------------
+C_Code: 
+size_t upb_Arena_SpaceAllocated(upb_Arena* arena, size_t* fused_count) {
+  upb_ArenaInternal* ai = _upb_Arena_FindRoot(arena).root;
+  size_t memsize = 0;
+  size_t local_fused_count = 0;
+
+  while (ai != NULL) {
+    upb_MemBlock* block = upb_Atomic_Load(&ai->blocks, memory_order_relaxed);
+    while (block != NULL) {
+      memsize += sizeof(upb_MemBlock) + block->size;
+      block = upb_Atomic_Load(&block->next, memory_order_relaxed);
+    }
+    ai = upb_Atomic_Load(&ai->next, memory_order_relaxed);
+    local_fused_count++;
+  }
+
+  if (fused_count) *fused_count = local_fused_count;
+  return memsize;
+}
+Function: 
+pub fn copy_in<'a, T: Copy>(&'a self, data: &T) -> Option<&'a T> {
+        let size = size_of_val(data);
+        let align = align_of_val(data);
+
+        self.checked_alloc(size, align).map(|alloc| {
+            // SAFETY:
+            // - alloc is valid for `size` bytes and is the uninit bytes are written to not
+            //   read from until written.
+            // - T is copy so copying the bytes of the value is sound.
+            unsafe {
+                let alloc = alloc.as_mut_ptr().cast::<MaybeUninit<T>>();
+                &*(*alloc).write(*data)
+            }
+        })
+    }
+Unixcoder Score: -0.012841811403632164
+--------------------------------------------------
+C_Code: 
+struct block_info {
+    cbb_ptr block;  ///< pointer to the block
+    bb_iter iter;   ///< Iterator to the current child node being processed
+  }
+Function: 
+pub struct Blob {
+    /// Length of the blob in bytes
+    pub length: u32,
+    /// A raw pointer to the contents
+    pub data: *mut u8,
+}
+Unixcoder Score: -0.01550065167248249
+--------------------------------------------------
+C_Code: 
+size_t upb_Arena_SpaceAllocated(upb_Arena* arena, size_t* fused_count) {
+  upb_ArenaInternal* ai = _upb_Arena_FindRoot(arena).root;
+  size_t memsize = 0;
+  size_t local_fused_count = 0;
+
+  while (ai != NULL) {
+    upb_MemBlock* block = upb_Atomic_Load(&ai->blocks, memory_order_relaxed);
+    while (block != NULL) {
+      memsize += sizeof(upb_MemBlock) + block->size;
+      block = upb_Atomic_Load(&block->next, memory_order_relaxed);
+    }
+    ai = upb_Atomic_Load(&ai->next, memory_order_relaxed);
+    local_fused_count++;
+  }
+
+  if (fused_count) *fused_count = local_fused_count;
+  return memsize;
+}
+Function: 
+pub fn copy_slice_in<'a, T: Copy>(&'a self, data: &[T]) -> Option<&'a [T]> {
+        let size = size_of_val(data);
+        let align = align_of_val(data);
+        self.checked_alloc(size, align).map(|alloc| {
+            let alloc: *mut T = alloc.as_mut_ptr().cast();
+            // SAFETY:
+            // - uninit_alloc is valid for `layout.len()` bytes and is the uninit bytes are
+            //   written to not read from until written.
+            // - T is copy so copying the bytes of the values is sound.
+            unsafe {
+                ptr::copy_nonoverlapping(data.as_ptr(), alloc, data.len());
+                slice::from_raw_parts(alloc, data.len())
+            }
+        })
+    }
+Unixcoder Score: -0.01846311241388321
+--------------------------------------------------
+C_Code: 
+size_t upb_Arena_SpaceAllocated(upb_Arena* arena, size_t* fused_count) {
+  upb_ArenaInternal* ai = _upb_Arena_FindRoot(arena).root;
+  size_t memsize = 0;
+  size_t local_fused_count = 0;
+
+  while (ai != NULL) {
+    upb_MemBlock* block = upb_Atomic_Load(&ai->blocks, memory_order_relaxed);
+    while (block != NULL) {
+      memsize += sizeof(upb_MemBlock) + block->size;
+      block = upb_Atomic_Load(&block->next, memory_order_relaxed);
+    }
+    ai = upb_Atomic_Load(&ai->next, memory_order_relaxed);
+    local_fused_count++;
+  }
+
+  if (fused_count) *fused_count = local_fused_count;
+  return memsize;
+}
+Function: 
+pub fn new() -> Self {
+        #[inline(never)]
+        #[cold]
+        fn arena_new_failed() -> ! {
+            panic!("Could not create a new UPB arena");
+        }
+
+        // SAFETY:
+        // - `upb_Arena_New` is assumed to be implemented correctly and always sound to
+        //   call; if it returned a non-null pointer, it is a valid arena.
+        unsafe {
+            let Some(raw) = upb_Arena_New() else { arena_new_failed() };
+            Self { raw, _not_sync: PhantomData }
+        }
+    }
+Unixcoder Score: -0.018604623153805733
+--------------------------------------------------

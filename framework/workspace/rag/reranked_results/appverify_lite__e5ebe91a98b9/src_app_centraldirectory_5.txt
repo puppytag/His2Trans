@@ -1,0 +1,453 @@
+C_Code: 
+bool ReadBuffer(MessageParcel &msgParcel, size_t len, rust::vec<uint8_t> &buffer)
+{
+    if (len == 0) {
+        return true;
+    }
+    const uint8_t *data = msgParcel.ReadBuffer(len);
+    if (data == nullptr) {
+        return false;
+    }
+    if (memcpy_s(buffer.data(), len, data, len) != EOK) {
+        return false;
+    }
+    return true;
+}
+Function: 
+fn read_to_end() {
+        let mut msg = MsgParcel::new();
+        msg.write(&true).unwrap();
+        msg.read::<bool>().unwrap();
+
+        msg.write(&vec![1, 2, 3]).unwrap();
+        assert_eq!(
+            vec![3, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0],
+            msg.read_buffer(msg.readable()).unwrap()
+        );
+    }
+Unixcoder Score: 0.029136300086975098
+--------------------------------------------------
+C_Code: 
+bool CParcelWriteBuffer(CParcel *parcel, const uint8_t *buffer, uint32_t len)
+{
+    if (!IsValidParcel(parcel, __func__)) {
+        return false;
+    }
+    if (buffer == nullptr) {
+        ZLOGE(LOG_LABEL, "%{public}s: buffer is null: %d\n", __func__, len);
+        return false;
+    }
+    return parcel->parcel_->WriteBuffer(buffer, len);
+}
+Function: 
+pub fn write_buffer(&mut self, buffer: &[u8]) -> IpcResult<()> {
+        match WriteBuffer(self.as_msg_parcel_mut(), buffer) {
+            true => Ok(()),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustModuleBufferLen__idx141714_rank1.c", "source_rust_file": "API_Mapping__LLVMRustModuleBufferLen__idx141714_rank1.rs", "c_api": "Buffer->data.length()", "rust_api": "self.0.get()).len()", "mapping_type": "field_access", "description": "Retrieving the length of a buffer/data structure", "reasoning": "[Task Analysis] C function accesses a field 'data.length()' on a struct pointer, while Rust function calls 'len()' on a wrapped pointer. Both perform the same logical operation: retrieving the length of a buffer. [Similarity] Names do not match (LLVMRustModuleBuffer vs self), but the semantic domain is the same (buffer length retrieval). [Knowledge Extraction] This is a field access pattern with equivalent behavior; the Rust version uses unsafe dereferencing to access the underlying data. No full structural match due to different naming and abstraction levels, but API mapping exists."}]
+Unixcoder Score: 0.012070142664015293
+--------------------------------------------------
+C_Code: 
+bool CheckSystemHapPermission(void)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;
+}
+Function: 
+pub(crate) fn check_system_permission(attrs: &AssetMap) -> Result<()> {
+    if attrs.get(&Tag::UserId).is_some() {
+        if unsafe { !CheckSystemHapPermission() } {
+            return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
+        }
+
+        let permission = CString::new("ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS").unwrap();
+        if unsafe { !CheckPermission(permission.as_ptr()) } {
+            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+        }
+
+        let uid = Skeleton::calling_uid();
+        let user_id = get_user_id(uid)?;
+        if user_id > ROOT_USER_UPPERBOUND {
+            return log_throw_error!(
+                ErrCode::AccessDenied,
+                "[FATAL]The caller user_id is: {}. Not in range[0, 99]",
+                user_id
+            );
+        }
+    }
+    Ok(())
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__LLVMRustThinLTOBufferLen__idx114754_rank1.c", "source_rust_file": "Partial__LLVMRustThinLTOBufferLen__idx114754_rank1.rs", "c_fragment": "return Buffer->data.length();", "rust_fragment": "self.data.len()", "description": "Accessing the length of a data buffer", "reasoning": "[Entity Name Check] -> LLVMRustThinLTOBufferLen vs len - different concepts (FFI wrapper vs method), but both operate on buffer length. [Empty/Trivial Code] -> Neither is empty. [FFI Wrapper] -> C function is FFI wrapper (LLVMRust prefix), but Rust side is not FFI. [Semantic Domain Mismatch] -> C accesses buffer via FFI, Rust accesses via method call on struct - same domain (length access). [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> C is a function definition, Rust is a method definition - both are implementations. [Full] -> Names don't match, but logic is identical (accessing length of data buffer) - not full. [Partial] -> Structural match in accessing length. [API Mappings] -> C's Buffer->data.length() maps to Rust's self.data.len()."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__LLVMRustThinLTOBufferLen__idx114754_rank1.c", "source_rust_file": "Partial__LLVMRustThinLTOBufferLen__idx114754_rank1.rs", "c_api": "Buffer->data.length()", "rust_api": "self.data.len()", "mapping_type": "method", "description": "Accessing the length of a data buffer", "reasoning": "[Entity Name Check] -> LLVMRustThinLTOBufferLen vs len - different concepts (FFI wrapper vs method), but both operate on buffer length. [Empty/Trivial Code] -> Neither is empty. [FFI Wrapper] -> C function is FFI wrapper (LLVMRust prefix), but Rust side is not FFI. [Semantic Domain Mismatch] -> C accesses buffer via FFI, Rust accesses via method call on struct - same domain (length access). [Empty Structs] -> Not applicable. [Definition vs Usage Asymmetry] -> C is a function definition, Rust is a method definition - both are implementations. [Full] -> Names don't match, but logic is identical (accessing length of data buffer) - not full. [Partial] -> Structural match in accessing length. [API Mappings] -> C's Buffer->data.length() maps to Rust's self.data.len()."}]
+Unixcoder Score: -0.01100274920463562
+--------------------------------------------------
+C_Code: 
+int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
+{
+    if (strategy >= Strategy::STRATEGY_BUTT) {
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto hapInfo = GetHapInfo(tokenId);
+    if (hapInfo.bundleName.empty() || hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
+        ZLOGE("invalid, user:%{public}d, bundleName:%{public}s, strategy:%{public}d, values size:%{public}zu",
+            hapInfo.user, hapInfo.bundleName.c_str(), strategy, values.size());
+        return ERROR;
+    }
+    return STRATEGY_SAVERS[strategy](values, hapInfo);
+}
+Function: 
+fn from(value: ipc_conn::CloudData) -> Self {
+        let mut vec = vec![];
+        for v in value.values.0 {
+            vec.push(v);
+        }
+        CloudDbData {
+            next_cursor: value.next_cursor,
+            has_more: value.has_more,
+            values: vec,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetSharingHandle__idx5113_rank5.c", "source_rust_file": "Partial__GetSharingHandle__idx5113_rank5.rs", "c_fragment": "auto handle = instance->ConnectSharingCenter(hapInfo.user, hapInfo.bundleName);\n    return handle;", "rust_fragment": "let subscription = Subscription::default();\n        subscription.subscribe(&self.remote_obj, expiration, bundle_name, databases)", "description": "Both retrieve or create a handle/object and return it, though with different logic and domains.", "reasoning": "[Task Analysis] C function returns a shared_ptr from a method call, Rust function performs subscription logic with similar intent. [Similarity] Names don't match but both involve retrieving/creating a handle/object. [Knowledge Extraction] No full structural match due to different domains (connection vs subscription), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSharingHandle__idx5113_rank5.c", "source_rust_file": "Partial__GetSharingHandle__idx5113_rank5.rs", "c_api": "std::shared_ptr<SharingCenter>", "rust_api": "SubscriptionResult", "mapping_type": "type", "description": "Both represent a handle to a resource or object", "reasoning": "[Task Analysis] C function returns a shared_ptr from a method call, Rust function performs subscription logic with similar intent. [Similarity] Names don't match but both involve retrieving/creating a handle/object. [Knowledge Extraction] No full structural match due to different domains (connection vs subscription), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSharingHandle__idx5113_rank5.c", "source_rust_file": "Partial__GetSharingHandle__idx5113_rank5.rs", "c_api": "instance->ConnectSharingCenter", "rust_api": "subscription.subscribe", "mapping_type": "function", "description": "Handle/connection creation and subscription logic", "reasoning": "[Task Analysis] C function returns a shared_ptr from a method call, Rust function performs subscription logic with similar intent. [Similarity] Names don't match but both involve retrieving/creating a handle/object. [Knowledge Extraction] No full structural match due to different domains (connection vs subscription), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.02449301816523075
+--------------------------------------------------
+C_Code: 
+rust::string GetCallingBundle(rust::u64 tokenId)
+{
+    auto tokenType = AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(tokenId));
+    if (tokenType != TOKEN_HAP) {
+        REQUEST_HILOGE("invalid token");
+        return rust::string("");
+    }
+    HapTokenInfo info;
+    int ret = AccessTokenKit::GetHapTokenInfo(tokenId, info);
+    if (ret != 0) {
+        REQUEST_HILOGE("failed to get hap info, ret: %{public}d", ret);
+        return rust::string("");
+    }
+    return rust::string(info.bundleName);
+}
+Function: 
+pub(crate) fn update_accounts(
+        &mut self,
+        foreground_account: u64,
+        active_accounts: HashSet<u64>,
+    ) -> Option<SqlList> {
+        if self.active_accounts == active_accounts {
+            return None;
+        }
+        info!("update active accounts {:?}", active_accounts);
+        let mut sql_list = SqlList::new();
+        sql_list.add_account_change(&active_accounts);
+        self.active_accounts = active_accounts;
+        self.top_user = foreground_account;
+        Some(sql_list)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx911_rank1.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx911_rank1.rs", "c_api": "AccessTokenKit::GetHapTokenInfo", "rust_api": "ffi::GetCallingBundle", "mapping_type": "function", "description": "Retrieval of HAP token info via FFI call", "reasoning": "[Task Analysis] C function `GetCallingBundle` retrieves bundle name from token ID, with validation and error handling. Rust function `query_calling_bundle` calls an FFI function `GetCallingBundle` after getting token ID. [Similarity] The overall task is the same (retrieving bundle name), but the C function has complex logic (validation, error logging) while Rust just delegates. [Knowledge Extraction] No full structural match due to different scopes and logic. However, there's a clear API mapping between C's `AccessTokenKit::GetTokenTypeFlag` and Rust's `ipc::Skeleton::calling_full_token_id()` as both retrieve token information. Also, C's `AccessTokenKit::GetHapTokenInfo` and Rust's `ffi::GetCallingBundle` both handle token info retrieval, even though they differ in implementation details. No partial match due to domain mismatch (C has validation/logic, Rust just calls FFI)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetCallingBundle__idx911_rank1.c", "source_rust_file": "API_Mapping__GetCallingBundle__idx911_rank1.rs", "c_api": "AccessTokenKit::GetTokenTypeFlag", "rust_api": "ipc::Skeleton::calling_full_token_id", "mapping_type": "function", "description": "Token type validation and token ID retrieval", "reasoning": "[Task Analysis] C function `GetCallingBundle` retrieves bundle name from token ID, with validation and error handling. Rust function `query_calling_bundle` calls an FFI function `GetCallingBundle` after getting token ID. [Similarity] The overall task is the same (retrieving bundle name), but the C function has complex logic (validation, error logging) while Rust just delegates. [Knowledge Extraction] No full structural match due to different scopes and logic. However, there's a clear API mapping between C's `AccessTokenKit::GetTokenTypeFlag` and Rust's `ipc::Skeleton::calling_full_token_id()` as both retrieve token information. Also, C's `AccessTokenKit::GetHapTokenInfo` and Rust's `ffi::GetCallingBundle` both handle token info retrieval, even though they differ in implementation details. No partial match due to domain mismatch (C has validation/logic, Rust just calls FFI)."}]
+Unixcoder Score: -0.02648058533668518
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+pub(crate) fn get_app_schema(
+        &mut self,
+        user_id: i32,
+        bundle_name: &str,
+    ) -> ConnectResult<RwLockReadGuard<Schema>> {
+        self.infos.entry(user_id).or_default();
+        let infos = self.infos.get_mut(&user_id).unwrap();
+
+        let mut lock = infos.app_schema.write().unwrap();
+
+        let mut msg_parcel = MsgParcel::new();
+
+        msg_parcel
+            .write_string16(bundle_name)
+            .map_err(|_| Error::WriteMsgParcelFailed)?;
+
+        let function_number = GetAppSchema as u32;
+        let remote_obj = self
+            .remote_obj
+            .clone()
+            .ok_or(Error::CreateMsgParcelFailed)?;
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
+            .map_err(|_| Error::SendRequestFailed)?;
+
+        lock.read(&mut receive)?;
+
+        drop(lock);
+
+        Ok(infos.app_schema.read().unwrap())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_fragment": "for (auto &schema : schemas) {\n        if (schemaMeta.Unmarshall(schema)) {\n            return { SUCCESS, schemaMeta };\n        }\n    }", "rust_fragment": "lock.read(&mut receive)?;", "description": "Both perform iteration over data and conditional return on success.", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "lock.read(&mut receive)?;", "mapping_type": "function", "description": "Data unmarshalling from serialized format", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_fragment": "ZLOGD(\"get schema from hap failed, bundleName:%{public}s\", hapInfo.bundleName.c_str());\n    return { ERROR, schemaMeta };", "rust_fragment": "map_err(|_| Error::WriteMsgParcelFailed)?;\n        let function_number = GetAppSchema as u32;\n        let remote_obj = self\n            .remote_obj\n            .clone()\n            .ok_or(Error::CreateMsgParcelFailed)?;\n        let mut receive = remote_obj\n            .send_request(function_number, &mut msg_parcel)\n            .map_err(|_| Error::SendRequestFailed)?;", "description": "Both handle error conditions and return early on failure.", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_api": "GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info)", "rust_api": "remote_obj.send_request(function_number, &mut msg_parcel)", "mapping_type": "function", "description": "Retrieving schema data from source", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_api": "return { ERROR, schemaMeta };", "rust_api": "map_err(|_| Error::WriteMsgParcelFailed)?", "mapping_type": "pattern", "description": "Error propagation and return", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_api": "return { SUCCESS, schemaMeta };", "rust_api": "Ok(infos.app_schema.read().unwrap())", "mapping_type": "pattern", "description": "Successful return of result", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}]
+Unixcoder Score: -0.03871806710958481
+--------------------------------------------------
+C_Code: 
+ssize_t ares_writev(ares_socket_t s, const struct iovec *iov, int iovcnt)
+{
+  char *buffer, *bp;
+  int i;
+  size_t bytes = 0;
+  ssize_t result;
+
+  /* Validate iovcnt */
+  if (iovcnt <= 0)
+  {
+    SET_ERRNO(EINVAL);
+    return (-1);
+  }
+
+  /* Validate and find the sum of the iov_len values in the iov array */
+  for (i = 0; i < iovcnt; i++)
+  {
+    if (iov[i].iov_len > INT_MAX - bytes)
+    {
+      SET_ERRNO(EINVAL);
+      return (-1);
+    }
+    bytes += iov[i].iov_len;
+  }
+
+  if (bytes == 0)
+    return (0);
+
+  /* Allocate a temporary buffer to hold the data */
+  buffer = malloc(bytes);
+  if (!buffer)
+  {
+    SET_ERRNO(ENOMEM);
+    return (-1);
+  }
+
+  /* Copy the data into buffer */
+  for (bp = buffer, i = 0; i < iovcnt; ++i)
+  {
+    memcpy (bp, iov[i].iov_base, iov[i].iov_len);
+    bp += iov[i].iov_len;
+  }
+
+  /* Send buffer contents */
+  result = swrite(s, buffer, bytes);
+
+  free(buffer);
+
+  return (result);
+}
+Function: 
+fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
+        self.lock().write_vectored(bufs)
+    }
+Unixcoder Score: -0.04381668195128441
+--------------------------------------------------
+C_Code: 
+bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
+{
+    auto [status, cloudInfo] = GetCloudInfo(user);
+    if (status != SUCCESS) {
+        Report(GetDfxFaultType(scene), Fault::CSF_APP_SCHEMA, "", "UpdateSchema ret=" + std::to_string(status));
+        return false;
+    }
+    auto keys = cloudInfo.GetSchemaKey();
+    for (const auto &[bundle, key] : keys) {
+        HapInfo hapInfo{ .user = user, .instIndex = 0, .bundleName = bundle };
+        auto appInfoOpt = cloudInfo.GetAppInfo(bundle);
+        if (appInfoOpt.has_value()) {
+            const CloudInfo::AppInfo &appInfo = appInfoOpt.value();
+            hapInfo.instIndex = appInfo.instanceId;
+        }
+
+        SchemaMeta schemaMeta;
+        std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
+        if (status != SUCCESS) {
+            std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
+        }
+        if (status == NOT_SUPPORT) {
+            ZLOGW("app not support, del cloudInfo! user:%{public}d, bundleName:%{public}s", user, bundle.c_str());
+            MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+            return false;
+        }
+        if (status != SUCCESS) {
+            continue;
+        }
+        SchemaMeta oldMeta;
+        if (MetaDataManager::GetInstance().LoadMeta(key, oldMeta, true)) {
+            UpgradeSchemaMeta(user, oldMeta);
+            UpdateClearWaterMark(hapInfo, schemaMeta, oldMeta);
+        }
+        if (oldMeta != schemaMeta) {
+            MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true);
+        }
+    }
+    return true;
+}
+Function: 
+pub(crate) fn get_app_schema(
+        &mut self,
+        user_id: i32,
+        bundle_name: &str,
+    ) -> ConnectResult<RwLockReadGuard<Schema>> {
+        self.infos.entry(user_id).or_default();
+        let infos = self.infos.get_mut(&user_id).unwrap();
+
+        let mut lock = infos.app_schema.write().unwrap();
+
+        let mut msg_parcel = MsgParcel::new();
+
+        msg_parcel
+            .write_string16(bundle_name)
+            .map_err(|_| Error::WriteMsgParcelFailed)?;
+
+        let function_number = GetAppSchema as u32;
+        let remote_obj = self
+            .remote_obj
+            .clone()
+            .ok_or(Error::CreateMsgParcelFailed)?;
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
+            .map_err(|_| Error::SendRequestFailed)?;
+
+        lock.read(&mut receive)?;
+
+        drop(lock);
+
+        Ok(infos.app_schema.read().unwrap())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_fragment": "return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;", "rust_fragment": "if attrs.get(&Tag::UserId).is_some() { if unsafe { !CheckSystemHapPermission() } { return log_throw_error!(ErrCode::NotSystemApplication, \"[FATAL]The caller is not system application.\"); }", "description": "Both check for system HAP permission and return early on failure", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "IPCSkeleton::GetCallingTokenID()", "rust_api": "Skeleton::calling_uid()", "mapping_type": "function", "description": "Get calling process token/UID for permission validation", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "AccessTokenKit::GetTokenTypeFlag(tokenId)", "rust_api": "attrs.get(&Tag::UserId)", "mapping_type": "function", "description": "Check token type/attribute presence for system application validation", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "CheckSystemApp()", "rust_api": "CheckSystemHapPermission()", "mapping_type": "function", "description": "Validate if calling process is a system application", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "CheckPermission(permission.as_ptr())", "rust_api": "CheckPermission(permission.as_ptr())", "mapping_type": "function", "description": "Check specific permission using permission string", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}]
+Unixcoder Score: -0.0451463907957077
+--------------------------------------------------
+C_Code: 
+ssize_t ares_writev(ares_socket_t s, const struct iovec *iov, int iovcnt)
+{
+  char *buffer, *bp;
+  int i;
+  size_t bytes = 0;
+  ssize_t result;
+
+  /* Validate iovcnt */
+  if (iovcnt <= 0)
+  {
+    SET_ERRNO(EINVAL);
+    return (-1);
+  }
+
+  /* Validate and find the sum of the iov_len values in the iov array */
+  for (i = 0; i < iovcnt; i++)
+  {
+    if (iov[i].iov_len > INT_MAX - bytes)
+    {
+      SET_ERRNO(EINVAL);
+      return (-1);
+    }
+    bytes += iov[i].iov_len;
+  }
+
+  if (bytes == 0)
+    return (0);
+
+  /* Allocate a temporary buffer to hold the data */
+  buffer = malloc(bytes);
+  if (!buffer)
+  {
+    SET_ERRNO(ENOMEM);
+    return (-1);
+  }
+
+  /* Copy the data into buffer */
+  for (bp = buffer, i = 0; i < iovcnt; ++i)
+  {
+    memcpy (bp, iov[i].iov_base, iov[i].iov_len);
+    bp += iov[i].iov_len;
+  }
+
+  /* Send buffer contents */
+  result = swrite(s, buffer, bytes);
+
+  free(buffer);
+
+  return (result);
+}
+Function: 
+fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
+        (&*self).write_vectored(bufs)
+    }
+Unixcoder Score: -0.04518371820449829
+--------------------------------------------------
+C_Code: 
+ssize_t ares_writev(ares_socket_t s, const struct iovec *iov, int iovcnt)
+{
+  char *buffer, *bp;
+  int i;
+  size_t bytes = 0;
+  ssize_t result;
+
+  /* Validate iovcnt */
+  if (iovcnt <= 0)
+  {
+    SET_ERRNO(EINVAL);
+    return (-1);
+  }
+
+  /* Validate and find the sum of the iov_len values in the iov array */
+  for (i = 0; i < iovcnt; i++)
+  {
+    if (iov[i].iov_len > INT_MAX - bytes)
+    {
+      SET_ERRNO(EINVAL);
+      return (-1);
+    }
+    bytes += iov[i].iov_len;
+  }
+
+  if (bytes == 0)
+    return (0);
+
+  /* Allocate a temporary buffer to hold the data */
+  buffer = malloc(bytes);
+  if (!buffer)
+  {
+    SET_ERRNO(ENOMEM);
+    return (-1);
+  }
+
+  /* Copy the data into buffer */
+  for (bp = buffer, i = 0; i < iovcnt; ++i)
+  {
+    memcpy (bp, iov[i].iov_base, iov[i].iov_len);
+    bp += iov[i].iov_len;
+  }
+
+  /* Send buffer contents */
+  result = swrite(s, buffer, bytes);
+
+  free(buffer);
+
+  return (result);
+}
+Function: 
+fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
+        self.lock().write_vectored(bufs)
+    }
+Unixcoder Score: -0.046066492795944214
+--------------------------------------------------

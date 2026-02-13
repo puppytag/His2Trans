@@ -1,0 +1,347 @@
+C_Code: 
+bool IsLocalCalling()
+    {
+        return g_mock.IsLocalCalling();
+    }
+Function: 
+pub fn is_local_calling() -> bool {
+        IsLocalCalling()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__QrSegment__idx23231_rank1.c", "source_rust_file": "Partial__QrSegment__idx23231_rank1.rs", "c_fragment": "private: int numChars;", "rust_fragment": "numchars: usize,", "description": "Both represent the number of characters in the segment.", "reasoning": "[Task Analysis] The C code defines a C++ class `QrSegment` with nested `Mode` class and various static methods, while the Rust code defines a Rust struct `QrSegment` with similar fields but different internal representation. [Similarity] The overall structure is not fully equivalent due to different language paradigms (C++ vs Rust) and different field types (e.g., `std::vector<bool>` vs `Vec<bool>`). [Knowledge Extraction] There are partial structural similarities in field definitions and some API mappings related to data handling, but no full structural match due to differing class vs struct paradigms and method signatures. However, there are API mappings for field access and data handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__QrSegment__idx23231_rank1.c", "source_rust_file": "Partial__QrSegment__idx23231_rank1.rs", "c_fragment": "private: std::vector<bool> data;", "rust_fragment": "data: Vec<bool>,", "description": "Both represent a sequence of boolean values for data storage.", "reasoning": "[Task Analysis] The C code defines a C++ class `QrSegment` with nested `Mode` class and various static methods, while the Rust code defines a Rust struct `QrSegment` with similar fields but different internal representation. [Similarity] The overall structure is not fully equivalent due to different language paradigms (C++ vs Rust) and different field types (e.g., `std::vector<bool>` vs `Vec<bool>`). [Knowledge Extraction] There are partial structural similarities in field definitions and some API mappings related to data handling, but no full structural match due to differing class vs struct paradigms and method signatures. However, there are API mappings for field access and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__QrSegment__idx23231_rank1.c", "source_rust_file": "Partial__QrSegment__idx23231_rank1.rs", "c_api": "int numChars", "rust_api": "usize numchars", "mapping_type": "field_access", "description": "Both represent the count of characters in the segment.", "reasoning": "[Task Analysis] The C code defines a C++ class `QrSegment` with nested `Mode` class and various static methods, while the Rust code defines a Rust struct `QrSegment` with similar fields but different internal representation. [Similarity] The overall structure is not fully equivalent due to different language paradigms (C++ vs Rust) and different field types (e.g., `std::vector<bool>` vs `Vec<bool>`). [Knowledge Extraction] There are partial structural similarities in field definitions and some API mappings related to data handling, but no full structural match due to differing class vs struct paradigms and method signatures. However, there are API mappings for field access and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__QrSegment__idx23231_rank1.c", "source_rust_file": "Partial__QrSegment__idx23231_rank1.rs", "c_api": "std::vector<bool>", "rust_api": "Vec<bool>", "mapping_type": "type", "description": "Both represent a dynamic array of boolean values.", "reasoning": "[Task Analysis] The C code defines a C++ class `QrSegment` with nested `Mode` class and various static methods, while the Rust code defines a Rust struct `QrSegment` with similar fields but different internal representation. [Similarity] The overall structure is not fully equivalent due to different language paradigms (C++ vs Rust) and different field types (e.g., `std::vector<bool>` vs `Vec<bool>`). [Knowledge Extraction] There are partial structural similarities in field definitions and some API mappings related to data handling, but no full structural match due to differing class vs struct paradigms and method signatures. However, there are API mappings for field access and data handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__QrSegment__idx23231_rank1.c", "source_rust_file": "Partial__QrSegment__idx23231_rank1.rs", "c_fragment": "#if defined(ACE_ENGINE_QRCODE_ABLE)\nprivate: Mode mode;\n#else\nprivate: const Mode *mode;\n#endif", "rust_fragment": "mode: QrSegmentMode,", "description": "Both represent the mode of the QR segment.", "reasoning": "[Task Analysis] The C code defines a C++ class `QrSegment` with nested `Mode` class and various static methods, while the Rust code defines a Rust struct `QrSegment` with similar fields but different internal representation. [Similarity] The overall structure is not fully equivalent due to different language paradigms (C++ vs Rust) and different field types (e.g., `std::vector<bool>` vs `Vec<bool>`). [Knowledge Extraction] There are partial structural similarities in field definitions and some API mappings related to data handling, but no full structural match due to differing class vs struct paradigms and method signatures. However, there are API mappings for field access and data handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__QrSegment__idx23231_rank1.c", "source_rust_file": "Partial__QrSegment__idx23231_rank1.rs", "c_api": "Mode mode", "rust_api": "QrSegmentMode", "mapping_type": "type", "description": "Both represent the mode of the QR segment.", "reasoning": "[Task Analysis] The C code defines a C++ class `QrSegment` with nested `Mode` class and various static methods, while the Rust code defines a Rust struct `QrSegment` with similar fields but different internal representation. [Similarity] The overall structure is not fully equivalent due to different language paradigms (C++ vs Rust) and different field types (e.g., `std::vector<bool>` vs `Vec<bool>`). [Knowledge Extraction] There are partial structural similarities in field definitions and some API mappings related to data handling, but no full structural match due to differing class vs struct paradigms and method signatures. However, there are API mappings for field access and data handling patterns."}]
+Unixcoder Score: 0.07496141642332077
+--------------------------------------------------
+C_Code: 
+inline void SetMode(rust::str taskId, int32_t mode)
+{
+    std::string tid = std::string(taskId);
+    RequestAction::GetInstance()->SetMode(tid, static_cast<Mode>(mode));
+}
+Function: 
+fn main() {
+    SetAccessTokenPermission();
+    println!("Please Input Test CASE");
+    println!("1. Disable Task Notification Bar");
+    println!("2. Set Task Mode");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    match input.trim() {
+        "1" => loop {
+            println!("please input TaskId");
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            DisableTaskNotification(input.trim());
+        },
+        "2" => loop {
+            println!("please input TaskId");
+            let mut task_id = String::new();
+            std::io::stdin().read_line(&mut task_id).unwrap();
+            println!("please input Mode 0 for background 1 for foreground");
+            let mut mode = String::new();
+            std::io::stdin().read_line(&mut mode).unwrap();
+            let mode = match mode.trim() {
+                "0" => 0,
+                "1" => 1,
+                _ => {
+                    println!("invalid mode");
+                    continue;
+                }
+            };
+            SetMode(task_id.trim(), mode);
+        },
+        _ => {
+            println!("invalid inpu");
+        }
+    }
+}
+Unixcoder Score: 0.06337039917707443
+--------------------------------------------------
+C_Code: 
+static int numCharCountBits(enum qrcodegen_Mode mode, int version) {
+	if (!(qrcodegen_VERSION_MIN <= version && version <= qrcodegen_VERSION_MAX)) {
+		return -1;
+	}
+	int i = (version + 7) / 17;
+	switch (mode) {
+		case qrcodegen_Mode_NUMERIC     : { static const int temp[] = {10, 12, 14}; return temp[i]; }
+		case qrcodegen_Mode_ALPHANUMERIC: { static const int temp[] = { 9, 11, 13}; return temp[i]; }
+		case qrcodegen_Mode_BYTE        : { static const int temp[] = { 8, 16, 16}; return temp[i]; }
+		case qrcodegen_Mode_KANJI       : { static const int temp[] = { 8, 10, 12}; return temp[i]; }
+		case qrcodegen_Mode_ECI         : return 0;
+		default:  return(false);  return -1;  // Dummy value
+	}
+}
+Function: 
+fn get_total_bits(segs: &[Self], version: Version) -> Option<usize> {
+		let mut result: usize = 0;
+		for seg in segs {
+			let ccbits: u8 = seg.mode.num_char_count_bits(version);
+			// ccbits can be as large as 16, but usize can be as small as 16
+			if let Some(limit) = 1usize.checked_shl(ccbits.into()) {
+				if seg.numchars >= limit {
+					return None;  // The segment's length doesn't fit the field's bit width
+				}
+			}
+			result = result.checked_add(4 + usize::from(ccbits))?;
+			result = result.checked_add(seg.bitlength)?;
+		}
+		Some(result)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_api": "qrcodegen_makeNumeric", "rust_api": "QrSegment::make_numeric", "mapping_type": "function", "description": "Create numeric segment", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_api": "qrcodegen_isNumeric", "rust_api": "QrSegment::is_numeric", "mapping_type": "function", "description": "Check if text is numeric", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_api": "qrcodegen_encodeSegmentsAdvanced", "rust_api": "QrCode::encode_codewords", "mapping_type": "function", "description": "Encode codewords into final QR code", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_api": "qrcodegen_makeBytes", "rust_api": "QrSegment::make_bytes", "mapping_type": "function", "description": "Create byte segment", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_api": "qrcodegen_calcSegmentBufferSize", "rust_api": "QrSegment::calc_buffer_size", "mapping_type": "function", "description": "Calculate buffer size for a segment", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_api": "qrcodegen_encodeSegmentsAdvanced", "rust_api": "QrCode::encode_segments_to_codewords", "mapping_type": "function", "description": "Encode segments into codewords", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "Partial", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_fragment": "return qrcodegen_encodeSegmentsAdvanced(&seg, 1, ecl, minVersion, maxVersion, mask, boostEcl, tempBuffer, qrcode);\n\nfail:\n\tqrcode[0] = 0;  // Set size to invalid value for safety\n\treturn false;", "rust_fragment": "let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(&[seg], outbuffer, ecl, minversion, maxversion, boostecl)?;\n\tOk(Self::encode_codewords(outbuffer, datacodewordslen, tempbuffer, ecl, version, mask))", "description": "Call the advanced encoding function with the created segment and return the result.", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "Partial", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_fragment": "struct qrcodegen_Segment seg;\n\tif (qrcodegen_isNumeric(text)) {\n\t\tif (qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_NUMERIC, textLen) > bufLen)\n\t\t\tgoto fail;\n\t\tseg = qrcodegen_makeNumeric(text, tempBuffer);\n\t} else if (qrcodegen_isAlphanumeric(text)) {\n\t\tif (qrcodegen_calcSegmentBufferSize(qrcodegen_Mode_ALPHANUMERIC, textLen) > bufLen)\n\t\t\tgoto fail;\n\t\tseg = qrcodegen_makeAlphanumeric(text, tempBuffer);\n\t} else {\n\t\tif (textLen > bufLen)\n\t\t\tgoto fail;\n\t\tsize_t i;\n\t\tfor (i = 0; i < textLen; i++)\n\t\t\ttempBuffer[i] = (uint8_t)text[i];\n\t\tseg.mode = qrcodegen_Mode_BYTE;\n\t\tseg.bitLength = calcSegmentBitLength(seg.mode, textLen);\n\t\tif (seg.bitLength == -1)\n\t\t\tgoto fail;\n\t\tseg.numChars = (int)textLen;\n\t\tseg.data = tempBuffer;\n\t}", "rust_fragment": "use QrSegmentMode::*;\n\tlet buflen: usize = outbuffer.len();\n\tlet seg: QrSegment = if QrSegment::is_numeric(text) && QrSegment::calc_buffer_size(Numeric, textlen).map_or(false, |x| x <= buflen) {\n\t\tQrSegment::make_numeric(text, tempbuffer)\n\t} else if QrSegment::is_alphanumeric(text) && QrSegment::calc_buffer_size(Alphanumeric, textlen).map_or(false, |x| x <= buflen) {\n\t\tQrSegment::make_alphanumeric(text, tempbuffer)\n\t} else if QrSegment::calc_buffer_size(Byte, textlen).map_or(false, |x| x <= buflen) {\n\t\tQrSegment::make_bytes(text.as_bytes())\n\t} else {\n\t\treturn Err(DataTooLong::SegmentTooLong);\n\t};", "description": "Determine segment type (numeric, alphanumeric, byte) and create appropriate segment with buffer size validation.", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "Partial", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_fragment": "size_t textLen = strlen(text);\n\tif (textLen == 0)\n\t\treturn qrcodegen_encodeSegmentsAdvanced(NULL, 0, ecl, minVersion, maxVersion, mask, boostEcl, tempBuffer, qrcode);", "rust_fragment": "let textlen: usize = text.len();  // In bytes\n\tif textlen == 0 {\n\t\tlet (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(&[], outbuffer, ecl, minversion, maxversion, boostecl)?;\n\t\treturn Ok(Self::encode_codewords(outbuffer, datacodewordslen, tempbuffer, ecl, version, mask));", "description": "Handle empty text case by calling the advanced encoding function with no segments.", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_api": "qrcodegen_isAlphanumeric", "rust_api": "QrSegment::is_alphanumeric", "mapping_type": "function", "description": "Check if text is alphanumeric", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}, {"knowledge_type": "Full", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_encodeText__idx144418_rank1.c", "source_rust_file": "Full__qrcodegen_encodeText__idx144418_rank1.rs", "c_api": "qrcodegen_makeAlphanumeric", "rust_api": "QrSegment::make_alphanumeric", "mapping_type": "function", "description": "Create alphanumeric segment", "reasoning": "[Task Analysis] Both functions encode text into QR codes, handling numeric/alphanumeric/byte segments with buffer size checks and error handling. [Similarity] High structural similarity in control flow: input validation, segment type detection, buffer size checks, and encoding logic. [Knowledge Extraction] Full structural match with minor naming/type differences; API mappings found for segment creation, buffer size checks, and encoding functions."}]
+Unixcoder Score: 0.05224025249481201
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestManager::SetMode(const std::string &tid, const Mode mode)
+{
+    return RequestManagerImpl::GetInstance()->SetMode(tid, mode);
+}
+Function: 
+pub(crate) fn set_mode(uid: u64, task_id: u32, mode: Mode) -> (Self, Recv<ErrorCode>) {
+        let (tx, rx) = channel::<ErrorCode>();
+        (
+            Self::Service(ServiceEvent::SetMode(uid, task_id, mode, tx)),
+            Recv::new(rx),
+        )
+    }
+Unixcoder Score: 0.0435815267264843
+--------------------------------------------------
+C_Code: 
+napi_value Open::Sync(napi_env env, napi_callback_info info)
+{
+    NFuncArg funcArg(env, info);
+    if (!funcArg.InitArgs(NARG_CNT::ONE, NARG_CNT::THREE)) {
+        UniError(EINVAL).ThrowErr(env, "Number of arguments unmatched");
+        return nullptr;
+    }
+
+    bool succ = false;
+    unique_ptr<char[]> path = nullptr;
+    tie(succ, path, ignore) = NVal(env, funcArg[NARG_POS::FIRST]).ToUTF8StringPath();
+    if (!succ) {
+        UniError(EINVAL).ThrowErr(env, "Invalid path");
+        return nullptr;
+    }
+
+    unsigned int flags = O_RDONLY;
+    if (funcArg.GetArgc() >= NARG_CNT::TWO) {
+        auto [succGetFlags, authFlags] = NVal(env, funcArg[NARG_POS::SECOND]).ToInt32(O_RDONLY);
+        if (!succGetFlags || authFlags < 0) {
+            UniError(EINVAL).ThrowErr(env, "Invalid flags");
+            return nullptr;
+        }
+        flags = static_cast<unsigned int>(authFlags);
+        (void)CommonFunc::ConvertJsFlags(flags);
+    }
+
+    int fd = -1;
+    if (ModuleRemoteUri::RemoteUri::IsRemoteUri(path.get(), fd, flags)) {
+        return NVal::CreateInt64(env, fd).val_;
+    }
+
+    int32_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+    if (funcArg.GetArgc() != NARG_CNT::THREE) {
+        size_t flagsFirst { flags };
+        if ((flagsFirst & O_CREAT) || (flagsFirst & O_TMPFILE)) {
+            UniError(EINVAL).ThrowErr(env, "called with O_CREAT/O_TMPFILE but no mode");
+            return nullptr;
+        }
+    } else {
+        tie(succ, mode) = NVal(env, funcArg.GetArg(NARG_POS::THIRD)).ToInt32(mode);
+        if (!succ) {
+            UniError(EINVAL).ThrowErr(env, "Invalid mode");
+            return nullptr;
+        }
+    }
+    fd = open(path.get(), flags, mode);
+    if (fd == -1) {
+        if (errno == ENAMETOOLONG) {
+            UniError(errno).ThrowErr(env, "Filename too long");
+            return nullptr;
+        }
+        UniError(errno).ThrowErr(env);
+        return nullptr;
+    }
+
+    return NVal::CreateInt64(env, fd).val_;
+}
+Function: 
+pub(crate) unsafe fn reader_iterator(path: *const c_char) -> Result<*mut c_void, Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = CStr::from_ptr(path);
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+    Ok(Box::into_raw(Box::new(reader)) as *mut c_void)
+}
+Unixcoder Score: 0.034873757511377335
+--------------------------------------------------
+C_Code: 
+static tuple<bool, int> ValidMoveDirArg(
+    const string &src, const string &dest, optional<int32_t> mode)
+{
+    std::error_code errCode;
+    if (!filesystem::is_directory(filesystem::status(src.c_str(), errCode))) {
+        HILOGE("Invalid src, errCode = %{public}d", errCode.value());
+        return { false, 0 };
+    }
+    if (!filesystem::is_directory(filesystem::status(dest.c_str(), errCode))) {
+        HILOGE("Invalid dest,errCode = %{public}d", errCode.value());
+        return { false, 0 };
+    }
+    int modeType = 0;
+    if (mode.has_value()) {
+        modeType = mode.value();
+        if (modeType < DIRMODE_MIN || modeType > DIRMODE_MAX) {
+            HILOGE("Invalid mode");
+            return { false, 0 };
+        }
+    }
+    return { true, modeType };
+}
+Function: 
+pub(crate) fn create_dir(path: *const c_char, mode: MakeDirectionMode) -> Result<(), Error> {
+    if path.is_null() {
+        return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+    }
+    let path = unsafe { CStr::from_ptr(path) };
+    let path = match path.to_str() {
+        Ok(p) => p,
+        Err(_) => {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid input"));
+        }
+    };
+    match mode {
+        MakeDirectionMode::Single => fs::create_dir(path),
+        MakeDirectionMode::Multiple => fs::create_dir_all(path),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__eio__fallocate__idx126196_rank1.c", "source_rust_file": "API_Mapping__eio__fallocate__idx126196_rank1.rs", "c_api": "fallocate (fd, mode, offset, len)", "rust_api": "wasi::fd_allocate(self.as_raw_fd() as wasi::Fd, offset, len)", "mapping_type": "function", "description": "File allocation operation", "reasoning": "[Task Analysis] C function `eio__fallocate` wraps the system call `fallocate` with a fallback to `ENOSYS`, while Rust function `allocate` uses `wasi::fd_allocate` for file allocation. [Similarity] Both perform file allocation operations, but differ in system interface (POSIX vs WASI) and error handling. [Knowledge Extraction] The core operation is file allocation, but the system calls are different. No full structural match due to domain mismatch (POSIX vs WASI), but API mapping exists for file allocation operation."}]
+Unixcoder Score: 0.0346318781375885
+--------------------------------------------------
+C_Code: 
+bool ChangeMode(const string& fileName, const mode_t& mode)
+{
+    return (chmod(fileName.c_str(), mode) == 0);
+}
+Function: 
+fn test_change_mode_file_001()
+{
+    let_cxx_string!(dirpath = "/data/test/utils_directory_tmp/test.txt");
+    let mode = directory_ex::S_IRWXU | directory_ex::S_IRWXG | directory_ex::S_IRWXO;
+    let ret = directory_ex::ffi::ChangeModeFile(&dirpath, &mode);
+    assert!(!ret);
+}
+Unixcoder Score: 0.03125423938035965
+--------------------------------------------------
+C_Code: 
+inline ReflectionMode ScopedReflectionMode::current_reflection_mode() {
+  return reflection_mode_;
+}
+Function: 
+pub fn new() -> Self {
+        #[inline(never)]
+        #[cold]
+        fn arena_new_failed() -> ! {
+            panic!("Could not create a new UPB arena");
+        }
+
+        // SAFETY:
+        // - `upb_Arena_New` is assumed to be implemented correctly and always sound to
+        //   call; if it returned a non-null pointer, it is a valid arena.
+        unsafe {
+            let Some(raw) = upb_Arena_New() else { arena_new_failed() };
+            Self { raw, _not_sync: PhantomData }
+        }
+    }
+Unixcoder Score: 0.021330436691641808
+--------------------------------------------------
+C_Code: 
+size_t qrcodegen_calcSegmentBufferSize(enum qrcodegen_Mode mode, size_t numChars) {
+	int temp = calcSegmentBitLength(mode, numChars);
+	if (temp == -1) {
+		return SIZE_MAX;
+	}
+	if (!(0 <= temp && temp <= INT16_MAX)) {
+		return SIZE_MAX;
+	}
+	return ((size_t)temp + 7) / 8;
+}
+Function: 
+pub fn calc_buffer_size(mode: QrSegmentMode, numchars: usize) -> Option<usize> {
+		let temp = Self::calc_bit_length(mode, numchars)?;
+		Some(temp / 8 + usize::from(temp % 8 != 0))  // ceil(temp / 8)
+	}
+Unixcoder Score: 0.01916879042983055
+--------------------------------------------------
+C_Code: 
+int uv_tty_set_mode(uv_tty_t* tty, int mode) {
+  DWORD flags = 0;
+  unsigned char was_reading;
+  uv_alloc_cb alloc_cb;
+  uv_read_cb read_cb;
+
+  if (!!mode == !!(tty->flags & UV_HANDLE_TTY_RAW)) {
+    return 0;
+  }
+
+  if (tty->original_console_mode & ENABLE_QUICK_EDIT_MODE) {
+    flags = ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS;
+  }
+
+  if (mode) {
+    /* Raw input */
+    flags |= ENABLE_WINDOW_INPUT;
+  } else {
+    /* Line-buffered mode. */
+    flags |= ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT |
+        ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT;
+  }
+
+  if (!SetConsoleMode(tty->handle, flags)) {
+    uv__set_sys_error(tty->loop, GetLastError());
+    return -1;
+  }
+
+  /* If currently reading, stop, and restart reading. */
+  if (tty->flags & UV_HANDLE_READING) {
+    was_reading = 1;
+    alloc_cb = tty->alloc_cb;
+    read_cb = tty->read_cb;
+
+    if (was_reading && uv_tty_read_stop(tty) != 0) {
+      return -1;
+    }
+  } else {
+    was_reading = 0;
+  }
+
+  /* Update flag. */
+  tty->flags &= ~UV_HANDLE_TTY_RAW;
+  tty->flags |= mode ? UV_HANDLE_TTY_RAW : 0;
+
+  /* If we just stopped reading, restart. */
+  if (was_reading && uv_tty_read_start(tty, alloc_cb, read_cb) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+Function: 
+pub fn set_mode(&self, raw: bool) -> Result<(), UvError> {
+        let raw = raw as libc::c_int;
+        match unsafe { uvll::tty_set_mode(self.native_handle(), raw) } {
+            0 => Ok(()),
+            n => Err(UvError(n))
+        }
+    }
+Unixcoder Score: 0.015568053349852562
+--------------------------------------------------

@@ -1,0 +1,255 @@
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.003765996778383851
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.0016964123351499438
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.00387869612313807
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.004878223408013582
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.009200124070048332
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.009860874153673649
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemProcessHandler> SubscribeSystemProcess(
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStart_,
+    rust::Fn<void(const OHOS::SamgrRust::SystemProcessInfo &systemProcessInfo)> onStop_)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    sptr<ISystemProcessStatusChange> listener = new SystemProcessStatusChangeWrapper(nullptr, onStart_, onStop_);
+    sysm->SubscribeSystemProcess(listener);
+    return std::make_unique<UnSubscribeSystemProcessHandler>(listener);
+}
+Function: 
+pub fn subscribe_system_process(
+        on_start: fn(&SystemProcessInfo),
+        on_stop: fn(&SystemProcessInfo),
+    ) -> UnsubscribeHandler {
+        UnsubscribeHandler::new(Unsubscribe::Process(SubscribeSystemProcess(
+            on_start, on_stop,
+        )))
+    }
+Unixcoder Score: -0.01107828225940466
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::UnSubscribeSystemAbility(int32_t systemAbilityId,
+    const sptr<ISystemAbilityStatusChange>& listener)
+{
+    if (!CheckInputSysAbilityId(systemAbilityId) || listener == nullptr) {
+        HILOGW("UnSubscribeSA saId or listener invalid");
+        return ERR_INVALID_VALUE;
+    }
+
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    lock_guard<samgr::mutex> autoLock(listenerMapLock_);
+    auto& listeners = listenerMap_[systemAbilityId];
+    UnSubscribeSystemAbilityLocked(listeners, listener->AsObject());
+    if (abilityStatusDeath_ != nullptr) {
+        listener->AsObject()->RemoveDeathRecipient(abilityStatusDeath_);
+    }
+    HILOGI("UnSubscribeSA:%{public}d_%{public}d_%{public}zu", systemAbilityId, callingPid, listeners.size());
+    return ERR_OK;
+}
+Function: 
+pub fn unsubscribe(self) {
+        match self.inner {
+            Unsubscribe::Ability(mut p) => p.pin_mut().UnSubscribe(),
+            Unsubscribe::Process(mut p) => p.pin_mut().UnSubscribe(),
+        }
+    }
+Unixcoder Score: -0.01249393355101347
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.013974525965750217
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.01835862174630165
+--------------------------------------------------

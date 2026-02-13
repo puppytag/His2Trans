@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_service_record_2",
+  "function_name": "DevSvcRecordFreeInstance",
+  "source_c_file": "src/hdf_service_record.c",
+  "c_code": "void DevSvcRecordFreeInstance(struct DevSvcRecord * inst)\n{\n    if (inst != NULL) {\n        OsalMemFree((char *)inst->servName);\n        OsalMemFree((char *)inst->servInfo);\n        OsalMemFree((char *)inst->interfaceDesc);\n        OsalMemFree(inst);\n    }\n}",
+  "rust_signature": "pub extern \"C\" fn DevSvcRecordFreeInstance(inst: *mut crate::types::DevSvcRecord)",
+  "rust_code": "pub extern \\\"C\\\" fn DevSvcRecordFreeInstance(inst: *mut DevSvcRecord) {\n    if inst.is_null() {\n        return;\n    }\n    unsafe {\n        OsalMemFree((*inst).servName as *mut core::ffi::c_void);\n        OsalMemFree((*inst).servInfo as *mut core::ffi::c_void);\n        OsalMemFree((*inst).interfaceDesc as *mut core::ffi::c_void);\n        OsalMemFree(inst as *mut core::ffi::c_void);\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemFree",
+      "rust_api": "OsalMemFree",
+      "description": "Free memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

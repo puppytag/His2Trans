@@ -1,0 +1,953 @@
+C_Code: 
+std::pair<const char*, int32> ReadSizeFallback(const char* p, uint32 res) {
+  for (std::uint32_t i = 1; i < 4; i++) {
+    uint32 byte = static_cast<uint8>(p[i]);
+    res += (byte - 1) << (7 * i);
+    if (PROTOBUF_PREDICT_TRUE(byte < 128)) {
+      return {p + i + 1, res};
+    }
+  }
+  std::uint32_t byte = static_cast<uint8>(p[4]);
+  if (PROTOBUF_PREDICT_FALSE(byte >= 8)) return {nullptr, 0};  // size >= 2gb
+  res += (byte - 1) << 28;
+  // Protect against sign integer overflow in PushLimit. Limits are relative
+  // to buffer ends and ptr could potential be kSlopBytes beyond a buffer end.
+  // To protect against overflow we reject limits absurdly close to INT_MAX.
+  if (PROTOBUF_PREDICT_FALSE(res > INT_MAX - ParseContext::kSlopBytes)) {
+    return {nullptr, 0};
+  }
+  return {p + 5, res};
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112895_rank4.c", "source_rust_file": "API_Mapping__insert_char__idx112895_rank4.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "unsafe { self.as_mut_vec() }.splice((start, end), replace_with.bytes())", "mapping_type": "pattern", "description": "Copying new characters into buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function replaces a range in a string with new content. [Similarity] Names do not match (insert_char vs replace_range), but both perform character-level string manipulation. [Knowledge Extraction] No full structural match due to different domains (buffer manipulation vs string slicing). However, both involve character-level operations and memory movement. API mappings found for string replacement and character handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112895_rank4.c", "source_rust_file": "API_Mapping__insert_char__idx112895_rank4.rs", "c_api": "utf8_index(current->buf, pos)", "rust_api": "self.is_char_boundary(n)", "mapping_type": "function", "description": "UTF-8 character index calculation", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function replaces a range in a string with new content. [Similarity] Names do not match (insert_char vs replace_range), but both perform character-level string manipulation. [Knowledge Extraction] No full structural match due to different domains (buffer manipulation vs string slicing). However, both involve character-level operations and memory movement. API mappings found for string replacement and character handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112895_rank4.c", "source_rust_file": "API_Mapping__insert_char__idx112895_rank4.rs", "c_api": "utf8_getchars(buf, ch)", "rust_api": "replace_with.bytes()", "mapping_type": "function", "description": "UTF-8 character encoding", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function replaces a range in a string with new content. [Similarity] Names do not match (insert_char vs replace_range), but both perform character-level string manipulation. [Knowledge Extraction] No full structural match due to different domains (buffer manipulation vs string slicing). However, both involve character-level operations and memory movement. API mappings found for string replacement and character handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112895_rank4.c", "source_rust_file": "API_Mapping__insert_char__idx112895_rank4.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "unsafe { self.as_mut_vec() }.splice((start, end), replace_with.bytes())", "mapping_type": "pattern", "description": "Memory shifting operation for character insertion", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function replaces a range in a string with new content. [Similarity] Names do not match (insert_char vs replace_range), but both perform character-level string manipulation. [Knowledge Extraction] No full structural match due to different domains (buffer manipulation vs string slicing). However, both involve character-level operations and memory movement. API mappings found for string replacement and character handling patterns."}]
+Unixcoder Score: 0.0710124522447586
+--------------------------------------------------
+C_Code: 
+int utf8_naive(const unsigned char *data, int len)
+{
+    int err_pos = 1;
+
+    while (len) {
+        int bytes;
+        const unsigned char byte1 = data[0];
+
+        /* 00..7F */
+        if (byte1 <= 0x7F) {
+            bytes = 1;
+        /* C2..DF, 80..BF */
+        } else if (len >= 2 && byte1 >= 0xC2 && byte1 <= 0xDF &&
+                (signed char)data[1] <= (signed char)0xBF) {
+            bytes = 2;
+        } else if (len >= 3) {
+            const unsigned char byte2 = data[1];
+
+            /* Is byte2, byte3 between 0x80 ~ 0xBF */
+            const int byte2_ok = (signed char)byte2 <= (signed char)0xBF;
+            const int byte3_ok = (signed char)data[2] <= (signed char)0xBF;
+
+            if (byte2_ok && byte3_ok &&
+                     /* E0, A0..BF, 80..BF */
+                    ((byte1 == 0xE0 && byte2 >= 0xA0) ||
+                     /* E1..EC, 80..BF, 80..BF */
+                     (byte1 >= 0xE1 && byte1 <= 0xEC) ||
+                     /* ED, 80..9F, 80..BF */
+                     (byte1 == 0xED && byte2 <= 0x9F) ||
+                     /* EE..EF, 80..BF, 80..BF */
+                     (byte1 >= 0xEE && byte1 <= 0xEF))) {
+                bytes = 3;
+            } else if (len >= 4) {
+                /* Is byte4 between 0x80 ~ 0xBF */
+                const int byte4_ok = (signed char)data[3] <= (signed char)0xBF;
+
+                if (byte2_ok && byte3_ok && byte4_ok &&
+                         /* F0, 90..BF, 80..BF, 80..BF */
+                        ((byte1 == 0xF0 && byte2 >= 0x90) ||
+                         /* F1..F3, 80..BF, 80..BF, 80..BF */
+                         (byte1 >= 0xF1 && byte1 <= 0xF3) ||
+                         /* F4, 80..8F, 80..BF, 80..BF */
+                         (byte1 == 0xF4 && byte2 <= 0x8F))) {
+                    bytes = 4;
+                } else {
+                    return err_pos;
+                }
+            } else {
+                return err_pos;
+            }
+        } else {
+            return err_pos;
+        }
+
+        len -= bytes;
+        err_pos += bytes;
+        data += bytes;
+    }
+
+    return 0;
+}
+Function: 
+fn next(&mut self) -> Option<Utf8Chunk<'a>> {
+        if self.source.is_empty() {
+            return None;
+        }
+
+        const TAG_CONT_U8: u8 = 128;
+        fn safe_get(xs: &[u8], i: usize) -> u8 {
+            *xs.get(i).unwrap_or(&0)
+        }
+
+        let mut i = 0;
+        let mut valid_up_to = 0;
+        while i < self.source.len() {
+            // SAFETY: `i < self.source.len()` per previous line.
+            // For some reason the following are both significantly slower:
+            // while let Some(&byte) = self.source.get(i) {
+            // while let Some(byte) = self.source.get(i).copied() {
+            let byte = unsafe { *self.source.get_unchecked(i) };
+            i += 1;
+
+            if byte < 128 {
+                // This could be a `1 => ...` case in the match below, but for
+                // the common case of all-ASCII inputs, we bypass loading the
+                // sizeable UTF8_CHAR_WIDTH table into cache.
+            } else {
+                let w = utf8_char_width(byte);
+
+                match w {
+                    2 => {
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    3 => {
+                        match (byte, safe_get(self.source, i)) {
+                            (0xE0, 0xA0..=0xBF) => (),
+                            (0xE1..=0xEC, 0x80..=0xBF) => (),
+                            (0xED, 0x80..=0x9F) => (),
+                            (0xEE..=0xEF, 0x80..=0xBF) => (),
+                            _ => break,
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    4 => {
+                        match (byte, safe_get(self.source, i)) {
+                            (0xF0, 0x90..=0xBF) => (),
+                            (0xF1..=0xF3, 0x80..=0xBF) => (),
+                            (0xF4, 0x80..=0x8F) => (),
+                            _ => break,
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    _ => break,
+                }
+            }
+
+            valid_up_to = i;
+        }
+
+        /// # Safety
+        /// `index` must be in-bounds for `x`
+        unsafe fn split_at_unchecked(x: &[u8], index: usize) -> (&[u8], &[u8]) {
+            // SAFETY: in-bounds as promised by the caller
+            unsafe { (x.get_unchecked(..index), x.get_unchecked(index..)) }
+        }
+
+        // SAFETY: `i <= self.source.len()` because it is only ever incremented
+        // via `i += 1` and in between every single one of those increments, `i`
+        // is compared against `self.source.len()`. That happens either
+        // literally by `i < self.source.len()` in the while-loop's condition,
+        // or indirectly by `safe_get(self.source, i) & 192 != TAG_CONT_U8`. The
+        // loop is terminated as soon as the latest `i += 1` has made `i` no
+        // longer less than `self.source.len()`, which means it'll be at most
+        // equal to `self.source.len()`.
+        let (inspected, remaining) = unsafe { split_at_unchecked(self.source, i) };
+        self.source = remaining;
+
+        // SAFETY: `valid_up_to <= i` because it is only ever assigned via
+        // `valid_up_to = i` and `i` only increases.
+        let (valid, invalid) = unsafe { split_at_unchecked(inspected, valid_up_to) };
+
+        Some(Utf8Chunk {
+            // SAFETY: All bytes up to `valid_up_to` are valid UTF-8.
+            valid: unsafe { from_utf8_unchecked(valid) },
+            invalid,
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78431_rank3.c", "source_rust_file": "API_Mapping__insert_char__idx78431_rank3.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "push_bytes(s, bytes)", "mapping_type": "function", "description": "Shifting buffer content to make space for new bytes", "reasoning": "[Task Analysis] C function inserts a UTF-8 character into a buffer at a given position; Rust function pushes UTF-8 bytes to a string. [Similarity] Both perform UTF-8 encoding and buffer manipulation, but C handles positioning and scrolling logic while Rust focuses on byte conversion. [Knowledge Extraction] No full structural match due to different domains (buffer manipulation vs UTF-8 encoding), but API mappings found for UTF-8 byte handling and buffer operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78431_rank3.c", "source_rust_file": "API_Mapping__insert_char__idx78431_rank3.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "push_bytes(s, bytes)", "mapping_type": "function", "description": "Inserting UTF-8 byte sequence into buffer", "reasoning": "[Task Analysis] C function inserts a UTF-8 character into a buffer at a given position; Rust function pushes UTF-8 bytes to a string. [Similarity] Both perform UTF-8 encoding and buffer manipulation, but C handles positioning and scrolling logic while Rust focuses on byte conversion. [Knowledge Extraction] No full structural match due to different domains (buffer manipulation vs UTF-8 encoding), but API mappings found for UTF-8 byte handling and buffer operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78431_rank3.c", "source_rust_file": "API_Mapping__insert_char__idx78431_rank3.rs", "c_api": "utf8_getchars(buf, ch)", "rust_api": "ch as uint", "mapping_type": "function", "description": "UTF-8 character to byte sequence conversion", "reasoning": "[Task Analysis] C function inserts a UTF-8 character into a buffer at a given position; Rust function pushes UTF-8 bytes to a string. [Similarity] Both perform UTF-8 encoding and buffer manipulation, but C handles positioning and scrolling logic while Rust focuses on byte conversion. [Knowledge Extraction] No full structural match due to different domains (buffer manipulation vs UTF-8 encoding), but API mappings found for UTF-8 byte handling and buffer operations."}]
+Unixcoder Score: 0.05305078625679016
+--------------------------------------------------
+C_Code: 
+int utf8_naive(const unsigned char *data, int len)
+{
+    int err_pos = 1;
+
+    while (len) {
+        int bytes;
+        const unsigned char byte1 = data[0];
+
+        /* 00..7F */
+        if (byte1 <= 0x7F) {
+            bytes = 1;
+        /* C2..DF, 80..BF */
+        } else if (len >= 2 && byte1 >= 0xC2 && byte1 <= 0xDF &&
+                (signed char)data[1] <= (signed char)0xBF) {
+            bytes = 2;
+        } else if (len >= 3) {
+            const unsigned char byte2 = data[1];
+
+            /* Is byte2, byte3 between 0x80 ~ 0xBF */
+            const int byte2_ok = (signed char)byte2 <= (signed char)0xBF;
+            const int byte3_ok = (signed char)data[2] <= (signed char)0xBF;
+
+            if (byte2_ok && byte3_ok &&
+                     /* E0, A0..BF, 80..BF */
+                    ((byte1 == 0xE0 && byte2 >= 0xA0) ||
+                     /* E1..EC, 80..BF, 80..BF */
+                     (byte1 >= 0xE1 && byte1 <= 0xEC) ||
+                     /* ED, 80..9F, 80..BF */
+                     (byte1 == 0xED && byte2 <= 0x9F) ||
+                     /* EE..EF, 80..BF, 80..BF */
+                     (byte1 >= 0xEE && byte1 <= 0xEF))) {
+                bytes = 3;
+            } else if (len >= 4) {
+                /* Is byte4 between 0x80 ~ 0xBF */
+                const int byte4_ok = (signed char)data[3] <= (signed char)0xBF;
+
+                if (byte2_ok && byte3_ok && byte4_ok &&
+                         /* F0, 90..BF, 80..BF, 80..BF */
+                        ((byte1 == 0xF0 && byte2 >= 0x90) ||
+                         /* F1..F3, 80..BF, 80..BF, 80..BF */
+                         (byte1 >= 0xF1 && byte1 <= 0xF3) ||
+                         /* F4, 80..8F, 80..BF, 80..BF */
+                         (byte1 == 0xF4 && byte2 <= 0x8F))) {
+                    bytes = 4;
+                } else {
+                    return err_pos;
+                }
+            } else {
+                return err_pos;
+            }
+        } else {
+            return err_pos;
+        }
+
+        len -= bytes;
+        err_pos += bytes;
+        data += bytes;
+    }
+
+    return 0;
+}
+Function: 
+const fn utf8_char_width(b: u8) -> usize {
+    UTF8_CHAR_WIDTH[b as usize] as usize
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112923_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx112923_rank1.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "self.push_str(&s)", "mapping_type": "function", "description": "Shifting existing content to make space for new data in buffer", "reasoning": "[Task Analysis] C function `insert_char` manipulates a UTF-8 buffer by inserting a character at a given position, handling memory moves and character counting. Rust function `extend_one` appends a string to an existing string buffer. [Similarity] While both involve string/buffer manipulation, the C code is low-level with manual memory management and UTF-8 handling, whereas Rust uses high-level string methods. [Knowledge Extraction] No full structural match due to domain mismatch (low-level buffer manipulation vs high-level string extension). However, both involve appending/extending string-like data, so API mapping is extracted. No partial fragments found due to semantic mismatch. API mapping extracted: C `memcpy`/`memmove` with Rust `push_str` as both extend string buffers with new content."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112923_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx112923_rank1.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "self.push_str(&s)", "mapping_type": "function", "description": "Extending a string buffer with new content", "reasoning": "[Task Analysis] C function `insert_char` manipulates a UTF-8 buffer by inserting a character at a given position, handling memory moves and character counting. Rust function `extend_one` appends a string to an existing string buffer. [Similarity] While both involve string/buffer manipulation, the C code is low-level with manual memory management and UTF-8 handling, whereas Rust uses high-level string methods. [Knowledge Extraction] No full structural match due to domain mismatch (low-level buffer manipulation vs high-level string extension). However, both involve appending/extending string-like data, so API mapping is extracted. No partial fragments found due to semantic mismatch. API mapping extracted: C `memcpy`/`memmove` with Rust `push_str` as both extend string buffers with new content."}]
+Unixcoder Score: 0.05226517841219902
+--------------------------------------------------
+C_Code: 
+vector<uint8_t> QrCode::addEccAndInterleave(const vector<uint8_t> &data) const {
+	if (data.size() != static_cast<unsigned int>(getNumDataCodewords(version, errorCorrectionLevel)))
+		throw std::invalid_argument("Invalid argument");
+#endif
+	
+	// Calculate parameter numbers
+	int numBlocks = NUM_ERROR_CORRECTION_BLOCKS[static_cast<int>(errorCorrectionLevel)][version];
+	int blockEccLen = ECC_CODEWORDS_PER_BLOCK  [static_cast<int>(errorCorrectionLevel)][version];
+	int rawCodewords = getNumRawDataModules(version) / 8;
+	int numShortBlocks = numBlocks - rawCodewords % numBlocks;
+	int shortBlockLen = rawCodewords / numBlocks;
+	
+	// Split data into blocks and append ECC to each block
+	vector<vector<uint8_t> > blocks;
+	const vector<uint8_t> rsDiv = reedSolomonComputeDivisor(blockEccLen);
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+	if (!flag) {
+		return result;
+	}
+#endif
+	for (int i = 0, k = 0; i < numBlocks; i++) {
+		vector<uint8_t> dat(data.cbegin() + k, data.cbegin() + (k + shortBlockLen - blockEccLen + (i < numShortBlocks ? 0 : 1)));
+		k += static_cast<int>(dat.size());
+		const vector<uint8_t> ecc = reedSolomonComputeRemainder(dat, rsDiv);
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		if (!flag) {
+			return result;
+		}
+#endif
+		if (i < numShortBlocks)
+			dat.push_back(0);
+		dat.insert(dat.end(), ecc.cbegin(), ecc.cend());
+		blocks.push_back(std::move(dat));
+	}
+	
+	// Interleave (not concatenate) the bytes from every block into a single sequence
+#if !defined(ACE_ENGINE_QRCODE_ABLE)
+	vector<uint8_t> result;
+#endif
+	for (size_t i = 0; i < blocks.at(0).size(); i++) {
+		for (size_t j = 0; j < blocks.size(); j++) {
+			// Skip the padding byte in short blocks
+			if (i != static_cast<unsigned int>(shortBlockLen - blockEccLen) || j >= static_cast<unsigned int>(numShortBlocks))
+				result.push_back(blocks.at(j).at(i));
+		}
+	}
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+	if (result.size() != static_cast<unsigned int>(rawCodewords))
+		flag = false;
+#else
+	assert(result.size() == static_cast<unsigned int>(rawCodewords));
+#endif
+	return result;
+}
+Function: 
+fn add_ecc_and_interleave(&self, data: &[u8]) -> Vec<u8> {
+		let ver: Version = self.version;
+		let ecl: QrCodeEcc = self.errorcorrectionlevel;
+		assert_eq!(data.len(), QrCode::get_num_data_codewords(ver, ecl), "Illegal argument");
+		
+		// Calculate parameter numbers
+		let numblocks: usize = QrCode::table_get(&NUM_ERROR_CORRECTION_BLOCKS, ver, ecl);
+		let blockecclen: usize = QrCode::table_get(&ECC_CODEWORDS_PER_BLOCK  , ver, ecl);
+		let rawcodewords: usize = QrCode::get_num_raw_data_modules(ver) / 8;
+		let numshortblocks: usize = numblocks - rawcodewords % numblocks;
+		let shortblocklen: usize = rawcodewords / numblocks;
+		
+		// Split data into blocks and append ECC to each block
+		let mut blocks = Vec::<Vec<u8>>::with_capacity(numblocks);
+		let rsdiv: Vec<u8> = QrCode::reed_solomon_compute_divisor(blockecclen);
+		let mut k: usize = 0;
+		for i in 0 .. numblocks {
+			let datlen: usize = shortblocklen - blockecclen + usize::from(i >= numshortblocks);
+			let mut dat = data[k .. k+datlen].to_vec();
+			k += datlen;
+			let ecc: Vec<u8> = QrCode::reed_solomon_compute_remainder(&dat, &rsdiv);
+			if i < numshortblocks {
+				dat.push(0);
+			}
+			dat.extend_from_slice(&ecc);
+			blocks.push(dat);
+		}
+		
+		// Interleave (not concatenate) the bytes from every block into a single sequence
+		let mut result = Vec::<u8>::with_capacity(rawcodewords);
+		for i in 0 ..= shortblocklen {
+			for (j, block) in blocks.iter().enumerate() {
+				// Skip the padding byte in short blocks
+				if i != shortblocklen - blockecclen || j >= numshortblocks {
+					result.push(block[i]);
+				}
+			}
+		}
+		result
+	}
+Unixcoder Score: 0.02586624026298523
+--------------------------------------------------
+C_Code: 
+vector<uint8_t> QrCode::addEccAndInterleave(const vector<uint8_t> &data) const {
+	if (data.size() != static_cast<unsigned int>(getNumDataCodewords(version, errorCorrectionLevel)))
+		throw std::invalid_argument("Invalid argument");
+#endif
+	
+	// Calculate parameter numbers
+	int numBlocks = NUM_ERROR_CORRECTION_BLOCKS[static_cast<int>(errorCorrectionLevel)][version];
+	int blockEccLen = ECC_CODEWORDS_PER_BLOCK  [static_cast<int>(errorCorrectionLevel)][version];
+	int rawCodewords = getNumRawDataModules(version) / 8;
+	int numShortBlocks = numBlocks - rawCodewords % numBlocks;
+	int shortBlockLen = rawCodewords / numBlocks;
+	
+	// Split data into blocks and append ECC to each block
+	vector<vector<uint8_t> > blocks;
+	const vector<uint8_t> rsDiv = reedSolomonComputeDivisor(blockEccLen);
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+	if (!flag) {
+		return result;
+	}
+#endif
+	for (int i = 0, k = 0; i < numBlocks; i++) {
+		vector<uint8_t> dat(data.cbegin() + k, data.cbegin() + (k + shortBlockLen - blockEccLen + (i < numShortBlocks ? 0 : 1)));
+		k += static_cast<int>(dat.size());
+		const vector<uint8_t> ecc = reedSolomonComputeRemainder(dat, rsDiv);
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		if (!flag) {
+			return result;
+		}
+#endif
+		if (i < numShortBlocks)
+			dat.push_back(0);
+		dat.insert(dat.end(), ecc.cbegin(), ecc.cend());
+		blocks.push_back(std::move(dat));
+	}
+	
+	// Interleave (not concatenate) the bytes from every block into a single sequence
+#if !defined(ACE_ENGINE_QRCODE_ABLE)
+	vector<uint8_t> result;
+#endif
+	for (size_t i = 0; i < blocks.at(0).size(); i++) {
+		for (size_t j = 0; j < blocks.size(); j++) {
+			// Skip the padding byte in short blocks
+			if (i != static_cast<unsigned int>(shortBlockLen - blockEccLen) || j >= static_cast<unsigned int>(numShortBlocks))
+				result.push_back(blocks.at(j).at(i));
+		}
+	}
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+	if (result.size() != static_cast<unsigned int>(rawCodewords))
+		flag = false;
+#else
+	assert(result.size() == static_cast<unsigned int>(rawCodewords));
+#endif
+	return result;
+}
+Function: 
+fn reed_solomon_compute_divisor(degree: usize) -> Vec<u8> {
+		assert!((1 ..= 255).contains(&degree), "Degree out of range");
+		// Polynomial coefficients are stored from highest to lowest power, excluding the leading term which is always 1.
+		// For example the polynomial x^3 + 255x^2 + 8x + 93 is stored as the uint8 array [255, 8, 93].
+		let mut result = vec![0u8; degree - 1];
+		result.push(1);  // Start off with the monomial x^0
+		
+		// Compute the product polynomial (x - r^0) * (x - r^1) * (x - r^2) * ... * (x - r^{degree-1}),
+		// and drop the highest monomial term which is always 1x^degree.
+		// Note that r = 0x02, which is a generator element of this field GF(2^8/0x11D).
+		let mut root: u8 = 1;
+		for _ in 0 .. degree {  // Unused variable i
+			// Multiply the current product by (x - r^i)
+			for j in 0 .. degree {
+				result[j] = QrCode::reed_solomon_multiply(result[j], root);
+				if j + 1 < result.len() {
+					result[j] ^= result[j + 1];
+				}
+			}
+			root = QrCode::reed_solomon_multiply(root, 0x02);
+		}
+		result
+	}
+Unixcoder Score: 0.024410879239439964
+--------------------------------------------------
+C_Code: 
+bool qrcodegen_encodeSegmentsAdvanced(const struct qrcodegen_Segment segs[], size_t len, enum qrcodegen_Ecc ecl,
+		int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl, uint8_t tempBuffer[], uint8_t qrcode[]) {
+	if (!(segs != NULL || len == 0))
+		return false;
+	if (!(qrcodegen_VERSION_MIN <= minVersion && minVersion <= maxVersion && maxVersion <= qrcodegen_VERSION_MAX))
+		return false;
+	if (!(0 <= (int)ecl && (int)ecl <= 3 && -1 <= (int)mask && (int)mask <= 7))
+		return false;
+	// Find the minimal version number to use
+	int version, dataUsedBits;
+	for (version = minVersion; ; version++) {
+		int dataCapacityBits = getNumDataCodewords(version, ecl) * 8;  // Number of data bits available
+		dataUsedBits = getTotalBits(segs, len, version);
+		if (dataUsedBits != -1 && dataUsedBits <= dataCapacityBits)
+			break;  // This version number is found to be suitable
+		if (version >= maxVersion) {  // All versions in the range could not fit the given data
+			qrcode[0] = 0;  // Set size to invalid value for safety
+			return false;
+		}
+	}
+	if (dataUsedBits == -1) {
+		return false;
+	}
+	// Increase the error correction level while the data still fits in the current version number
+	int i, j;
+	for (i = (int)qrcodegen_Ecc_MEDIUM; i <= (int)qrcodegen_Ecc_HIGH; i++) {  // From low to high
+		if (boostEcl && dataUsedBits <= getNumDataCodewords(version, (enum qrcodegen_Ecc)i) * 8)
+			ecl = (enum qrcodegen_Ecc)i;
+	}
+
+	// Concatenate all segments to create the data bit string
+	memset(qrcode, 0, (size_t)qrcodegen_BUFFER_LEN_FOR_VERSION(version) * sizeof(qrcode[0]));
+	int bitLen = 0;
+	size_t k;
+	for (k = 0; k < len; k++) {
+		const struct qrcodegen_Segment *seg = &segs[k];
+		appendBitsToBuffer((unsigned int)seg->mode, 4, qrcode, &bitLen);
+		appendBitsToBuffer((unsigned int)seg->numChars, numCharCountBits(seg->mode, version), qrcode, &bitLen);
+		for (j = 0; j < seg->bitLength; j++) {
+			int bit = (seg->data[j >> 3] >> (7 - (j & 7))) & 1;
+			appendBitsToBuffer((unsigned int)bit, 1, qrcode, &bitLen);
+		}
+	}
+	if (bitLen != dataUsedBits) {
+		return false;
+	}
+	// Add terminator and pad up to a byte if applicable
+	int dataCapacityBits = getNumDataCodewords(version, ecl) * 8;
+	if (bitLen > dataCapacityBits) {
+		return false;
+	}
+	int terminatorBits = dataCapacityBits - bitLen;
+	if (terminatorBits > 4)
+		terminatorBits = 4;
+	appendBitsToBuffer(0, terminatorBits, qrcode, &bitLen);
+	appendBitsToBuffer(0, (8 - bitLen % 8) % 8, qrcode, &bitLen);
+	if (bitLen % 8 != 0) {
+		return false;
+	}
+	// Pad with alternating bytes until data capacity is reached
+	uint8_t padByte;
+	for (padByte = 0xEC; bitLen < dataCapacityBits; padByte ^= 0xEC ^ 0x11) {
+		appendBitsToBuffer(padByte, 8, qrcode, &bitLen);
+	}
+	// Compute ECC, draw modules
+	addEccAndInterleave(qrcode, version, ecl, tempBuffer);
+	initializeFunctionModules(version, qrcode);
+	drawCodewords(tempBuffer, getNumRawDataModules(version) / 8, qrcode);
+	drawLightFunctionModules(qrcode, version);
+	initializeFunctionModules(version, tempBuffer);
+
+	// Do masking
+	if (mask == qrcodegen_Mask_AUTO) {  // Automatically choose best mask
+		long minPenalty = LONG_MAX;
+		for (i = 0; i < 8; i++) {
+			enum qrcodegen_Mask msk = (enum qrcodegen_Mask)i;
+			applyMask(tempBuffer, qrcode, msk);
+			drawFormatBits(ecl, msk, qrcode);
+			long penalty = getPenaltyScore(qrcode);
+			if (penalty < minPenalty) {
+				mask = msk;
+				minPenalty = penalty;
+			}
+			applyMask(tempBuffer, qrcode, msk);  // Undoes the mask due to XOR
+		}
+	}
+	if (!(0 <= (int)mask && (int)mask <= 7))
+		return false;
+	applyMask(tempBuffer, qrcode, mask);  // Apply the final choice of mask
+	drawFormatBits(ecl, mask, qrcode);  // Overwrite old format bits
+	return true;
+}
+Function: 
+pub fn encode_text<'b>(text: &str, tempbuffer: &'b mut [u8], mut outbuffer: &'a mut [u8], ecl: QrCodeEcc,
+			minversion: Version, maxversion: Version, mask: Option<Mask>, boostecl: bool) -> Result<QrCode<'a>,DataTooLong> {
+		
+		let minlen: usize = outbuffer.len().min(tempbuffer.len());
+		outbuffer = &mut outbuffer[ .. minlen];
+		
+		let textlen: usize = text.len();  // In bytes
+		if textlen == 0 {
+			let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(&[], outbuffer, ecl, minversion, maxversion, boostecl)?;
+			return Ok(Self::encode_codewords(outbuffer, datacodewordslen, tempbuffer, ecl, version, mask));
+		}
+		
+		use QrSegmentMode::*;
+		let buflen: usize = outbuffer.len();
+		let seg: QrSegment = if QrSegment::is_numeric(text) && QrSegment::calc_buffer_size(Numeric, textlen).map_or(false, |x| x <= buflen) {
+			QrSegment::make_numeric(text, tempbuffer)
+		} else if QrSegment::is_alphanumeric(text) && QrSegment::calc_buffer_size(Alphanumeric, textlen).map_or(false, |x| x <= buflen) {
+			QrSegment::make_alphanumeric(text, tempbuffer)
+		} else if QrSegment::calc_buffer_size(Byte, textlen).map_or(false, |x| x <= buflen) {
+			QrSegment::make_bytes(text.as_bytes())
+		} else {
+			return Err(DataTooLong::SegmentTooLong);
+		};
+		let (datacodewordslen, ecl, version) = QrCode::encode_segments_to_codewords(&[seg], outbuffer, ecl, minversion, maxversion, boostecl)?;
+		Ok(Self::encode_codewords(outbuffer, datacodewordslen, tempbuffer, ecl, version, mask))
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112874_rank2.c", "source_rust_file": "API_Mapping__insert_char__idx112874_rank2.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "self.vec.try_reserve(additional)", "mapping_type": "pattern", "description": "Memory reallocation pattern for buffer growth", "reasoning": "[Task Analysis] C function 'insert_char' manipulates a buffer by inserting a UTF-8 character at a given position, handling memory moves and character counting. Rust function 'try_reserve' reserves additional capacity in a vector. [Similarity] No structural similarity at the code level; the C function performs complex buffer manipulation while Rust just reserves space. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping in memory management patterns (reserve vs. buffer growth)."}]
+Unixcoder Score: 0.00012347214214969426
+--------------------------------------------------
+C_Code: 
+bool qrcodegen_encodeSegmentsAdvanced(const struct qrcodegen_Segment segs[], size_t len, enum qrcodegen_Ecc ecl,
+		int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl, uint8_t tempBuffer[], uint8_t qrcode[]) {
+	if (!(segs != NULL || len == 0))
+		return false;
+	if (!(qrcodegen_VERSION_MIN <= minVersion && minVersion <= maxVersion && maxVersion <= qrcodegen_VERSION_MAX))
+		return false;
+	if (!(0 <= (int)ecl && (int)ecl <= 3 && -1 <= (int)mask && (int)mask <= 7))
+		return false;
+	// Find the minimal version number to use
+	int version, dataUsedBits;
+	for (version = minVersion; ; version++) {
+		int dataCapacityBits = getNumDataCodewords(version, ecl) * 8;  // Number of data bits available
+		dataUsedBits = getTotalBits(segs, len, version);
+		if (dataUsedBits != -1 && dataUsedBits <= dataCapacityBits)
+			break;  // This version number is found to be suitable
+		if (version >= maxVersion) {  // All versions in the range could not fit the given data
+			qrcode[0] = 0;  // Set size to invalid value for safety
+			return false;
+		}
+	}
+	if (dataUsedBits == -1) {
+		return false;
+	}
+	// Increase the error correction level while the data still fits in the current version number
+	int i, j;
+	for (i = (int)qrcodegen_Ecc_MEDIUM; i <= (int)qrcodegen_Ecc_HIGH; i++) {  // From low to high
+		if (boostEcl && dataUsedBits <= getNumDataCodewords(version, (enum qrcodegen_Ecc)i) * 8)
+			ecl = (enum qrcodegen_Ecc)i;
+	}
+
+	// Concatenate all segments to create the data bit string
+	memset(qrcode, 0, (size_t)qrcodegen_BUFFER_LEN_FOR_VERSION(version) * sizeof(qrcode[0]));
+	int bitLen = 0;
+	size_t k;
+	for (k = 0; k < len; k++) {
+		const struct qrcodegen_Segment *seg = &segs[k];
+		appendBitsToBuffer((unsigned int)seg->mode, 4, qrcode, &bitLen);
+		appendBitsToBuffer((unsigned int)seg->numChars, numCharCountBits(seg->mode, version), qrcode, &bitLen);
+		for (j = 0; j < seg->bitLength; j++) {
+			int bit = (seg->data[j >> 3] >> (7 - (j & 7))) & 1;
+			appendBitsToBuffer((unsigned int)bit, 1, qrcode, &bitLen);
+		}
+	}
+	if (bitLen != dataUsedBits) {
+		return false;
+	}
+	// Add terminator and pad up to a byte if applicable
+	int dataCapacityBits = getNumDataCodewords(version, ecl) * 8;
+	if (bitLen > dataCapacityBits) {
+		return false;
+	}
+	int terminatorBits = dataCapacityBits - bitLen;
+	if (terminatorBits > 4)
+		terminatorBits = 4;
+	appendBitsToBuffer(0, terminatorBits, qrcode, &bitLen);
+	appendBitsToBuffer(0, (8 - bitLen % 8) % 8, qrcode, &bitLen);
+	if (bitLen % 8 != 0) {
+		return false;
+	}
+	// Pad with alternating bytes until data capacity is reached
+	uint8_t padByte;
+	for (padByte = 0xEC; bitLen < dataCapacityBits; padByte ^= 0xEC ^ 0x11) {
+		appendBitsToBuffer(padByte, 8, qrcode, &bitLen);
+	}
+	// Compute ECC, draw modules
+	addEccAndInterleave(qrcode, version, ecl, tempBuffer);
+	initializeFunctionModules(version, qrcode);
+	drawCodewords(tempBuffer, getNumRawDataModules(version) / 8, qrcode);
+	drawLightFunctionModules(qrcode, version);
+	initializeFunctionModules(version, tempBuffer);
+
+	// Do masking
+	if (mask == qrcodegen_Mask_AUTO) {  // Automatically choose best mask
+		long minPenalty = LONG_MAX;
+		for (i = 0; i < 8; i++) {
+			enum qrcodegen_Mask msk = (enum qrcodegen_Mask)i;
+			applyMask(tempBuffer, qrcode, msk);
+			drawFormatBits(ecl, msk, qrcode);
+			long penalty = getPenaltyScore(qrcode);
+			if (penalty < minPenalty) {
+				mask = msk;
+				minPenalty = penalty;
+			}
+			applyMask(tempBuffer, qrcode, msk);  // Undoes the mask due to XOR
+		}
+	}
+	if (!(0 <= (int)mask && (int)mask <= 7))
+		return false;
+	applyMask(tempBuffer, qrcode, mask);  // Apply the final choice of mask
+	drawFormatBits(ecl, mask, qrcode);  // Overwrite old format bits
+	return true;
+}
+Function: 
+pub fn encode_binary(data: &[u8], ecl: QrCodeEcc) -> Result<Self,DataTooLong> {
+		let segs: [QrSegment; 1] = [QrSegment::make_bytes(data)];
+		QrCode::encode_segments(&segs, ecl)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112917_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx112917_rank1.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "self.push(c)", "mapping_type": "function", "description": "Character insertion into a data structure", "reasoning": "[Task Analysis] C function 'insert_char' manipulates a UTF-8 buffer by inserting a character at a given position, handling memory moves and character counting. Rust function 'extend_one' appends a character to a collection. [Similarity] Names and domains differ significantly; C operates on raw buffers with manual memory management, while Rust uses high-level collections. [Knowledge Extraction] No full structural match due to domain mismatch (buffer manipulation vs collection extension). However, both involve adding characters to a data structure. API mapping identified: C 'memcpy' and 'memmove' for buffer manipulation vs Rust 'push' for collection extension."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx112917_rank1.c", "source_rust_file": "API_Mapping__insert_char__idx112917_rank1.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "self.push(c)", "mapping_type": "function", "description": "Shifting data in a buffer to make space for new character", "reasoning": "[Task Analysis] C function 'insert_char' manipulates a UTF-8 buffer by inserting a character at a given position, handling memory moves and character counting. Rust function 'extend_one' appends a character to a collection. [Similarity] Names and domains differ significantly; C operates on raw buffers with manual memory management, while Rust uses high-level collections. [Knowledge Extraction] No full structural match due to domain mismatch (buffer manipulation vs collection extension). However, both involve adding characters to a data structure. API mapping identified: C 'memcpy' and 'memmove' for buffer manipulation vs Rust 'push' for collection extension."}]
+Unixcoder Score: -0.0011623450554907322
+--------------------------------------------------
+C_Code: 
+testable int getNumRawDataModules(int ver) {
+	if (!(qrcodegen_VERSION_MIN <= ver && ver <= qrcodegen_VERSION_MAX)) {
+		return 0;
+	}
+	int result = (16 * ver + 128) * ver + 64;
+	if (ver >= 2) {
+		int numAlign = ver / 7 + 2;
+		result -= (25 * numAlign - 10) * numAlign - 55;
+		if (ver >= 7)
+			result -= 36;
+	}
+	if (!(208 <= result && result <= 29648)) {
+		return 0;
+	}
+	return result;
+}
+Function: 
+fn get_alignment_pattern_positions<'b>(&self, resultbuf: &'b mut [u8; 7]) -> &'b [u8] {
+		let ver: u8 = self.version().value();
+		if ver == 1 {
+			&resultbuf[ .. 0]
+		} else {
+			let numalign: u8 = ver / 7 + 2;
+			let step: u8 = if ver == 32 { 26 } else
+				{(ver * 4 + numalign * 2 + 1) / (numalign * 2 - 2) * 2};
+			let result = &mut resultbuf[ .. usize::from(numalign)];
+			for i in 0 .. numalign-1 {
+				result[usize::from(i)] = *self.size - 7 - i * step;
+			}
+			*result.last_mut().unwrap() = 6;
+			result.reverse();
+			result
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__addEccAndInterleave__idx144387_rank5.c", "source_rust_file": "Partial__addEccAndInterleave__idx144387_rank5.rs", "c_fragment": "if (currentruncolor) {  // Terminate dark run\n\tself.add_history(currentrunlength);\n\tcurrentrunlength = 0;\n}\ncurrentrunlength += self.qr_size;  // Add light border to final run\nself.add_history(currentrunlength);\nreturn self.count_patterns();", "rust_fragment": "if currentruncolor {  // Terminate dark run\n\tself.add_history(currentrunlength);\n\tcurrentrunlength = 0;\n}\ncurrentrunlength += self.qr_size;  // Add light border to final run\nself.add_history(currentrunlength);\nself.count_patterns()", "description": "Both functions handle the termination and counting of a run of same-colored modules in QR code penalty calculation, including adding history and computing patterns.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction]"}]
+Unixcoder Score: -0.002196006942540407
+--------------------------------------------------
+C_Code: 
+bool qrcodegen_encodeSegmentsAdvanced(const struct qrcodegen_Segment segs[], size_t len, enum qrcodegen_Ecc ecl,
+		int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl, uint8_t tempBuffer[], uint8_t qrcode[]) {
+	if (!(segs != NULL || len == 0))
+		return false;
+	if (!(qrcodegen_VERSION_MIN <= minVersion && minVersion <= maxVersion && maxVersion <= qrcodegen_VERSION_MAX))
+		return false;
+	if (!(0 <= (int)ecl && (int)ecl <= 3 && -1 <= (int)mask && (int)mask <= 7))
+		return false;
+	// Find the minimal version number to use
+	int version, dataUsedBits;
+	for (version = minVersion; ; version++) {
+		int dataCapacityBits = getNumDataCodewords(version, ecl) * 8;  // Number of data bits available
+		dataUsedBits = getTotalBits(segs, len, version);
+		if (dataUsedBits != -1 && dataUsedBits <= dataCapacityBits)
+			break;  // This version number is found to be suitable
+		if (version >= maxVersion) {  // All versions in the range could not fit the given data
+			qrcode[0] = 0;  // Set size to invalid value for safety
+			return false;
+		}
+	}
+	if (dataUsedBits == -1) {
+		return false;
+	}
+	// Increase the error correction level while the data still fits in the current version number
+	int i, j;
+	for (i = (int)qrcodegen_Ecc_MEDIUM; i <= (int)qrcodegen_Ecc_HIGH; i++) {  // From low to high
+		if (boostEcl && dataUsedBits <= getNumDataCodewords(version, (enum qrcodegen_Ecc)i) * 8)
+			ecl = (enum qrcodegen_Ecc)i;
+	}
+
+	// Concatenate all segments to create the data bit string
+	memset(qrcode, 0, (size_t)qrcodegen_BUFFER_LEN_FOR_VERSION(version) * sizeof(qrcode[0]));
+	int bitLen = 0;
+	size_t k;
+	for (k = 0; k < len; k++) {
+		const struct qrcodegen_Segment *seg = &segs[k];
+		appendBitsToBuffer((unsigned int)seg->mode, 4, qrcode, &bitLen);
+		appendBitsToBuffer((unsigned int)seg->numChars, numCharCountBits(seg->mode, version), qrcode, &bitLen);
+		for (j = 0; j < seg->bitLength; j++) {
+			int bit = (seg->data[j >> 3] >> (7 - (j & 7))) & 1;
+			appendBitsToBuffer((unsigned int)bit, 1, qrcode, &bitLen);
+		}
+	}
+	if (bitLen != dataUsedBits) {
+		return false;
+	}
+	// Add terminator and pad up to a byte if applicable
+	int dataCapacityBits = getNumDataCodewords(version, ecl) * 8;
+	if (bitLen > dataCapacityBits) {
+		return false;
+	}
+	int terminatorBits = dataCapacityBits - bitLen;
+	if (terminatorBits > 4)
+		terminatorBits = 4;
+	appendBitsToBuffer(0, terminatorBits, qrcode, &bitLen);
+	appendBitsToBuffer(0, (8 - bitLen % 8) % 8, qrcode, &bitLen);
+	if (bitLen % 8 != 0) {
+		return false;
+	}
+	// Pad with alternating bytes until data capacity is reached
+	uint8_t padByte;
+	for (padByte = 0xEC; bitLen < dataCapacityBits; padByte ^= 0xEC ^ 0x11) {
+		appendBitsToBuffer(padByte, 8, qrcode, &bitLen);
+	}
+	// Compute ECC, draw modules
+	addEccAndInterleave(qrcode, version, ecl, tempBuffer);
+	initializeFunctionModules(version, qrcode);
+	drawCodewords(tempBuffer, getNumRawDataModules(version) / 8, qrcode);
+	drawLightFunctionModules(qrcode, version);
+	initializeFunctionModules(version, tempBuffer);
+
+	// Do masking
+	if (mask == qrcodegen_Mask_AUTO) {  // Automatically choose best mask
+		long minPenalty = LONG_MAX;
+		for (i = 0; i < 8; i++) {
+			enum qrcodegen_Mask msk = (enum qrcodegen_Mask)i;
+			applyMask(tempBuffer, qrcode, msk);
+			drawFormatBits(ecl, msk, qrcode);
+			long penalty = getPenaltyScore(qrcode);
+			if (penalty < minPenalty) {
+				mask = msk;
+				minPenalty = penalty;
+			}
+			applyMask(tempBuffer, qrcode, msk);  // Undoes the mask due to XOR
+		}
+	}
+	if (!(0 <= (int)mask && (int)mask <= 7))
+		return false;
+	applyMask(tempBuffer, qrcode, mask);  // Apply the final choice of mask
+	drawFormatBits(ecl, mask, qrcode);  // Overwrite old format bits
+	return true;
+}
+Function: 
+fn get_total_bits(segs: &[Self], version: Version) -> Option<usize> {
+		let mut result: usize = 0;
+		for seg in segs {
+			let ccbits: u8 = seg.mode.num_char_count_bits(version);
+			// ccbits can be as large as 16, but usize can be as small as 16
+			if let Some(limit) = 1usize.checked_shl(ccbits.into()) {
+				if seg.numchars >= limit {
+					return None;  // The segment's length doesn't fit the field's bit width
+				}
+			}
+			result = result.checked_add(4 + usize::from(ccbits))?;
+			result = result.checked_add(seg.data.len())?;
+		}
+		Some(result)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__insert_char__idx22073_rank1.c", "source_rust_file": "Partial__insert_char__idx22073_rank1.rs", "c_fragment": "for (c in string.chars()) {\n            self.putc(line, n, c, style);\n            n += 1;\n        }", "rust_fragment": "for (c in string.chars()) {\n            self.putc(line, n, c, style);\n            n += 1;\n        }", "description": "Character-by-character string iteration and printing logic", "reasoning": "[Task Analysis] C function manipulates UTF-8 buffer and character insertion logic; Rust function prints a string character-by-character using a putc method. [Similarity] No full structural similarity due to different domains (buffer manipulation vs text rendering). [Knowledge Extraction] Extract partial structural fragment and API mappings based on character insertion logic and loop patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx22073_rank1.c", "source_rust_file": "Partial__insert_char__idx22073_rank1.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "self.putc(line, n, c, style)", "mapping_type": "function", "description": "Character insertion into buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 buffer and character insertion logic; Rust function prints a string character-by-character using a putc method. [Similarity] No full structural similarity due to different domains (buffer manipulation vs text rendering). [Knowledge Extraction] Extract partial structural fragment and API mappings based on character insertion logic and loop patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__insert_char__idx22073_rank1.c", "source_rust_file": "Partial__insert_char__idx22073_rank1.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "self.putc(line, n, c, style)", "mapping_type": "function", "description": "Buffer shifting for character insertion", "reasoning": "[Task Analysis] C function manipulates UTF-8 buffer and character insertion logic; Rust function prints a string character-by-character using a putc method. [Similarity] No full structural similarity due to different domains (buffer manipulation vs text rendering). [Knowledge Extraction] Extract partial structural fragment and API mappings based on character insertion logic and loop patterns."}]
+Unixcoder Score: -0.0113592017441988
+--------------------------------------------------
+C_Code: 
+bool qrcodegen_encodeSegmentsAdvanced(const struct qrcodegen_Segment segs[], size_t len, enum qrcodegen_Ecc ecl,
+		int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl, uint8_t tempBuffer[], uint8_t qrcode[]) {
+	if (!(segs != NULL || len == 0))
+		return false;
+	if (!(qrcodegen_VERSION_MIN <= minVersion && minVersion <= maxVersion && maxVersion <= qrcodegen_VERSION_MAX))
+		return false;
+	if (!(0 <= (int)ecl && (int)ecl <= 3 && -1 <= (int)mask && (int)mask <= 7))
+		return false;
+	// Find the minimal version number to use
+	int version, dataUsedBits;
+	for (version = minVersion; ; version++) {
+		int dataCapacityBits = getNumDataCodewords(version, ecl) * 8;  // Number of data bits available
+		dataUsedBits = getTotalBits(segs, len, version);
+		if (dataUsedBits != -1 && dataUsedBits <= dataCapacityBits)
+			break;  // This version number is found to be suitable
+		if (version >= maxVersion) {  // All versions in the range could not fit the given data
+			qrcode[0] = 0;  // Set size to invalid value for safety
+			return false;
+		}
+	}
+	if (dataUsedBits == -1) {
+		return false;
+	}
+	// Increase the error correction level while the data still fits in the current version number
+	int i, j;
+	for (i = (int)qrcodegen_Ecc_MEDIUM; i <= (int)qrcodegen_Ecc_HIGH; i++) {  // From low to high
+		if (boostEcl && dataUsedBits <= getNumDataCodewords(version, (enum qrcodegen_Ecc)i) * 8)
+			ecl = (enum qrcodegen_Ecc)i;
+	}
+
+	// Concatenate all segments to create the data bit string
+	memset(qrcode, 0, (size_t)qrcodegen_BUFFER_LEN_FOR_VERSION(version) * sizeof(qrcode[0]));
+	int bitLen = 0;
+	size_t k;
+	for (k = 0; k < len; k++) {
+		const struct qrcodegen_Segment *seg = &segs[k];
+		appendBitsToBuffer((unsigned int)seg->mode, 4, qrcode, &bitLen);
+		appendBitsToBuffer((unsigned int)seg->numChars, numCharCountBits(seg->mode, version), qrcode, &bitLen);
+		for (j = 0; j < seg->bitLength; j++) {
+			int bit = (seg->data[j >> 3] >> (7 - (j & 7))) & 1;
+			appendBitsToBuffer((unsigned int)bit, 1, qrcode, &bitLen);
+		}
+	}
+	if (bitLen != dataUsedBits) {
+		return false;
+	}
+	// Add terminator and pad up to a byte if applicable
+	int dataCapacityBits = getNumDataCodewords(version, ecl) * 8;
+	if (bitLen > dataCapacityBits) {
+		return false;
+	}
+	int terminatorBits = dataCapacityBits - bitLen;
+	if (terminatorBits > 4)
+		terminatorBits = 4;
+	appendBitsToBuffer(0, terminatorBits, qrcode, &bitLen);
+	appendBitsToBuffer(0, (8 - bitLen % 8) % 8, qrcode, &bitLen);
+	if (bitLen % 8 != 0) {
+		return false;
+	}
+	// Pad with alternating bytes until data capacity is reached
+	uint8_t padByte;
+	for (padByte = 0xEC; bitLen < dataCapacityBits; padByte ^= 0xEC ^ 0x11) {
+		appendBitsToBuffer(padByte, 8, qrcode, &bitLen);
+	}
+	// Compute ECC, draw modules
+	addEccAndInterleave(qrcode, version, ecl, tempBuffer);
+	initializeFunctionModules(version, qrcode);
+	drawCodewords(tempBuffer, getNumRawDataModules(version) / 8, qrcode);
+	drawLightFunctionModules(qrcode, version);
+	initializeFunctionModules(version, tempBuffer);
+
+	// Do masking
+	if (mask == qrcodegen_Mask_AUTO) {  // Automatically choose best mask
+		long minPenalty = LONG_MAX;
+		for (i = 0; i < 8; i++) {
+			enum qrcodegen_Mask msk = (enum qrcodegen_Mask)i;
+			applyMask(tempBuffer, qrcode, msk);
+			drawFormatBits(ecl, msk, qrcode);
+			long penalty = getPenaltyScore(qrcode);
+			if (penalty < minPenalty) {
+				mask = msk;
+				minPenalty = penalty;
+			}
+			applyMask(tempBuffer, qrcode, msk);  // Undoes the mask due to XOR
+		}
+	}
+	if (!(0 <= (int)mask && (int)mask <= 7))
+		return false;
+	applyMask(tempBuffer, qrcode, mask);  // Apply the final choice of mask
+	drawFormatBits(ecl, mask, qrcode);  // Overwrite old format bits
+	return true;
+}
+Function: 
+fn get_total_bits(segs: &[Self], version: Version) -> Option<usize> {
+		let mut result: usize = 0;
+		for seg in segs {
+			let ccbits: u8 = seg.mode.num_char_count_bits(version);
+			// ccbits can be as large as 16, but usize can be as small as 16
+			if let Some(limit) = 1usize.checked_shl(ccbits.into()) {
+				if seg.numchars >= limit {
+					return None;  // The segment's length doesn't fit the field's bit width
+				}
+			}
+			result = result.checked_add(4 + usize::from(ccbits))?;
+			result = result.checked_add(seg.bitlength)?;
+		}
+		Some(result)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "memmove(current->buf + p2, current->buf + p1, current->len - p1)", "rust_api": "memmove(...)", "mapping_type": "function", "description": "Move memory block within buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "memcpy(...)", "mapping_type": "function", "description": "Copy bytes from source to destination", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "utf8_getchars(buf, ch)", "rust_api": "push_utf8_bytes(buf, ch)", "mapping_type": "function", "description": "Convert character to UTF-8 bytes and append to buffer", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78433_rank5.c", "source_rust_file": "API_Mapping__insert_char__idx78433_rank5.rs", "c_api": "utf8_strlen(current->prompt, -1)", "rust_api": "utf8_strlen(...)", "mapping_type": "function", "description": "Calculate UTF-8 string length", "reasoning": "[Task Analysis] C function manipulates UTF-8 character buffer with insertion logic; Rust function converts char slice to string with UTF-8 byte conversion. [Similarity] Names do not refer to same concept (insert_char vs from_chars), and domains differ (buffer manipulation vs string construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve UTF-8 character handling and string-like operations, so API mappings may be extracted for UTF-8 processing patterns."}]
+Unixcoder Score: -0.013250661082565784
+--------------------------------------------------

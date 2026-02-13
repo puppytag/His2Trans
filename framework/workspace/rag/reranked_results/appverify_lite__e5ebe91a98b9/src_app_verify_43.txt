@@ -1,0 +1,402 @@
+C_Code: 
+inline void SetMode(rust::str taskId, int32_t mode)
+{
+    std::string tid = std::string(taskId);
+    RequestAction::GetInstance()->SetMode(tid, static_cast<Mode>(mode));
+}
+Function: 
+fn main() {
+    SetAccessTokenPermission();
+    println!("Please Input Test CASE");
+    println!("1. Disable Task Notification Bar");
+    println!("2. Set Task Mode");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    match input.trim() {
+        "1" => loop {
+            println!("please input TaskId");
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            DisableTaskNotification(input.trim());
+        },
+        "2" => loop {
+            println!("please input TaskId");
+            let mut task_id = String::new();
+            std::io::stdin().read_line(&mut task_id).unwrap();
+            println!("please input Mode 0 for background 1 for foreground");
+            let mut mode = String::new();
+            std::io::stdin().read_line(&mut mode).unwrap();
+            let mode = match mode.trim() {
+                "0" => 0,
+                "1" => 1,
+                _ => {
+                    println!("invalid mode");
+                    continue;
+                }
+            };
+            SetMode(task_id.trim(), mode);
+        },
+        _ => {
+            println!("invalid inpu");
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SetMode__idx1201_rank3.h", "source_rust_file": "API_Mapping__SetMode__idx1201_rank3.rs", "c_api": "SetMode", "rust_api": "SetMode", "mapping_type": "function", "description": "Set task mode with string ID and integer mode", "reasoning": "[Task Analysis] C function 'SetMode' is a wrapper for setting a task mode, while Rust code is a CLI menu driver with user input handling. [Similarity] No structural similarity at function level; C function is a simple setter, Rust code is a complex interactive loop. [Knowledge Extraction] No full match, no partial match, but there is an API mapping between C's 'SetMode' and Rust's 'SetMode' call in the match arm, both performing the same logical operation of setting a task mode with a string ID and integer mode."}]
+Unixcoder Score: 0.11289824545383453
+--------------------------------------------------
+C_Code: 
+int uv_tty_set_mode(uv_tty_t* tty, int mode) {
+  DWORD flags = 0;
+  unsigned char was_reading;
+  uv_alloc_cb alloc_cb;
+  uv_read_cb read_cb;
+
+  if (!!mode == !!(tty->flags & UV_HANDLE_TTY_RAW)) {
+    return 0;
+  }
+
+  if (tty->original_console_mode & ENABLE_QUICK_EDIT_MODE) {
+    flags = ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS;
+  }
+
+  if (mode) {
+    /* Raw input */
+    flags |= ENABLE_WINDOW_INPUT;
+  } else {
+    /* Line-buffered mode. */
+    flags |= ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT |
+        ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT;
+  }
+
+  if (!SetConsoleMode(tty->handle, flags)) {
+    uv__set_sys_error(tty->loop, GetLastError());
+    return -1;
+  }
+
+  /* If currently reading, stop, and restart reading. */
+  if (tty->flags & UV_HANDLE_READING) {
+    was_reading = 1;
+    alloc_cb = tty->alloc_cb;
+    read_cb = tty->read_cb;
+
+    if (was_reading && uv_tty_read_stop(tty) != 0) {
+      return -1;
+    }
+  } else {
+    was_reading = 0;
+  }
+
+  /* Update flag. */
+  tty->flags &= ~UV_HANDLE_TTY_RAW;
+  tty->flags |= mode ? UV_HANDLE_TTY_RAW : 0;
+
+  /* If we just stopped reading, restart. */
+  if (was_reading && uv_tty_read_start(tty, alloc_cb, read_cb) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+Function: 
+pub fn set_mode(&self, raw: bool) -> Result<(), uv::UvError> {
+        let raw = raw as libc::c_int;
+        match unsafe { uvll::uv_tty_set_mode(self.native_handle(), raw) } {
+            0 => Ok(()),
+            n => Err(uv::UvError(n))
+        }
+    }
+Unixcoder Score: 0.01641189493238926
+--------------------------------------------------
+C_Code: 
+int uv_tty_set_mode(uv_tty_t* tty, int mode) {
+  DWORD flags = 0;
+  unsigned char was_reading;
+  uv_alloc_cb alloc_cb;
+  uv_read_cb read_cb;
+
+  if (!!mode == !!(tty->flags & UV_HANDLE_TTY_RAW)) {
+    return 0;
+  }
+
+  if (tty->original_console_mode & ENABLE_QUICK_EDIT_MODE) {
+    flags = ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS;
+  }
+
+  if (mode) {
+    /* Raw input */
+    flags |= ENABLE_WINDOW_INPUT;
+  } else {
+    /* Line-buffered mode. */
+    flags |= ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT |
+        ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT;
+  }
+
+  if (!SetConsoleMode(tty->handle, flags)) {
+    uv__set_sys_error(tty->loop, GetLastError());
+    return -1;
+  }
+
+  /* If currently reading, stop, and restart reading. */
+  if (tty->flags & UV_HANDLE_READING) {
+    was_reading = 1;
+    alloc_cb = tty->alloc_cb;
+    read_cb = tty->read_cb;
+
+    if (was_reading && uv_tty_read_stop(tty) != 0) {
+      return -1;
+    }
+  } else {
+    was_reading = 0;
+  }
+
+  /* Update flag. */
+  tty->flags &= ~UV_HANDLE_TTY_RAW;
+  tty->flags |= mode ? UV_HANDLE_TTY_RAW : 0;
+
+  /* If we just stopped reading, restart. */
+  if (was_reading && uv_tty_read_start(tty, alloc_cb, read_cb) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+Function: 
+pub fn set_mode(&self, raw: bool) -> Result<(), UvError> {
+        let raw = raw as libc::c_int;
+        match unsafe { uvll::tty_set_mode(self.native_handle(), raw) } {
+            0 => Ok(()),
+            n => Err(UvError(n))
+        }
+    }
+Unixcoder Score: 0.010932449251413345
+--------------------------------------------------
+C_Code: 
+int uv_tty_set_mode(uv_tty_t* tty, int mode) {
+  DWORD flags = 0;
+  unsigned char was_reading;
+  uv_alloc_cb alloc_cb;
+  uv_read_cb read_cb;
+
+  if (!!mode == !!(tty->flags & UV_HANDLE_TTY_RAW)) {
+    return 0;
+  }
+
+  if (tty->original_console_mode & ENABLE_QUICK_EDIT_MODE) {
+    flags = ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS;
+  }
+
+  if (mode) {
+    /* Raw input */
+    flags |= ENABLE_WINDOW_INPUT;
+  } else {
+    /* Line-buffered mode. */
+    flags |= ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT |
+        ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT;
+  }
+
+  if (!SetConsoleMode(tty->handle, flags)) {
+    uv__set_sys_error(tty->loop, GetLastError());
+    return -1;
+  }
+
+  /* If currently reading, stop, and restart reading. */
+  if (tty->flags & UV_HANDLE_READING) {
+    was_reading = 1;
+    alloc_cb = tty->alloc_cb;
+    read_cb = tty->read_cb;
+
+    if (was_reading && uv_tty_read_stop(tty) != 0) {
+      return -1;
+    }
+  } else {
+    was_reading = 0;
+  }
+
+  /* Update flag. */
+  tty->flags &= ~UV_HANDLE_TTY_RAW;
+  tty->flags |= mode ? UV_HANDLE_TTY_RAW : 0;
+
+  /* If we just stopped reading, restart. */
+  if (was_reading && uv_tty_read_start(tty, alloc_cb, read_cb) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+Function: 
+pub unsafe fn tty_set_mode(tty: *uv_tty_t, mode: c_int) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+    rust_uv_tty_set_mode(tty, mode)
+}
+Unixcoder Score: 0.002025570487603545
+--------------------------------------------------
+C_Code: 
+void SkPngCodecBase::initializeXformParams() {
+    if (fXformMode == kSwizzleColor_XformMode) {
+        fXformWidth = this->swizzler()->swizzleWidth();
+    }
+}
+Function: 
+fn compute_transformations(info: &png::Info) -> png::Transformations {
+    // There are 2 scenarios where `EXPAND` transformation may be needed:
+    //
+    // * `SkSwizzler` can handle low-bit-depth `ColorType::Indexed`, but it may not
+    //   support other inputs with low bit depth (e.g. `kGray_Color` with bpp=4). We
+    //   use `EXPAND` to ask the `png` crate to expand such low-bpp images to at
+    //   least 8 bits.
+    // * We may need to inject an alpha channel from the `tRNS` chunk if present.
+    //   Note that we can't check `info.trns.is_some()` because at this point we
+    //   have not yet read beyond the `IHDR` chunk.
+    //
+    // We avoid using `EXPAND` for `ColorType::Indexed` because this results in some
+    // performance gains - see https://crbug.com/356882657 for more details.
+    let mut result = match info.color_type {
+        // Work around bpp<8 limitations of `SkSwizzler`
+        png::ColorType::Rgba | png::ColorType::GrayscaleAlpha if (info.bit_depth as u8) < 8 => {
+            png::Transformations::EXPAND
+        }
+
+        // Handle `tRNS` expansion + work around bpp<8 limitations of `SkSwizzler`
+        png::ColorType::Rgb | png::ColorType::Grayscale => png::Transformations::EXPAND,
+
+        // Otherwise there is no need to `EXPAND`.
+        png::ColorType::Indexed | png::ColorType::Rgba | png::ColorType::GrayscaleAlpha => {
+            png::Transformations::IDENTITY
+        }
+    };
+
+    // We mimic how the `libpng`-based `SkPngCodec` handles G16 and GA16.
+    //
+    // TODO(https://crbug.com/359245096): Avoid stripping least signinficant 8 bits in G16 and
+    // GA16 images.
+    if info.bit_depth == png::BitDepth::Sixteen {
+        if matches!(info.color_type, png::ColorType::Grayscale | png::ColorType::GrayscaleAlpha) {
+            result = result | png::Transformations::STRIP_16;
+        }
+    }
+
+    result
+}
+Unixcoder Score: -0.009869716130197048
+--------------------------------------------------
+C_Code: 
+absl::string_view GetForcedPackagePrefix() {
+  return g_prefix_mode.forced_package_prefix();
+}
+Function: 
+fn from(slice: &[u8]) -> Self {
+        Self { ptr: slice.as_ptr(), len: slice.len() }
+    }
+Unixcoder Score: -0.010702698491513729
+--------------------------------------------------
+C_Code: 
+void TaskBuilder::checkOtherConfig()
+{
+    this->config.version = Version::API10;
+    if (this->config.begins < 0) {
+        this->config.begins = 0;
+    }
+    if (this->config.mode == Mode::BACKGROUND) {
+        this->config.background = true;
+    }
+}
+Function: 
+fn config(server: String, files: Vec<File>) -> TaskConfig {
+    let mut builder = ConfigBuilder::new();
+    builder
+        .action(Action::Upload)
+        .method("POST")
+        .mode(Mode::BackGround)
+        .url(&format!("http://{}/", server))
+        .redirect(true)
+        .version(1);
+    for file in files {
+        builder.file_spec(file);
+    }
+    builder.build()
+}
+Unixcoder Score: -0.011675814166665077
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment {
+	// The mode indicator of this segment.
+	enum qrcodegen_Mode mode;
+	
+	// The length of this segment's unencoded data. Measured in characters for
+	// numeric/alphanumeric/kanji mode, bytes for byte mode, and 0 for ECI mode.
+	// Always zero or positive. Not the same as the data's bit length.
+	int numChars;
+	
+	// The data bits of this segment, packed in bitwise big endian.
+	// Can be null if the bit length is zero.
+	uint8_t *data;
+	
+	// The number of valid data bits used in the buffer. Requires
+	// 0 <= bitLength <= 32767, and bitLength <= (capacity of data array) * 8.
+	// The character count (numChars) must agree with the mode and the bit buffer length.
+	int bitLength;
+}
+Function: 
+pub struct QrSegment {
+	
+	// The mode indicator of this segment. Accessed through mode().
+	mode: QrSegmentMode,
+	
+	// The length of this segment's unencoded data. Measured in characters for
+	// numeric/alphanumeric/kanji mode, bytes for byte mode, and 0 for ECI mode.
+	// Not the same as the data's bit length. Accessed through num_chars().
+	numchars: usize,
+	
+	// The data bits of this segment. Accessed through data().
+	data: Vec<bool>,
+	
+}
+Unixcoder Score: -0.013044088147580624
+--------------------------------------------------
+C_Code: 
+void TaskBuilder::checkOtherConfig()
+{
+    this->config.version = Version::API10;
+    if (this->config.begins < 0) {
+        this->config.begins = 0;
+    }
+    if (this->config.mode == Mode::BACKGROUND) {
+        this->config.background = true;
+    }
+}
+Function: 
+fn ut_upload_basic() {
+    test_init();
+    let server = test_server(vec![vec![TEST_CONTENT.to_string()]]);
+    let mut file = create_file("test_files/ut_upload_basic.txt");
+
+    file.write_all(TEST_CONTENT.as_bytes()).unwrap();
+
+    let config = ConfigBuilder::new()
+        .action(Action::Upload)
+        .method("POST")
+        .mode(Mode::BackGround)
+        .file_spec(file)
+        .url(&format!("http://{}/", server))
+        .redirect(true)
+        .version(1)
+        .build();
+    let task = build_task(config);
+    ylong_runtime::block_on(async {
+        upload(task.clone(), Arc::new(AtomicBool::new(false))).await;
+    });
+    assert!(task.running_result.lock().unwrap().unwrap().is_ok());
+}
+Unixcoder Score: -0.017215019091963768
+--------------------------------------------------
+C_Code: 
+absl::string_view GetForcedPackagePrefix() {
+  return g_prefix_mode.forced_package_prefix();
+}
+Function: 
+fn from(slice: &[u8]) -> Self {
+        Self { ptr: slice.as_ptr(), len: slice.len() }
+    }
+Unixcoder Score: -0.020164888352155685
+--------------------------------------------------

@@ -1,0 +1,262 @@
+C_Code: 
+struct TT_DriverRec_
+Function: 
+struct CBufferContents {
+    length: u32,
+    info: *mut CGlyphInfo,
+    position: *mut CGlyphPosition,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx131949_rank1.c", "source_rust_file": "Partial__main__idx131949_rank1.rs", "c_api": "getopts::getopts(args_, opts)", "rust_api": "getopts::opt_str(matches, \"compile-lib-path\")", "mapping_type": "function", "description": "Parsing command-line options using getopts library.", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a config parsing function using getopts. [Similarity] Names don't refer to same concept (main vs parse_config), and domains are different (CLI handling vs config parsing). [Knowledge Extraction] No full structural match, but there are partial matching fragments and API mappings related to argument parsing and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx131949_rank1.c", "source_rust_file": "Partial__main__idx131949_rank1.rs", "c_api": "free(tmp)", "rust_api": "config { ... }", "mapping_type": "pattern", "description": "Cleanup of allocated memory structures.", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a config parsing function using getopts. [Similarity] Names don't refer to same concept (main vs parse_config), and domains are different (CLI handling vs config parsing). [Knowledge Extraction] No full structural match, but there are partial matching fragments and API mappings related to argument parsing and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx131949_rank1.c", "source_rust_file": "Partial__main__idx131949_rank1.rs", "c_api": "free((void*)tmp->name)", "rust_api": "Path(*s)", "mapping_type": "function", "description": "Memory deallocation for string data.", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a config parsing function using getopts. [Similarity] Names don't refer to same concept (main vs parse_config), and domains are different (CLI handling vs config parsing). [Knowledge Extraction] No full structural match, but there are partial matching fragments and API mappings related to argument parsing and conditional logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__main__idx131949_rank1.c", "source_rust_file": "Partial__main__idx131949_rank1.rs", "c_fragment": "while (nodes) {\n    tmp = nodes;\n    nodes = tmp->next;\n    if (tmp->own_string) {\n      free((void*)tmp->name);\n    }\n    free(tmp);\n  }", "rust_fragment": "config {\n        compile_lib_path: getopts::opt_str(matches, \"compile-lib-path\"),\n        run_lib_path: getopts::opt_str(matches, \"run-lib-path\"),\n        rustc_path: opt_path(matches, \"rustc-path\"),\n        src_base: opt_path(matches, \"src-base\"),\n        build_base: opt_path(matches, \"build-base\"),\n        aux_base: opt_path(matches, \"aux-base\"),\n        stage_id: getopts::opt_str(matches, \"stage-id\"),\n        mode: str_mode(getopts::opt_str(matches, \"mode\")),\n        run_ignored: getopts::opt_present(matches, \"ignored\"),\n        filter:\n             if !matches.free.is_empty() {\n                 option::Some(copy matches.free[0])\n             } else { option::None },\n        logfile: getopts::opt_maybe_str(matches, \"logfile\").map(|s| Path(*s)),\n        runtool: getopts::opt_maybe_str(matches, \"runtool\"),\n        rustcflags: getopts::opt_maybe_str(matches, \"rustcflags\"),\n        jit: getopts::opt_present(matches, \"jit\"),\n        newrt: getopts::opt_present(matches, \"newrt\"),\n        target: opt_str2(getopts::opt_maybe_str(matches, \"target\")).to_str(),\n        adb_path: opt_str2(getopts::opt_maybe_str(matches, \"adb-path\")).to_str(),\n        adb_test_dir:\n            opt_str2(getopts::opt_maybe_str(matches, \"adb-test-dir\")).to_str(),\n        adb_device_status:\n            if (opt_str2(getopts::opt_maybe_str(matches, \"target\")) ==\n                ~\"arm-linux-androideabi\") {\n                if (opt_str2(getopts::opt_maybe_str(matches, \"adb-test-dir\")) !=\n                    ~\"(none)\" &&\n                    opt_str2(getopts::opt_maybe_str(matches, \"adb-test-dir\")) !=\n                    ~\"\") { true }\n                else { false }\n            } else { false },\n        verbose: getopts::opt_present(matches, \"verbose\")\n    }", "description": "Both process command-line arguments and build configuration structures, though in different ways.", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a config parsing function using getopts. [Similarity] Names don't refer to same concept (main vs parse_config), and domains are different (CLI handling vs config parsing). [Knowledge Extraction] No full structural match, but there are partial matching fragments and API mappings related to argument parsing and conditional logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__main__idx131949_rank1.c", "source_rust_file": "Partial__main__idx131949_rank1.rs", "c_fragment": "if (argc == 2 && strcmp(argv[1], \"-v\") == 0) {\n    verbose = 1;\n  } else {\n    verbose = 0;\n  }", "rust_fragment": "verbose: getopts::opt_present(matches, \"verbose\")", "description": "Both handle checking for a verbose flag from command-line arguments.", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a config parsing function using getopts. [Similarity] Names don't refer to same concept (main vs parse_config), and domains are different (CLI handling vs config parsing). [Knowledge Extraction] No full structural match, but there are partial matching fragments and API mappings related to argument parsing and conditional logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx131949_rank1.c", "source_rust_file": "Partial__main__idx131949_rank1.rs", "c_api": "strcmp(argv[1], \"-v\")", "rust_api": "getopts::opt_present(matches, \"verbose\")", "mapping_type": "function", "description": "Checking for a verbose flag in command-line arguments.", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a config parsing function using getopts. [Similarity] Names don't refer to same concept (main vs parse_config), and domains are different (CLI handling vs config parsing). [Knowledge Extraction] No full structural match, but there are partial matching fragments and API mappings related to argument parsing and conditional logic."}]
+Unixcoder Score: -0.007314401213079691
+--------------------------------------------------
+C_Code: 
+bool Serializable::GetValue(const json &node, const std::string &name, uint64_t &value)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null() || !subNode.is_number_unsigned()) {
+        return false;
+    }
+    subNode.get_to(value);
+    return true;
+}
+Function: 
+pub(crate) fn vec_raw_read<T: Deserialize>(msg_parcel: &mut MsgParcel) -> IpcResult<Vec<T>> {
+    let length = msg_parcel.read::<i32>()? as usize;
+    let mut vector = Vec::with_capacity(length);
+    for _ in 0..length {
+        let value = msg_parcel.read::<T>()?;
+        vector.push(value);
+    }
+    Ok(vector)
+}
+Unixcoder Score: -0.02213265933096409
+--------------------------------------------------
+C_Code: 
+struct FT_DriverRec_
+Function: 
+struct BitmapMetrics {
+        // Outer glyph bearings that affect the computed bounds. We distinguish
+        // those here from `inner_bearing_*` to account for CoreText behavior in
+        // SBIX placement. Where the sbix originOffsetX/Y are applied only
+        // within the bounds. Specified in font units.
+        // 0 for CBDT, CBLC.
+        bearing_x: f32,
+        bearing_y: f32,
+        // Scale factors to scale image to 1em.
+        ppem_x: f32,
+        ppem_y: f32,
+        // Account for the fact that Sbix and CBDT/CBLC have a different origin
+        // definition.
+        placement_origin_bottom_left: bool,
+        // Specified as a pixel value, to be scaled by `ppem_*` as an
+        // offset applied to placing the image within the bounds rectangle.
+        inner_bearing_x: f32,
+        inner_bearing_y: f32,
+        // Some, but not all, bitmap glyphs have a special bitmap advance
+        advance: f32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12108_rank1.c", "source_rust_file": "API_Mapping__main__idx12108_rank1.rs", "c_api": "free((void*)tmp->name)", "rust_api": "drop(...)", "mapping_type": "function", "description": "Memory deallocation of string data", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a token parsing function. [Similarity] No structural similarity at the function level due to different domains (CLI arg handling vs. token parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between memory management and token handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12108_rank1.c", "source_rust_file": "API_Mapping__main__idx12108_rank1.rs", "c_api": "while (nodes) { ... }", "rust_api": "loop { ... }", "mapping_type": "pattern", "description": "Iterative traversal of linked list", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a token parsing function. [Similarity] No structural similarity at the function level due to different domains (CLI arg handling vs. token parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between memory management and token handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12108_rank1.c", "source_rust_file": "API_Mapping__main__idx12108_rank1.rs", "c_api": "free(tmp)", "rust_api": "drop(...)", "mapping_type": "function", "description": "Memory deallocation of node structure", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a token parsing function. [Similarity] No structural similarity at the function level due to different domains (CLI arg handling vs. token parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between memory management and token handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12108_rank1.c", "source_rust_file": "API_Mapping__main__idx12108_rank1.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "Vec::new()", "mapping_type": "function", "description": "Initialization of buffer with null bytes", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a token parsing function. [Similarity] No structural similarity at the function level due to different domains (CLI arg handling vs. token parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between memory management and token handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12108_rank1.c", "source_rust_file": "API_Mapping__main__idx12108_rank1.rs", "c_api": "strcmp(argv[1], \"-v\") == 0", "rust_api": "matches!(...)", "mapping_type": "pattern", "description": "String comparison for flag check", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a token parsing function. [Similarity] No structural similarity at the function level due to different domains (CLI arg handling vs. token parsing). [Knowledge Extraction] No full match, no partial match, but there are API mappings between memory management and token handling patterns."}]
+Unixcoder Score: -0.02888382412493229
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceDriverProperties
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_sched_driver__idx76536_rank2.c", "source_rust_file": "API_Mapping__rust_sched_driver__idx76536_rank2.rs", "c_api": "sched_loop->on_pump_loop(this)", "rust_api": "sched.run()", "mapping_type": "method", "description": "Starting the event loop execution", "reasoning": "[Task Analysis] C code is a constructor initializing a struct with a pointer and calling a method; Rust code is a function that spawns a thread and runs a task loop. [Similarity] Names don't refer to the same concept (constructor vs function), and domains are different (C++ object initialization vs Rust thread/task scheduling). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, some API patterns may be extracted based on similar control flow and data handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_sched_driver__idx76536_rank2.c", "source_rust_file": "API_Mapping__rust_sched_driver__idx76536_rank2.rs", "c_api": "sched_loop->on_pump_loop(this)", "rust_api": "sched.task_queue.push_back(task)", "mapping_type": "method", "description": "Scheduling a task for execution in the event loop", "reasoning": "[Task Analysis] C code is a constructor initializing a struct with a pointer and calling a method; Rust code is a function that spawns a thread and runs a task loop. [Similarity] Names don't refer to the same concept (constructor vs function), and domains are different (C++ object initialization vs Rust thread/task scheduling). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, some API patterns may be extracted based on similar control flow and data handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_sched_driver__idx76536_rank2.c", "source_rust_file": "API_Mapping__rust_sched_driver__idx76536_rank2.rs", "c_api": "assert(sched_loop != NULL)", "rust_api": "use unstable::run_in_bare_thread", "mapping_type": "pattern", "description": "Thread initialization and error handling pattern", "reasoning": "[Task Analysis] C code is a constructor initializing a struct with a pointer and calling a method; Rust code is a function that spawns a thread and runs a task loop. [Similarity] Names don't refer to the same concept (constructor vs function), and domains are different (C++ object initialization vs Rust thread/task scheduling). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, some API patterns may be extracted based on similar control flow and data handling."}]
+Unixcoder Score: -0.04310939833521843
+--------------------------------------------------
+C_Code: 
+bool Table::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(sharedTableName), sharedTableName);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(fields), fields);
+    GetValue(node, GET_NAME(tableName), name);
+    GetValue(node, GET_NAME(deviceSyncFields), deviceSyncFields);
+    GetValue(node, GET_NAME(cloudSyncFields), cloudSyncFields);
+    return true;
+}
+Function: 
+fn try_from(value: &Table) -> Result<Self, Self::Error> {
+        let mut fields = vec![];
+        for fd in &value.fields {
+            let ipc_fd = ipc_conn::Field::try_from(fd)?;
+            fields.push(ipc_fd);
+        }
+        Ok(ipc_conn::OrderTable {
+            alias: value.alias.clone(),
+            table_name: value.name.clone(),
+            fields: ipc_conn::Fields(fields),
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx114300_rank3.c", "source_rust_file": "API_Mapping__iter_module_map__idx114300_rank3.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "iter.map(|k| (k, SetValZST::default()))", "mapping_type": "function", "description": "Callback invocation in C vs mapping operation in Rust", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function builds a BTreeSet from an iterator. [Similarity] No structural similarity at the block level; C uses a for loop with pointer arithmetic and function call, Rust uses iterator methods. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping in the use of iterators for data processing."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__iter_module_map__idx114300_rank3.c", "source_rust_file": "API_Mapping__iter_module_map__idx114300_rank3.rs", "c_api": "for (const mod_entry* cur = map; cur->name; cur++)", "rust_api": "I: Iterator<Item = T>", "mapping_type": "pattern", "description": "Iteration over a collection using a loop pattern in C vs iterator in Rust", "reasoning": "[Task Analysis] C function iterates over a module map using a callback; Rust function builds a BTreeSet from an iterator. [Similarity] No structural similarity at the block level; C uses a for loop with pointer arithmetic and function call, Rust uses iterator methods. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping in the use of iterators for data processing."}]
+Unixcoder Score: -0.04575330764055252
+--------------------------------------------------
+C_Code: 
+bool Database::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(alias)], alias);
+    SetValue(node[GET_NAME(tables)], tables);
+    SetValue(node[GET_NAME(version)], version);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(deviceId)], deviceId);
+    SetValue(node[GET_NAME(autoSyncType)], autoSyncType);
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::OrderTable) -> Self {
+        let mut fields = vec![];
+        for fd in &value.fields.0 {
+            fields.push(Field::from(fd));
+        }
+        Table {
+            name: value.table_name.clone(),
+            alias: value.alias.clone(),
+            fields,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__iter_module_map__idx28540_rank2.c", "source_rust_file": "Partial__iter_module_map__idx28540_rank2.rs", "c_fragment": "for (const mod_entry* cur = map; cur->name; cur++) {\n        fn(fptr, env, cur);\n    }", "rust_fragment": "for &item_id in module.item_ids {\n        visitor.visit_nested_item(item_id);\n    }", "description": "Both use iterative traversal over a collection of items, though the specific data structures and mechanisms differ (C pointer-based loop vs Rust iterator over item IDs).", "reasoning": "[Task Analysis] C function iter_module_map iterates over a module map using a callback, while Rust function walk_mod iterates over module items using a visitor pattern. [Similarity] Both use loops to traverse data structures, but the domains are different: C operates on raw module entries with function pointers, while Rust uses a visitor pattern on HIR (High-Level Intermediate Representation) nodes. [Knowledge Extraction] No full structural match due to domain mismatch (memory traversal vs HIR traversal), but partial matching fragments exist in loop structures and data traversal logic."}]
+Unixcoder Score: -0.04710109904408455
+--------------------------------------------------
+C_Code: 
+struct TT_DriverRec_
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12052_rank4.c", "source_rust_file": "API_Mapping__main__idx12052_rank4.rs", "c_api": "if (argc == 2 && strcmp(argv[1], \"-v\") == 0) { verbose = 1; } else { verbose = 0; }", "rust_api": "if !is_raw && ident.is_reserved() { let mut err = self.expected_ident_found_err(); if recover { err.emit(); } else { return Err(err); } }", "mapping_type": "pattern", "description": "Conditional logic with error recovery and early return", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function for identifiers. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs. parsing logic). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and control flow patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12052_rank4.c", "source_rust_file": "API_Mapping__main__idx12052_rank4.rs", "c_api": "while (nodes) { tmp = nodes; nodes = tmp->next; if (tmp->own_string) { free((void*)tmp->name); } free(tmp); }", "rust_api": "self.bump();", "mapping_type": "pattern", "description": "Iterator-style traversal and cleanup of data structures", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function for identifiers. [Similarity] No structural similarity at the function level due to different domains (CLI handling vs. parsing logic). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to error handling and control flow patterns."}]
+Unixcoder Score: -0.05040939152240753
+--------------------------------------------------
+C_Code: 
+struct CID_DriverRec_
+Function: 
+pub struct CGlyphInfo {
+    pub codepoint: u32,
+    pub mask: u32,
+    pub cluster: u32,
+    pub var1: u32,
+    pub var2: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12103_rank3.c", "source_rust_file": "API_Mapping__main__idx12103_rank3.rs", "c_api": "if (argc == 2 && strcmp(argv[1], \"-v\") == 0)", "rust_api": "if let Some(args) = self.parse_delim_args_inner()", "mapping_type": "pattern", "description": "Conditional check for argument presence", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function for attribute arguments. [Similarity] Names don't refer to same concept (main vs parse_attr_args), and domains differ (CLI handling + memory mgmt vs AST parsing). [Knowledge Extraction] No full or partial match due to domain mismatch and different logic scopes. However, both have conditional logic and control flow patterns that can be mapped in terms of API usage (e.g., if/else, parsing logic)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12103_rank3.c", "source_rust_file": "API_Mapping__main__idx12103_rank3.rs", "c_api": "free((void*)tmp->name)", "rust_api": "AttrArgs::Eq(eq_span, AttrArgsEq::Ast(self.parse_expr_force_collect()?))", "mapping_type": "function", "description": "Freeing memory vs parsing expression", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function for attribute arguments. [Similarity] Names don't refer to same concept (main vs parse_attr_args), and domains differ (CLI handling + memory mgmt vs AST parsing). [Knowledge Extraction] No full or partial match due to domain mismatch and different logic scopes. However, both have conditional logic and control flow patterns that can be mapped in terms of API usage (e.g., if/else, parsing logic)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12103_rank3.c", "source_rust_file": "API_Mapping__main__idx12103_rank3.rs", "c_api": "free(tmp)", "rust_api": "AttrArgs::Empty", "mapping_type": "function", "description": "Memory deallocation vs returning empty argument type", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function for attribute arguments. [Similarity] Names don't refer to same concept (main vs parse_attr_args), and domains differ (CLI handling + memory mgmt vs AST parsing). [Knowledge Extraction] No full or partial match due to domain mismatch and different logic scopes. However, both have conditional logic and control flow patterns that can be mapped in terms of API usage (e.g., if/else, parsing logic)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12103_rank3.c", "source_rust_file": "API_Mapping__main__idx12103_rank3.rs", "c_api": "while (nodes)", "rust_api": "if self.eat(&token::Eq)", "mapping_type": "pattern", "description": "Loop over data structure with conditional logic", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function for attribute arguments. [Similarity] Names don't refer to same concept (main vs parse_attr_args), and domains differ (CLI handling + memory mgmt vs AST parsing). [Knowledge Extraction] No full or partial match due to domain mismatch and different logic scopes. However, both have conditional logic and control flow patterns that can be mapped in terms of API usage (e.g., if/else, parsing logic)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx12103_rank3.c", "source_rust_file": "API_Mapping__main__idx12103_rank3.rs", "c_api": "if (nodes)", "rust_api": "if let Some(args) = self.parse_delim_args_inner()", "mapping_type": "pattern", "description": "Conditional check for existence of data structure", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parser function for attribute arguments. [Similarity] Names don't refer to same concept (main vs parse_attr_args), and domains differ (CLI handling + memory mgmt vs AST parsing). [Knowledge Extraction] No full or partial match due to domain mismatch and different logic scopes. However, both have conditional logic and control flow patterns that can be mapped in terms of API usage (e.g., if/else, parsing logic)."}]
+Unixcoder Score: -0.051707684993743896
+--------------------------------------------------
+C_Code: 
+bool Serializable::GetValue(const json &node, const std::string &name, bool &value)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_boolean()) {
+        subNode.get_to(value);
+        return true;
+    }
+
+    if (subNode.is_number_unsigned()) {
+        uint32_t number = 0;
+        subNode.get_to(number);
+        value = number != 0;
+        return true;
+    }
+
+    return false;
+}
+Function: 
+pub(crate) fn string_hash_map_raw_read<V: Deserialize>(
+    msg_parcel: &mut MsgParcel,
+) -> IpcResult<HashMap<String, V>> {
+    let length = msg_parcel.read::<i32>()?;
+    let mut hash_map = HashMap::new();
+    for _ in 0..length {
+        let key = msg_parcel.read_string16()?;
+        let value = msg_parcel.read::<V>()?;
+        hash_map.insert(key, value);
+    }
+    Ok(hash_map)
+}
+Unixcoder Score: -0.054024651646614075
+--------------------------------------------------
+C_Code: 
+bool Database::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(alias)], alias);
+    SetValue(node[GET_NAME(tables)], tables);
+    SetValue(node[GET_NAME(version)], version);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(deviceId)], deviceId);
+    SetValue(node[GET_NAME(autoSyncType)], autoSyncType);
+    return true;
+}
+Function: 
+fn try_from(value: &Database) -> Result<Self, SyncError> {
+        let mut tables = vec![];
+        for table in value.tables.values() {
+            tables.push(table.try_into()?);
+        }
+
+        Ok(ipc_conn::Database {
+            name: value.name.clone(),
+            alias: value.alias.to_string(),
+            tables: ipc_conn::SchemaOrderTables(tables),
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__iter_module_map__idx7829_rank4.c", "source_rust_file": "Partial__iter_module_map__idx7829_rank4.rs", "c_fragment": "for (const mod_entry* cur = map; cur->name; cur++) {\n        fn(fptr, env, cur);\n    }", "rust_fragment": "iter_module_map(entries(crate_map), |x| f(x));", "description": "Both perform iteration over a data structure with callback invocation.", "reasoning": "[Task Analysis] C function `iter_module_map` iterates over a module map using a callback, while Rust function `do_iter_crate_map` recursively traverses a crate map with a similar callback pattern. [Similarity] Both functions perform iterative traversal with callback invocation, but differ in structure and domain (C-style module map vs Rust crate map). [Knowledge Extraction] Structural fragments match in loop/callback pattern, but not full function logic. API mappings found for callback invocation and iteration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx7829_rank4.c", "source_rust_file": "Partial__iter_module_map__idx7829_rank4.rs", "c_api": "cur++", "rust_api": "iter_module_map(...)", "mapping_type": "function", "description": "Iteration over module entries using callback.", "reasoning": "[Task Analysis] C function `iter_module_map` iterates over a module map using a callback, while Rust function `do_iter_crate_map` recursively traverses a crate map with a similar callback pattern. [Similarity] Both functions perform iterative traversal with callback invocation, but differ in structure and domain (C-style module map vs Rust crate map). [Knowledge Extraction] Structural fragments match in loop/callback pattern, but not full function logic. API mappings found for callback invocation and iteration patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__iter_module_map__idx7829_rank4.c", "source_rust_file": "Partial__iter_module_map__idx7829_rank4.rs", "c_api": "fn(fptr, env, cur)", "rust_api": "|x| f(x)", "mapping_type": "function", "description": "Callback invocation pattern in iteration.", "reasoning": "[Task Analysis] C function `iter_module_map` iterates over a module map using a callback, while Rust function `do_iter_crate_map` recursively traverses a crate map with a similar callback pattern. [Similarity] Both functions perform iterative traversal with callback invocation, but differ in structure and domain (C-style module map vs Rust crate map). [Knowledge Extraction] Structural fragments match in loop/callback pattern, but not full function logic. API mappings found for callback invocation and iteration patterns."}]
+Unixcoder Score: -0.05723502114415169
+--------------------------------------------------

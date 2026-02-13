@@ -1,0 +1,308 @@
+C_Code: 
+Serializable::json Serializable::Marshall() const
+{
+    json root;
+    Marshal(root);
+    return root;
+}
+Function: 
+pub(crate) fn vec_raw_write<T: Serialize>(
+    msg_parcel: &mut MsgParcel,
+    vector: &Vec<T>,
+) -> IpcResult<()> {
+    msg_parcel.write(&(vector.len() as i32))?;
+    for value in vector {
+        msg_parcel.write(value)?;
+    }
+    Ok(())
+}
+Unixcoder Score: 0.05469825118780136
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn read_golden_flexbuffer() {
+    let s =
+        std::fs::read("../gold_flexbuffer_example.bin").expect("Unable to read golden flexbuffer.");
+    let r = Reader::get_root(s.as_ref()).unwrap();
+    let m = r.as_map();
+
+    let vec = m.idx("vec").as_vector();
+    assert_eq!(vec.idx(0).as_i8(), -100);
+    assert_eq!(vec.idx(1).as_str(), "Fred");
+    assert_eq!(vec.idx(2).as_f32(), 4.0);
+    assert_eq!(vec.idx(3).as_blob(), Blob([77].as_ref()));
+    assert_eq!(vec.idx(4).flexbuffer_type(), FlexBufferType::Bool);
+    assert_eq!(vec.idx(4).as_bool(), false);
+    assert_eq!(vec.idx(5).as_f64(), 4.0);
+
+    let bar = m.idx("bar").as_vector();
+    for (i, &x) in [1, 2, 3].iter().enumerate() {
+        assert_eq!(bar.idx(i).as_i8(), x);
+    }
+    let bar3 = m.idx("bar3").as_vector();
+    for (i, &x) in [1, 2, 3].iter().enumerate() {
+        assert_eq!(bar3.idx(i).as_i8(), x);
+    }
+    let bools = m.idx("bools").as_vector();
+    for (i, &b) in [true, false, true, false].iter().enumerate() {
+        assert_eq!(bools.idx(i).as_bool(), b)
+    }
+
+    assert_eq!(m.idx("bool").as_bool(), true);
+    assert_eq!(m.idx("foo").as_f64(), 100.0);
+    let mymap = m.idx("mymap").as_map();
+    assert_eq!(mymap.idx("foo").as_str(), "Fred");
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "return { ERROR, schemaMeta };", "rust_api": "Err(IpcStatusCode::Failed)", "mapping_type": "function", "description": "Error return in case of failed deserialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "for (auto &schema : schemas)", "rust_api": "match index", "mapping_type": "pattern", "description": "Iterating over data to process based on type or index", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "return { SUCCESS, schemaMeta };", "rust_api": "Ok(FieldRaw::...)", "mapping_type": "function", "description": "Successful return of deserialized data", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "parcel.read::<...>()", "mapping_type": "function", "description": "Data deserialization from a source into structured data", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5078_rank3.rs", "c_api": "GetSchemaHelper::GetInstance().GetSchemaFromHap(...)", "rust_api": "parcel.read_string16()", "mapping_type": "function", "description": "Retrieving data from a source for deserialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not refer to the same concept (C: GetSchemaFromHap, Rust: deserialize). [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> C function handles schema deserialization and logic flow with return values, while Rust function is a match-based deserialization from a parcel. Domains are different (schema handling vs data deserialization). [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage/call. [Task Analysis] -> C function processes HAP info and returns schema metadata, Rust function deserializes data from a parcel. [Similarity] -> No full or partial structural match due to domain mismatch. [Knowledge Extraction] -> No full match, no partial match, but there may be API mappings based on data flow and operation types."}]
+Unixcoder Score: 0.05340800806879997
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn read_monsters(b: &mut Bencher) {
+    let mut builder = Builder::default();
+    let mut monsters = builder.start_vector();
+    for _ in 0..100 {
+        make_monster(monsters.start_map());
+    }
+    monsters.end_vector();
+    b.bytes = builder.view().len() as u64;
+    let go = || {
+        let r = Reader::get_root(builder.view()).unwrap().as_vector();
+        assert_eq!(r.len(), 100);
+        for i in 0..100 {
+            validate_monster(r.idx(i).as_map());
+        }
+    };
+    b.iter(go);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_fragment": "for (auto &schema : schemas) {\n        if (schemaMeta.Unmarshall(schema)) {\n            return { SUCCESS, schemaMeta };\n        }\n    }", "rust_fragment": "lock.read(&mut receive)?;", "description": "Both perform iteration over data and conditional return on success.", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "lock.read(&mut receive)?;", "mapping_type": "function", "description": "Data unmarshalling from serialized format", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_fragment": "ZLOGD(\"get schema from hap failed, bundleName:%{public}s\", hapInfo.bundleName.c_str());\n    return { ERROR, schemaMeta };", "rust_fragment": "map_err(|_| Error::WriteMsgParcelFailed)?;\n        let function_number = GetAppSchema as u32;\n        let remote_obj = self\n            .remote_obj\n            .clone()\n            .ok_or(Error::CreateMsgParcelFailed)?;\n        let mut receive = remote_obj\n            .send_request(function_number, &mut msg_parcel)\n            .map_err(|_| Error::SendRequestFailed)?;", "description": "Both handle error conditions and return early on failure.", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_api": "GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info)", "rust_api": "remote_obj.send_request(function_number, &mut msg_parcel)", "mapping_type": "function", "description": "Retrieving schema data from source", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_api": "return { ERROR, schemaMeta };", "rust_api": "map_err(|_| Error::WriteMsgParcelFailed)?", "mapping_type": "pattern", "description": "Error propagation and return", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSchemaFromHap__idx5112_rank4.c", "source_rust_file": "Partial__GetSchemaFromHap__idx5112_rank4.rs", "c_api": "return { SUCCESS, schemaMeta };", "rust_api": "Ok(infos.app_schema.read().unwrap())", "mapping_type": "pattern", "description": "Successful return of result", "reasoning": "[Task Analysis] C function returns a pair of error code and schema meta; Rust function performs IPC to fetch schema. [Similarity] Names don't match but both perform schema retrieval logic. [Knowledge Extraction] No full structural match due to different domains (C: local schema lookup vs Rust: remote IPC). Partial match in loop logic and error handling patterns. API mappings found for schema retrieval and error handling."}]
+Unixcoder Score: 0.05168849974870682
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn qc_reader_no_crash() {
+    fn no_crash(xs: Vec<u8>) -> bool {
+        let r = Reader::get_root(xs.as_ref());
+        r.is_err() || r.is_ok()
+    }
+    QuickCheck::new()
+        .min_tests_passed(10_000_000)
+        .quicktest(no_crash as fn(Vec<u8>) -> bool)
+        .unwrap();
+
+    no_crash(vec![0, 10 << 2 | 2, 0]);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5102_rank4.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5102_rank4.rs", "c_api": "parcel.read_string16()", "rust_api": "parcel.read_string16()", "mapping_type": "function", "description": "Reading a UTF-16 string from a parcel", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes data from a parcel into a struct. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data deserialization and field reading."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5102_rank4.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5102_rank4.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "Self { ... }", "mapping_type": "function", "description": "Deserializing schema data into a struct", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes data from a parcel into a struct. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data deserialization and field reading."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5102_rank4.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5102_rank4.rs", "c_api": "parcel.read::<i32>()", "rust_api": "parcel.read::<i32>()", "mapping_type": "function", "description": "Reading an i32 value from a parcel", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes data from a parcel into a struct. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data deserialization and field reading."}]
+Unixcoder Score: 0.04081322252750397
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+pub fn from_buffer<'de, T: Deserialize<'de>, B: Buffer>(
+    buf: &'de B,
+) -> Result<T, DeserializationError> {
+    let r = Reader::get_root(buf as &'de [u8])?;
+    T::deserialize(r)
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5091_rank2.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5091_rank2.rs", "c_api": "parcel.read_string16()", "rust_api": "parcel.read_string16()", "mapping_type": "function", "description": "Reading a UTF-16 string from parcel", "reasoning": "[Task Analysis] C function returns a pair of error code and SchemaMeta, while Rust function deserializes a Field from a parcel. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data deserialization and field reading."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5091_rank2.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5091_rank2.rs", "c_api": "parcel.read::<FieldType>()", "rust_api": "parcel.read::<FieldType>()", "mapping_type": "function", "description": "Reading a FieldType from parcel", "reasoning": "[Task Analysis] C function returns a pair of error code and SchemaMeta, while Rust function deserializes a Field from a parcel. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data deserialization and field reading."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5091_rank2.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5091_rank2.rs", "c_api": "parcel.read::<bool>()", "rust_api": "parcel.read::<bool>()", "mapping_type": "function", "description": "Reading a boolean value from parcel", "reasoning": "[Task Analysis] C function returns a pair of error code and SchemaMeta, while Rust function deserializes a Field from a parcel. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to data deserialization and field reading."}]
+Unixcoder Score: 0.04029890149831772
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+pub fn get_root(buffer: B) -> Result<Self, Error> {
+        let end = buffer.len();
+        if end < 3 {
+            return Err(Error::FlexbufferOutOfBounds);
+        }
+        // Last byte is the root width.
+        let root_width = BitWidth::from_nbytes(buffer[end - 1]).ok_or(Error::InvalidRootWidth)?;
+        // Second last byte is root type.
+        let (fxb_type, width) = unpack_type(buffer[end - 2])?;
+        // Location of root data. (BitWidth bits before root type)
+        let address = safe_sub(end - 2, root_width.n_bytes())?;
+        Self::new(buffer, address, fxb_type, width, root_width)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "parcel.read::<Databases>()", "mapping_type": "function", "description": "Data extraction from source (schema unmarshalling vs parcel reading)", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes a parcel into a Schema struct. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs parcel deserialization). [Knowledge Extraction] No full or partial match. However, both involve data extraction from a source (C: GetSchemaFromHap, Rust: deserialize). The Rust function reads from a parcel, which is conceptually similar to the C function reading from a schema collection. [API Mappings] Extract mapping between parcel reading and schema unmarshalling operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "parcel.read_string16()", "mapping_type": "function", "description": "Data extraction from source (schema unmarshalling vs parcel reading)", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes a parcel into a Schema struct. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs parcel deserialization). [Knowledge Extraction] No full or partial match. However, both involve data extraction from a source (C: GetSchemaFromHap, Rust: deserialize). The Rust function reads from a parcel, which is conceptually similar to the C function reading from a schema collection. [API Mappings] Extract mapping between parcel reading and schema unmarshalling operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "parcel.read::<i32>()", "mapping_type": "function", "description": "Data extraction from source (schema unmarshalling vs parcel reading)", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes a parcel into a Schema struct. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs parcel deserialization). [Knowledge Extraction] No full or partial match. However, both involve data extraction from a source (C: GetSchemaFromHap, Rust: deserialize). The Rust function reads from a parcel, which is conceptually similar to the C function reading from a schema collection. [API Mappings] Extract mapping between parcel reading and schema unmarshalling operations."}]
+Unixcoder Score: 0.03667593002319336
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn singleton_vector_uint_4_16bit() {
+    let mut builder = Builder::default();
+    let mut v = builder.start_vector();
+    v.push(2u8);
+    v.push(3u8);
+    v.push(5u8);
+    v.end_vector();
+    let buf1 = builder.view();
+    let buf2 = singleton(&[2u8, 3, 5]);
+    assert_eq!(buf1, buf2.as_slice());
+
+    let r = Reader::get_root(buf1).unwrap().as_vector();
+    assert_eq!(r.idx(0).get_u64(), Ok(2));
+    assert_eq!(r.idx(1).get_u64(), Ok(3));
+    assert_eq!(r.idx(2).get_u64(), Ok(5));
+    assert_eq!(r.index(3).unwrap_err(), ReaderError::IndexOutOfBounds);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5087_rank1.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5087_rank1.rs", "c_api": "if (schemaMeta.Unmarshall(schema))", "rust_api": "match value", "mapping_type": "pattern", "description": "Conditional logic for extracting data from input", "reasoning": "[Task Analysis] C function returns a pair of error code and SchemaMeta, while Rust function converts a u8 into a FieldType enum with error handling. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs enum conversion). [Knowledge Extraction] No full or partial match due to domain mismatch (data retrieval vs type conversion). However, both involve conditional logic and error handling patterns that can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5087_rank1.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5087_rank1.rs", "c_api": "return { ERROR, schemaMeta };", "rust_api": "Err(Error::InvalidFieldType)", "mapping_type": "pattern", "description": "Error return when processing fails", "reasoning": "[Task Analysis] C function returns a pair of error code and SchemaMeta, while Rust function converts a u8 into a FieldType enum with error handling. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs enum conversion). [Knowledge Extraction] No full or partial match due to domain mismatch (data retrieval vs type conversion). However, both involve conditional logic and error handling patterns that can be mapped."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5087_rank1.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5087_rank1.rs", "c_api": "return { SUCCESS, schemaMeta };", "rust_api": "Ok(typ)", "mapping_type": "pattern", "description": "Successful return of processed data", "reasoning": "[Task Analysis] C function returns a pair of error code and SchemaMeta, while Rust function converts a u8 into a FieldType enum with error handling. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs enum conversion). [Knowledge Extraction] No full or partial match due to domain mismatch (data retrieval vs type conversion). However, both involve conditional logic and error handling patterns that can be mapped."}]
+Unixcoder Score: 0.03562769293785095
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+pub fn get_root(buffer: B) -> Result<Self, Error> {
+        let end = buffer.len();
+        if end < 3 {
+            return Err(Error::FlexbufferOutOfBounds);
+        }
+        // Last byte is the root width.
+        let root_width = BitWidth::from_nbytes(buffer[end - 1]).ok_or(Error::InvalidRootWidth)?;
+        // Second last byte is root type.
+        let (fxb_type, width) = unpack_type(buffer[end - 2])?;
+        // Location of root data. (BitWidth bits before root type)
+        let address = safe_sub(end - 2, root_width.n_bytes())?;
+        Self::new(buffer, address, fxb_type, width, root_width)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "REQUEST_HILOGI(\"RegisterAppState Out\")", "rust_api": "info!(\"ability init succeed\")", "mapping_type": "function", "description": "Logging completion message", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "REQUEST_HILOGI(\"RegisterAppState In\")", "rust_api": "info!(\"ability init\")", "mapping_type": "function", "description": "Logging initialization message", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager()", "rust_api": "SystemAbilityManager::subscribe_system_ability", "mapping_type": "function", "description": "System ability manager access and subscription", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "REQUEST_HILOGE(\"get SystemAbilityManager failed.\")", "rust_api": "error!(\"app manager service died\")", "mapping_type": "function", "description": "Error logging for system service failure", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx277_rank1.rs", "c_api": "systemAbilityManager->GetSystemAbility(APP_MGR_SERVICE_ID)", "rust_api": "SystemAbilityManager::subscribe_system_ability", "mapping_type": "function", "description": "Retrieving system ability by ID", "reasoning": "[Task Analysis] C function registers app state change callback; Rust function initializes system components and subscribes to system ability. [Similarity] Names don't match but both involve system service registration and callback handling. [Knowledge Extraction] Found API mappings for system ability subscription and logging, but no full structural match due to different domains and logic flow."}]
+Unixcoder Score: 0.030008548870682716
+--------------------------------------------------
+C_Code: 
+inline Reference GetRoot(const uint8_t *buffer, size_t size) {
+  // See Finish() below for the serialization counterpart of this.
+  // The root starts at the end of the buffer, so we parse backwards from there.
+  auto end = buffer + size;
+  auto byte_width = *--end;
+  auto packed_type = *--end;
+  end -= byte_width;  // The root data item.
+  return Reference(end, byte_width, packed_type);
+}
+Function: 
+fn store_root(buffer: &mut Vec<u8>, root: Value) {
+    let root_width = root.width_in_vector(buffer.len(), 0);
+    align(buffer, root_width);
+    store_value(buffer, root, root_width);
+    buffer.push(root.packed_type(root_width));
+    buffer.push(root_width.n_bytes() as u8);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx282_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx282_rank1.rs", "c_api": "REQUEST_HILOGI(...)", "rust_api": "info!(...)", "mapping_type": "function", "description": "Logging", "reasoning": "[Task Analysis] C code registers application state change callback via system ability manager; Rust code initializes a request service by building and registering a system ability. [Similarity] Both involve system ability registration and initialization, but differ in domain logic (app state vs request service). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, there are API mappings for system ability registration and initialization patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx282_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx282_rank1.rs", "c_api": "systemAbilityManager->GetSystemAbility(APP_MGR_SERVICE_ID)", "rust_api": "RequestAbility::new().build_system_ability(samgr::definition::DOWNLOAD_SERVICE_ID, false)", "mapping_type": "function", "description": "System ability retrieval/creation", "reasoning": "[Task Analysis] C code registers application state change callback via system ability manager; Rust code initializes a request service by building and registering a system ability. [Similarity] Both involve system ability registration and initialization, but differ in domain logic (app state vs request service). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, there are API mappings for system ability registration and initialization patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__RegisterAppStateChanged__idx282_rank1.c", "source_rust_file": "API_Mapping__RegisterAppStateChanged__idx282_rank1.rs", "c_api": "systemAbilityManager->GetSystemAbility(APP_MGR_SERVICE_ID)", "rust_api": "system_ability.register()", "mapping_type": "method", "description": "System ability registration", "reasoning": "[Task Analysis] C code registers application state change callback via system ability manager; Rust code initializes a request service by building and registering a system ability. [Similarity] Both involve system ability registration and initialization, but differ in domain logic (app state vs request service). [Knowledge Extraction] No full structural match due to domain mismatch and different control flow. However, there are API mappings for system ability registration and initialization patterns."}]
+Unixcoder Score: 0.02970116212964058
+--------------------------------------------------
+C_Code: 
+napi_value RequestEvent::Off(napi_env env, napi_callback_info info)
+{
+    int32_t seq = RequestManager::GetInstance()->GetNextSeq();
+    REQUEST_HILOGD("Begin task off, seq %{public}d", seq);
+    JsParam jsParam;
+    ExceptionError err = ParseOnOffParameters(env, info, false, jsParam);
+    if (err.code != E_OK) {
+        bool withErrCode = jsParam.task->config_.version == Version::API10;
+        REQUEST_HILOGE("End task off, seq: %{public}d, failed: %{public}d", seq, err.code);
+        NapiUtils::ThrowError(env, err.code, err.errInfo, withErrCode);
+        return nullptr;
+    }
+
+    if (jsParam.subscribeType == SubscribeType::RESPONSE) {
+        jsParam.task->listenerMutex_.lock();
+        if (jsParam.task->responseListener_ == nullptr) {
+            jsParam.task->responseListener_ = std::make_shared<JSResponseListener>(env, jsParam.task->GetTid());
+        }
+        jsParam.task->listenerMutex_.unlock();
+        napi_status ret = jsParam.task->responseListener_->RemoveListener(jsParam.callback);
+        if (ret != napi_ok) {
+            REQUEST_HILOGE("End task off, seq: %{public}d, failed: RemoveListener fail code %{public}d", seq, ret);
+            return nullptr;
+        }
+    } else {
+        jsParam.task->listenerMutex_.lock();
+        auto listener = jsParam.task->notifyDataListenerMap_.find(jsParam.subscribeType);
+        if (listener == jsParam.task->notifyDataListenerMap_.end()) {
+            jsParam.task->notifyDataListenerMap_[jsParam.subscribeType] =
+                std::make_shared<JSNotifyDataListener>(env, jsParam.task->GetTid(), jsParam.subscribeType);
+        }
+        jsParam.task->listenerMutex_.unlock();
+        napi_status ret = jsParam.task->notifyDataListenerMap_[jsParam.subscribeType]->RemoveListener(jsParam.callback);
+        if (ret != napi_ok) {
+            REQUEST_HILOGE("End task off, seq: %{public}d, failed: RemoveListener fail code %{public}d", seq, ret);
+            return nullptr;
+        }
+    }
+
+    REQUEST_HILOGD("End task off %{public}s ok, seq %{public}d tid %{public}s", jsParam.type.c_str(), seq,
+        jsParam.task->GetTid().c_str());
+    return nullptr;
+}
+Function: 
+pub(crate) fn pause(client_manager: &ClientManagerEntry, notify_data: NotifyData) {
+        client_manager.send_notify_data(SubscribeType::Pause, notify_data)
+    }
+Unixcoder Score: 0.024481365457177162
+--------------------------------------------------

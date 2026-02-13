@@ -1,0 +1,581 @@
+C_Code: 
+static uint32_t
+read_uint32 (struct dwarf_buf *buf)
+{
+  const unsigned char *p = buf->buf;
+
+  if (!advance (buf, 4))
+    return 0;
+  if (buf->is_bigendian)
+    return (((uint32_t) p[0] << 24) | ((uint32_t) p[1] << 16)
+	    | ((uint32_t) p[2] << 8) | (uint32_t) p[3]);
+  else
+    return (((uint32_t) p[3] << 24) | ((uint32_t) p[2] << 16)
+	    | ((uint32_t) p[1] << 8) | (uint32_t) p[0]);
+}
+Function: 
+pub unsafe fn read<T: Copy>(&mut self) -> T {
+        let Unaligned(result) = *(self.ptr as *const Unaligned<T>);
+        self.ptr = self.ptr.add(mem::size_of::<T>());
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__read_uint64__idx140639_rank1.c", "source_rust_file": "Partial__read_uint64__idx140639_rank1.rs", "c_api": "advance (buf, 8)", "rust_api": "self.ptr.byte_add(mem::size_of::<T>())", "mapping_type": "function", "description": "Buffer advancement in C and Rust.", "reasoning": "[Task Analysis] C function reads a 64-bit integer from a buffer with endianness handling; Rust function reads a value of generic type T from a buffer pointer. [Similarity] Both perform low-level memory reading from a buffer, but differ in abstraction level and endianness handling. [Knowledge Extraction] Full match blocked due to semantic domain mismatch (C: raw byte manipulation with endianness logic; Rust: generic unaligned read). Partial match found in buffer reading pattern. API mappings identified for buffer reading operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__read_uint64__idx140639_rank1.c", "source_rust_file": "Partial__read_uint64__idx140639_rank1.rs", "c_fragment": "const unsigned char *p = buf->buf;\n\n  if (!advance (buf, 8))\n    return 0;", "rust_fragment": "let result = self.ptr.cast::<T>().read_unaligned();", "description": "Both read data from a buffer, with C checking for buffer advancement and Rust using a pointer cast and read operation.", "reasoning": "[Task Analysis] C function reads a 64-bit integer from a buffer with endianness handling; Rust function reads a value of generic type T from a buffer pointer. [Similarity] Both perform low-level memory reading from a buffer, but differ in abstraction level and endianness handling. [Knowledge Extraction] Full match blocked due to semantic domain mismatch (C: raw byte manipulation with endianness logic; Rust: generic unaligned read). Partial match found in buffer reading pattern. API mappings identified for buffer reading operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__read_uint64__idx140639_rank1.c", "source_rust_file": "Partial__read_uint64__idx140639_rank1.rs", "c_api": "read_uint64", "rust_api": "read", "mapping_type": "function", "description": "Reading a value from a buffer in both languages.", "reasoning": "[Task Analysis] C function reads a 64-bit integer from a buffer with endianness handling; Rust function reads a value of generic type T from a buffer pointer. [Similarity] Both perform low-level memory reading from a buffer, but differ in abstraction level and endianness handling. [Knowledge Extraction] Full match blocked due to semantic domain mismatch (C: raw byte manipulation with endianness logic; Rust: generic unaligned read). Partial match found in buffer reading pattern. API mappings identified for buffer reading operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__read_uint64__idx140639_rank1.c", "source_rust_file": "Partial__read_uint64__idx140639_rank1.rs", "c_api": "buf->buf", "rust_api": "self.ptr", "mapping_type": "field_access", "description": "Access to buffer data in C and Rust.", "reasoning": "[Task Analysis] C function reads a 64-bit integer from a buffer with endianness handling; Rust function reads a value of generic type T from a buffer pointer. [Similarity] Both perform low-level memory reading from a buffer, but differ in abstraction level and endianness handling. [Knowledge Extraction] Full match blocked due to semantic domain mismatch (C: raw byte manipulation with endianness logic; Rust: generic unaligned read). Partial match found in buffer reading pattern. API mappings identified for buffer reading operations."}]
+Unixcoder Score: 0.11552238464355469
+--------------------------------------------------
+C_Code: 
+static uint64_t
+read_uleb128 (struct dwarf_buf *buf)
+{
+  uint64_t ret;
+  unsigned int shift;
+  int overflow;
+  unsigned char b;
+
+  ret = 0;
+  shift = 0;
+  overflow = 0;
+  do
+    {
+      const unsigned char *p;
+
+      p = buf->buf;
+      if (!advance (buf, 1))
+	return 0;
+      b = *p;
+      if (shift < 64)
+	ret |= ((uint64_t) (b & 0x7f)) << shift;
+      else if (!overflow)
+	{
+	  dwarf_buf_error (buf, "LEB128 overflows uint64_t");
+	  overflow = 1;
+	}
+      shift += 7;
+    }
+  while ((b & 0x80) != 0);
+
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GenerateKey__idx4515_rank1.c", "source_rust_file": "API_Mapping__GenerateKey__idx4515_rank1.rs", "c_api": "HksInitParamSet(&paramSet)", "rust_api": "calculate_key_alias(...)", "mapping_type": "function", "description": "Initialize parameter set for key generation", "reasoning": "[Task Analysis] C function generates a key using HUKS APIs with param set building; Rust function creates a key struct with alias calculation. [Similarity] Names don't match (GenerateKey vs new_without_alias), domains differ (low-level crypto vs high-level key struct creation), and logic is not semantically equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different responsibilities. However, there are API mappings related to key generation and parameter handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GenerateKey__idx4515_rank1.c", "source_rust_file": "API_Mapping__GenerateKey__idx4515_rank1.rs", "c_api": "HksAddParams(paramSet, &tempParam, 1)", "rust_api": "require_password_set", "mapping_type": "field_access", "description": "Set password requirement flag in key parameters", "reasoning": "[Task Analysis] C function generates a key using HUKS APIs with param set building; Rust function creates a key struct with alias calculation. [Similarity] Names don't match (GenerateKey vs new_without_alias), domains differ (low-level crypto vs high-level key struct creation), and logic is not semantically equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different responsibilities. However, there are API mappings related to key generation and parameter handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GenerateKey__idx4515_rank1.c", "source_rust_file": "API_Mapping__GenerateKey__idx4515_rank1.rs", "c_api": "HksGenerateKey(&keyId->alias, paramSet, NULL)", "rust_api": "Self { alias: prefixed_new_alias, ... }", "mapping_type": "function", "description": "Generate key with specified alias", "reasoning": "[Task Analysis] C function generates a key using HUKS APIs with param set building; Rust function creates a key struct with alias calculation. [Similarity] Names don't match (GenerateKey vs new_without_alias), domains differ (low-level crypto vs high-level key struct creation), and logic is not semantically equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different responsibilities. However, there are API mappings related to key generation and parameter handling."}]
+Unixcoder Score: 0.03837542608380318
+--------------------------------------------------
+C_Code: 
+static unsigned char
+read_byte (struct dwarf_buf *buf)
+{
+  const unsigned char *p = buf->buf;
+
+  if (!advance (buf, 1))
+    return 0;
+  return p[0];
+}
+Function: 
+fn dwarf_reader() {
+    let encoded: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 0xE5, 0x8E, 0x26, 0x9B, 0xF1, 0x59, 0xFF, 0xFF];
+
+    let mut reader = DwarfReader::new(encoded.as_ptr());
+
+    unsafe {
+        assert!(reader.read::<u8>() == u8::to_be(1u8));
+        assert!(reader.read::<u16>() == u16::to_be(0x0203));
+        assert!(reader.read::<u32>() == u32::to_be(0x04050607));
+
+        assert!(reader.read_uleb128() == 624485);
+        assert!(reader.read_sleb128() == -624485);
+
+        assert!(reader.read::<i8>() == i8::to_be(-1));
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AddCommonGenParams__idx4509_rank1.c", "source_rust_file": "API_Mapping__AddCommonGenParams__idx4509_rank1.rs", "c_api": "HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams))", "rust_api": "vec.push(b'_'); vec.extend_from_slice(tag.as_bytes()); vec.push(b':'); vec.extend_from_slice(&u32::from(value).to_le_bytes())", "mapping_type": "pattern", "description": "Adding structured data to a container with conditional logic", "reasoning": "[Task Analysis] C function builds a parameter set with fixed values, Rust function appends tagged attributes to a byte vector. [Similarity] No full or partial structural match due to different domains (parameter building vs byte serialization). [Knowledge Extraction] Extract API mappings based on similar data flow patterns: both involve adding structured data to a container, with conditional logic for non-default values."}]
+Unixcoder Score: 0.025589339435100555
+--------------------------------------------------
+C_Code: 
+static uint64_t
+read_uleb128 (struct dwarf_buf *buf)
+{
+  uint64_t ret;
+  unsigned int shift;
+  int overflow;
+  unsigned char b;
+
+  ret = 0;
+  shift = 0;
+  overflow = 0;
+  do
+    {
+      const unsigned char *p;
+
+      p = buf->buf;
+      if (!advance (buf, 1))
+	return 0;
+      b = *p;
+      if (shift < 64)
+	ret |= ((uint64_t) (b & 0x7f)) << shift;
+      else if (!overflow)
+	{
+	  dwarf_buf_error (buf, "LEB128 overflows uint64_t");
+	  overflow = 1;
+	}
+      shift += 7;
+    }
+  while ((b & 0x80) != 0);
+
+  return ret;
+}
+Function: 
+fn decode(d: &mut D) -> BytePos {
+        BytePos(d.read_u32())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__EncryptData__idx4516_rank5.c", "source_rust_file": "API_Mapping__EncryptData__idx4516_rank5.rs", "c_api": "HuksErrorTransfer", "rust_api": "transfer_error_code", "mapping_type": "function", "description": "Error code translation", "reasoning": "[Task Analysis] C function performs AES encryption using HUKS APIs, while Rust function checks if a key exists using FFI call. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to key existence checking and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__EncryptData__idx4516_rank5.c", "source_rust_file": "API_Mapping__EncryptData__idx4516_rank5.rs", "c_api": "HksInit", "rust_api": "IsKeyExist", "mapping_type": "function", "description": "Key initialization vs key existence check", "reasoning": "[Task Analysis] C function performs AES encryption using HUKS APIs, while Rust function checks if a key exists using FFI call. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to key existence checking and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__EncryptData__idx4516_rank5.c", "source_rust_file": "API_Mapping__EncryptData__idx4516_rank5.rs", "c_api": "HksFreeParamSet", "rust_api": "transfer_error_code", "mapping_type": "function", "description": "Parameter set cleanup vs error code transfer", "reasoning": "[Task Analysis] C function performs AES encryption using HUKS APIs, while Rust function checks if a key exists using FFI call. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to key existence checking and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__EncryptData__idx4516_rank5.c", "source_rust_file": "API_Mapping__EncryptData__idx4516_rank5.rs", "c_api": "HksFinish", "rust_api": "IsKeyExist", "mapping_type": "function", "description": "Finalization vs key existence check", "reasoning": "[Task Analysis] C function performs AES encryption using HUKS APIs, while Rust function checks if a key exists using FFI call. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to key existence checking and error handling."}]
+Unixcoder Score: 0.02033628150820732
+--------------------------------------------------
+C_Code: 
+static uint64_t
+read_uleb128 (struct dwarf_buf *buf)
+{
+  uint64_t ret;
+  unsigned int shift;
+  int overflow;
+  unsigned char b;
+
+  ret = 0;
+  shift = 0;
+  overflow = 0;
+  do
+    {
+      const unsigned char *p;
+
+      p = buf->buf;
+      if (!advance (buf, 1))
+	return 0;
+      b = *p;
+      if (shift < 64)
+	ret |= ((uint64_t) (b & 0x7f)) << shift;
+      else if (!overflow)
+	{
+	  dwarf_buf_error (buf, "LEB128 overflows uint64_t");
+	  overflow = 1;
+	}
+      shift += 7;
+    }
+  while ((b & 0x80) != 0);
+
+  return ret;
+}
+Function: 
+pub unsafe fn find_eh_action(lsda: *const u8, context: &EHContext<'_>) -> Result<EHAction, ()> {
+    if lsda.is_null() {
+        return Ok(EHAction::None);
+    }
+
+    let func_start = context.func_start;
+    let mut reader = DwarfReader::new(lsda);
+
+    let start_encoding = reader.read::<u8>();
+    // base address for landing pad offsets
+    let lpad_base = if start_encoding != DW_EH_PE_omit {
+        read_encoded_pointer(&mut reader, context, start_encoding)?
+    } else {
+        func_start
+    };
+
+    let ttype_encoding = reader.read::<u8>();
+    if ttype_encoding != DW_EH_PE_omit {
+        // Rust doesn't analyze exception types, so we don't care about the type table
+        reader.read_uleb128();
+    }
+
+    let call_site_encoding = reader.read::<u8>();
+    let call_site_table_length = reader.read_uleb128();
+    let action_table = reader.ptr.add(call_site_table_length as usize);
+    let ip = context.ip;
+
+    if !USING_SJLJ_EXCEPTIONS {
+        while reader.ptr < action_table {
+            let cs_start = read_encoded_pointer(&mut reader, context, call_site_encoding)?;
+            let cs_len = read_encoded_pointer(&mut reader, context, call_site_encoding)?;
+            let cs_lpad = read_encoded_pointer(&mut reader, context, call_site_encoding)?;
+            let cs_action_entry = reader.read_uleb128();
+            // Callsite table is sorted by cs_start, so if we've passed the ip, we
+            // may stop searching.
+            if ip < func_start + cs_start {
+                break;
+            }
+            if ip < func_start + cs_start + cs_len {
+                if cs_lpad == 0 {
+                    return Ok(EHAction::None);
+                } else {
+                    let lpad = lpad_base + cs_lpad;
+                    return Ok(interpret_cs_action(action_table as *mut u8, cs_action_entry, lpad));
+                }
+            }
+        }
+        // Ip is not present in the table. This indicates a nounwind call.
+        Ok(EHAction::Terminate)
+    } else {
+        // SjLj version:
+        // The "IP" is an index into the call-site table, with two exceptions:
+        // -1 means 'no-action', and 0 means 'terminate'.
+        match ip as isize {
+            -1 => return Ok(EHAction::None),
+            0 => return Ok(EHAction::Terminate),
+            _ => (),
+        }
+        let mut idx = ip;
+        loop {
+            let cs_lpad = reader.read_uleb128();
+            let cs_action_entry = reader.read_uleb128();
+            idx -= 1;
+            if idx == 0 {
+                // Can never have null landing pad for sjlj -- that would have
+                // been indicated by a -1 call site index.
+                let lpad = (cs_lpad + 1) as usize;
+                return Ok(interpret_cs_action(action_table as *mut u8, cs_action_entry, lpad));
+            }
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__EncryptData__idx4571_rank4.c", "source_rust_file": "API_Mapping__EncryptData__idx4571_rank4.rs", "c_api": "LOGE(\"[FATAL]HUKS encrypt init failed. error=%{public}d\", ret);", "rust_api": "log_throw_error!(ErrCode::InvalidArgument, \"[FATAL]Get attribute of bytes type failed, key: {}\", key)", "mapping_type": "function", "description": "Error logging with fatal message and error code", "reasoning": "[Task Analysis] C function performs encryption using HUKS APIs with parameter building, initialization, and finalization; Rust function retrieves byte attributes from a map with error handling. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there is a potential API mapping in error handling/logic pattern."}]
+Unixcoder Score: 0.007242879364639521
+--------------------------------------------------
+C_Code: 
+static int fd_read_char(int fd, int timeout)
+{
+    struct pollfd p;
+    unsigned char c;
+
+    p.fd = fd;
+    p.events = POLLIN;
+
+    if (poll(&p, 1, timeout) == 0) {
+        /* timeout */
+        return -1;
+    }
+    if (read(fd, &c, 1) != 1) {
+        return -1;
+    }
+    return c;
+}
+Function: 
+fn read_byte(r: &mut dyn io::Read) -> io::Result<u8> {
+    match r.bytes().next() {
+        Some(s) => s,
+        None => Err(io::Error::new(io::ErrorKind::Other, "end of file")),
+    }
+}
+Unixcoder Score: 0.004315844736993313
+--------------------------------------------------
+C_Code: 
+int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const struct HksBlob *inData,
+    struct HksBlob *outData)
+{
+    struct HksParam encryptParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+    };
+    struct HksParamSet *encryptParamSet = NULL;
+    int32_t ret = BuildParamSet(&encryptParamSet, encryptParams, ARRAY_SIZE(encryptParams), keyId->userId);
+    if (ret != HKS_SUCCESS) {
+        return HuksErrorTransfer(ret);
+    }
+
+    uint8_t handle[sizeof(uint64_t)] = { 0 };
+    struct HksBlob handleBlob = { sizeof(uint64_t), handle };
+    ret = HksInit(&keyId->alias, encryptParamSet, &handleBlob, NULL);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS encrypt init failed. error=%{public}d", ret);
+        HksFreeParamSet(&encryptParamSet);
+        return HuksErrorTransfer(ret);
+    }
+
+    ret = HksFinish(&handleBlob, encryptParamSet, inData, outData);
+    HksFreeParamSet(&encryptParamSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS encrypt finish failed. error=%{public}d", ret);
+    }
+    return HuksErrorTransfer(ret);
+}
+Function: 
+fn get_bytes_attr(&self, key: &K) -> Result<&Vec<u8>> {
+        if let Some(Value::Bytes(bytes)) = self.get(key) {
+            Ok(bytes)
+        } else {
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__HasStrParamLenOverLimit__idx5525_rank3.c", "source_rust_file": "API_Mapping__HasStrParamLenOverLimit__idx5525_rank3.rs", "c_api": "CString::new(item).expect(...)", "rust_api": "CString::new(item)", "mapping_type": "function", "description": "Creating C string from Rust string", "reasoning": "[Task Analysis] C function checks if string parameter lengths exceed a limit; Rust function builds a string array parameter for HiSysEvent. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to string handling and parameter building."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__HasStrParamLenOverLimit__idx5525_rank3.c", "source_rust_file": "API_Mapping__HasStrParamLenOverLimit__idx5525_rank3.rs", "c_api": "any_of(...)", "rust_api": "for &item in str_arr", "mapping_type": "pattern", "description": "Iterating over container elements in C vs Rust", "reasoning": "[Task Analysis] C function checks if string parameter lengths exceed a limit; Rust function builds a string array parameter for HiSysEvent. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to string handling and parameter building."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__HasStrParamLenOverLimit__idx5525_rank3.c", "source_rust_file": "API_Mapping__HasStrParamLenOverLimit__idx5525_rank3.rs", "c_api": "item.second.index()", "rust_api": "param_name", "mapping_type": "field_access", "description": "Accessing parameter type/index in C vs parameter name in Rust", "reasoning": "[Task Analysis] C function checks if string parameter lengths exceed a limit; Rust function builds a string array parameter for HiSysEvent. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to string handling and parameter building."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__HasStrParamLenOverLimit__idx5525_rank3.c", "source_rust_file": "API_Mapping__HasStrParamLenOverLimit__idx5525_rank3.rs", "c_api": "std::get<STR>(item.second).size()", "rust_api": "item.size()", "mapping_type": "function", "description": "Getting string length in C vs Rust", "reasoning": "[Task Analysis] C function checks if string parameter lengths exceed a limit; Rust function builds a string array parameter for HiSysEvent. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to string handling and parameter building."}]
+Unixcoder Score: -0.0007176080835051835
+--------------------------------------------------
+C_Code: 
+int32_t CjRemoteObjectImpl::SendMessageRequest(
+    uint32_t code, int64_t dataId, int64_t replyId, MessageOption option, int64_t funcId)
+{
+    auto data = FFIData::GetData<MessageSequenceImpl>(dataId);
+    if (!data) {
+        ZLOGE(LOG_LABEL, "[RPC] failed to get data message parcel");
+        return errorDesc::CHECK_PARAM_ERROR;
+    }
+    auto reply = FFIData::GetData<MessageSequenceImpl>(replyId);
+    if (!reply) {
+        ZLOGE(LOG_LABEL, "[RPC] failed to get reply message parcel");
+        return errorDesc::CHECK_PARAM_ERROR;
+    }
+    if (holder_ == nullptr) {
+        ZLOGE(LOG_LABEL, "failed to get napi remote object holder");
+        return errorDesc::PROXY_OR_REMOTE_OBJECT_INVALID_ERROR;
+    }
+    sptr<IRemoteObject> target = holder_->Get();
+    if (target == nullptr) {
+        ZLOGE(LOG_LABEL, "native stub object is nullptr");
+        return errorDesc::PROXY_OR_REMOTE_OBJECT_INVALID_ERROR;
+    }
+    CJSendRequestParam* sendRequestParam = new (std::nothrow) CJSendRequestParam {
+        .target = target,
+        .code = code,
+        .data = data->GetMessageParcel(),
+        .reply = reply->GetMessageParcel(),
+        .option = option,
+        .errCode = -1,
+        .cjDataRef = dataId,
+        .cjReplyRef = replyId,
+        .callback = funcId,
+        .traceId = 0,
+    };
+    if (sendRequestParam == nullptr) {
+        ZLOGE(LOG_LABEL, "new SendRequestParam failed");
+        return errorDesc::PROXY_OR_REMOTE_OBJECT_INVALID_ERROR;
+    }
+    std::string remoteDescriptor = Str16ToStr8(target->GetObjectDescriptor());
+    if (!remoteDescriptor.empty()) {
+        std::string traceValue = remoteDescriptor + std::to_string(code);
+        int32_t traceId = bytraceId.fetch_add(1, std::memory_order_seq_cst);
+        StartAsyncTrace(HITRACE_TAG_RPC, traceValue.c_str(), traceId);
+    }
+    std::thread t(StubExecuteSendRequest, sendRequestParam);
+    t.detach();
+    return 0;
+}
+Function: 
+pub fn async_send_request<F, R>(
+        self: &Arc<Self>,
+        code: u32,
+        mut data: MsgParcel,
+        mut option: MsgOption,
+        call_back: F,
+    ) where
+        F: FnOnce(MsgParcel) -> R,
+        F: Send + 'static,
+        R: Send + 'static,
+    {
+        let remote = self.clone();
+        Runtime::spawn_blocking(move || {
+            let reply = remote.send_request(code, &mut data);
+            match reply {
+                Ok(reply) => {
+                    call_back(reply);
+                    IpcStatusCode::Ok
+                }
+                _ => IpcStatusCode::Failed,
+            }
+        });
+    }
+Unixcoder Score: -0.0015627196989953518
+--------------------------------------------------
+C_Code: 
+int32_t UnloadAllIdleSystemAbility() override;
+
+    /**
+     * UnloadProcess, unload process by process name list.
+     * only support for memmgrservice
+     *
+     * @return ERR_OK It means unload all process in list.
+     */
+    virtual int32_t UnloadProcess(const std::vector<std::u16string>& processList) override;
+
+    /**
+     * GetSystemProcessInfo, Get process info by said.
+     * only support for memmgrservice
+     *
+     * @param processList, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    virtual int32_t GetLruIdleSystemAbilityProc(std::vector<IdleProcessInfo>& processInfos) override;
+
+    /**
+     * GetSystemProcessInfo, Get process info by said.
+     *
+     * @param systemAbilityId, Need the said of sa which wants to get process info.
+     * @param systemProcessInfo, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    int32_t GetSystemProcessInfo(int32_t systemAbilityId, SystemProcessInfo& systemProcessInfo) override;
+
+    /**
+     * GetRunningSystemProcess, Get all processes currently running.
+     *
+     * @param systemProcessInfos, Issue a parameter and return it as a result.
+     * @return ERR_OK indicates that the get successfully.
+     */
+    int32_t GetRunningSystemProcess(std::list<SystemProcessInfo>& systemProcessInfos) override;
+
+    /**
+     * SubscribeSystemProcess, Subscribe the status of process.
+     *
+     * @param listener, callback.
+     * @return ERR_OK indicates that the Subscribe successfully.
+     */
+    int32_t SubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener) override;
+
+    /**
+     * SendStrategy, Send strategy to SA.
+     *
+     * @param type, type is a certain device status type.
+     * @param systemAbilityIds, Need the vector of said which wants to send strategy.
+     * @param level, level is level of a certain device status type.
+     * @param action, action is scheduling strategy.
+     * @return ERR_OK indicates that the Subscribe successfully.
+     */
+    int32_t SendStrategy(int32_t type, std::vector<int32_t>& systemAbilityIds,
+        int32_t level, std::string& action) override;
+
+    /**
+     * UnSubscribeSystemProcess, UnSubscribe the status of process.
+     *
+     * @param listener, callback.
+     * @return ERR_OK indicates that the UnSubscribe successfully.
+     */
+    int32_t UnSubscribeSystemProcess(const sptr<ISystemProcessStatusChange>& listener) override;
+
+    /**
+     * GetExtensionSaIds, Return list of saId that match extension.
+     *
+     * @param extension, extension, match with profile extension.
+     * @param saIds, list of saId that match extension
+     * @return ERR_OK indicates that the list of saId that match extension success.
+     */
+    int32_t GetExtensionSaIds(const std::string& extension, std::vector<int32_t> &saIds) override;
+
+    /**
+     * GetExtensionRunningSaList, Return started list of hanlde that match extension.
+     *
+     * @param extension, extension, match with profile extension.
+     * @param saList, started list of remote obj that match extension
+     * @return ERR_OK indicates that the list of hanlde that match extension success.
+     */
+    int32_t GetExtensionRunningSaList(const std::string& extension, std::vector<sptr<IRemoteObject>>& saList) override;
+
+    /**
+     * GetLocalAbilityManagerProxy, Return local ability manager proxy.
+     *
+     * @param systemAbilityId, need to obtain the said of sa.
+     * @return nullptr indicates acquistion failure.
+     */
+    sptr<IRemoteObject> GetLocalAbilityManagerProxy(int32_t systemAbilityId) override;
+
+    int32_t GetRunningSaExtensionInfoList(const std::string& extension,
+        std::vector<SaExtensionInfo>& infoList) override;
+    int32_t GetCommonEventExtraDataIdlist(int32_t saId, std::vector<int64_t>& extraDataIdList,
+        const std::string& eventName = "") override;
+    int32_t GetOnDemandReasonExtraData(int64_t extraDataId, MessageParcel& extraDataParcel) override;
+    int32_t GetOnDemandPolicy(int32_t systemAbilityId, OnDemandPolicyType type,
+        std::vector<SystemAbilityOnDemandEvent>& abilityOnDemandEvents) override;
+    int32_t UpdateOnDemandPolicy(int32_t systemAbilityId, OnDemandPolicyType type,
+        const std::vector<SystemAbilityOnDemandEvent>& sabilityOnDemandEvents) override;
+    sptr<IRemoteObject> Recompute(int32_t systemAbilityId, int32_t code) override;
+    int32_t GetOnDemandSystemAbilityIds(std::vector<int32_t>& systemAbilityIds) override;
+private:
+    sptr<IRemoteObject> GetSystemAbilityWrapper(int32_t systemAbilityId, const std::string& deviceId = "");
+    sptr<IRemoteObject> CheckSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    sptr<IRemoteObject> CheckSystemAbilityWrapper(int32_t code, MessageParcel& data, int32_t& errCode);
+    sptr<IRemoteObject> CheckSystemAbility(int32_t systemAbilityId, const std::string& deviceId, int32_t& errCode);
+    sptr<IRemoteObject> CheckSystemAbility(int32_t systemAbilityId, bool& isExist, int32_t& errCode);
+    int32_t MarshalSAExtraProp(const SAExtraProp& extraProp, MessageParcel& data) const;
+    int32_t AddSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    int32_t RemoveSystemAbilityWrapper(int32_t code, MessageParcel& data);
+    int32_t ReadSystemProcessFromParcel(MessageParcel& reply, std::list<SystemProcessInfo>& systemProcessInfos);
+    int32_t ReadProcessInfoFromParcel(MessageParcel& reply, SystemProcessInfo& systemProcessInfo);
+    int32_t ReadIdleProcessInfoFromParcel(MessageParcel& reply, std::vector<IdleProcessInfo>& procInfos);
+    sptr<IRemoteObject> CheckSystemAbilityTransaction(int32_t systemAbilityId);
+    bool IsOnDemandSystemAbility(int32_t systemAbilityId);
+    int32_t ListExtensionSendReq(const std::string& extension,
+        SamgrInterfaceCode cmd, MessageParcel& reply, MessageOption& option);
+private:
+    static inline BrokerDelegator<SystemAbilityManagerProxy> delegator_;
+    std::set<int32_t> onDemandSystemAbilityIdsSet_;
+    std::mutex onDemandSaLock_;
+};
+
+class SystemAbilityProxyCallback : public SystemAbilityLoadCallbackStub {
+public:
+    void OnLoadSystemAbilitySuccess(int32_t systemAbilityId,
+        const sptr<IRemoteObject> &remoteObject) override;
+    void OnLoadSystemAbilityFail(int32_t systemAbilityId) override;
+    std::mutex callbackLock_;
+    std::condition_variable cv_;
+    sptr<IRemoteObject> loadproxy_;
+}
+Function: 
+pub fn unload_all_idle_system_ability(&self) -> i32 {
+        info!("unload all idle system ability");
+        UnloadAllIdleSystemAbility()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__insert_char__idx78511_rank2.c", "source_rust_file": "API_Mapping__insert_char__idx78511_rank2.rs", "c_api": "memcpy(current->buf + p1, buf, n)", "rust_api": "append_rope(rope, of_str(str))", "mapping_type": "function", "description": "Appending character data to a buffer/rope structure", "reasoning": "[Task Analysis] C function manipulates UTF-8 string buffer with insertion logic; Rust function appends string to a rope data structure. [Similarity] No structural similarity at function level due to different domains (buffer manipulation vs rope manipulation). [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping in terms of string/character appending behavior."}]
+Unixcoder Score: -0.0028633202891796827
+--------------------------------------------------
+C_Code: 
+static int fd_read_char(int fd, int timeout)
+{
+    struct pollfd p;
+    unsigned char c;
+
+    p.fd = fd;
+    p.events = POLLIN;
+
+    if (poll(&p, 1, timeout) == 0) {
+        /* timeout */
+        return -1;
+    }
+    if (read(fd, &c, 1) != 1) {
+        return -1;
+    }
+    return c;
+}
+Function: 
+fn read_byte(r: &mut dyn io::Read) -> io::Result<u8> {
+    match r.bytes().next() {
+        Some(s) => s,
+        None => Err(io::Error::new(io::ErrorKind::Other, "end of file")),
+    }
+}
+Unixcoder Score: -0.005736019928008318
+--------------------------------------------------

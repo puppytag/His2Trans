@@ -1,0 +1,529 @@
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_uleb128(&mut self) -> u64 {
+        let mut shift: usize = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        result
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "(*p & 0x80)", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Check continuation bit in LEB128 encoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "Full", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = self.read::<u8>();\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Iterative byte processing with continuation condition based on MSB flag", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "++p", "rust_api": "self.read::<u8>()", "mapping_type": "function", "description": "Advance to next byte in stream", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__leb128_len__idx122870_rank5.c", "source_rust_file": "Full__leb128_len__idx122870_rank5.rs", "c_api": "++ret", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Accumulate size/shift during LEB128 decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function reads LEB128 value. [Similarity] Both involve bit manipulation and iterative processing of bytes with continuation flags. [Knowledge Extraction] Found full structural match and API mapping for byte reading and bit operations."}]
+Unixcoder Score: 0.06360425800085068
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_write_read_002()
+{
+    let ashmem = unsafe { ashmem::create_ashmem_instance(MEMORY_NAME, MEMORY_SIZE) };
+    assert!(ashmem.is_some());
+
+    let ashmem = ashmem.unwrap();
+    assert!(ashmem.map_read_write_ashmem());
+
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    unsafe {
+        assert!(ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+        assert!(ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."),
+                MEMORY_CONTENT.len().try_into().expect("Invalid content size.")));
+    }
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem.read_from_ashmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0);
+        assert!(!readout_ptr.is_null());
+    }
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+
+    let mut expect = String::from(MEMORY_CONTENT);
+    expect.push_str(MEMORY_CONTENT);
+    assert_eq!(readout_str, expect.as_str());
+
+    ashmem.unmap_ashmem();
+    ashmem.close_ashmem();
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx128109_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx128109_rank1.rs", "c_api": "rng_gen_seed", "rust_api": "fill_bytes", "mapping_type": "function", "description": "Random byte generation from OS entropy sources (Windows CryptoAPI or /dev/urandom) vs filling a byte slice with random data from an RNG abstraction.", "reasoning": "[Filter 1: Entity Name Check] -> Names 'rng_gen_seed' (C) and 'fill_bytes' (Rust) refer to different concepts; C generates random bytes, Rust fills bytes with randomness from an RNG. -> [Filter 2: Empty/Trivial Code] -> Neither function is empty. -> [Filter 3: FFI Wrapper] -> C uses Windows CryptoAPI and Unix system calls, Rust uses a method call on an RNG. -> [Filter 4: Semantic Domain Mismatch] -> C handles OS-level entropy sources (Windows CryptoAPI, /dev/urandom), Rust operates on a high-level RNG abstraction. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. -> [Full Classification] -> Names don't refer to same concept, domains are mismatched (low-level OS entropy vs high-level RNG abstraction), so not Full. -> [Partial Classification] -> No matching structural blocks. -> [API Mapping Extraction] -> C function 'rng_gen_seed' performs random byte generation from OS entropy, Rust function 'fill_bytes' fills a byte slice using an RNG. These perform similar operations (generating random data) but with different abstractions and APIs. -> [Knowledge Extraction] -> Extract API mapping between OS entropy generation and RNG filling."}]
+Unixcoder Score: 0.04837395250797272
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_ffi_write_read_003()
+{
+    let c_name = CString::new(MEMORY_NAME).expect("CString::new Failed!");
+    let ashmem = unsafe { ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE) };
+    assert!(!ashmem.is_null());
+
+    assert!(ashmem.MapReadAndWriteAshmem());
+
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    let c_content_ptr: *const ashmem::ffi::c_void = unsafe { ashmem::ffi::AsVoidPtr(c_content.as_ptr()) };
+
+    unsafe {
+        assert!(ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    ashmem.UnmapAshmem();
+    assert!(ashmem.MapReadOnlyAshmem());
+
+    unsafe {
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."),
+                MEMORY_NAME.len().try_into().expect("Invalid content size.")));
+    }
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem::ffi::AsCharPtr(ashmem.ReadFromAshmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+    assert!(!readout_ptr.is_null());
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+
+    assert_eq!(readout_str, MEMORY_CONTENT);
+
+    ashmem.UnmapAshmem();
+    ashmem.CloseAshmem();
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__rng_gen_seed__idx140250_rank1.c", "source_rust_file": "Partial__rng_gen_seed__idx140250_rank1.rs", "c_fragment": "size_t amount = 0;\n    do {\n        ssize_t ret = read(fd, dest+amount, size-amount);\n        if (ret < 0) {\n            fprintf(stderr, \"error reading /dev/urandom: %s\", strerror(errno));\n            abort();\n        }\n        else if (ret == 0) {\n            fprintf(stderr, \"somehow hit eof reading from /dev/urandom\");\n            abort();\n        }\n        amount += (size_t)ret;\n    } while (amount < size);", "rust_fragment": "let mut chunks = bytes.array_chunks_mut();\n    for chunk in &mut chunks {\n        *chunk = rdrand64().to_ne_bytes();\n    }\n\n    let mut chunks = chunks.into_remainder().array_chunks_mut();\n    for chunk in &mut chunks {\n        *chunk = rdrand32().to_ne_bytes();\n    }\n\n    let mut chunks = chunks.into_remainder().array_chunks_mut();\n    for chunk in &mut chunks {\n        *chunk = rdrand16().to_ne_bytes();\n    }\n\n    if let [byte] = chunks.into_remainder() {\n        *byte = rdrand16() as u8;\n    }", "description": "Both functions fill a byte buffer with random data, though using different mechanisms: C reads from OS entropy source, Rust uses hardware random instructions.", "reasoning": "[Task Analysis] C function generates random bytes using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses rdrand intrinsics. [Similarity] Names don't match but both perform the same core task: filling a byte buffer with random data. [Knowledge Extraction] Full structural match is blocked by domain mismatch (low-level OS calls vs hardware intrinsics), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rng_gen_seed__idx140250_rank1.c", "source_rust_file": "Partial__rng_gen_seed__idx140250_rank1.rs", "c_api": "read(fd, dest+amount, size-amount)", "rust_api": "rdrand64().to_ne_bytes()", "mapping_type": "function", "description": "Reading random bytes from OS entropy source vs using hardware random instruction", "reasoning": "[Task Analysis] C function generates random bytes using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses rdrand intrinsics. [Similarity] Names don't match but both perform the same core task: filling a byte buffer with random data. [Knowledge Extraction] Full structural match is blocked by domain mismatch (low-level OS calls vs hardware intrinsics), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rng_gen_seed__idx140250_rank1.c", "source_rust_file": "Partial__rng_gen_seed__idx140250_rank1.rs", "c_api": "fill_bytes(bytes: &mut [u8])", "rust_api": "rdrand64().to_ne_bytes()", "mapping_type": "function", "description": "Function that fills a mutable byte slice with random data", "reasoning": "[Task Analysis] C function generates random bytes using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses rdrand intrinsics. [Similarity] Names don't match but both perform the same core task: filling a byte buffer with random data. [Knowledge Extraction] Full structural match is blocked by domain mismatch (low-level OS calls vs hardware intrinsics), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rng_gen_seed__idx140250_rank1.c", "source_rust_file": "Partial__rng_gen_seed__idx140250_rank1.rs", "c_api": "CryptGenRandom(hProv, size, (BYTE*) dest)", "rust_api": "rdrand64().to_ne_bytes()", "mapping_type": "function", "description": "Cryptographic random generation vs hardware random instruction", "reasoning": "[Task Analysis] C function generates random bytes using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust uses rdrand intrinsics. [Similarity] Names don't match but both perform the same core task: filling a byte buffer with random data. [Knowledge Extraction] Full structural match is blocked by domain mismatch (low-level OS calls vs hardware intrinsics), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: 0.046836212277412415
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_write_read_005()
+{
+    let ashmem = unsafe { ashmem::create_ashmem_instance(MEMORY_NAME, MEMORY_SIZE) };
+    assert!(ashmem.is_some());
+
+    let ashmem = ashmem.unwrap();
+    assert!(ashmem.map_read_write_ashmem());
+    assert!(ashmem.set_protection(ashmem::PROT_READ));
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    unsafe {
+        assert!(!ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    assert!(ashmem.map_read_only_ashmem());
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem.read_from_ashmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0);
+        assert!(!readout_ptr.is_null());
+    }
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+    assert_eq!(readout_str, "");
+
+    ashmem.unmap_ashmem();
+    ashmem.close_ashmem();
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx128128_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx128128_rank1.rs", "c_api": "close(fd)", "rust_api": "r.reseed", "mapping_type": "function", "description": "Closing entropy source and reseeding", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function tests reseeding of a random number generator. [Similarity] No structural similarity at the function level due to different domains (OS-level entropy vs. high-level RNG testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to random number generation and seeding."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx128128_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx128128_rank1.rs", "c_api": "open(\"/dev/urandom\", O_RDONLY)", "rust_api": "SeedableRng::from_seed", "mapping_type": "function", "description": "Accessing OS entropy source for seeding", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function tests reseeding of a random number generator. [Similarity] No structural similarity at the function level due to different domains (OS-level entropy vs. high-level RNG testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to random number generation and seeding."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx128128_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx128128_rank1.rs", "c_api": "read(fd, dest+amount, size-amount)", "rust_api": "task_rng().gen_iter::<uint>().take(256)", "mapping_type": "function", "description": "Reading random data from entropy source", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function tests reseeding of a random number generator. [Similarity] No structural similarity at the function level due to different domains (OS-level entropy vs. high-level RNG testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to random number generation and seeding."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx128128_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx128128_rank1.rs", "c_api": "CryptGenRandom", "rust_api": "SeedableRng::from_seed", "mapping_type": "function", "description": "Cryptographically secure random seed generation", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function tests reseeding of a random number generator. [Similarity] No structural similarity at the function level due to different domains (OS-level entropy vs. high-level RNG testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to random number generation and seeding."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rng_gen_seed__idx128128_rank1.c", "source_rust_file": "API_Mapping__rng_gen_seed__idx128128_rank1.rs", "c_api": "CryptReleaseContext", "rust_api": "r.reseed", "mapping_type": "function", "description": "Cleanup and reseeding of random number generator", "reasoning": "[Task Analysis] C function generates random seeds using OS-specific APIs (CryptGenRandom on Windows, /dev/urandom on Unix), while Rust function tests reseeding of a random number generator. [Similarity] No structural similarity at the function level due to different domains (OS-level entropy vs. high-level RNG testing). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to random number generation and seeding."}]
+Unixcoder Score: 0.02377975732088089
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_ffi_write_read_005()
+{
+    let c_name = CString::new(MEMORY_NAME).expect("CString::new Failed!");
+    let ashmem = unsafe { ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE) };
+    assert!(!ashmem.is_null());
+
+    assert!(ashmem.MapReadAndWriteAshmem());
+    assert!(ashmem.SetProtection(ashmem::PROT_READ));
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    let c_content_ptr: *const ashmem::ffi::c_void = unsafe { ashmem::ffi::AsVoidPtr(c_content.as_ptr()) };
+    unsafe {
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    assert!(ashmem.MapReadOnlyAshmem());
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem::ffi::AsCharPtr(ashmem.ReadFromAshmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+    assert!(!readout_ptr.is_null());
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+    assert_eq!(readout_str, "");
+    
+    ashmem.UnmapAshmem();
+    ashmem.CloseAshmem();
+}
+Unixcoder Score: 0.02228516899049282
+--------------------------------------------------
+C_Code: 
+static size_t
+leb128_len (const unsigned char *p)
+{
+  size_t ret;
+
+  ret = 1;
+  while ((*p & 0x80) != 0)
+    {
+      ++p;
+      ++ret;
+    }
+  return ret;
+}
+Function: 
+pub unsafe fn read_sleb128(&mut self) -> i64 {
+        let mut shift: u32 = 0;
+        let mut result: u64 = 0;
+        let mut byte: u8;
+        loop {
+            byte = self.read::<u8>();
+            result |= ((byte & 0x7F) as u64) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        // sign-extend
+        if shift < u64::BITS && (byte & 0x40) != 0 {
+            result |= (!0 as u64) << shift;
+        }
+        result as i64
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "byte & 0x80", "rust_api": "byte & 0x80", "mapping_type": "pattern", "description": "Checking continuation bit in variable-length encoded data", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "self.read::<u8>()", "rust_api": "*p", "mapping_type": "function", "description": "Reading a byte from input stream for decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_api": "++p", "rust_api": "shift += 7", "mapping_type": "pattern", "description": "Advancing through data stream during decoding", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__leb128_len__idx122871_rank3.c", "source_rust_file": "Partial__leb128_len__idx122871_rank3.rs", "c_fragment": "while ((*p & 0x80) != 0)\n    {\n      ++p;\n      ++ret;\n    }", "rust_fragment": "loop {\n            byte = self.read::<u8>();\n            result |= ((byte & 0x7F) as u64) << shift;\n            shift += 7;\n            if byte & 0x80 == 0 {\n                break;\n            }\n        }", "description": "Both implement iterative decoding of variable-length encoded data using bit masking and loop control.", "reasoning": "[Task Analysis] C function computes LEB128 length; Rust function decodes SLEB128 value. [Similarity] Both involve bit manipulation and iterative decoding of variable-length encoded data. [Knowledge Extraction] Found partial structural match in loop logic and bit operations, and API mapping for byte reading and bit manipulation patterns."}]
+Unixcoder Score: 0.02115853689610958
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_write_read_003()
+{
+    let ashmem = unsafe { ashmem::create_ashmem_instance(MEMORY_NAME, MEMORY_SIZE) };
+    assert!(ashmem.is_some());
+
+    let ashmem = ashmem.unwrap();
+    assert!(ashmem.map_read_write_ashmem());
+
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    unsafe {
+        assert!(ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    ashmem.unmap_ashmem();
+    assert!(ashmem.map_read_only_ashmem());
+
+    unsafe {
+        assert!(!ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."),
+                MEMORY_CONTENT.len().try_into().expect("Invalid content size.")));
+    }
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem.read_from_ashmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0);
+        assert!(!readout_ptr.is_null());
+    }
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+
+    assert_eq!(readout_str, MEMORY_CONTENT);
+
+    ashmem.unmap_ashmem();
+    ashmem.close_ashmem();
+}
+Unixcoder Score: 0.019813045859336853
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_ffi_invalid_006()
+{
+    let c_name = CString::new(MEMORY_NAME).expect("CString::new Failed!");
+    let ashmem = unsafe { ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE) };
+    assert!(!ashmem.is_null());
+
+    assert!(ashmem.MapReadAndWriteAshmem());
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    let c_content_ptr: *const ashmem::ffi::c_void = unsafe { ashmem::ffi::AsVoidPtr(c_content.as_ptr()) };
+    unsafe {
+        assert!(!ashmem.WriteToAshmem(ptr::null(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), MEMORY_SIZE));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), MEMORY_SIZE + 1));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), -1));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_SIZE + 1, 0));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, -1, 0));
+    }
+
+    ashmem.UnmapAshmem();
+    ashmem.CloseAshmem();
+}
+Unixcoder Score: 0.01900896057486534
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_write_read_003()
+{
+    let ashmem = unsafe { ashmem::create_ashmem_instance(MEMORY_NAME, MEMORY_SIZE) };
+    assert!(ashmem.is_some());
+
+    let ashmem = ashmem.unwrap();
+    assert!(ashmem.map_read_write_ashmem());
+
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    unsafe {
+        assert!(ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    ashmem.unmap_ashmem();
+    assert!(ashmem.map_read_only_ashmem());
+
+    unsafe {
+        assert!(!ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."),
+                MEMORY_CONTENT.len().try_into().expect("Invalid content size.")));
+    }
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem.read_from_ashmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0);
+        assert!(!readout_ptr.is_null());
+    }
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+
+    assert_eq!(readout_str, MEMORY_CONTENT);
+
+    ashmem.unmap_ashmem();
+    ashmem.close_ashmem();
+}
+Unixcoder Score: 0.018716581165790558
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_ffi_write_read_004()
+{
+    let c_name = CString::new(MEMORY_NAME).expect("CString::new Failed!");
+    let ashmem = unsafe { ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE) };
+    assert!(!ashmem.is_null());
+
+    assert!(ashmem.MapReadAndWriteAshmem());
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    let c_content_ptr: *const ashmem::ffi::c_void = unsafe { ashmem::ffi::AsVoidPtr(c_content.as_ptr()) };
+    unsafe {
+        assert!(ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    ashmem.UnmapAshmem();
+    assert!(ashmem.SetProtection(ashmem::PROT_READ));
+    assert!(!ashmem.MapReadAndWriteAshmem());
+    assert!(ashmem.MapReadOnlyAshmem());
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem::ffi::AsCharPtr(ashmem.ReadFromAshmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+    assert!(!readout_ptr.is_null());
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+    assert_eq!(readout_str, MEMORY_CONTENT);
+
+    ashmem.UnmapAshmem();
+    ashmem.CloseAshmem();
+}
+Unixcoder Score: 0.016898062080144882
+--------------------------------------------------

@@ -1,0 +1,696 @@
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_mapbits_get(arena_chunk_t *chunk, size_t pageind)
+{
+
+	return (*arena_mapbitsp_get(chunk, pageind));
+}
+Function: 
+unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // jemalloc provides alignment less than MIN_ALIGN for small allocations.
+        // So only rely on MIN_ALIGN if size >= align.
+        // Also see <https://github.com/rust-lang/rust/issues/45955> and
+        // <https://github.com/rust-lang/rust/issues/62251#issuecomment-507580914>.
+        if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+            unsafe { libc::malloc(layout.size()) as *mut u8 }
+        } else {
+            // `posix_memalign` returns a non-aligned value if supplied a very
+            // large alignment on older versions of Apple's platforms (unknown
+            // exactly which version range, but the issue is definitely
+            // present in macOS 10.14 and iOS 13.3).
+            //
+            // <https://github.com/rust-lang/rust/issues/30170>
+            #[cfg(target_vendor = "apple")]
+            {
+                if layout.align() > (1 << 31) {
+                    return ptr::null_mut();
+                }
+            }
+            unsafe { aligned_malloc(&layout) }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_run_dalloc__idx28934_rank2.c", "source_rust_file": "API_Mapping__arena_run_dalloc__idx28934_rank2.rs", "c_api": "arena_chunk_dealloc(arena, chunk)", "rust_api": "drop(Box::from_raw(self.storage.as_mut()))", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function manipulates memory chunks and runs for arena allocation, involving mapbit operations, coalescing logic, and stats updates. Rust function is a drop implementation using Box::from_raw. [Similarity] No structural similarity; C is complex memory management logic, Rust is a simple drop trait implementation. [Knowledge Extraction] No full match, no partial match, but there is an API mapping between C's memory deallocation and Rust's Box::from_raw."}]
+Unixcoder Score: -0.009483166970312595
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_mapbits_small_runind_get(arena_chunk_t *chunk, size_t pageind)
+{
+	size_t mapbits;
+
+	mapbits = arena_mapbits_get(chunk, pageind);
+	assert((mapbits & (CHUNK_MAP_LARGE|CHUNK_MAP_ALLOCATED)) ==
+	    CHUNK_MAP_ALLOCATED);
+	return (mapbits >> LG_PAGE);
+}
+Function: 
+fn chunk_index<T: Idx>(elem: T) -> usize {
+    elem.index() / CHUNK_BITS
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_mapbits_unallocated_set__idx26173_rank4.h", "source_rust_file": "API_Mapping__arena_mapbits_unallocated_set__idx26173_rank4.rs", "c_api": "*mapbitsp = size | CHUNK_MAP_BININD_INVALID | flags;", "rust_api": "self.0 |= bits;", "mapping_type": "pattern", "description": "Setting bits in a memory region", "reasoning": "[Task Analysis] C function manipulates memory map bits for arena chunks; Rust function sets bits in a range using bitwise operations. [Similarity] Names don't match but both perform bit manipulation on memory regions. [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs bitfield operations), but API mapping found for setting ranges of bits."}]
+Unixcoder Score: -0.013066400773823261
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_ptr_small_binind_get(const void *ptr, size_t mapbits)
+{
+	size_t binind;
+
+	binind = (mapbits & CHUNK_MAP_BININD_MASK) >> CHUNK_MAP_BININD_SHIFT;
+
+	if (config_debug) {
+		arena_chunk_t *chunk;
+		arena_t *arena;
+		size_t pageind;
+		size_t actual_mapbits;
+		arena_run_t *run;
+		arena_bin_t *bin;
+		size_t actual_binind;
+		arena_bin_info_t *bin_info;
+
+		assert(binind != BININD_INVALID);
+		assert(binind < NBINS);
+		chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+		arena = chunk->arena;
+		pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+		actual_mapbits = arena_mapbits_get(chunk, pageind);
+		assert(mapbits == actual_mapbits);
+		assert(arena_mapbits_large_get(chunk, pageind) == 0);
+		assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+		run = (arena_run_t *)((uintptr_t)chunk + (uintptr_t)((pageind -
+		    (actual_mapbits >> LG_PAGE)) << LG_PAGE));
+		bin = run->bin;
+		actual_binind = bin - arena->bins;
+		assert(binind == actual_binind);
+		bin_info = &arena_bin_info[actual_binind];
+		assert(((uintptr_t)ptr - ((uintptr_t)run +
+		    (uintptr_t)bin_info->reg0_offset)) % bin_info->reg_interval
+		    == 0);
+	}
+
+	return (binind);
+}
+Function: 
+unsafe fn grow_impl(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+        zeroed: bool,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        debug_assert!(
+            new_layout.size() >= old_layout.size(),
+            "`new_layout.size()` must be greater than or equal to `old_layout.size()`"
+        );
+
+        match old_layout.size() {
+            0 => self.alloc_impl(new_layout, zeroed),
+
+            // SAFETY: `new_size` is non-zero as `new_size` is greater than or equal to `old_size`
+            // as required by safety conditions and the `old_size == 0` case was handled in the
+            // previous match arm. Other conditions must be upheld by the caller
+            old_size if old_layout.align() == new_layout.align() => unsafe {
+                let new_size = new_layout.size();
+
+                // `realloc` probably checks for `new_size >= old_layout.size()` or something similar.
+                intrinsics::assume(new_size >= old_layout.size());
+
+                let raw_ptr = GlobalAlloc::realloc(self, ptr.as_ptr(), old_layout, new_size);
+                let ptr = NonNull::new(raw_ptr).ok_or(AllocError)?;
+                if zeroed {
+                    raw_ptr.add(old_size).write_bytes(0, new_size - old_size);
+                }
+                Ok(NonNull::slice_from_raw_parts(ptr, new_size))
+            },
+
+            // SAFETY: because `new_layout.size()` must be greater than or equal to `old_size`,
+            // both the old and new memory allocation are valid for reads and writes for `old_size`
+            // bytes. Also, because the old allocation wasn't yet deallocated, it cannot overlap
+            // `new_ptr`. Thus, the call to `copy_nonoverlapping` is safe. The safety contract
+            // for `dealloc` must be upheld by the caller.
+            old_size => unsafe {
+                let new_ptr = self.alloc_impl(new_layout, zeroed)?;
+                ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), old_size);
+                Allocator::deallocate(self, ptr, old_layout);
+                Ok(new_ptr)
+            },
+        }
+    }
+Unixcoder Score: -0.018338365480303764
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_ptr_small_binind_get(const void *ptr, size_t mapbits)
+{
+	size_t binind;
+
+	binind = (mapbits & CHUNK_MAP_BININD_MASK) >> CHUNK_MAP_BININD_SHIFT;
+
+	if (config_debug) {
+		arena_chunk_t *chunk;
+		arena_t *arena;
+		size_t pageind;
+		size_t actual_mapbits;
+		arena_run_t *run;
+		arena_bin_t *bin;
+		size_t actual_binind;
+		arena_bin_info_t *bin_info;
+
+		assert(binind != BININD_INVALID);
+		assert(binind < NBINS);
+		chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+		arena = chunk->arena;
+		pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+		actual_mapbits = arena_mapbits_get(chunk, pageind);
+		assert(mapbits == actual_mapbits);
+		assert(arena_mapbits_large_get(chunk, pageind) == 0);
+		assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+		run = (arena_run_t *)((uintptr_t)chunk + (uintptr_t)((pageind -
+		    (actual_mapbits >> LG_PAGE)) << LG_PAGE));
+		bin = run->bin;
+		actual_binind = bin - arena->bins;
+		assert(binind == actual_binind);
+		bin_info = &arena_bin_info[actual_binind];
+		assert(((uintptr_t)ptr - ((uintptr_t)run +
+		    (uintptr_t)bin_info->reg0_offset)) % bin_info->reg_interval
+		    == 0);
+	}
+
+	return (binind);
+}
+Function: 
+unsafe fn grow(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        debug_assert!(
+            new_layout.size() >= old_layout.size(),
+            "`new_layout.size()` must be greater than or equal to `old_layout.size()`"
+        );
+
+        let new_ptr = self.allocate(new_layout)?;
+
+        // SAFETY: because `new_layout.size()` must be greater than or equal to
+        // `old_layout.size()`, both the old and new memory allocation are valid for reads and
+        // writes for `old_layout.size()` bytes. Also, because the old allocation wasn't yet
+        // deallocated, it cannot overlap `new_ptr`. Thus, the call to `copy_nonoverlapping` is
+        // safe. The safety contract for `dealloc` must be upheld by the caller.
+        unsafe {
+            ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), old_layout.size());
+            self.deallocate(ptr, old_layout);
+        }
+
+        Ok(new_ptr)
+    }
+Unixcoder Score: -0.024754470214247704
+--------------------------------------------------
+C_Code: 
+static inline void
+arena_run_zero(arena_chunk_t *chunk, size_t run_ind, size_t npages)
+{
+
+	VALGRIND_MAKE_MEM_UNDEFINED((void *)((uintptr_t)chunk + (run_ind <<
+	    LG_PAGE)), (npages << LG_PAGE));
+	memset((void *)((uintptr_t)chunk + (run_ind << LG_PAGE)), 0,
+	    (npages << LG_PAGE));
+}
+Function: 
+pub fn alloc_from_iter<T, I: IntoIterator<Item = T>>(&self, iter: I) -> &mut [T] {
+        let iter = iter.into_iter();
+        assert!(mem::size_of::<T>() != 0);
+        assert!(!mem::needs_drop::<T>());
+
+        let size_hint = iter.size_hint();
+
+        match size_hint {
+            (min, Some(max)) if min == max => {
+                // We know the exact number of elements the iterator will produce here
+                let len = min;
+
+                if len == 0 {
+                    return &mut [];
+                }
+
+                let mem = self.alloc_raw(Layout::array::<T>(len).unwrap()) as *mut T;
+                unsafe { self.write_from_iter(iter, len, mem) }
+            }
+            (_, _) => {
+                cold_path(move || -> &mut [T] {
+                    let mut vec: SmallVec<[_; 8]> = iter.collect();
+                    if vec.is_empty() {
+                        return &mut [];
+                    }
+                    // Move the content to the arena by copying it and then forgetting
+                    // the content of the SmallVec
+                    unsafe {
+                        let len = vec.len();
+                        let start_ptr =
+                            self.alloc_raw(Layout::for_value::<[T]>(vec.as_slice())) as *mut T;
+                        vec.as_ptr().copy_to_nonoverlapping(start_ptr, len);
+                        vec.set_len(0);
+                        slice::from_raw_parts_mut(start_ptr, len)
+                    }
+                })
+            }
+        }
+    }
+Unixcoder Score: -0.03438147157430649
+--------------------------------------------------
+C_Code: 
+static void
+arena_run_dalloc(arena_t *arena, arena_run_t *run, bool dirty, bool cleaned)
+{
+	arena_chunk_t *chunk;
+	size_t size, run_ind, run_pages, flag_dirty;
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(run);
+	run_ind = (size_t)(((uintptr_t)run - (uintptr_t)chunk) >> LG_PAGE);
+	assert(run_ind >= map_bias);
+	assert(run_ind < chunk_npages);
+	if (arena_mapbits_large_get(chunk, run_ind) != 0) {
+		size = arena_mapbits_large_size_get(chunk, run_ind);
+		assert(size == PAGE ||
+		    arena_mapbits_large_size_get(chunk,
+		    run_ind+(size>>LG_PAGE)-1) == 0);
+	} else {
+		size_t binind = arena_bin_index(arena, run->bin);
+		arena_bin_info_t *bin_info = &arena_bin_info[binind];
+		size = bin_info->run_size;
+	}
+	run_pages = (size >> LG_PAGE);
+	if (config_stats) {
+		/*
+		 * Update stats_cactive if nactive is crossing a chunk
+		 * multiple.
+		 */
+		size_t cactive_diff = CHUNK_CEILING(arena->nactive << LG_PAGE) -
+		    CHUNK_CEILING((arena->nactive - run_pages) << LG_PAGE);
+		if (cactive_diff != 0)
+			stats_cactive_sub(cactive_diff);
+	}
+	arena->nactive -= run_pages;
+
+	/*
+	 * The run is dirty if the caller claims to have dirtied it, as well as
+	 * if it was already dirty before being allocated and the caller
+	 * doesn't claim to have cleaned it.
+	 */
+	assert(arena_mapbits_dirty_get(chunk, run_ind) ==
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages-1));
+	if (cleaned == false && arena_mapbits_dirty_get(chunk, run_ind) != 0)
+		dirty = true;
+	flag_dirty = dirty ? CHUNK_MAP_DIRTY : 0;
+
+	/* Mark pages as unallocated in the chunk map. */
+	if (dirty) {
+		arena_mapbits_unallocated_set(chunk, run_ind, size,
+		    CHUNK_MAP_DIRTY);
+		arena_mapbits_unallocated_set(chunk, run_ind+run_pages-1, size,
+		    CHUNK_MAP_DIRTY);
+	} else {
+		arena_mapbits_unallocated_set(chunk, run_ind, size,
+		    arena_mapbits_unzeroed_get(chunk, run_ind));
+		arena_mapbits_unallocated_set(chunk, run_ind+run_pages-1, size,
+		    arena_mapbits_unzeroed_get(chunk, run_ind+run_pages-1));
+	}
+
+	/* Try to coalesce forward. */
+	if (run_ind + run_pages < chunk_npages &&
+	    arena_mapbits_allocated_get(chunk, run_ind+run_pages) == 0 &&
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages) == flag_dirty) {
+		size_t nrun_size = arena_mapbits_unallocated_size_get(chunk,
+		    run_ind+run_pages);
+		size_t nrun_pages = nrun_size >> LG_PAGE;
+
+		/*
+		 * Remove successor from runs_avail; the coalesced run is
+		 * inserted later.
+		 */
+		assert(arena_mapbits_unallocated_size_get(chunk,
+		    run_ind+run_pages+nrun_pages-1) == nrun_size);
+		assert(arena_mapbits_dirty_get(chunk,
+		    run_ind+run_pages+nrun_pages-1) == flag_dirty);
+		arena_avail_remove(arena, chunk, run_ind+run_pages, nrun_pages,
+		    false, true);
+
+		size += nrun_size;
+		run_pages += nrun_pages;
+
+		arena_mapbits_unallocated_size_set(chunk, run_ind, size);
+		arena_mapbits_unallocated_size_set(chunk, run_ind+run_pages-1,
+		    size);
+	}
+
+	/* Try to coalesce backward. */
+	if (run_ind > map_bias && arena_mapbits_allocated_get(chunk, run_ind-1)
+	    == 0 && arena_mapbits_dirty_get(chunk, run_ind-1) == flag_dirty) {
+		size_t prun_size = arena_mapbits_unallocated_size_get(chunk,
+		    run_ind-1);
+		size_t prun_pages = prun_size >> LG_PAGE;
+
+		run_ind -= prun_pages;
+
+		/*
+		 * Remove predecessor from runs_avail; the coalesced run is
+		 * inserted later.
+		 */
+		assert(arena_mapbits_unallocated_size_get(chunk, run_ind) ==
+		    prun_size);
+		assert(arena_mapbits_dirty_get(chunk, run_ind) == flag_dirty);
+		arena_avail_remove(arena, chunk, run_ind, prun_pages, true,
+		    false);
+
+		size += prun_size;
+		run_pages += prun_pages;
+
+		arena_mapbits_unallocated_size_set(chunk, run_ind, size);
+		arena_mapbits_unallocated_size_set(chunk, run_ind+run_pages-1,
+		    size);
+	}
+
+	/* Insert into runs_avail, now that coalescing is complete. */
+	assert(arena_mapbits_unallocated_size_get(chunk, run_ind) ==
+	    arena_mapbits_unallocated_size_get(chunk, run_ind+run_pages-1));
+	assert(arena_mapbits_dirty_get(chunk, run_ind) ==
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages-1));
+	arena_avail_insert(arena, chunk, run_ind, run_pages, true, true);
+
+	/* Deallocate chunk if it is now completely unused. */
+	if (size == arena_maxclass) {
+		assert(run_ind == map_bias);
+		assert(run_pages == (arena_maxclass >> LG_PAGE));
+		arena_chunk_dealloc(arena, chunk);
+	}
+
+	/*
+	 * It is okay to do dirty page processing here even if the chunk was
+	 * deallocated above, since in that case it is the spare.  Waiting
+	 * until after possible chunk deallocation to do dirty processing
+	 * allows for an old spare to be fully deallocated, thus decreasing the
+	 * chances of spuriously crossing the dirty page purging threshold.
+	 */
+	if (dirty)
+		arena_maybe_purge(arena);
+}
+Function: 
+fn allocate_from_iter<'a>(
+            arena: &'a Arena<'tcx>,
+            iter: impl ::std::iter::IntoIterator<Item = Self>,
+        ) -> &'a mut [Self] {
+            arena.dropless.alloc_from_iter(iter)
+        }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_run_dalloc__idx28965_rank2.c", "source_rust_file": "API_Mapping__arena_run_dalloc__idx28965_rank2.rs", "c_api": "arena_mapbits_unallocated_set", "rust_api": "alloc_slice", "mapping_type": "function", "description": "Memory layout operations for unallocated regions", "reasoning": "[Task Analysis] C function `arena_run_dalloc` manages memory deallocation for arena runs, handling coalescing and chunk management. Rust function `alloc_slice` allocates a slice from a dropless allocator. [Similarity] No structural similarity due to different domains (memory management vs allocation). [Knowledge Extraction] No full/partial match. API mappings found: C `arena_mapbits_unallocated_set` ↔ Rust `alloc_slice` (both handle memory layout operations)."}]
+Unixcoder Score: -0.04628891125321388
+--------------------------------------------------
+C_Code: 
+static void
+arena_run_dalloc(arena_t *arena, arena_run_t *run, bool dirty, bool cleaned)
+{
+	arena_chunk_t *chunk;
+	size_t size, run_ind, run_pages, flag_dirty;
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(run);
+	run_ind = (size_t)(((uintptr_t)run - (uintptr_t)chunk) >> LG_PAGE);
+	assert(run_ind >= map_bias);
+	assert(run_ind < chunk_npages);
+	if (arena_mapbits_large_get(chunk, run_ind) != 0) {
+		size = arena_mapbits_large_size_get(chunk, run_ind);
+		assert(size == PAGE ||
+		    arena_mapbits_large_size_get(chunk,
+		    run_ind+(size>>LG_PAGE)-1) == 0);
+	} else {
+		size_t binind = arena_bin_index(arena, run->bin);
+		arena_bin_info_t *bin_info = &arena_bin_info[binind];
+		size = bin_info->run_size;
+	}
+	run_pages = (size >> LG_PAGE);
+	if (config_stats) {
+		/*
+		 * Update stats_cactive if nactive is crossing a chunk
+		 * multiple.
+		 */
+		size_t cactive_diff = CHUNK_CEILING(arena->nactive << LG_PAGE) -
+		    CHUNK_CEILING((arena->nactive - run_pages) << LG_PAGE);
+		if (cactive_diff != 0)
+			stats_cactive_sub(cactive_diff);
+	}
+	arena->nactive -= run_pages;
+
+	/*
+	 * The run is dirty if the caller claims to have dirtied it, as well as
+	 * if it was already dirty before being allocated and the caller
+	 * doesn't claim to have cleaned it.
+	 */
+	assert(arena_mapbits_dirty_get(chunk, run_ind) ==
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages-1));
+	if (cleaned == false && arena_mapbits_dirty_get(chunk, run_ind) != 0)
+		dirty = true;
+	flag_dirty = dirty ? CHUNK_MAP_DIRTY : 0;
+
+	/* Mark pages as unallocated in the chunk map. */
+	if (dirty) {
+		arena_mapbits_unallocated_set(chunk, run_ind, size,
+		    CHUNK_MAP_DIRTY);
+		arena_mapbits_unallocated_set(chunk, run_ind+run_pages-1, size,
+		    CHUNK_MAP_DIRTY);
+	} else {
+		arena_mapbits_unallocated_set(chunk, run_ind, size,
+		    arena_mapbits_unzeroed_get(chunk, run_ind));
+		arena_mapbits_unallocated_set(chunk, run_ind+run_pages-1, size,
+		    arena_mapbits_unzeroed_get(chunk, run_ind+run_pages-1));
+	}
+
+	/* Try to coalesce forward. */
+	if (run_ind + run_pages < chunk_npages &&
+	    arena_mapbits_allocated_get(chunk, run_ind+run_pages) == 0 &&
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages) == flag_dirty) {
+		size_t nrun_size = arena_mapbits_unallocated_size_get(chunk,
+		    run_ind+run_pages);
+		size_t nrun_pages = nrun_size >> LG_PAGE;
+
+		/*
+		 * Remove successor from runs_avail; the coalesced run is
+		 * inserted later.
+		 */
+		assert(arena_mapbits_unallocated_size_get(chunk,
+		    run_ind+run_pages+nrun_pages-1) == nrun_size);
+		assert(arena_mapbits_dirty_get(chunk,
+		    run_ind+run_pages+nrun_pages-1) == flag_dirty);
+		arena_avail_remove(arena, chunk, run_ind+run_pages, nrun_pages,
+		    false, true);
+
+		size += nrun_size;
+		run_pages += nrun_pages;
+
+		arena_mapbits_unallocated_size_set(chunk, run_ind, size);
+		arena_mapbits_unallocated_size_set(chunk, run_ind+run_pages-1,
+		    size);
+	}
+
+	/* Try to coalesce backward. */
+	if (run_ind > map_bias && arena_mapbits_allocated_get(chunk, run_ind-1)
+	    == 0 && arena_mapbits_dirty_get(chunk, run_ind-1) == flag_dirty) {
+		size_t prun_size = arena_mapbits_unallocated_size_get(chunk,
+		    run_ind-1);
+		size_t prun_pages = prun_size >> LG_PAGE;
+
+		run_ind -= prun_pages;
+
+		/*
+		 * Remove predecessor from runs_avail; the coalesced run is
+		 * inserted later.
+		 */
+		assert(arena_mapbits_unallocated_size_get(chunk, run_ind) ==
+		    prun_size);
+		assert(arena_mapbits_dirty_get(chunk, run_ind) == flag_dirty);
+		arena_avail_remove(arena, chunk, run_ind, prun_pages, true,
+		    false);
+
+		size += prun_size;
+		run_pages += prun_pages;
+
+		arena_mapbits_unallocated_size_set(chunk, run_ind, size);
+		arena_mapbits_unallocated_size_set(chunk, run_ind+run_pages-1,
+		    size);
+	}
+
+	/* Insert into runs_avail, now that coalescing is complete. */
+	assert(arena_mapbits_unallocated_size_get(chunk, run_ind) ==
+	    arena_mapbits_unallocated_size_get(chunk, run_ind+run_pages-1));
+	assert(arena_mapbits_dirty_get(chunk, run_ind) ==
+	    arena_mapbits_dirty_get(chunk, run_ind+run_pages-1));
+	arena_avail_insert(arena, chunk, run_ind, run_pages, true, true);
+
+	/* Deallocate chunk if it is now completely unused. */
+	if (size == arena_maxclass) {
+		assert(run_ind == map_bias);
+		assert(run_pages == (arena_maxclass >> LG_PAGE));
+		arena_chunk_dealloc(arena, chunk);
+	}
+
+	/*
+	 * It is okay to do dirty page processing here even if the chunk was
+	 * deallocated above, since in that case it is the spare.  Waiting
+	 * until after possible chunk deallocation to do dirty processing
+	 * allows for an old spare to be fully deallocated, thus decreasing the
+	 * chances of spuriously crossing the dirty page purging threshold.
+	 */
+	if (dirty)
+		arena_maybe_purge(arena);
+}
+Function: 
+default fn alloc_from_iter(self, arena: &TypedArena<T>) -> &mut [T] {
+        let vec: SmallVec<[_; 8]> = self.into_iter().collect();
+        vec.alloc_from_iter(arena)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__arena_mapbits_small_runind_get__idx26157_rank4.h", "source_rust_file": "Partial__arena_mapbits_small_runind_get__idx26157_rank4.rs", "c_fragment": "return (mapbits >> LG_PAGE);", "rust_fragment": "elem.index() / CHUNK_BITS", "description": "Both perform bit shifting or division to compute an index from a larger value.", "reasoning": "[Task Analysis] C function manipulates memory map bits to extract run index; Rust function computes chunk index using bit arithmetic. [Similarity] Names and domains differ (memory management vs indexing), but both perform bit manipulation and division. [Knowledge Extraction] No full structural match due to domain mismatch (memory vs indexing), but partial fragment found involving bit shifting/division logic. No API mappings due to semantic mismatch."}]
+Unixcoder Score: -0.047760143876075745
+--------------------------------------------------
+C_Code: 
+static inline void
+arena_run_zero(arena_chunk_t *chunk, size_t run_ind, size_t npages)
+{
+
+	VALGRIND_MAKE_MEM_UNDEFINED((void *)((uintptr_t)chunk + (run_ind <<
+	    LG_PAGE)), (npages << LG_PAGE));
+	memset((void *)((uintptr_t)chunk + (run_ind << LG_PAGE)), 0,
+	    (npages << LG_PAGE));
+}
+Function: 
+fn clear_last_chunk(&self, last_chunk: &mut ArenaChunk<T>) {
+        // Determine how much was filled.
+        let start = last_chunk.start().addr();
+        // We obtain the value of the pointer to the first uninitialized element.
+        let end = self.ptr.get().addr();
+        // We then calculate the number of elements to be dropped in the last chunk,
+        // which is the filled area's length.
+        let diff = if mem::size_of::<T>() == 0 {
+            // `T` is ZST. It can't have a drop flag, so the value here doesn't matter. We get
+            // the number of zero-sized values in the last and only chunk, just out of caution.
+            // Recall that `end` was incremented for each allocated value.
+            end - start
+        } else {
+            // FIXME: this should *likely* use `offset_from`, but more
+            // investigation is needed (including running tests in miri).
+            (end - start) / mem::size_of::<T>()
+        };
+        // Pass that to the `destroy` method.
+        unsafe {
+            last_chunk.destroy(diff);
+        }
+        // Reset the chunk.
+        self.ptr.set(last_chunk.start());
+    }
+Unixcoder Score: -0.056098390370607376
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_salloc(const void *ptr, bool demote)
+{
+	size_t ret;
+	arena_chunk_t *chunk;
+	size_t pageind, binind;
+
+	assert(ptr != NULL);
+	assert(CHUNK_ADDR2BASE(ptr) != ptr);
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+	pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+	assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+	binind = arena_mapbits_binind_get(chunk, pageind);
+	if (binind == BININD_INVALID || (config_prof && demote == false &&
+	    prof_promote && arena_mapbits_large_get(chunk, pageind) != 0)) {
+		/*
+		 * Large allocation.  In the common case (demote == true), and
+		 * as this is an inline function, most callers will only end up
+		 * looking at binind to determine that ptr is a small
+		 * allocation.
+		 */
+		assert(((uintptr_t)ptr & PAGE_MASK) == 0);
+		ret = arena_mapbits_large_size_get(chunk, pageind);
+		assert(ret != 0);
+		assert(pageind + (ret>>LG_PAGE) <= chunk_npages);
+		assert(ret == PAGE || arena_mapbits_large_size_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1) == 0);
+		assert(binind == arena_mapbits_binind_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1));
+		assert(arena_mapbits_dirty_get(chunk, pageind) ==
+		    arena_mapbits_dirty_get(chunk, pageind+(ret>>LG_PAGE)-1));
+	} else {
+		/*
+		 * Small allocation (possibly promoted to a large object due to
+		 * prof_promote).
+		 */
+		assert(arena_mapbits_large_get(chunk, pageind) != 0 ||
+		    arena_ptr_small_binind_get(ptr, arena_mapbits_get(chunk,
+		    pageind)) == binind);
+		ret = arena_bin_info[binind].reg_size;
+	}
+
+	return (ret);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        let block = {
+            if layout.align() <= MIN_ALIGN {
+                ptr
+            } else {
+                // The location of the start of the block is stored in the padding before `ptr`.
+
+                // SAFETY: Because of the contract of `System`, `ptr` is guaranteed to be non-null
+                // and have a header readable directly before it.
+                unsafe { ptr::read((ptr as *mut Header).sub(1)).0 }
+            }
+        };
+
+        // SAFETY: because `ptr` has been successfully allocated with this allocator,
+        // `HEAP` must have been successfully initialized.
+        let heap = unsafe { get_process_heap() };
+
+        // SAFETY: `heap` is a non-null handle returned by `GetProcessHeap`,
+        // `block` is a pointer to the start of an allocated block.
+        unsafe { HeapFree(heap, 0, block as c::LPVOID) };
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx34379_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx34379_rank1.rs", "c_api": "arena_mapbits_large_size_get(chunk, pageind)", "rust_api": "layout.size()", "mapping_type": "function", "description": "Retrieves the size of a large memory allocation", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, handling both small and large allocations; Rust function `allocate` performs heap allocation using a global allocator. [Similarity] Names and domains differ significantly (memory management vs allocation), and the control flow and logic are not structurally equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different operations. However, both involve memory-related logic and size computation, so API mappings may be extracted based on context and operation type."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx34379_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx34379_rank1.rs", "c_api": "Global.allocate(layout)", "rust_api": "allocate", "mapping_type": "function", "description": "Performs heap allocation using a global allocator", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, handling both small and large allocations; Rust function `allocate` performs heap allocation using a global allocator. [Similarity] Names and domains differ significantly (memory management vs allocation), and the control flow and logic are not structurally equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different operations. However, both involve memory-related logic and size computation, so API mappings may be extracted based on context and operation type."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx34379_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx34379_rank1.rs", "c_api": "arena_bin_info[binind].reg_size", "rust_api": "layout.size()", "mapping_type": "function", "description": "Retrieves the size of a small memory allocation", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, handling both small and large allocations; Rust function `allocate` performs heap allocation using a global allocator. [Similarity] Names and domains differ significantly (memory management vs allocation), and the control flow and logic are not structurally equivalent. [Knowledge Extraction] No full or partial match due to domain mismatch and different operations. However, both involve memory-related logic and size computation, so API mappings may be extracted based on context and operation type."}]
+Unixcoder Score: -0.06049877032637596
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE void
+arena_mapbits_unallocated_set(arena_chunk_t *chunk, size_t pageind, size_t size,
+    size_t flags)
+{
+	size_t *mapbitsp;
+
+	mapbitsp = arena_mapbitsp_get(chunk, pageind);
+	assert((size & PAGE_MASK) == 0);
+	assert((flags & ~CHUNK_MAP_FLAGS_MASK) == 0);
+	assert((flags & (CHUNK_MAP_DIRTY|CHUNK_MAP_UNZEROED)) == flags);
+	*mapbitsp = size | CHUNK_MAP_BININD_INVALID | flags;
+}
+Function: 
+pub fn set_tag(&mut self, data: usize) {
+            assert_eq!(
+                data & Self::ADDRESS_MASK,
+                0,
+                "cannot set more data beyond the lowest NUM_BITS"
+            );
+            let data = data & Self::DATA_MASK;
+
+            // SAFETY: This value will always be non-zero because the upper bits (from
+            // ADDRESS_MASK) will always be non-zero. This a property of the type and its
+            // construction.
+            self.0 = self.0.map_addr(|addr| unsafe {
+                NonZeroUsize::new_unchecked((addr.get() & Self::ADDRESS_MASK) | data)
+            })
+        }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_mapbits_large_set__idx127097_rank5.h", "source_rust_file": "API_Mapping__arena_mapbits_large_set__idx127097_rank5.rs", "c_api": "arena_mapbits_large_set", "rust_api": "allocate", "mapping_type": "function", "description": "Memory allocation for large chunks", "reasoning": "[Task Analysis] C function manipulates memory map bits for large allocations; Rust function allocates memory using system allocator. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there is a conceptual mapping in memory allocation behavior."}]
+Unixcoder Score: -0.06272602826356888
+--------------------------------------------------

@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_ioserstat_listener_1",
+  "function_name": "OnIoServiceEventReceive",
+  "source_c_file": "src/ioserstat_listener.c",
+  "c_code": "static int OnIoServiceEventReceive(struct HdfDevEventlistener * listener, struct HdfIoService * service, uint32_t id, struct HdfSBuf * data)\n{\n    if (listener == NULL || service == NULL || data == NULL) {\n        return HDF_ERR_INVALID_PARAM;\n    }\n    (void)id;\n    struct ServiceStatus status = { 0 };\n    if (ServiceStatusUnMarshalling(&status, data) != HDF_SUCCESS) {\n        return HDF_ERR_INVALID_PARAM;\n    }\n\n    struct IoServiceStatusListener *statusListener = listener->priv;\n    if (statusListener->svcstatListener.callback != NULL &&\n        (statusListener->deviceClass & status.deviceClass)) {\n        statusListener->svcstatListener.callback(&statusListener->svcstatListener, &status);\n    }\n\n    return HDF_SUCCESS;\n}",
+  "rust_signature": "fn OnIoServiceEventReceive(listener: *mut crate::types::HdfDevEventlistener, service: *mut crate::types::HdfIoService, id: u32, data: *mut crate::types::HdfSBuf) -> i32",
+  "rust_code": "fn OnIoServiceEventReceive(listener: *mut HdfDevEventlistener, service: *mut HdfIoService, id: u32, data: *mut HdfSBuf) -> i32 {\n    if listener.is_null() || service.is_null() || data.is_null() {\n        return HDF_ERR_INVALID_PARAM;\n    }\n    let _ = id;\n\n    let mut status = ServiceStatus {\n        serviceName: core::ptr::null(),\n        deviceClass: 0,\n        status: 0,\n        info: core::ptr::null(),\n    };\n    if crate::src_service_status::ServiceStatusUnMarshalling(&mut status, data) != HDF_SUCCESS {\n        return HDF_ERR_INVALID_PARAM;\n    }\n\n    unsafe {\n        let status_listener = (*listener).priv_ as *mut IoServiceStatusListener;\n        if !status_listener.is_null() {\n            let sl = &*status_listener;\n            if let Some(cb) = sl.svcstatListener.callback {\n                if (sl.deviceClass & status.deviceClass) != 0 {\n                    cb(core::ptr::addr_of!(sl.svcstatListener) as *mut ServiceStatusListener, &mut status);\n                }\n            }\n        }\n    }\n\n    HDF_SUCCESS\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

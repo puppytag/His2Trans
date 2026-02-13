@@ -1,0 +1,271 @@
+C_Code: 
+void PreloadGetInfo::TearDown(void)
+{
+    // input testCase teardown step，teardown invoked after each testCase
+    SetAccesslNoPermission();
+}
+Function: 
+fn ut_cancel_handle_reset() {
+        init();
+        let mut request = Request::new();
+        request.url("http://www.example.com");
+        let callback = MockPrimeCallback::new("test_task_id");
+        request.callback(callback);
+        request.info_mgr(Arc::new(DownloadInfoMgr::new()));
+
+        if let Some(task) = request.build() {
+            let cancel_handle = CancelHandle::new(task);
+            cancel_handle.reset();
+            // There's no direct way to verify reset, but we can check that the handle is still valid
+            assert!(!cancel_handle.cancel()); // Should return false since we haven't started the task
+        } else {
+            panic!("Failed to build request task");
+        }
+    }
+Unixcoder Score: 0.03073979541659355
+--------------------------------------------------
+C_Code: 
+void PreloadGetInfo::TearDown(void)
+{
+    // input testCase teardown step，teardown invoked after each testCase
+    SetAccesslNoPermission();
+}
+Function: 
+fn ut_enum_error_code() {
+    assert_eq!(ErrorCode::ErrOk as i32, 0);
+    assert_eq!(ErrorCode::IpcSizeTooLarge as i32, 2);
+    assert_eq!(ErrorCode::ChannelNotOpen as i32, 5);
+    assert_eq!(ErrorCode::Permission as i32, 201);
+    assert_eq!(ErrorCode::SystemApi as i32, 202);
+    assert_eq!(ErrorCode::ParameterCheck as i32, 401);
+    assert_eq!(ErrorCode::FileOperationErr as i32, 13400001);
+    assert_eq!(ErrorCode::Other as i32, 13499999);
+    assert_eq!(ErrorCode::TaskEnqueueErr as i32, 21900004);
+    assert_eq!(ErrorCode::TaskNotFound as i32, 21900006);
+    assert_eq!(ErrorCode::TaskStateErr as i32, 21900007);
+}
+Unixcoder Score: 0.025357600301504135
+--------------------------------------------------
+C_Code: 
+uint64_t LLVMRustCoverageHashByteArray(
+    const char *Bytes,
+    unsigned NumBytes) {
+  StringRef StrRef(Bytes, NumBytes);
+  return IndexedInstrProf::ComputeHash(StrRef);
+}
+Function: 
+pub(crate) fn hash_str(strval: &str) -> u64 {
+    let strval = CString::new(strval).expect("null error converting hashable str to C string");
+    unsafe { llvm::LLVMRustCoverageHashCString(strval.as_ptr()) }
+}
+Unixcoder Score: 0.013475818559527397
+--------------------------------------------------
+C_Code: 
+uint64_t LLVMRustCoverageHashByteArray(
+    const char *Bytes,
+    unsigned NumBytes) {
+  StringRef StrRef(Bytes, NumBytes);
+  return IndexedInstrProf::ComputeHash(StrRef);
+}
+Function: 
+pub(crate) fn hash_bytes(bytes: Vec<u8>) -> u64 {
+    unsafe { llvm::LLVMRustCoverageHashByteArray(bytes.as_ptr().cast(), bytes.len()) }
+}
+Unixcoder Score: 0.002093120478093624
+--------------------------------------------------
+C_Code: 
+uint64_t LLVMRustCoverageHashByteArray(
+    const char *Bytes,
+    unsigned NumBytes) {
+  StringRef StrRef(Bytes, NumBytes);
+  return IndexedInstrProf::ComputeHash(StrRef);
+}
+Function: 
+pub(crate) fn hash_bytes(bytes: Vec<u8>) -> u64 {
+    unsafe { llvm::LLVMRustCoverageHashByteArray(bytes.as_ptr().cast(), bytes.len()) }
+}
+Unixcoder Score: -0.008077803067862988
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::RemoveSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    if (!CanRequest()) {
+        HILOGE("RemoveSystemAbilityInner PERMISSION DENIED!");
+        return ERR_PERMISSION_DENIED;
+    }
+    int32_t systemAbilityId = -1;
+    bool ret = data.ReadInt32(systemAbilityId);
+    if (!ret) {
+        return ERR_NULL_OBJECT;
+    }
+    if (!CheckInputSysAbilityId(systemAbilityId)) {
+        HILOGW("RemoveSystemAbilityInner read SAId failed!");
+        return ERR_NULL_OBJECT;
+    }
+
+    if (!CheckAddOrRemovePermission(systemAbilityId)) {
+        HILOGE("RemoveSystemAbilityInner selinux permission denied! SA:%{public}d,callSid:%{public}s",
+            systemAbilityId, OHOS::IPCSkeleton::GetCallingSid().c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+
+    int32_t result = RemoveSystemAbility(systemAbilityId);
+    ret = reply.WriteInt32(result);
+    if (!ret) {
+        HILOGW("RemoveSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: -0.008648722432553768
+--------------------------------------------------
+C_Code: 
+uint64_t LLVMRustCoverageHashByteArray(
+    const char *Bytes,
+    unsigned NumBytes) {
+  StringRef StrRef(Bytes, NumBytes);
+  return IndexedInstrProf::ComputeHash(StrRef);
+}
+Function: 
+pub(crate) fn hash_str(strval: &str) -> u64 {
+    let strval = CString::new(strval).expect("null error converting hashable str to C string");
+    unsafe { llvm::LLVMRustCoverageHashCString(strval.as_ptr()) }
+}
+Unixcoder Score: -0.01369946263730526
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::RemoveSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    if (!CanRequest()) {
+        HILOGE("RemoveSystemAbilityInner PERMISSION DENIED!");
+        return ERR_PERMISSION_DENIED;
+    }
+    int32_t systemAbilityId = -1;
+    bool ret = data.ReadInt32(systemAbilityId);
+    if (!ret) {
+        return ERR_NULL_OBJECT;
+    }
+    if (!CheckInputSysAbilityId(systemAbilityId)) {
+        HILOGW("RemoveSystemAbilityInner read SAId failed!");
+        return ERR_NULL_OBJECT;
+    }
+
+    if (!CheckAddOrRemovePermission(systemAbilityId)) {
+        HILOGE("RemoveSystemAbilityInner selinux permission denied! SA:%{public}d,callSid:%{public}s",
+            systemAbilityId, OHOS::IPCSkeleton::GetCallingSid().c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+
+    int32_t result = RemoveSystemAbility(systemAbilityId);
+    ret = reply.WriteInt32(result);
+    if (!ret) {
+        HILOGW("RemoveSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: -0.016845712438225746
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::AddSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    if (!CanRequest()) {
+        KHILOGE("AddSystemAbilityInner PERMISSION DENIED!");
+        return ERR_PERMISSION_DENIED;
+    }
+    int32_t systemAbilityId = -1;
+    bool ret = data.ReadInt32(systemAbilityId);
+    if (!ret) {
+        return ERR_NULL_OBJECT;
+    }
+    if (!CheckInputSysAbilityId(systemAbilityId)) {
+        KHILOGW("AddSystemAbilityExtraInner read SAId failed!");
+        return ERR_NULL_OBJECT;
+    }
+
+    if (!CheckAddOrRemovePermission(systemAbilityId)) {
+        KHILOGE("AddSystemAbilityInner selinux permission denied! SA:%{public}d,callSid:%{public}s",
+            systemAbilityId, OHOS::IPCSkeleton::GetCallingSid().c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+
+    auto object = data.ReadRemoteObject();
+    if (object == nullptr) {
+        KHILOGW("AddSystemAbilityExtraInner readParcelable failed!");
+        return ERR_NULL_OBJECT;
+    }
+    SAExtraProp extraProp;
+    int32_t result = UnmarshalingSaExtraProp(data, extraProp);
+    if (result != ERR_OK) {
+        KHILOGW("AddSystemAbilityExtraInner UnmarshalingSaExtraProp failed!");
+        return result;
+    }
+    if (extraProp.isDistributed && !CheckAddRemoteSAPermission(systemAbilityId)) {
+        KHILOGE("CheckAddRemoteSAPermission selinux permission denied! SA:%{public}d,callSid:%{public}s",
+            systemAbilityId, OHOS::IPCSkeleton::GetCallingSid().c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+    result = AddSystemAbility(systemAbilityId, object, extraProp);
+    ret = reply.WriteInt32(result);
+    if (!ret) {
+        KHILOGW("AddSystemAbilityExtraInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn add_systemability_with_extra<A: RemoteStub + 'static>(
+        said: i32,
+        ability: A,
+        is_distributed: bool,
+        dump_flags: DumpFlagPriority,
+        capability: &str,
+        permission: &str,
+    ) -> i32 {
+        info!("add system ability {}", said);
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.017064224928617477
+--------------------------------------------------
+C_Code: 
+struct SmapsHeadInfo {
+    std::string startAddrStr;
+    std::string endAddrStr;
+    std::string permission;
+    std::string path;
+    int64_t iNode = -1;
+}
+Function: 
+struct VmStruct {
+    name:   String,
+    start:  u64,
+    end:    u64,
+    off:    u64,
+    perm:   String,
+    dev:    String,
+    inode:  u64,
+    counts: usize,
+    value:  HashMap<String, u64>
+}
+Unixcoder Score: -0.017984583973884583
+--------------------------------------------------

@@ -1,0 +1,458 @@
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_const_or_mut(&mut self) -> Option<Mutability> {
+        if self.eat_keyword(kw::Mut) {
+            Some(Mutability::Mut)
+        } else if self.eat_keyword(kw::Const) {
+            Some(Mutability::Not)
+        } else {
+            None
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__main__idx7914_rank1.c", "source_rust_file": "Partial__main__idx7914_rank1.rs", "c_fragment": "if (argc == 2 && strcmp(argv[1], \"-v\") == 0) {\n    verbose = 1;\n  } else {\n    verbose = 0;\n  }", "rust_fragment": "if args.len() >= 2 && args[1].as_slice() == \"fail\" {\n        foo();\n    } else if args.len() >= 2 && args[1].as_slice() == \"double-fail\" {\n        double();\n    } else {\n        runtest(args[0]);\n    }", "description": "Both use conditional logic to check command-line arguments and execute different code paths based on input.", "reasoning": "[Task Analysis] C main() parses command-line args and manages a linked list of nodes; Rust main() handles command-line args and dispatches tests. [Similarity] Names don't refer to same concept (main vs main), and domains differ (parsing + memory mgmt vs test dispatch). [Knowledge Extraction] No full match due to domain mismatch and different logic. Partial match found in argument parsing logic. API mappings found for command-line argument handling and conditional logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7914_rank1.c", "source_rust_file": "Partial__main__idx7914_rank1.rs", "c_api": "argc", "rust_api": "args.len()", "mapping_type": "function", "description": "Command-line argument count check", "reasoning": "[Task Analysis] C main() parses command-line args and manages a linked list of nodes; Rust main() handles command-line args and dispatches tests. [Similarity] Names don't refer to same concept (main vs main), and domains differ (parsing + memory mgmt vs test dispatch). [Knowledge Extraction] No full match due to domain mismatch and different logic. Partial match found in argument parsing logic. API mappings found for command-line argument handling and conditional logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7914_rank1.c", "source_rust_file": "Partial__main__idx7914_rank1.rs", "c_api": "argv[1]", "rust_api": "args[1]", "mapping_type": "field_access", "description": "Accessing first command-line argument", "reasoning": "[Task Analysis] C main() parses command-line args and manages a linked list of nodes; Rust main() handles command-line args and dispatches tests. [Similarity] Names don't refer to same concept (main vs main), and domains differ (parsing + memory mgmt vs test dispatch). [Knowledge Extraction] No full match due to domain mismatch and different logic. Partial match found in argument parsing logic. API mappings found for command-line argument handling and conditional logic patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__main__idx7914_rank1.c", "source_rust_file": "Partial__main__idx7914_rank1.rs", "c_api": "strcmp(argv[1], \"-v\")", "rust_api": "args[1].as_slice() == \"fail\"", "mapping_type": "function", "description": "String comparison for argument value", "reasoning": "[Task Analysis] C main() parses command-line args and manages a linked list of nodes; Rust main() handles command-line args and dispatches tests. [Similarity] Names don't refer to same concept (main vs main), and domains differ (parsing + memory mgmt vs test dispatch). [Knowledge Extraction] No full match due to domain mismatch and different logic. Partial match found in argument parsing logic. API mappings found for command-line argument handling and conditional logic patterns."}]
+Unixcoder Score: -0.04176373779773712
+--------------------------------------------------
+C_Code: 
+void UntypedMapBase::ClearTable(const ClearInput input) {
+  ABSL_DCHECK_NE(num_buckets_, kGlobalEmptyTableSize);
+
+  if (alloc_.arena() == nullptr) {
+    const auto loop = [=](auto destroy_node) {
+      const TableEntryPtr* table = table_;
+      for (map_index_t b = index_of_first_non_null_, end = num_buckets_;
+           b < end; ++b) {
+        NodeBase* node =
+            PROTOBUF_PREDICT_FALSE(internal::TableEntryIsTree(table[b]))
+                ? DestroyTree(TableEntryToTree(table[b]))
+                : TableEntryToNode(table[b]);
+
+        while (node != nullptr) {
+          NodeBase* next = node->next;
+          destroy_node(node);
+          SizedDelete(node, SizeFromInfo(input.size_info));
+          node = next;
+        }
+      }
+    };
+    switch (input.destroy_bits) {
+      case 0:
+        loop([](NodeBase*) {});
+        break;
+      case kKeyIsString:
+        loop([](NodeBase* node) {
+          static_cast<std::string*>(node->GetVoidKey())->~basic_string();
+        });
+        break;
+      case kValueIsString:
+        loop([size_info = input.size_info](NodeBase* node) {
+          static_cast<std::string*>(node->GetVoidValue(size_info))
+              ->~basic_string();
+        });
+        break;
+      case kKeyIsString | kValueIsString:
+        loop([size_info = input.size_info](NodeBase* node) {
+          static_cast<std::string*>(node->GetVoidKey())->~basic_string();
+          static_cast<std::string*>(node->GetVoidValue(size_info))
+              ->~basic_string();
+        });
+        break;
+      case kValueIsProto:
+        loop([size_info = input.size_info](NodeBase* node) {
+          static_cast<MessageLite*>(node->GetVoidValue(size_info))
+              ->~MessageLite();
+        });
+        break;
+      case kKeyIsString | kValueIsProto:
+        loop([size_info = input.size_info](NodeBase* node) {
+          static_cast<std::string*>(node->GetVoidKey())->~basic_string();
+          static_cast<MessageLite*>(node->GetVoidValue(size_info))
+              ->~MessageLite();
+        });
+        break;
+      case kUseDestructFunc:
+        loop(input.destroy_node);
+        break;
+    }
+  }
+
+  if (input.reset_table) {
+    std::fill(table_, table_ + num_buckets_, TableEntryPtr{});
+    num_elements_ = 0;
+    index_of_first_non_null_ = num_buckets_;
+  } else {
+    DeleteTable(table_, num_buckets_);
+  }
+}
+Function: 
+pub fn clear(&mut self) {
+        V::map_clear(self.as_mut())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "delete head.node", "rust_api": "VecDeque is dropped automatically", "mapping_type": "function", "description": "Delete dummy node in C, equivalent to automatic cleanup of VecDeque in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "push_front", "rust_api": "out.push_front(push_back + b)", "mapping_type": "method", "description": "Push element to front of container in C, equivalent to push_front in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "node_t *node = new node_t()", "rust_api": "VecDeque::new()", "mapping_type": "function", "description": "Allocate dummy node in C, equivalent to creating new VecDeque in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "head.node = node", "rust_api": "out.push_back(a)", "mapping_type": "field_access", "description": "Initialize head pointer with dummy node in C, equivalent to pushing elements to VecDeque in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "pop_back", "rust_api": "out.pop_back()", "mapping_type": "method", "description": "Pop element from back of container in C, equivalent to pop_back in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "tail.node = node", "rust_api": "out.push_front(push_back + b)", "mapping_type": "field_access", "description": "Initialize tail pointer with dummy node in C, equivalent to pushing elements to front of VecDeque in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "compare_and_swap", "rust_api": "VecDeque operations", "mapping_type": "function", "description": "Atomic compare and swap in C, equivalent to atomic operations on VecDeque in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "pop_front", "rust_api": "out.pop_front()", "mapping_type": "method", "description": "Pop element from front of container in C, equivalent to pop_front in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx112479_rank2.h", "source_rust_file": "API_Mapping__lock_free_queue__idx112479_rank2.rs", "c_api": "push_back", "rust_api": "out.push_back(a)", "mapping_type": "method", "description": "Push element to back of container in C, equivalent to push_back in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code constructs a VecDeque with push/pop operations. [Similarity] No structural similarity at the function level due to different domains (lock-free concurrent data structure vs simple VecDeque construction). [Knowledge Extraction] No full match, no partial match, but there are API mappings between equivalent operations (push/pop in C vs push_back/push_front/pop_back/pop_front in Rust)."}]
+Unixcoder Score: -0.06515906751155853
+--------------------------------------------------
+C_Code: 
+bool Table::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(sharedTableName), sharedTableName);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(fields), fields);
+    GetValue(node, GET_NAME(tableName), name);
+    GetValue(node, GET_NAME(deviceSyncFields), deviceSyncFields);
+    GetValue(node, GET_NAME(cloudSyncFields), cloudSyncFields);
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::OrderTable) -> Self {
+        let mut fields = vec![];
+        for fd in &value.fields.0 {
+            fields.push(Field::from(fd));
+        }
+        Table {
+            name: value.table_name.clone(),
+            alias: value.alias.clone(),
+            fields,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5177_rank3.c", "source_rust_file": "Partial__Marshal__idx5177_rank3.rs", "c_fragment": "SetValue(node[GET_NAME(alias)], alias);", "rust_fragment": "alias: value.alias.clone(),", "description": "Assigning a field value from source to destination in serialization logic.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node; Rust function 'from' converts an ipc_conn::Database into a local Database struct. [Similarity] Names don't match ('Marshal' vs 'from'), but both perform data transformation/serialization logic. [Knowledge Extraction] No full structural match due to different domains (serialization vs struct construction). However, there are partial matching fragments in data assignment and loop-based population. API mappings found for field assignment and collection population patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5177_rank3.c", "source_rust_file": "Partial__Marshal__idx5177_rank3.rs", "c_api": "SetValue(node[GET_NAME(alias)], alias)", "rust_api": "alias: value.alias.clone()", "mapping_type": "pattern", "description": "Field assignment from source to destination in data serialization.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node; Rust function 'from' converts an ipc_conn::Database into a local Database struct. [Similarity] Names don't match ('Marshal' vs 'from'), but both perform data transformation/serialization logic. [Knowledge Extraction] No full structural match due to different domains (serialization vs struct construction). However, there are partial matching fragments in data assignment and loop-based population. API mappings found for field assignment and collection population patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5177_rank3.c", "source_rust_file": "Partial__Marshal__idx5177_rank3.rs", "c_fragment": "for t in &value.tables.0 { tables.insert(t.table_name.clone(), Table::from(t)); }", "rust_fragment": "for t in &value.tables.0 { tables.insert(t.table_name.clone(), Table::from(t)); }", "description": "Iterating over a collection and inserting transformed elements into a hashmap.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node; Rust function 'from' converts an ipc_conn::Database into a local Database struct. [Similarity] Names don't match ('Marshal' vs 'from'), but both perform data transformation/serialization logic. [Knowledge Extraction] No full structural match due to different domains (serialization vs struct construction). However, there are partial matching fragments in data assignment and loop-based population. API mappings found for field assignment and collection population patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Marshal__idx5177_rank3.c", "source_rust_file": "Partial__Marshal__idx5177_rank3.rs", "c_fragment": "SetValue(node[GET_NAME(name)], name);", "rust_fragment": "name: value.name.clone(),", "description": "Assigning a field value from source to destination in serialization logic.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node; Rust function 'from' converts an ipc_conn::Database into a local Database struct. [Similarity] Names don't match ('Marshal' vs 'from'), but both perform data transformation/serialization logic. [Knowledge Extraction] No full structural match due to different domains (serialization vs struct construction). However, there are partial matching fragments in data assignment and loop-based population. API mappings found for field assignment and collection population patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5177_rank3.c", "source_rust_file": "Partial__Marshal__idx5177_rank3.rs", "c_api": "tables.insert(t.table_name.clone(), Table::from(t))", "rust_api": "tables.insert(t.table_name.clone(), Table::from(t))", "mapping_type": "pattern", "description": "Inserting a transformed element into a hashmap during iteration.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node; Rust function 'from' converts an ipc_conn::Database into a local Database struct. [Similarity] Names don't match ('Marshal' vs 'from'), but both perform data transformation/serialization logic. [Knowledge Extraction] No full structural match due to different domains (serialization vs struct construction). However, there are partial matching fragments in data assignment and loop-based population. API mappings found for field assignment and collection population patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Marshal__idx5177_rank3.c", "source_rust_file": "Partial__Marshal__idx5177_rank3.rs", "c_api": "SetValue(node[GET_NAME(name)], name)", "rust_api": "name: value.name.clone()", "mapping_type": "pattern", "description": "Field assignment from source to destination in data serialization.", "reasoning": "[Task Analysis] C function 'Marshal' serializes a Table object into a JSON node; Rust function 'from' converts an ipc_conn::Database into a local Database struct. [Similarity] Names don't match ('Marshal' vs 'from'), but both perform data transformation/serialization logic. [Knowledge Extraction] No full structural match due to different domains (serialization vs struct construction). However, there are partial matching fragments in data assignment and loop-based population. API mappings found for field assignment and collection population patterns."}]
+Unixcoder Score: -0.0794050469994545
+--------------------------------------------------
+C_Code: 
+bool Database::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(alias)], alias);
+    SetValue(node[GET_NAME(tables)], tables);
+    SetValue(node[GET_NAME(version)], version);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(user)], user);
+    SetValue(node[GET_NAME(deviceId)], deviceId);
+    SetValue(node[GET_NAME(autoSyncType)], autoSyncType);
+    return true;
+}
+Function: 
+fn from(value: &ipc_conn::Database) -> Self {
+        let mut tables = HashMap::new();
+        for t in &value.tables.0 {
+            tables.insert(t.table_name.clone(), Table::from(t));
+        }
+        Database {
+            name: value.name.clone(),
+            alias: value.alias.clone(),
+            tables,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Marshal__idx5183_rank3.c", "source_rust_file": "API_Mapping__Marshal__idx5183_rank3.rs", "c_api": "SetValue(node[GET_NAME(name)], name)", "rust_api": "name,", "mapping_type": "field_access", "description": "Assigning a field value in a structured object", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node, while Rust code is a constructor for a Table struct. [Similarity] Names do not refer to the same concept (Marshal vs new), and the domains are different (data serialization vs struct construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to field assignment and struct initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Marshal__idx5183_rank3.c", "source_rust_file": "API_Mapping__Marshal__idx5183_rank3.rs", "c_api": "SetValue(node[GET_NAME(tables)], tables)", "rust_api": "fields,", "mapping_type": "field_access", "description": "Assigning a field value in a structured object", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node, while Rust code is a constructor for a Table struct. [Similarity] Names do not refer to the same concept (Marshal vs new), and the domains are different (data serialization vs struct construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to field assignment and struct initialization."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Marshal__idx5183_rank3.c", "source_rust_file": "API_Mapping__Marshal__idx5183_rank3.rs", "c_api": "SetValue(node[GET_NAME(alias)], alias)", "rust_api": "alias,", "mapping_type": "field_access", "description": "Assigning a field value in a structured object", "reasoning": "[Task Analysis] C code is a marshaling function that sets values in a JSON node, while Rust code is a constructor for a Table struct. [Similarity] Names do not refer to the same concept (Marshal vs new), and the domains are different (data serialization vs struct construction). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to field assignment and struct initialization."}]
+Unixcoder Score: -0.08224847912788391
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn main() {
+    let args = env::args().skip(1).collect::<Vec<_>>();
+    if args.len() > 0 {
+        match &args[0][..] {
+            "main-thread" => recurse(&[]),
+            "child-thread" => thread::spawn(|| recurse(&[])).join().unwrap(),
+            _ => panic!(),
+        }
+        return
+    }
+
+    let me = env::current_exe().unwrap();
+
+    // The linux kernel has some different behavior for the main thread because
+    // the main thread's stack can typically grow. We can't always guarantee
+    // that we report stack overflow on the main thread, see #43052 for some
+    // details
+    if cfg!(not(target_os = "linux")) {
+        assert_overflow(Command::new(&me).arg("main-thread"));
+    }
+    assert_overflow(Command::new(&me).arg("child-thread"));
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76956_rank2.c", "source_rust_file": "API_Mapping__main__idx76956_rank2.rs", "c_api": "free((void*)tmp->name)", "rust_api": "self.ecx.expr_call_global(sp, rtpath(\"String\"), ~[self.ecx.expr_str(sp, s.to_managed())])", "mapping_type": "function", "description": "Memory deallocation and string creation", "reasoning": "[Task Analysis] C code is a C main function handling command-line args, parsing, and memory cleanup; Rust code is a complex Rust function for translating parsing pieces into AST expressions. [Similarity] No structural similarity at the function level due to different domains (C memory management vs Rust AST generation). [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. However, some API mappings can be extracted based on similar operations like string handling and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76956_rank2.c", "source_rust_file": "API_Mapping__main__idx76956_rank2.rs", "c_api": "free(tmp)", "rust_api": "self.ecx.expr_call_global(sp, rtpath(\"Argument\"), ~[s])", "mapping_type": "function", "description": "Memory deallocation and AST node creation", "reasoning": "[Task Analysis] C code is a C main function handling command-line args, parsing, and memory cleanup; Rust code is a complex Rust function for translating parsing pieces into AST expressions. [Similarity] No structural similarity at the function level due to different domains (C memory management vs Rust AST generation). [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. However, some API mappings can be extracted based on similar operations like string handling and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx76956_rank2.c", "source_rust_file": "API_Mapping__main__idx76956_rank2.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "self.ecx.expr_call_global(sp, rtpath(\"CurrentArgument\"), ~[nil])", "mapping_type": "function", "description": "Memory initialization and argument handling", "reasoning": "[Task Analysis] C code is a C main function handling command-line args, parsing, and memory cleanup; Rust code is a complex Rust function for translating parsing pieces into AST expressions. [Similarity] No structural similarity at the function level due to different domains (C memory management vs Rust AST generation). [Knowledge Extraction] No full/partial match due to domain mismatch and different logic. However, some API mappings can be extracted based on similar operations like string handling and memory management patterns."}]
+Unixcoder Score: -0.09037699550390244
+--------------------------------------------------
+C_Code: 
+bool Database::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(alias), alias);
+    GetValue(node, GET_NAME(tables), tables);
+    GetValue(node, GET_NAME(dbName), name);
+    GetValue(node, GET_NAME(autoSyncType), autoSyncType);
+    GetValue(node, GET_NAME(user), user);
+    GetValue(node, GET_NAME(deviceId), deviceId);
+    GetValue(node, GET_NAME(version), version);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    return true;
+}
+Function: 
+pub fn new(name: String, alias: String, tables: HashMap<String, Table>) -> Database {
+        Database {
+            name,
+            alias,
+            tables,
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5178_rank3.c", "source_rust_file": "Partial__Unmarshal__idx5178_rank3.rs", "c_api": "GetValue(node, GET_NAME(alias), alias)", "rust_api": "value.alias.to_string()", "mapping_type": "field_access", "description": "Extracting a string field from a source structure and converting it to a target string.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls. Rust code is a try_from function that builds a new Database struct from an existing one, converting tables and cloning fields. [Similarity] Names don't match exactly but both perform data extraction/serialization logic. [Knowledge Extraction] Full match blocked by domain mismatch (JSON deserialization vs struct construction), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5178_rank3.c", "source_rust_file": "Partial__Unmarshal__idx5178_rank3.rs", "c_api": "GetValue(node, GET_NAME(name), name)", "rust_api": "value.name.clone()", "mapping_type": "field_access", "description": "Extracting a field from a source structure and assigning it to a target field.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls. Rust code is a try_from function that builds a new Database struct from an existing one, converting tables and cloning fields. [Similarity] Names don't match exactly but both perform data extraction/serialization logic. [Knowledge Extraction] Full match blocked by domain mismatch (JSON deserialization vs struct construction), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5178_rank3.c", "source_rust_file": "Partial__Unmarshal__idx5178_rank3.rs", "c_api": "GetValue(node, GET_NAME(tables), tables)", "rust_api": "for table in value.tables.values() {\n            tables.push(table.try_into()?);\n        }", "mapping_type": "pattern", "description": "Iterating over a collection and converting each element to a new type.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls. Rust code is a try_from function that builds a new Database struct from an existing one, converting tables and cloning fields. [Similarity] Names don't match exactly but both perform data extraction/serialization logic. [Knowledge Extraction] Full match blocked by domain mismatch (JSON deserialization vs struct construction), but partial fragments and API mappings can be extracted."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Unmarshal__idx5178_rank3.c", "source_rust_file": "Partial__Unmarshal__idx5178_rank3.rs", "c_fragment": "GetValue(node, GET_NAME(name), name);\n    GetValue(node, GET_NAME(alias), alias);\n    GetValue(node, GET_NAME(tables), tables);\n    GetValue(node, GET_NAME(dbName), name);\n    GetValue(node, GET_NAME(autoSyncType), autoSyncType);\n    GetValue(node, GET_NAME(user), user);\n    GetValue(node, GET_NAME(deviceId), deviceId);\n    GetValue(node, GET_NAME(version), version);\n    GetValue(node, GET_NAME(bundleName), bundleName);", "rust_fragment": "let mut tables = vec![];\n        for table in value.tables.values() {\n            tables.push(table.try_into()?);\n        }", "description": "Both extract data from a source structure (JSON or struct) and populate fields in a target structure.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls. Rust code is a try_from function that builds a new Database struct from an existing one, converting tables and cloning fields. [Similarity] Names don't match exactly but both perform data extraction/serialization logic. [Knowledge Extraction] Full match blocked by domain mismatch (JSON deserialization vs struct construction), but partial fragments and API mappings can be extracted."}]
+Unixcoder Score: -0.10260076075792313
+--------------------------------------------------
+C_Code: 
+bool PromiseInfo::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(tokenIds), tokenIds);
+    GetValue(node, GET_NAME(uids), uids);
+    GetValue(node, GET_NAME(permissionNames), permissionNames);
+    return true;
+}
+Function: 
+fn from(value: &Value) -> Self {
+        match value {
+            Value::Empty => ipc_conn::FieldRaw::Null,
+            Value::Int(i) => ipc_conn::FieldRaw::Number(*i),
+            Value::Float(f) => ipc_conn::FieldRaw::Real(*f),
+            Value::String(s) => ipc_conn::FieldRaw::Text(s.clone()),
+            Value::Bool(b) => ipc_conn::FieldRaw::Bool(*b),
+            Value::Bytes(b) => ipc_conn::FieldRaw::Blob(b.clone()),
+            Value::Asset(a) => ipc_conn::FieldRaw::Asset(a.clone()),
+            Value::Assets(a) => ipc_conn::FieldRaw::Assets(ipc_conn::CloudAssets(a.clone())),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(autoSyncType), autoSyncType)", "rust_api": "value.auto_sync_type.clone()", "mapping_type": "function", "description": "Field extraction from source to destination", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(user), user)", "rust_api": "value.user.clone()", "mapping_type": "function", "description": "Field extraction from source to destination", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_fragment": "GetValue(node, GET_NAME(name), name);\n    GetValue(node, GET_NAME(alias), alias);\n    GetValue(node, GET_NAME(tables), tables);\n    GetValue(node, GET_NAME(dbName), name);\n    GetValue(node, GET_NAME(autoSyncType), autoSyncType);\n    GetValue(node, GET_NAME(user), user);\n    GetValue(node, GET_NAME(deviceId), deviceId);\n    GetValue(node, GET_NAME(version), version);\n    GetValue(node, GET_NAME(bundleName), bundleName);", "rust_fragment": "Database {\n            name: value.name.clone(),\n            alias: value.alias.clone(),\n            tables,\n        }", "description": "Both extract and assign fields from a source to construct a Database struct, though C uses GetValue calls and Rust directly accesses fields.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(alias), alias)", "rust_api": "value.alias.clone()", "mapping_type": "function", "description": "Field extraction from source to destination", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(tables), tables)", "rust_api": "value.tables.0", "mapping_type": "field_access", "description": "Accessing nested data structure for further processing", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_fragment": "GetValue(node, GET_NAME(tables), tables);", "rust_fragment": "for t in &value.tables.0 {\n            tables.insert(t.table_name.clone(), Table::from(t));\n        }", "description": "Both handle the 'tables' field, with C extracting it via GetValue and Rust iterating over a collection to build a HashMap.", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(version), version)", "rust_api": "value.version.clone()", "mapping_type": "function", "description": "Field extraction from source to destination", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(deviceId), deviceId)", "rust_api": "value.device_id.clone()", "mapping_type": "function", "description": "Field extraction from source to destination", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(dbName), name)", "rust_api": "value.name.clone()", "mapping_type": "function", "description": "Field extraction from source to destination", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(bundleName), bundleName)", "rust_api": "value.bundle_name.clone()", "mapping_type": "function", "description": "Field extraction from source to destination", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5177_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5177_rank2.rs", "c_api": "GetValue(node, GET_NAME(name), name)", "rust_api": "value.name.clone()", "mapping_type": "function", "description": "Field extraction from source to destination", "reasoning": "[Task Analysis] C code is a Unmarshal function that extracts fields from a JSON node using GetValue calls, while Rust code is a from function that builds a Database struct from an ipc_conn::Database value. [Similarity] Names don't match exactly but both perform data extraction and struct construction. [Knowledge Extraction] There are partial structural matches in field assignment and loop-based collection building, and API mappings for field access and data construction patterns."}]
+Unixcoder Score: -0.10621324181556702
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_data(len: uint, io: @io::Reader) -> Result {
+  let res =
+      if (len > 0) {
+      let bytes = io.read_bytes(len as uint);
+      assert_eq!(bytes.len(), len);
+      Data(bytes)
+  } else {
+      Data(~[])
+  };
+  assert_eq!(io.read_char(), '\r');
+  assert_eq!(io.read_char(), '\n');
+  return res;
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__lock_free_queue__idx117696_rank1.h", "source_rust_file": "Partial__lock_free_queue__idx117696_rank1.rs", "c_api": "pointer_t", "rust_api": "*mut T", "mapping_type": "type", "description": "Pointer type used for atomic operations in both languages", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__lock_free_queue__idx117696_rank1.h", "source_rust_file": "Partial__lock_free_queue__idx117696_rank1.rs", "c_api": "uint64_t*", "rust_api": "*mut T", "mapping_type": "type", "description": "Pointer to 64-bit value used in atomic operations", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__lock_free_queue__idx117696_rank1.h", "source_rust_file": "Partial__lock_free_queue__idx117696_rank1.rs", "c_api": "sync::compare_and_swap", "rust_api": "intrinsics::atomic_cxchgweak_*", "mapping_type": "function", "description": "Atomic compare and swap operation for pointer values", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__lock_free_queue__idx117696_rank1.h", "source_rust_file": "Partial__lock_free_queue__idx117696_rank1.rs", "c_fragment": "bool compare_and_swap(pointer_t *address,\n        pointer_t *oldValue,\n        pointer_t newValue) {\n\n        // FIXME (#2701) this is requiring us to pass -fno-strict-aliasing\n        // to GCC (possibly there are other, similar problems)\n        if (sync::compare_and_swap(\n                (uint64_t*) address,\n                *(uint64_t*) oldValue,\n                *(uint64_t*) &newValue)) {\n            return true;\n        }\n        return false;\n    }", "rust_fragment": "unsafe fn atomic_compare_exchange_weak<T: Copy>(\n    dst: *mut T,\n    old: T,\n    new: T,\n    success: Ordering,\n    failure: Ordering,\n) -> Result<T, T> {\n    // SAFETY: the caller must uphold the safety contract for `atomic_compare_exchange_weak`.\n    let (val, ok) = unsafe {\n        match (success, failure) {\n            (Relaxed, Relaxed) => intrinsics::atomic_cxchgweak_relaxed_relaxed(dst, old, new),\n            (Relaxed, Acquire) => intrinsics::atomic_cxchgweak_relaxed_acquire(dst, old, new),\n            (Relaxed, SeqCst) => intrinsics::atomic_cxchgweak_relaxed_seqcst(dst, old, new),\n            (Acquire, Relaxed) => intrinsics::atomic_cxchgweak_acquire_relaxed(dst, old, new),\n            (Acquire, Acquire) => intrinsics::atomic_cxchgweak_acquire_acquire(dst, old, new),\n            (Acquire, SeqCst) => intrinsics::atomic_cxchgweak_acquire_seqcst(dst, old, new),\n            (Release, Relaxed) => intrinsics::atomic_cxchgweak_release_relaxed(dst, old, new),\n            (Release, Acquire) => intrinsics::atomic_cxchgweak_release_acquire(dst, old, new),\n            (Release, SeqCst) => intrinsics::atomic_cxchgweak_release_seqcst(dst, old, new),\n            (AcqRel, Relaxed) => intrinsics::atomic_cxchgweak_acqrel_relaxed(dst, old, new),\n            (AcqRel, Acquire) => intrinsics::atomic_cxchgweak_acqrel_acquire(dst, old, new),\n            (AcqRel, SeqCst) => intrinsics::atomic_cxchgweak_acqrel_seqcst(dst, old, new),\n            (SeqCst, Relaxed) => intrinsics::atomic_cxchgweak_seqcst_relaxed(dst, old, new),\n            (SeqCst, Acquire) => intrinsics::atomic_cxchgweak_seqcst_acquire(dst, old, new),\n            (SeqCst, SeqCst) => intrinsics::atomic_cxchgweak_seqcst_seqcst(dst, old, new),\n            (_, AcqRel) => panic!(\"there is no such thing as an acquire-release failure ordering\"),\n            (_, Release) => panic!(\"there is no such thing as a release failure ordering\"),\n        }\n    };\n    if ok { Ok(val) } else { Err(val) }\n}", "description": "Both implement atomic compare-and-swap operations with similar logic and error handling patterns.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> [Filter 2: Empty/Trivial Code] -> [Filter 3: FFI Wrapper] -> [Filter 4: Semantic Domain Mismatch] -> [Filter 5: Empty Structs] -> [Filter 6: Definition vs Usage Asymmetry] -> [Full Classification] -> [Partial Classification] -> [API Mapping Extraction]"}]
+Unixcoder Score: -0.1084977462887764
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+pub fn parse_config(args: ~[~str]) -> config {
+    let opts =
+        ~[getopts::reqopt("compile-lib-path"),
+          getopts::reqopt("run-lib-path"),
+          getopts::reqopt("rustc-path"), getopts::reqopt("src-base"),
+          getopts::reqopt("build-base"), getopts::reqopt("aux-base"),
+          getopts::reqopt("stage-id"),
+          getopts::reqopt("mode"), getopts::optflag("ignored"),
+          getopts::optopt("runtool"), getopts::optopt("rustcflags"),
+          getopts::optflag("verbose"),
+          getopts::optopt("logfile"),
+          getopts::optflag("jit"),
+          getopts::optflag("newrt"),
+          getopts::optopt("target"),
+          getopts::optopt("adb-path"),
+          getopts::optopt("adb-test-dir")
+         ];
+
+    assert!(!args.is_empty());
+    let args_ = vec::tail(args);
+    let matches =
+        &match getopts::getopts(args_, opts) {
+          Ok(m) => m,
+          Err(f) => fail!(getopts::fail_str(f))
+        };
+
+    fn opt_path(m: &getopts::Matches, nm: &str) -> Path {
+        Path(getopts::opt_str(m, nm))
+    }
+
+    config {
+        compile_lib_path: getopts::opt_str(matches, "compile-lib-path"),
+        run_lib_path: getopts::opt_str(matches, "run-lib-path"),
+        rustc_path: opt_path(matches, "rustc-path"),
+        src_base: opt_path(matches, "src-base"),
+        build_base: opt_path(matches, "build-base"),
+        aux_base: opt_path(matches, "aux-base"),
+        stage_id: getopts::opt_str(matches, "stage-id"),
+        mode: str_mode(getopts::opt_str(matches, "mode")),
+        run_ignored: getopts::opt_present(matches, "ignored"),
+        filter:
+             if !matches.free.is_empty() {
+                 option::Some(copy matches.free[0])
+             } else { option::None },
+        logfile: getopts::opt_maybe_str(matches, "logfile").map(|s| Path(*s)),
+        runtool: getopts::opt_maybe_str(matches, "runtool"),
+        rustcflags: getopts::opt_maybe_str(matches, "rustcflags"),
+        jit: getopts::opt_present(matches, "jit"),
+        newrt: getopts::opt_present(matches, "newrt"),
+        target: opt_str2(getopts::opt_maybe_str(matches, "target")).to_str(),
+        adb_path: opt_str2(getopts::opt_maybe_str(matches, "adb-path")).to_str(),
+        adb_test_dir:
+            opt_str2(getopts::opt_maybe_str(matches, "adb-test-dir")).to_str(),
+        adb_device_status:
+            if (opt_str2(getopts::opt_maybe_str(matches, "target")) ==
+                ~"arm-linux-androideabi") {
+                if (opt_str2(getopts::opt_maybe_str(matches, "adb-test-dir")) !=
+                    ~"(none)" &&
+                    opt_str2(getopts::opt_maybe_str(matches, "adb-test-dir")) !=
+                    ~"") { true }
+                else { false }
+            } else { false },
+        verbose: getopts::opt_present(matches, "verbose")
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx31365_rank3.h", "source_rust_file": "API_Mapping__lock_free_queue__idx31365_rank3.rs", "c_api": "list.remove(&2)", "rust_api": "list.remove(&2)", "mapping_type": "function", "description": "Remove element from list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using linked list nodes, while Rust code tests removal from a TinyList. [Similarity] Names do not refer to the same concept (e.g., 'lock_free_queue' vs 'TinyList', 'pointer_t' vs 'node_t' vs 'TinyList::new'). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs high-level list operations), but API mappings can be extracted for equivalent operations like insertion and removal."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx31365_rank3.h", "source_rust_file": "API_Mapping__lock_free_queue__idx31365_rank3.rs", "c_api": "list.len()", "rust_api": "list.len()", "mapping_type": "function", "description": "Get length of list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using linked list nodes, while Rust code tests removal from a TinyList. [Similarity] Names do not refer to the same concept (e.g., 'lock_free_queue' vs 'TinyList', 'pointer_t' vs 'node_t' vs 'TinyList::new'). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs high-level list operations), but API mappings can be extracted for equivalent operations like insertion and removal."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx31365_rank3.h", "source_rust_file": "API_Mapping__lock_free_queue__idx31365_rank3.rs", "c_api": "list.contains(&2)", "rust_api": "list.contains(&2)", "mapping_type": "function", "description": "Check if element exists in list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using linked list nodes, while Rust code tests removal from a TinyList. [Similarity] Names do not refer to the same concept (e.g., 'lock_free_queue' vs 'TinyList', 'pointer_t' vs 'node_t' vs 'TinyList::new'). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs high-level list operations), but API mappings can be extracted for equivalent operations like insertion and removal."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx31365_rank3.h", "source_rust_file": "API_Mapping__lock_free_queue__idx31365_rank3.rs", "c_api": "list.insert(1)", "rust_api": "list.insert(1)", "mapping_type": "function", "description": "Insert element into list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using linked list nodes, while Rust code tests removal from a TinyList. [Similarity] Names do not refer to the same concept (e.g., 'lock_free_queue' vs 'TinyList', 'pointer_t' vs 'node_t' vs 'TinyList::new'). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs high-level list operations), but API mappings can be extracted for equivalent operations like insertion and removal."}]
+Unixcoder Score: -0.1088748648762703
+--------------------------------------------------
+C_Code: 
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+    verbose = 1;
+  } else {
+    verbose = 0;
+  }
+  int ret = 0;
+  struct node *tmp;
+  memset(pushback, '\0', PUSHBACK_LEN);
+  ret = rsparse();
+  print("--- PARSE COMPLETE: ret:%d, n_nodes:%d ---\n", ret, n_nodes);
+  if (nodes) {
+    print_node(nodes, 0);
+  }
+  while (nodes) {
+    tmp = nodes;
+    nodes = tmp->next;
+    if (tmp->own_string) {
+      free((void*)tmp->name);
+    }
+    free(tmp);
+  }
+  return ret;
+}
+Function: 
+fn parse_field_name(&mut self) -> PResult<'a, Ident> {
+        if let token::Literal(token::Lit { kind: token::Integer, symbol, suffix }) = self.token.kind
+        {
+            if let Some(suffix) = suffix {
+                self.expect_no_tuple_index_suffix(self.token.span, suffix);
+            }
+            self.bump();
+            Ok(Ident::new(symbol, self.prev_token.span))
+        } else {
+            self.parse_ident_common(true)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx79427_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx79427_rank1.rs", "c_api": "pointer_t newValue", "rust_api": "self.top.compare_and_swap(t, t + 1, SeqCst)", "mapping_type": "pattern", "description": "Compare and swap with new value assignment", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code implements a pop operation using atomic operations and manual memory management. [Similarity] No direct structural similarity due to different domains (C memory management vs Rust atomic operations), different data structures (linked list vs array-based), and different control flow. [Knowledge Extraction] No full or partial match due to domain mismatch and structural differences. However, there are API mappings related to atomic operations and compare-and-swap patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx79427_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx79427_rank1.rs", "c_api": "sync::compare_and_swap", "rust_api": "self.top.compare_and_swap", "mapping_type": "function", "description": "Atomic compare and swap operation for synchronization", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code implements a pop operation using atomic operations and manual memory management. [Similarity] No direct structural similarity due to different domains (C memory management vs Rust atomic operations), different data structures (linked list vs array-based), and different control flow. [Knowledge Extraction] No full or partial match due to domain mismatch and structural differences. However, there are API mappings related to atomic operations and compare-and-swap patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__lock_free_queue__idx79427_rank1.h", "source_rust_file": "API_Mapping__lock_free_queue__idx79427_rank1.rs", "c_api": "pointer_t *address", "rust_api": "self.top.load", "mapping_type": "pattern", "description": "Loading atomic value from memory location", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code implements a pop operation using atomic operations and manual memory management. [Similarity] No direct structural similarity due to different domains (C memory management vs Rust atomic operations), different data structures (linked list vs array-based), and different control flow. [Knowledge Extraction] No full or partial match due to domain mismatch and structural differences. However, there are API mappings related to atomic operations and compare-and-swap patterns."}]
+Unixcoder Score: -0.1090359315276146
+--------------------------------------------------

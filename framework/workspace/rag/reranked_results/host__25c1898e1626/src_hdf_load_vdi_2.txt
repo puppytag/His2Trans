@@ -1,0 +1,318 @@
+C_Code: 
+int SafeCount(const T* obj) {
+    return obj ? obj->size() : 0;
+}
+Function: 
+fn num_color_stops(color_stops: &BridgeColorStops) -> usize {
+    color_stops.num_stops
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__InstantiateReaderIterator__idx7657_rank2.c", "source_rust_file": "Partial__InstantiateReaderIterator__idx7657_rank2.rs", "c_api": "NError(EINVAL).GetNapiErr(env)", "rust_api": "Error::new(ErrorKind::InvalidInput, \"Invalid input\")", "mapping_type": "function", "description": "Error creation and return in C NAPI context vs Rust Result error", "reasoning": "[Task Analysis] C function creates and initializes a NAPI object with error handling, while Rust function opens a file and returns a boxed reader. [Similarity] Names don't match but both perform initialization and error handling. [Knowledge Extraction] Found partial structural match in error handling logic and API mappings for error propagation and memory allocation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__InstantiateReaderIterator__idx7657_rank2.c", "source_rust_file": "Partial__InstantiateReaderIterator__idx7657_rank2.rs", "c_fragment": "if (iterator == nullptr) {\n        HILOGE(\"Invalid argument iterator\");\n        if (async) {\n            return {env, NError(EINVAL).GetNapiErr(env)};\n        }\n        NError(EINVAL).ThrowErr(env);\n        return NVal();\n    }", "rust_fragment": "if path.is_null() {\n        return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n    }", "description": "Null pointer check and error return in both C and Rust code", "reasoning": "[Task Analysis] C function creates and initializes a NAPI object with error handling, while Rust function opens a file and returns a boxed reader. [Similarity] Names don't match but both perform initialization and error handling. [Knowledge Extraction] Found partial structural match in error handling logic and API mappings for error propagation and memory allocation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__InstantiateReaderIterator__idx7657_rank2.c", "source_rust_file": "Partial__InstantiateReaderIterator__idx7657_rank2.rs", "c_api": "Box::into_raw(Box::new(reader))", "rust_api": "Box::new(reader)", "mapping_type": "function", "description": "Heap allocation and raw pointer conversion in Rust vs C memory management", "reasoning": "[Task Analysis] C function creates and initializes a NAPI object with error handling, while Rust function opens a file and returns a boxed reader. [Similarity] Names don't match but both perform initialization and error handling. [Knowledge Extraction] Found partial structural match in error handling logic and API mappings for error propagation and memory allocation patterns."}]
+Unixcoder Score: -0.04395885393023491
+--------------------------------------------------
+C_Code: 
+void MessageParcel::PrintBuffer(const char *funcName, const size_t lineNum)
+{
+    if (funcName == nullptr) {
+        ZLOGE(LOG_LABEL, "invalid param, funcName is null");
+        return;
+    }
+    ZLOGI(LOG_LABEL, "[%{public}s %{public}zu %{public}u]: DataSize:%{public}zu, WP:%{public}zu, RP:%{public}zu",
+        funcName, lineNum, ProcessSkeleton::ConvertAddr(this), GetDataSize(), GetWritePosition(), GetReadPosition());
+    std::string format;
+    size_t idx = 0;
+    size_t size = GetOffsetsSize();
+    auto objOffsets = reinterpret_cast<binder_size_t *>(GetObjectOffsets());
+    while (idx < size) {
+        format += std::to_string(objOffsets[idx]) + ',';
+        ++idx;
+    }
+    ZLOGI(LOG_LABEL, "[%{public}s %{public}zu %{public}u]: ObjSize:%{public}zu, ObjOffsets:%{public}s", funcName,
+        lineNum, ProcessSkeleton::ConvertAddr(this), size, format.c_str());
+
+    format.clear();
+    idx = 0;
+    size = GetDataSize();
+    auto data = reinterpret_cast<const uint8_t *>(GetData());
+    while (idx < size) {
+        format += std::to_string(data[idx]) + ',';
+        ++idx;
+    }
+    ZLOGI(LOG_LABEL, "[%{public}s %{public}zu %{public}u]: data:%{public}s", funcName, lineNum,
+        ProcessSkeleton::ConvertAddr(this), format.c_str());
+}
+Function: 
+pub fn size(&self) -> usize {
+        self.as_parcel().GetDataSize()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__PrintBuffer__idx4689_rank2.c", "source_rust_file": "API_Mapping__PrintBuffer__idx4689_rank2.rs", "c_api": "GetDataSize()", "rust_api": "GetDataSize()", "mapping_type": "function", "description": "Retrieves the size of the data in the parcel", "reasoning": "[Task Analysis] C function prints buffer information using logging and data traversal; Rust function returns parcel size. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full/partial match. API mappings identified: C's GetDataSize() and Rust's GetDataSize() are functionally equivalent, both retrieving data size from a parcel object."}]
+Unixcoder Score: -0.0490107424557209
+--------------------------------------------------
+C_Code: 
+inline bool VerifyAny(::flatbuffers::Verifier &verifier, const void *obj, Any type) {
+  switch (type) {
+    case Any_NONE: {
+      return true;
+    }
+    case Any_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_TestSimpleTableWithEnum: {
+      auto ptr = reinterpret_cast<const MyGame::Example::TestSimpleTableWithEnum *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_MyGame_Example2_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example2::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+Function: 
+pub fn test_as_my_game_example_2_monster(&self) -> Option<super::example_2::Monster<'a>> {
+    if self.test_type() == Any::MyGame_Example2_Monster {
+      self.test().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { super::example_2::Monster::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+Unixcoder Score: -0.0500543937087059
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManager::GetRunningSaExtensionInfoList(const std::string& extension,
+    std::vector<SaExtensionInfo>& infoList)
+{
+    lock_guard<samgr::mutex> autoLock(saProfileMapLock_);
+    for (const auto& [saId, value] : saProfileMap_) {
+        if (std::find(value.extension.begin(), value.extension.end(), extension)
+            != value.extension.end()) {
+            auto obj = GetSystemProcess(value.process);
+            if (obj == nullptr) {
+                HILOGD("get SaExtInfoList sa not load,ext:%{public}s SA:%{public}d", extension.c_str(), saId);
+                continue;
+            }
+            shared_lock<samgr::shared_mutex> readLock(abilityMapLock_);
+            auto iter = abilityMap_.find(saId);
+            if (iter == abilityMap_.end() || iter->second.remoteObj == nullptr) {
+                HILOGD("getRunningSaExtInfoList SA:%{public}d not load,ext:%{public}s", saId, extension.c_str());
+                continue;
+            }
+            SaExtensionInfo tmp{saId, obj};
+            infoList.emplace_back(tmp);
+            HILOGD("get SaExtInfoList suc,ext:%{public}s,SA:%{public}d,proc:%{public}s",
+                extension.c_str(), saId, Str16ToStr8(value.process).c_str());
+        }
+    }
+    return ERR_OK;
+}
+Function: 
+pub fn get_running_system_process() -> Vec<SystemProcessInfo> {
+        info!("get running system ability process info");
+        GetRunningSystemProcess()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__VerifyAny__idx3836_rank2.c", "source_rust_file": "Partial__VerifyAny__idx3836_rank2.rs", "c_api": "Any_MyGame_Example2_Monster", "rust_api": "Self::MyGameExample2Monster(_)", "mapping_type": "field_access", "description": "Type tag constant for MyGame_Example2_Monster variant", "reasoning": "[Task Analysis] C function verifies flatbuffers objects based on type; Rust function maps enum variants to type tags. [Similarity] Names don't match but both handle type dispatching. [Knowledge Extraction] Found partial structural match in switch/match logic and API mapping for type tag conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__VerifyAny__idx3836_rank2.c", "source_rust_file": "Partial__VerifyAny__idx3836_rank2.rs", "c_api": "Any_NONE", "rust_api": "Self::NONE", "mapping_type": "field_access", "description": "Type tag constant for None variant", "reasoning": "[Task Analysis] C function verifies flatbuffers objects based on type; Rust function maps enum variants to type tags. [Similarity] Names don't match but both handle type dispatching. [Knowledge Extraction] Found partial structural match in switch/match logic and API mapping for type tag conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__VerifyAny__idx3836_rank2.c", "source_rust_file": "Partial__VerifyAny__idx3836_rank2.rs", "c_api": "Any_TestSimpleTableWithEnum", "rust_api": "Self::TestSimpleTableWithEnum(_)", "mapping_type": "field_access", "description": "Type tag constant for TestSimpleTableWithEnum variant", "reasoning": "[Task Analysis] C function verifies flatbuffers objects based on type; Rust function maps enum variants to type tags. [Similarity] Names don't match but both handle type dispatching. [Knowledge Extraction] Found partial structural match in switch/match logic and API mapping for type tag conversion."}, {"knowledge_type": "Partial", "source_c_file": "Partial__VerifyAny__idx3836_rank2.c", "source_rust_file": "Partial__VerifyAny__idx3836_rank2.rs", "c_fragment": "switch (type) {\n    case Any_NONE: {\n      return true;\n    }\n    case Any_Monster: {\n      auto ptr = reinterpret_cast<const MyGame::Example::Monster *>(obj);\n      return verifier.VerifyTable(ptr);\n    }\n    case Any_TestSimpleTableWithEnum: {\n      auto ptr = reinterpret_cast<const MyGame::Example::TestSimpleTableWithEnum *>(obj);\n      return verifier.VerifyTable(ptr);\n    }\n    case Any_MyGame_Example2_Monster: {\n      auto ptr = reinterpret_cast<const MyGame::Example2::Monster *>(obj);\n      return verifier.VerifyTable(ptr);\n    }\n    default: return true;\n  }", "rust_fragment": "match self {\n      Self::NONE => Any::NONE,\n      Self::Monster(_) => Any::Monster,\n      Self::TestSimpleTableWithEnum(_) => Any::TestSimpleTableWithEnum,\n      Self::MyGameExample2Monster(_) => Any::MyGame_Example2_Monster,\n    }", "description": "Type dispatch logic in C switch vs Rust match expression", "reasoning": "[Task Analysis] C function verifies flatbuffers objects based on type; Rust function maps enum variants to type tags. [Similarity] Names don't match but both handle type dispatching. [Knowledge Extraction] Found partial structural match in switch/match logic and API mapping for type tag conversion."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__VerifyAny__idx3836_rank2.c", "source_rust_file": "Partial__VerifyAny__idx3836_rank2.rs", "c_api": "Any_Monster", "rust_api": "Self::Monster(_)", "mapping_type": "field_access", "description": "Type tag constant for Monster variant", "reasoning": "[Task Analysis] C function verifies flatbuffers objects based on type; Rust function maps enum variants to type tags. [Similarity] Names don't match but both handle type dispatching. [Knowledge Extraction] Found partial structural match in switch/match logic and API mapping for type tag conversion."}]
+Unixcoder Score: -0.05516635626554489
+--------------------------------------------------
+C_Code: 
+inline bool VerifyAny(::flatbuffers::Verifier &verifier, const void *obj, Any type) {
+  switch (type) {
+    case Any_NONE: {
+      return true;
+    }
+    case Any_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_TestSimpleTableWithEnum: {
+      auto ptr = reinterpret_cast<const MyGame::Example::TestSimpleTableWithEnum *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_MyGame_Example2_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example2::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+Function: 
+pub fn any_type(&self) -> Any {
+    match self {
+      Self::NONE => Any::NONE,
+      Self::Monster(_) => Any::Monster,
+      Self::TestSimpleTableWithEnum(_) => Any::TestSimpleTableWithEnum,
+      Self::MyGameExample2Monster(_) => Any::MyGame_Example2_Monster,
+    }
+  }
+Unixcoder Score: -0.05863531306385994
+--------------------------------------------------
+C_Code: 
+inline bool VerifyAny(::flatbuffers::Verifier &verifier, const void *obj, Any type) {
+  switch (type) {
+    case Any_NONE: {
+      return true;
+    }
+    case Any_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_TestSimpleTableWithEnum: {
+      auto ptr = reinterpret_cast<const MyGame::Example::TestSimpleTableWithEnum *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_MyGame_Example2_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example2::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+Function: 
+pub fn test_as_my_game_example_2_monster(&self) -> Option<super::example_2::Monster<'a>> {
+    if self.test_type() == Any::MyGame_Example2_Monster {
+      self.test().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { super::example_2::Monster::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+Unixcoder Score: -0.06574736535549164
+--------------------------------------------------
+C_Code: 
+inline bool VerifyAny(::flatbuffers::Verifier &verifier, const void *obj, Any type) {
+  switch (type) {
+    case Any_NONE: {
+      return true;
+    }
+    case Any_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_TestSimpleTableWithEnum: {
+      auto ptr = reinterpret_cast<const MyGame::Example::TestSimpleTableWithEnum *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_MyGame_Example2_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example2::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+Function: 
+pub fn test_as_my_game_example_2_monster(&self) -> Option<super::example_2::Monster<'a>> {
+    if self.test_type() == Any::MyGame_Example2_Monster {
+      self.test().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { super::example_2::Monster::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+Unixcoder Score: -0.06579425930976868
+--------------------------------------------------
+C_Code: 
+inline bool VerifyAny(::flatbuffers::Verifier &verifier, const void *obj, Any type) {
+  switch (type) {
+    case Any_NONE: {
+      return true;
+    }
+    case Any_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_TestSimpleTableWithEnum: {
+      auto ptr = reinterpret_cast<const MyGame::Example::TestSimpleTableWithEnum *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_MyGame_Example2_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example2::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+Function: 
+pub fn any_type(&self) -> Any {
+    match self {
+      Self::NONE => Any::NONE,
+      Self::Monster(_) => Any::Monster,
+      Self::TestSimpleTableWithEnum(_) => Any::TestSimpleTableWithEnum,
+      Self::MyGameExample2Monster(_) => Any::MyGame_Example2_Monster,
+    }
+  }
+Unixcoder Score: -0.06691479682922363
+--------------------------------------------------
+C_Code: 
+inline bool VerifyAny(::flatbuffers::Verifier &verifier, const void *obj, Any type) {
+  switch (type) {
+    case Any_NONE: {
+      return true;
+    }
+    case Any_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_TestSimpleTableWithEnum: {
+      auto ptr = reinterpret_cast<const MyGame::Example::TestSimpleTableWithEnum *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_MyGame_Example2_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example2::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+Function: 
+pub fn any_type(&self) -> Any {
+    match self {
+      Self::NONE => Any::NONE,
+      Self::Monster(_) => Any::Monster,
+      Self::TestSimpleTableWithEnum(_) => Any::TestSimpleTableWithEnum,
+      Self::MyGameExample2Monster(_) => Any::MyGame_Example2_Monster,
+    }
+  }
+Unixcoder Score: -0.06949523091316223
+--------------------------------------------------
+C_Code: 
+inline bool VerifyAny(::flatbuffers::Verifier &verifier, const void *obj, Any type) {
+  switch (type) {
+    case Any_NONE: {
+      return true;
+    }
+    case Any_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_TestSimpleTableWithEnum: {
+      auto ptr = reinterpret_cast<const MyGame::Example::TestSimpleTableWithEnum *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    case Any_MyGame_Example2_Monster: {
+      auto ptr = reinterpret_cast<const MyGame::Example2::Monster *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
+    default: return true;
+  }
+}
+Function: 
+pub fn as_my_game_example_2_monster(&self) -> Option<&super::example_2::MonsterT> {
+    if let Self::MyGameExample2Monster(v) = self { Some(v.as_ref()) } else { None }
+  }
+Unixcoder Score: -0.07232030481100082
+--------------------------------------------------

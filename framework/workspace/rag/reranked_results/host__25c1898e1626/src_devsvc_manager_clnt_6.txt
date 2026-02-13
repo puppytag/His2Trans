@@ -1,0 +1,531 @@
+C_Code: 
+int32_t RequestServiceProxy::Unsubscribe(const std::string &tid)
+{
+    REQUEST_HILOGD("Request Unsubscribe, tid: %{public}s", tid.c_str());
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(tid);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_UNSUBSCRIBE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request Unsubscribe, tid: %{public}s, failed: %{public}d", tid.c_str(), ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    REQUEST_HILOGD("End Request Unsubscribe ok, tid: %{public}s", tid.c_str());
+    return E_OK;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+        self.sa_handler.cancel_idle();
+        self.active_counter.increment();
+        const SERVICE_TOKEN: &str = "OHOS.Download.RequestServiceInterface";
+        debug!("Processes on_remote_request, code: {}", code);
+        match data.read_interface_token() {
+            Ok(token) if token == SERVICE_TOKEN => {}
+            _ => {
+                error!("Gets invalid token");
+                sys_event!(ExecError, DfxCode::INVALID_IPC_MESSAGE_A00, "Gets invalid token");
+                self.active_counter.decrement();
+                return IpcStatusCode::Failed as i32;
+            }
+        };
+        let res = match code {
+            interface::CONSTRUCT => self.construct(data, reply),
+            interface::PAUSE => self.pause(data, reply),
+            interface::QUERY => self.query(data, reply),
+            interface::QUERY_MIME_TYPE => self.query_mime_type(data, reply),
+            interface::REMOVE => self.remove(data, reply),
+            interface::RESUME => self.resume(data, reply),
+            interface::START => self.start(data, reply),
+            interface::STOP => self.stop(data, reply),
+            interface::SHOW => self.show(data, reply),
+            interface::TOUCH => self.touch(data, reply),
+            interface::SEARCH => self.search(data, reply),
+            interface::GET_TASK => self.get_task(data, reply),
+            interface::CLEAR => Ok(()),
+            interface::OPEN_CHANNEL => self.open_channel(reply),
+            interface::SUBSCRIBE => self.subscribe(data, reply),
+            interface::UNSUBSCRIBE => self.unsubscribe(data, reply),
+            interface::SUB_RUN_COUNT => self.subscribe_run_count(data, reply),
+            interface::UNSUB_RUN_COUNT => self.unsubscribe_run_count(reply),
+            interface::CREATE_GROUP => self.create_group(data, reply),
+            interface::ATTACH_GROUP => self.attach_group(data, reply),
+            interface::DELETE_GROUP => self.delete_group(data, reply),
+            interface::SET_MAX_SPEED => self.set_max_speed(data, reply),
+            interface::SET_MODE => self.set_mode(data, reply),
+            interface::DISABLE_TASK_NOTIFICATION => self.disable_task_notifications(data, reply),
+            _ => Err(IpcStatusCode::Failed),
+        };
+
+        self.active_counter.decrement();
+        match res {
+            Ok(_) => 0,
+            Err(e) => e as i32,
+        }
+    }
+Unixcoder Score: 0.11238636821508408
+--------------------------------------------------
+C_Code: 
+int32_t RequestServiceProxy::Unsubscribe(const std::string &tid)
+{
+    REQUEST_HILOGD("Request Unsubscribe, tid: %{public}s", tid.c_str());
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(tid);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_UNSUBSCRIBE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request Unsubscribe, tid: %{public}s, failed: %{public}d", tid.c_str(), ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    REQUEST_HILOGD("End Request Unsubscribe ok, tid: %{public}s", tid.c_str());
+    return E_OK;
+}
+Function: 
+pub(crate) fn unsubscribe(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let task_id: String = data.read()?;
+        info!("Service unsubscribe tid {}", task_id);
+
+        let Ok(task_id) = task_id.parse::<u32>() else {
+            error!("End Service unsubscribe, failed: task_id not valid");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A30,
+                "End Service unsubscribe, failed: task_id not valid"
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+        let uid = ipc::Skeleton::calling_uid();
+
+        if !self.check_task_uid(task_id, uid) {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        if self.client_manager.unsubscribe(task_id) == ErrorCode::ErrOk {
+            reply.write(&(ErrorCode::ErrOk as i32))?;
+            Ok(())
+        } else {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            Err(IpcStatusCode::Failed)
+        }
+    }
+Unixcoder Score: 0.111005038022995
+--------------------------------------------------
+C_Code: 
+int32_t RequestServiceProxy::Unsubscribe(const std::string &tid)
+{
+    REQUEST_HILOGD("Request Unsubscribe, tid: %{public}s", tid.c_str());
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(tid);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_UNSUBSCRIBE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request Unsubscribe, tid: %{public}s, failed: %{public}d", tid.c_str(), ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    REQUEST_HILOGD("End Request Unsubscribe ok, tid: %{public}s", tid.c_str());
+    return E_OK;
+}
+Function: 
+pub(crate) fn subscribe(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let task_id: String = data.read()?;
+        debug!("Service subscribe tid {}", task_id);
+
+        let Ok(task_id) = task_id.parse::<u32>() else {
+            error!("End Service subscribe, failed: task_id not valid");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                "End Service subscribe, failed: task_id not valid"
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+        let uid = ipc::Skeleton::calling_uid();
+
+        if !self.check_task_uid(task_id, uid) {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let pid = ipc::Skeleton::calling_pid();
+        let token_id = ipc::Skeleton::calling_full_token_id();
+
+        let (event, rx) = TaskManagerEvent::subscribe(task_id, token_id);
+        if !self.task_manager.lock().unwrap().send_event(event) {
+            reply.write(&(ErrorCode::Other as i32))?;
+            error!(
+                "End Service subscribe, tid: {}, failed: send event failed",
+                task_id
+            );
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!(
+                    "End Service subscribe, tid: {}, failed: send event failed",
+                    task_id
+                )
+            );
+            return Err(IpcStatusCode::Failed);
+        }
+        let ret = match rx.get() {
+            Some(ret) => ret,
+            None => {
+                error!(
+                    "End Service subscribe, tid: {}, failed: receives ret failed",
+                    task_id
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A28,
+                    &format!(
+                        "End Service subscribe, tid: {}, failed: receives ret failed",
+                        task_id
+                    )
+                );
+                reply.write(&(ErrorCode::Other as i32))?;
+                return Err(IpcStatusCode::Failed);
+            }
+        };
+
+        if ret != ErrorCode::ErrOk {
+            error!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret)
+            );
+            reply.write(&(ret as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ret = self.client_manager.subscribe(task_id, pid, uid, token_id);
+        if ret == ErrorCode::ErrOk {
+            reply.write(&(ErrorCode::ErrOk as i32))?;
+            debug!("End Service subscribe ok: tid: {}", task_id);
+            Ok(())
+        } else {
+            error!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A28,
+                &format!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret)
+            );
+            reply.write(&(ret as i32))?;
+            Err(IpcStatusCode::Failed)
+        }
+    }
+Unixcoder Score: 0.10960761457681656
+--------------------------------------------------
+C_Code: 
+int32_t RequestServiceProxy::Unsubscribe(const std::string &tid)
+{
+    REQUEST_HILOGD("Request Unsubscribe, tid: %{public}s", tid.c_str());
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(tid);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_UNSUBSCRIBE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request Unsubscribe, tid: %{public}s, failed: %{public}d", tid.c_str(), ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    REQUEST_HILOGD("End Request Unsubscribe ok, tid: %{public}s", tid.c_str());
+    return E_OK;
+}
+Function: 
+pub(crate) fn get_task(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let task_id: String = data.read()?;
+        info!("Service getTask tid {}", task_id);
+
+        let Ok(task_id) = task_id.parse::<u32>() else {
+            error!(
+                "End Service getTask, tid: {}, failed: task_id or token not valid",
+                task_id
+            );
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A24,
+                &format!("End Service getTask, tid: {}, failed: task_id or token not valid", task_id)
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+
+        let uid = ipc::Skeleton::calling_uid();
+
+        if !self.check_task_uid(task_id, uid) {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let token: String = data.read()?;
+        let Some(config) = query::get_task(task_id, token) else {
+            error!(
+                "End Service getTask, tid: {}, failed: task_id or token not found",
+                task_id
+            );
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A24,
+                &format!("End Service getTask, tid: {}, failed: task_id or token not found", task_id)
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+
+        let token_id = ipc::Skeleton::calling_full_token_id();
+        let pid = ipc::Skeleton::calling_pid();
+
+        let ret = self.client_manager.subscribe(task_id, pid, uid, token_id);
+        if ret != ErrorCode::ErrOk {
+            error!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret);
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A24,
+                &format!("End Service subscribe, tid: {}, failed: {:?}", task_id, ret)
+            );
+            reply.write(&(ret as i32))?;
+            serialize_task_config(config, reply)?;
+            return Ok(());
+        }
+
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        serialize_task_config(config, reply)?;
+        Ok(())
+    }
+Unixcoder Score: 0.10723403841257095
+--------------------------------------------------
+C_Code: 
+int32_t RequestServiceProxy::Unsubscribe(const std::string &tid)
+{
+    REQUEST_HILOGD("Request Unsubscribe, tid: %{public}s", tid.c_str());
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteString(tid);
+    int32_t ret =
+        Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_UNSUBSCRIBE), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request Unsubscribe, tid: %{public}s, failed: %{public}d", tid.c_str(), ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return E_SERVICE_ERROR;
+    }
+    REQUEST_HILOGD("End Request Unsubscribe ok, tid: %{public}s", tid.c_str());
+    return E_OK;
+}
+Function: 
+pub(crate) fn unsubscribe(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        let task_id: String = data.read()?;
+        info!("Service unsubscribe tid {}", task_id);
+
+        let Ok(task_id) = task_id.parse::<u32>() else {
+            error!("End Service unsubscribe, failed: task_id not valid");
+            sys_event!(
+                ExecError,
+                DfxCode::INVALID_IPC_MESSAGE_A30,
+                "End Service unsubscribe, failed: task_id not valid"
+            );
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        };
+        let uid = ipc::Skeleton::calling_uid();
+
+        if !self.check_task_uid(task_id, uid) {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        if self.client_manager.unsubscribe(task_id) == ErrorCode::ErrOk {
+            reply.write(&(ErrorCode::ErrOk as i32))?;
+            Ok(())
+        } else {
+            reply.write(&(ErrorCode::TaskNotFound as i32))?;
+            Err(IpcStatusCode::Failed)
+        }
+    }
+Unixcoder Score: 0.10527759045362473
+--------------------------------------------------
+C_Code: 
+int TestServiceProxy::TestPingService(const std::u16string &serviceName)
+{
+    int ret;
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    ZLOGI(LABEL, "PingService");
+    dataParcel.WriteString16(serviceName);
+    ret = Remote()->SendRequest(TRANS_ID_PING_SERVICE, dataParcel, replyParcel, option);
+    int result = (ret == ERR_NONE) ? replyParcel.ReadInt32() : -1;
+    ZLOGI(LABEL, "PingService result = %{public}d", result);
+    return result;
+}
+Function: 
+fn parcel_write() -> MsgParcel {
+    init();
+
+    let test_service = SystemAbilityManager::get_system_ability(TEST_SYSTEM_ABILITY_ID).unwrap();
+    let mut msg = MsgParcel::new();
+
+    read_and_write(&mut msg);
+    read_and_write_vec(&mut msg);
+
+    let s = String::from("ipc hello");
+    let v = vec![s.clone(), s.clone(), s.clone()];
+    msg.write(&v).unwrap();
+
+    msg.write_string16(&s);
+    msg.write_string16_vec(&v);
+
+    test_service.send_request(0, &mut msg).unwrap()
+}
+Unixcoder Score: 0.006965255830436945
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: -0.0006034832913428545
+--------------------------------------------------
+C_Code: 
+int32_t TestServiceStub::ServerPingService(MessageParcel &data, MessageParcel &reply)
+{
+    std::u16string serviceName = data.ReadString16();
+    int32_t result = TestPingService(serviceName);
+    ZLOGI(LABEL, "Result:%{public}d", result);
+    reply.WriteInt32(result);
+    return 0;
+}
+Function: 
+fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+            0
+        }
+Unixcoder Score: -0.00693319458514452
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.007648558355867863
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability_with_extra<A: RemoteStub + 'static>(
+        said: i32,
+        ability: A,
+        is_distributed: bool,
+        dump_flags: DumpFlagPriority,
+        capability: &str,
+        permission: &str,
+    ) -> i32 {
+        info!("add system ability {}", said);
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: -0.010177035816013813
+--------------------------------------------------

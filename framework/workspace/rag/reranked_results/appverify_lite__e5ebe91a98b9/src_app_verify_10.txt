@@ -1,0 +1,496 @@
+C_Code: 
+DBValue ExtensionUtil::ConvertValue(OhCloudExtValue *value)
+{
+    DBValue result;
+    OhCloudExtValueType type = OhCloudExtValueType::VALUEINNERTYPE_EMPTY;
+    void *content = nullptr;
+    size_t ctLen = 0;
+    auto status = OhCloudExtValueGetContent(value, &type, &content, reinterpret_cast<unsigned int *>(&ctLen));
+    if (status != ERRNO_SUCCESS || content == nullptr) {
+        return result;
+    }
+    DoConvertValue(content, ctLen, type, result);
+    return result;
+}
+Function: 
+pub unsafe extern "C" fn OhCloudExtVectorGet(
+    vector: *const OhCloudExtVector,
+    index: usize,
+    value: *mut *const c_void,
+    value_len: *mut c_uint,
+) -> c_int {
+    macro_rules! get_content {
+        ($vec: ident, $index: ident, $value: ident) => {
+            if $index < $vec.len() {
+                *$value = (&$vec[index]) as *const _ as *const c_void;
+            } else {
+                return ERRNO_OUT_OF_RANGE;
+            }
+        };
+    }
+
+    macro_rules! get_content_clone {
+        ($vec: ident, $index: ident, $value: ident, $typ: ident, $id: ident) => {
+            if $index < $vec.len() {
+                *$value =
+                    $typ::new($vec[index].clone(), SafetyCheckId::$id).into_ptr() as *const c_void;
+            } else {
+                return ERRNO_OUT_OF_RANGE;
+            }
+        };
+    }
+
+    if vector.is_null() || value.is_null() || value_len.is_null() {
+        return ERRNO_NULLPTR;
+    }
+
+    let vector = match OhCloudExtVector::get_inner_ref(vector, SafetyCheckId::Vector) {
+        None => return ERRNO_WRONG_TYPE,
+        Some(v) => v,
+    };
+
+    match vector {
+        VectorCffi::I32(vec) => get_content!(vec, index, value),
+        VectorCffi::U32(vec) => get_content!(vec, index, value),
+        VectorCffi::String(vec) => {
+            if index < vec.len() {
+                *value = vec[index].as_ptr() as *const c_void;
+                *value_len = vec[index].len() as c_uint;
+            } else {
+                return ERRNO_OUT_OF_RANGE;
+            }
+        }
+        VectorCffi::Value(vec) => get_content_clone!(vec, index, value, OhCloudExtValue, Value),
+        VectorCffi::ValueBucket(vec) => {
+            get_content_clone!(vec, index, value, OhCloudExtValueBucket, ValueBucket)
+        }
+        VectorCffi::Database(vec) => {
+            get_content_clone!(vec, index, value, OhCloudExtDatabase, Database)
+        }
+        VectorCffi::Table(vec) => get_content_clone!(vec, index, value, OhCloudExtTable, Table),
+        VectorCffi::Field(vec) => get_content_clone!(vec, index, value, OhCloudExtField, Field),
+        VectorCffi::RelationSet(vec) => {
+            get_content_clone!(vec, index, value, OhCloudExtRelationSet, RelationSet)
+        }
+        VectorCffi::CloudAsset(vec) => {
+            get_content_clone!(vec, index, value, OhCloudExtCloudAsset, CloudAsset)
+        }
+        VectorCffi::AppInfo(vec) => {
+            get_content_clone!(vec, index, value, OhCloudExtAppInfo, AppInfo)
+        }
+        VectorCffi::VecU32(vec) => {
+            if index < vec.len() {
+                let src = &vec[index];
+                *value = OhCloudExtVector::new(VectorCffi::U32(src.clone()), SafetyCheckId::Vector)
+                    .into_ptr() as *const c_void;
+            } else {
+                return ERRNO_OUT_OF_RANGE;
+            }
+        }
+        VectorCffi::VecString(vec) => {
+            if index < vec.len() {
+                let src = &vec[index];
+                *value =
+                    OhCloudExtVector::new(VectorCffi::String(src.clone()), SafetyCheckId::Vector)
+                        .into_ptr() as *const c_void;
+            } else {
+                return ERRNO_OUT_OF_RANGE;
+            }
+        }
+        VectorCffi::VecDatabase(vec) => {
+            if index < vec.len() {
+                let src = &vec[index];
+                *value =
+                    OhCloudExtVector::new(VectorCffi::Database(src.clone()), SafetyCheckId::Vector)
+                        .into_ptr() as *const c_void;
+            } else {
+                return ERRNO_OUT_OF_RANGE;
+            }
+        }
+        VectorCffi::HashMapValue(vec) => {
+            if index < vec.len() {
+                let src = &vec[index];
+                let mut inner = HashMap::new();
+                for (key, value) in src {
+                    inner.insert(key.clone(), value.clone());
+                }
+                *value = OhCloudExtHashMap::new(HashMapCffi::Value(inner), SafetyCheckId::HashMap)
+                    .into_ptr() as *const c_void;
+            } else {
+                return ERRNO_OUT_OF_RANGE;
+            }
+        }
+    }
+    ERRNO_SUCCESS
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SaveString__idx5486_rank2.c", "source_rust_file": "API_Mapping__SaveString__idx5486_rank2.rs", "c_api": "AssertEqual(ret, true, ...)", "rust_api": "assert!(!ret); assert!(ret);", "mapping_type": "function", "description": "Assertion of boolean result", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests the same logic with file operations and FFI calls. [Similarity] Names do not refer to the same concept (SaveString vs test_save_string_to_fd_004), and domains differ: C uses low-level file I/O and assertions, Rust uses high-level file operations and FFI. [Knowledge Extraction] No full or partial structural match due to domain mismatch and naming inconsistency. However, API mappings can be extracted for file operations and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SaveString__idx5486_rank2.c", "source_rust_file": "API_Mapping__SaveString__idx5486_rank2.rs", "c_api": "LoadStringFromFd(fd, loadResult)", "rust_api": "file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result)", "mapping_type": "function", "description": "Loading string from file descriptor via FFI", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests the same logic with file operations and FFI calls. [Similarity] Names do not refer to the same concept (SaveString vs test_save_string_to_fd_004), and domains differ: C uses low-level file I/O and assertions, Rust uses high-level file operations and FFI. [Knowledge Extraction] No full or partial structural match due to domain mismatch and naming inconsistency. However, API mappings can be extracted for file operations and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SaveString__idx5486_rank2.c", "source_rust_file": "API_Mapping__SaveString__idx5486_rank2.rs", "c_api": "SaveStringToFd(fd, content)", "rust_api": "file_ex::ffi::RustSaveStringToFd(fd, &content)", "mapping_type": "function", "description": "Saving string to file descriptor via FFI", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests the same logic with file operations and FFI calls. [Similarity] Names do not refer to the same concept (SaveString vs test_save_string_to_fd_004), and domains differ: C uses low-level file I/O and assertions, Rust uses high-level file operations and FFI. [Knowledge Extraction] No full or partial structural match due to domain mismatch and naming inconsistency. However, API mappings can be extracted for file operations and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SaveString__idx5486_rank2.c", "source_rust_file": "API_Mapping__SaveString__idx5486_rank2.rs", "c_api": "close(fd)", "rust_api": "let _err = remove_test_file(&filename);", "mapping_type": "function", "description": "Closing file descriptor and removing test file", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests the same logic with file operations and FFI calls. [Similarity] Names do not refer to the same concept (SaveString vs test_save_string_to_fd_004), and domains differ: C uses low-level file I/O and assertions, Rust uses high-level file operations and FFI. [Knowledge Extraction] No full or partial structural match due to domain mismatch and naming inconsistency. However, API mappings can be extracted for file operations and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SaveString__idx5486_rank2.c", "source_rust_file": "API_Mapping__SaveString__idx5486_rank2.rs", "c_api": "AssertEqual(loadResult, content, ...)", "rust_api": "assert_eq!(load_result, \"\");", "mapping_type": "function", "description": "Assertion of string equality", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests the same logic with file operations and FFI calls. [Similarity] Names do not refer to the same concept (SaveString vs test_save_string_to_fd_004), and domains differ: C uses low-level file I/O and assertions, Rust uses high-level file operations and FFI. [Knowledge Extraction] No full or partial structural match due to domain mismatch and naming inconsistency. However, API mappings can be extracted for file operations and FFI calls."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SaveString__idx5486_rank2.c", "source_rust_file": "API_Mapping__SaveString__idx5486_rank2.rs", "c_api": "open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)", "rust_api": "File::create(&filename).expect(\"Failed to create file\"); let mut file = File::open(&filename).expect(\"Failed to open file\");", "mapping_type": "function", "description": "File creation and opening with read/write permissions", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests the same logic with file operations and FFI calls. [Similarity] Names do not refer to the same concept (SaveString vs test_save_string_to_fd_004), and domains differ: C uses low-level file I/O and assertions, Rust uses high-level file operations and FFI. [Knowledge Extraction] No full or partial structural match due to domain mismatch and naming inconsistency. However, API mappings can be extracted for file operations and FFI calls."}]
+Unixcoder Score: 0.016571668907999992
+--------------------------------------------------
+C_Code: 
+bool LoadStringFromFd(int fd, string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    const off_t fileLength = lseek(fd, 0, SEEK_END);
+    if (fileLength > MAX_FILE_LENGTH) {
+        UTILS_LOGE("invalid file length(%{public}jd)!", static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    // lseek is not support the linux file node
+    if (fileLength < 0) {
+        return LoadStringFromFdToFile(fd, content);
+    }
+
+    if (fileLength == 0) {
+        return true;
+    }
+
+    content.resize(fileLength);
+    off_t loc = lseek(fd, 0, SEEK_SET);
+    if (loc == -1) {
+        UTILS_LOGE("lseek file to begin failed!");
+        return false;
+    }
+
+    const ssize_t len = read(fd, content.data(), fileLength);
+    if (len != fileLength) {
+        UTILS_LOGE("the length read from file is not equal to fileLength!len:%{public}zd,fileLen:%{public}jd",
+            len, static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_load_string_from_fd_004() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename = FILE_PATH.to_string() + ".010";
+    let content: String = "t".repeat(MAX_FILE_LENGTH);
+    create_test_file(&filename, &content);
+    let file = File::open(&filename).expect("Failed to open file");
+    let fd: RawFd = file.as_raw_fd();
+    assert!(file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, content);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5493_rank2.c", "source_rust_file": "Partial__SaveString__idx5493_rank2.rs", "c_api": "open(filename.c_str(), O_RDONLY)", "rust_api": "file_ex::ffi::RustLoadStringFromFile(&filename, &mut load_result)", "mapping_type": "function", "description": "File read operation", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests save/load functionality with file I/O. [Similarity] Names don't match but logic is semantically aligned: both perform file I/O operations (open, read, write) and validation. [Knowledge Extraction] Found partial structural match in file I/O loop and API mappings for file operations and assertions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5493_rank2.c", "source_rust_file": "Partial__SaveString__idx5493_rank2.rs", "c_api": "open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)", "rust_api": "file_ex::ffi::RustSaveBufferToFile(&filename, &new_content, false)", "mapping_type": "function", "description": "File creation and write operation", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests save/load functionality with file I/O. [Similarity] Names don't match but logic is semantically aligned: both perform file I/O operations (open, read, write) and validation. [Knowledge Extraction] Found partial structural match in file I/O loop and API mappings for file operations and assertions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5493_rank2.c", "source_rust_file": "Partial__SaveString__idx5493_rank2.rs", "c_api": "AssertEqual(ret, true, \"ret did not equal true as expected.\", state)", "rust_api": "assert!(ret)", "mapping_type": "function", "description": "Assertion for success condition", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests save/load functionality with file I/O. [Similarity] Names don't match but logic is semantically aligned: both perform file I/O operations (open, read, write) and validation. [Knowledge Extraction] Found partial structural match in file I/O loop and API mappings for file operations and assertions."}, {"knowledge_type": "Partial", "source_c_file": "Partial__SaveString__idx5493_rank2.c", "source_rust_file": "Partial__SaveString__idx5493_rank2.rs", "c_fragment": "while (state.KeepRunning()) {\n        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);\n        bool ret = SaveStringToFd(fd, content);\n        close(fd);\n        AssertEqual(ret, true, \"ret did not equal true as expected.\", state);", "rust_fragment": "let new_content: Vec<c_char> = vec!['x' as c_char, 'x' as c_char, 't' as c_char, 't' as c_char];\n    let mut ret = file_ex::ffi::RustSaveBufferToFile(&filename, &new_content, false);\n    assert!(ret);", "description": "Both perform file write operations with error checking and assertions.", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests save/load functionality with file I/O. [Similarity] Names don't match but logic is semantically aligned: both perform file I/O operations (open, read, write) and validation. [Knowledge Extraction] Found partial structural match in file I/O loop and API mappings for file operations and assertions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5493_rank2.c", "source_rust_file": "Partial__SaveString__idx5493_rank2.rs", "c_api": "AssertEqual(loadResult, content, \"loadResult did not equal content as expected.\", state)", "rust_api": "assert_eq!(&load_result, &(content + &String::from_utf8_lossy(&new_content)))", "mapping_type": "function", "description": "Assertion for content equality", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests save/load functionality with file I/O. [Similarity] Names don't match but logic is semantically aligned: both perform file I/O operations (open, read, write) and validation. [Knowledge Extraction] Found partial structural match in file I/O loop and API mappings for file operations and assertions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5493_rank2.c", "source_rust_file": "Partial__SaveString__idx5493_rank2.rs", "c_api": "RemoveTestFile(filename)", "rust_api": "remove_test_file(&filename)", "mapping_type": "function", "description": "Cleanup test file", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests save/load functionality with file I/O. [Similarity] Names don't match but logic is semantically aligned: both perform file I/O operations (open, read, write) and validation. [Knowledge Extraction] Found partial structural match in file I/O loop and API mappings for file operations and assertions."}, {"knowledge_type": "Partial", "source_c_file": "Partial__SaveString__idx5493_rank2.c", "source_rust_file": "Partial__SaveString__idx5493_rank2.rs", "c_fragment": "string loadResult;\n        fd = open(filename.c_str(), O_RDONLY);\n        ret = LoadStringFromFd(fd, loadResult);\n        close(fd);\n        RemoveTestFile(filename);\n        AssertEqual(ret, true, \"ret did not equal true as expected.\", state);\n        AssertEqual(loadResult, content, \"loadResult did not equal content as expected.\", state);", "rust_fragment": "let mut load_result = String::new();\n    ret = file_ex::ffi::RustLoadStringFromFile(&filename, &mut load_result);\n    let _err = remove_test_file(&filename);\n    assert!(ret);\n    assert_eq!(&load_result, &(content + &String::from_utf8_lossy(&new_content)));", "description": "Both perform file read operations with error checking and assertions.", "reasoning": "[Task Analysis] C function saves and loads string content in a benchmark loop; Rust function tests save/load functionality with file I/O. [Similarity] Names don't match but logic is semantically aligned: both perform file I/O operations (open, read, write) and validation. [Knowledge Extraction] Found partial structural match in file I/O loop and API mappings for file operations and assertions."}]
+Unixcoder Score: -0.006373636890202761
+--------------------------------------------------
+C_Code: 
+bool LoadStringFromFd(int fd, string& content)
+{
+    if (fd <= 0) {
+        UTILS_LOGD("invalid fd:%{public}d", fd);
+        return false;
+    }
+
+    const off_t fileLength = lseek(fd, 0, SEEK_END);
+    if (fileLength > MAX_FILE_LENGTH) {
+        UTILS_LOGE("invalid file length(%{public}jd)!", static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    // lseek is not support the linux file node
+    if (fileLength < 0) {
+        return LoadStringFromFdToFile(fd, content);
+    }
+
+    if (fileLength == 0) {
+        return true;
+    }
+
+    content.resize(fileLength);
+    off_t loc = lseek(fd, 0, SEEK_SET);
+    if (loc == -1) {
+        UTILS_LOGE("lseek file to begin failed!");
+        return false;
+    }
+
+    const ssize_t len = read(fd, content.data(), fileLength);
+    if (len != fileLength) {
+        UTILS_LOGE("the length read from file is not equal to fileLength!len:%{public}zd,fileLen:%{public}jd",
+            len, static_cast<intmax_t>(fileLength));
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_load_string_from_fd_002() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename =FILE_PATH.to_string() + ".008";
+    let content = NULL_STR.to_string();
+    create_test_file(&filename, &content);
+    let file = File::open(&filename).expect("Failed to open file");
+    let fd: RawFd = file.as_raw_fd();
+    assert!(file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, content);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5469_rank3.c", "source_rust_file": "Partial__SaveString__idx5469_rank3.rs", "c_api": "open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)", "rust_api": "create_test_file(&filename, &content)", "mapping_type": "function", "description": "File creation and opening for writing", "reasoning": "[Task Analysis] C function saves and loads a string to/from a file in a benchmark loop; Rust function tests loading a string from file with assertions. [Similarity] Names don't refer to same concept (SaveString vs test_load_string_from_file_004), and domains differ (benchmarking vs testing). [Knowledge Extraction] No full match due to domain mismatch and name mismatch. Partial match found in file I/O logic. API mappings identified for file operations and assertions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5469_rank3.c", "source_rust_file": "Partial__SaveString__idx5469_rank3.rs", "c_api": "AssertEqual(loadResult, content, \"loadResult did not equal content as expected.\", state)", "rust_api": "assert_eq!(str, content)", "mapping_type": "function", "description": "Assertion that loaded content matches expected content", "reasoning": "[Task Analysis] C function saves and loads a string to/from a file in a benchmark loop; Rust function tests loading a string from file with assertions. [Similarity] Names don't refer to same concept (SaveString vs test_load_string_from_file_004), and domains differ (benchmarking vs testing). [Knowledge Extraction] No full match due to domain mismatch and name mismatch. Partial match found in file I/O logic. API mappings identified for file operations and assertions."}, {"knowledge_type": "Partial", "source_c_file": "Partial__SaveString__idx5469_rank3.c", "source_rust_file": "Partial__SaveString__idx5469_rank3.rs", "c_fragment": "while (state.KeepRunning()) {\n        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);\n        bool ret = SaveStringToFd(fd, content);\n        close(fd);\n        AssertEqual(ret, true, \"ret did not equal true as expected.\", state);", "rust_fragment": "let _guard = TEST_MUTEX.lock().unwrap();\n    let mut str = String::new();\n    let filename = FILE_PATH.to_string() + \".004\";\n    let content = CONTENT_STR.to_string();\n    create_test_file(&filename, &content);\n    assert!(file_ex::ffi::RustLoadStringFromFile(&filename, &mut str));", "description": "Both perform file creation and string saving/loading operations, though in different contexts (benchmark vs test).", "reasoning": "[Task Analysis] C function saves and loads a string to/from a file in a benchmark loop; Rust function tests loading a string from file with assertions. [Similarity] Names don't refer to same concept (SaveString vs test_load_string_from_file_004), and domains differ (benchmarking vs testing). [Knowledge Extraction] No full match due to domain mismatch and name mismatch. Partial match found in file I/O logic. API mappings identified for file operations and assertions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5469_rank3.c", "source_rust_file": "Partial__SaveString__idx5469_rank3.rs", "c_api": "AssertEqual(ret, true, \"ret did not equal true as expected.\", state)", "rust_api": "assert!(file_ex::ffi::RustLoadStringFromFile(&filename, &mut str))", "mapping_type": "function", "description": "Assertion that operation succeeded", "reasoning": "[Task Analysis] C function saves and loads a string to/from a file in a benchmark loop; Rust function tests loading a string from file with assertions. [Similarity] Names don't refer to same concept (SaveString vs test_load_string_from_file_004), and domains differ (benchmarking vs testing). [Knowledge Extraction] No full match due to domain mismatch and name mismatch. Partial match found in file I/O logic. API mappings identified for file operations and assertions."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__SaveString__idx5469_rank3.c", "source_rust_file": "Partial__SaveString__idx5469_rank3.rs", "c_api": "SaveStringToFd(fd, content)", "rust_api": "file_ex::ffi::RustLoadStringFromFile(&filename, &mut str)", "mapping_type": "function", "description": "Saving string to file descriptor (C) vs loading from file (Rust)", "reasoning": "[Task Analysis] C function saves and loads a string to/from a file in a benchmark loop; Rust function tests loading a string from file with assertions. [Similarity] Names don't refer to same concept (SaveString vs test_load_string_from_file_004), and domains differ (benchmarking vs testing). [Knowledge Extraction] No full match due to domain mismatch and name mismatch. Partial match found in file I/O logic. API mappings identified for file operations and assertions."}]
+Unixcoder Score: -0.010358650237321854
+--------------------------------------------------
+C_Code: 
+void SaveString(string& filename, string& content, benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        bool ret = SaveStringToFd(fd, content);
+        close(fd);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+
+        string loadResult;
+        fd = open(filename.c_str(), O_RDONLY);
+        ret = LoadStringFromFd(fd, loadResult);
+        close(fd);
+        RemoveTestFile(filename);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+        AssertEqual(loadResult, content, "loadResult did not equal content as expected.", state);
+    }
+}
+Function: 
+fn test_save_buffer_to_file_001() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let filename = FILE_PATH.to_string()  + ".026";
+    let content = "ttxx".to_string();
+    create_test_file(&filename, &content);
+    let buff: Vec<c_char> = Vec::new();
+    let ret = file_ex::ffi::RustSaveBufferToFile(&filename, &buff, false);
+    assert!(ret);
+
+    let mut load_result = String::new();
+    let ret = file_ex::ffi::RustLoadStringFromFile(&filename, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, content);
+}
+Unixcoder Score: -0.014711904339492321
+--------------------------------------------------
+C_Code: 
+bool SaveStringToFile(const std::string& filePath, const std::string& content, bool truncated /*= true*/)
+{
+    if (content.empty()) {
+        UTILS_LOGI("content is empty, no need to save!");
+        return true;
+    }
+
+    ofstream file;
+    if (truncated) {
+        file.open(filePath.c_str(), ios::out | ios::trunc);
+    } else {
+        file.open(filePath.c_str(), ios::out | ios::app);
+    }
+
+    if (!file.is_open()) {
+        UTILS_LOGD("open file failed! filePath:%{private}s", filePath.c_str());
+        return false;
+    }
+
+    file.write(content.c_str(), content.length());
+    if (file.fail()) {
+        UTILS_LOGE("write content to file failed!file:%{private}s, content:%{private}s",
+            filePath.c_str(), content.c_str());
+        return false;
+    }
+    return true;
+}
+Function: 
+fn test_save_string_to_file_003() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let path = FILE_PATH.to_string() + ".015";
+    let content = "Before truncated!".to_string();
+    create_test_file(&path, &content);
+
+    let new_content = NULL_STR.to_string();
+    assert!(file_ex::ffi::RustSaveStringToFile(&path, &new_content, true));
+
+    let mut load_result = String::new();
+    let ret = file_ex::ffi::RustLoadStringFromFile(&path, &mut load_result);
+    let _err = remove_test_file(&path);
+    assert!(ret);
+    assert_eq!(load_result, content);
+}
+Unixcoder Score: -0.017492355778813362
+--------------------------------------------------
+C_Code: 
+void SaveString(string& filename, string& content, benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        bool ret = SaveStringToFd(fd, content);
+        close(fd);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+
+        string loadResult;
+        fd = open(filename.c_str(), O_RDONLY);
+        ret = LoadStringFromFd(fd, loadResult);
+        close(fd);
+        RemoveTestFile(filename);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+        AssertEqual(loadResult, content, "loadResult did not equal content as expected.", state);
+    }
+}
+Function: 
+fn test_save_string_to_fd_004() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let content = CONTENT_STR.to_string();
+    let filename = FILE_PATH.to_string() + ".021";
+    File::create(&filename).expect("Failed to create file");
+    let mut file = File::open(&filename).expect("Failed to open file");
+    let mut fd: RawFd = file.as_raw_fd();
+    let mut ret = file_ex::ffi::RustSaveStringToFd(fd, &content);
+    assert!(!ret);
+
+    let mut load_result = String::new();
+    file = File::open(&filename).expect("Failed to open file");
+    fd = file.as_raw_fd();
+    ret = file_ex::ffi::RustLoadStringFromFd(fd, &mut load_result);
+    let _err = remove_test_file(&filename);
+    assert!(ret);
+    assert_eq!(load_result, "");
+}
+Unixcoder Score: -0.02523326501250267
+--------------------------------------------------
+C_Code: 
+void SaveString(string& filename, string& content, benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        bool ret = SaveStringToFd(fd, content);
+        close(fd);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+
+        string loadResult;
+        fd = open(filename.c_str(), O_RDONLY);
+        ret = LoadStringFromFd(fd, loadResult);
+        close(fd);
+        RemoveTestFile(filename);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+        AssertEqual(loadResult, content, "loadResult did not equal content as expected.", state);
+    }
+}
+Function: 
+fn test_load_string_from_fd_006() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut result = String::new();
+    let filename = FILE_PATH.to_string() + ".012";
+    let content = CONTENT_STR.to_string();
+    create_test_file(&filename, &content);
+    let fd: i32;
+    {
+        let file = File::open(&filename).expect("Failed to open file");
+        fd = file.as_raw_fd();
+    }
+    assert!(!file_ex::ffi::RustLoadStringFromFd(fd, &mut result));
+    let _err = remove_test_file(&filename);
+    assert_eq!(result, "");
+}
+Unixcoder Score: -0.028352150693535805
+--------------------------------------------------
+C_Code: 
+void SaveString(string& filename, string& content, benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        bool ret = SaveStringToFd(fd, content);
+        close(fd);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+
+        string loadResult;
+        fd = open(filename.c_str(), O_RDONLY);
+        ret = LoadStringFromFd(fd, loadResult);
+        close(fd);
+        RemoveTestFile(filename);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+        AssertEqual(loadResult, content, "loadResult did not equal content as expected.", state);
+    }
+}
+Function: 
+fn test_save_string_to_file_005() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let path = FILE_PATH.to_string()+ ".017";
+    let content = "Before truncated!".to_string();
+    create_test_file(&path, &content);
+
+    let new_content = CONTENT_STR.to_string();
+    assert!(file_ex::ffi::RustSaveStringToFile(&path, &new_content, false));
+
+    let mut load_result = String::new();
+    let ret = file_ex::ffi::RustLoadStringFromFile(&path, &mut load_result);
+    let _err = remove_test_file(&path);
+    assert!(ret);
+    assert_eq!(load_result, content + &new_content);
+}
+Unixcoder Score: -0.029612531885504723
+--------------------------------------------------
+C_Code: 
+void SaveString(string& filename, string& content, benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        bool ret = SaveStringToFd(fd, content);
+        close(fd);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+
+        string loadResult;
+        fd = open(filename.c_str(), O_RDONLY);
+        ret = LoadStringFromFd(fd, loadResult);
+        close(fd);
+        RemoveTestFile(filename);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+        AssertEqual(loadResult, content, "loadResult did not equal content as expected.", state);
+    }
+}
+Function: 
+fn test_load_string_from_file_005() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut str = String::new();
+    let filename = FILE_PATH.to_string() + ".005";
+    let content: String = "t".repeat(MAX_FILE_LENGTH);
+    create_test_file(&filename, &content);
+    assert!(file_ex::ffi::RustLoadStringFromFile(&filename, &mut str));
+    let _err = remove_test_file(&filename);
+    assert_eq!(str, content);
+}
+Unixcoder Score: -0.03043653629720211
+--------------------------------------------------
+C_Code: 
+void SaveString(string& filename, string& content, benchmark::State& state)
+{
+    while (state.KeepRunning()) {
+        int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        bool ret = SaveStringToFd(fd, content);
+        close(fd);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+
+        string loadResult;
+        fd = open(filename.c_str(), O_RDONLY);
+        ret = LoadStringFromFd(fd, loadResult);
+        close(fd);
+        RemoveTestFile(filename);
+        AssertEqual(ret, true, "ret did not equal true as expected.", state);
+        AssertEqual(loadResult, content, "loadResult did not equal content as expected.", state);
+    }
+}
+Function: 
+fn test_load_string_from_file_005() {
+    let _guard = TEST_MUTEX.lock().unwrap();
+    let mut str = String::new();
+    let filename = FILE_PATH.to_string() + ".005";
+    let content: String = "t".repeat(MAX_FILE_LENGTH);
+    create_test_file(&filename, &content);
+    assert!(file_ex::ffi::RustLoadStringFromFile(&filename, &mut str));
+    let _err = remove_test_file(&filename);
+    assert_eq!(str, content);
+}
+Unixcoder Score: -0.03296830505132675
+--------------------------------------------------

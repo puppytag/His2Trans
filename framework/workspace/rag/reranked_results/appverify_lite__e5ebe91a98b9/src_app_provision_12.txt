@@ -1,0 +1,233 @@
+C_Code: 
+void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override {}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: 0.01934468187391758
+--------------------------------------------------
+C_Code: 
+void MockSaStatusChange::OnAddSystemAbility(int32_t systemAbilityId, [[maybe_unused]] const std::string& deviceId)
+    {
+        cout << "OnAddSystemAbility said : " << systemAbilityId << endl;
+    }
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: 0.011142373085021973
+--------------------------------------------------
+C_Code: 
+bool RpcCallbackImp::LoadSystemAbilityFromRemote(const std::string& srcNetworkId, int32_t systemAbilityId)
+{
+    HILOGI("LoadSystemAbilityFromRemote! deviceId : %{public}s, said : %{public}d",
+        AnonymizeDeviceId(srcNetworkId).c_str(), systemAbilityId);
+    sptr<LoadCallbackImp> loadCallback = new LoadCallbackImp(srcNetworkId);
+    return SystemAbilityManager::GetInstance()->LoadSystemAbilityFromRpc(srcNetworkId,
+        systemAbilityId, loadCallback);
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        info!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.009396056644618511
+--------------------------------------------------
+C_Code: 
+void TestAudioAbility::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HiLog::Info(label_, "OnRemoveSystemAbility systemAbilityId:%{public}d removed!", systemAbilityId);
+}
+Function: 
+fn on_system_ability_remove_event(&self, said: i32, device_id: String) {
+        if said == TEST_LISTEN_ID {
+            self.watch.lock().unwrap().on_remove = true;
+        }
+    }
+Unixcoder Score: 0.006708043161779642
+--------------------------------------------------
+C_Code: 
+void SetAccessTokenPermission()
+{
+    auto permissions = std::vector<std::string>();
+    permissions.push_back("ohos.permission.INTERNET");
+    permissions.push_back("ohos.permission.GET_NETWORK_INFO");
+
+    auto processName = std::string("preload_info");
+    auto perms = std::make_unique<const char *[]>(permissions.size());
+    for (size_t i = 0; i < permissions.size(); i++) {
+        perms[i] = permissions[i].c_str();
+    }
+
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = permissions.size(),
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms.get(),
+        .acls = nullptr,
+        .processName = processName.c_str(),
+        .aplStr = "system_core",
+    };
+    auto tokenId = GetAccessTokenId(&infoInstance);
+    if (tokenId == 0) {
+        REQUEST_HILOGI("GetAccessTokenId failed.");
+        return;
+    }
+    int ret = SetSelfTokenID(tokenId);
+    if (ret != 0) {
+        REQUEST_HILOGI("SetSelfTokenID failed, code is %{public}d.", ret);
+        return;
+    }
+    ret = OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    if (ret < 0) {
+        REQUEST_HILOGI("ReloadNativeTokenInfo failed, code is %{public}d.", ret);
+        return;
+    }
+}
+Function: 
+pub(crate) fn test_init() {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| {
+            unsafe { SYSTEM_CONFIG_MANAGER.write(SystemConfigManager::init()) };
+        });
+
+        let _ = std::fs::create_dir("test_files/");
+
+        unsafe { SetAccessTokenPermission() };
+    }
+Unixcoder Score: 0.0036634451244026423
+--------------------------------------------------
+C_Code: 
+void MockSaStatusChange::OnRemoveSystemAbility(int32_t systemAbilityId,
+        [[maybe_unused]] const std::string& deviceId)
+    {
+        cout << "OnRemoveSystemAbility said : " << systemAbilityId << endl;
+    }
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: 0.002214464358985424
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::LoadRemoteSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t systemAbilityId = -1;
+    bool ret = false;
+    std::string deviceId = "";
+    sptr<IRemoteObject> remoteObject = nullptr;
+    sptr<ISystemAbilityLoadCallback> callback = nullptr;
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_readData");
+        ret = data.ReadInt32(systemAbilityId);
+        if (!ret) {
+            HILOGW("LoadRemoteSystemAbilityInner read SAId invalid");
+            return ERR_INVALID_VALUE;
+        }
+        int32_t checkRet = LoadRemoteSACheck(systemAbilityId);
+        if (checkRet != ERR_OK) {
+            return checkRet;
+        }
+        deviceId = data.ReadString();
+        if (deviceId.empty()) {
+            HILOGW("LoadRemoteSystemAbilityInner read deviceId failed");
+            return ERR_INVALID_VALUE;
+        }
+        remoteObject = data.ReadRemoteObject();
+        if (remoteObject == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner read callback failed!");
+            return ERR_INVALID_VALUE;
+        }
+        callback = iface_cast<ISystemAbilityLoadCallback>(remoteObject);
+        if (callback == nullptr) {
+            HILOGW("LoadRemoteSystemAbilityInner iface_cast failed!");
+            return ERR_INVALID_VALUE;
+        }
+    }
+
+    int32_t result = LoadSystemAbility(systemAbilityId, deviceId, callback);
+    HILOGD("LoadRemoteSystemAbilityInner result is %{public}d", result);
+    {
+        SamgrXCollie samgrXCollie("samgrStub--loadRmtSa_writeResult_" + ToString(systemAbilityId));
+        ret = reply.WriteInt32(result);
+    }
+    if (!ret) {
+        HILOGW("LoadRemoteSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+    return result;
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        debug!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: 0.0015251559671014547
+--------------------------------------------------
+C_Code: 
+void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override {}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: -0.0003941588511224836
+--------------------------------------------------
+C_Code: 
+void CesStateListener::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HILOGI("DeviceSwitchCollect OnRemoveSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Unixcoder Score: -0.006642898079007864
+--------------------------------------------------
+C_Code: 
+void DeviceStatusCollectManager::SaveCacheCommonEventSaExtraId(const OnDemandEvent& event,
+    const std::list<SaControlInfo>& saControlList)
+{
+    HILOGD("DeviceStaMgr SaveCacheCommonEventSaExtraId begin");
+    if (IsExistInPluginMap(COMMON_EVENT) != ERR_OK) {
+        HILOGE("CommonEventCollect is nullptr");
+        return;
+    }
+    collectPluginMap_[COMMON_EVENT]->SaveCacheCommonEventSaExtraId(event, saControlList);
+    return;
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Unixcoder Score: -0.009601392783224583
+--------------------------------------------------

@@ -1,0 +1,356 @@
+C_Code: 
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider dataProvider(data, size);
+    OHOS::AshmemTestFunc(&dataProvider);
+    return 0;
+}
+Function: 
+fn test_ashmem_ffi_write_read_003()
+{
+    let c_name = CString::new(MEMORY_NAME).expect("CString::new Failed!");
+    let ashmem = unsafe { ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE) };
+    assert!(!ashmem.is_null());
+
+    assert!(ashmem.MapReadAndWriteAshmem());
+
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    let c_content_ptr: *const ashmem::ffi::c_void = unsafe { ashmem::ffi::AsVoidPtr(c_content.as_ptr()) };
+
+    unsafe {
+        assert!(ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    ashmem.UnmapAshmem();
+    assert!(ashmem.MapReadOnlyAshmem());
+
+    unsafe {
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."),
+                MEMORY_NAME.len().try_into().expect("Invalid content size.")));
+    }
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem::ffi::AsCharPtr(ashmem.ReadFromAshmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+    assert!(!readout_ptr.is_null());
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+
+    assert_eq!(readout_str, MEMORY_CONTENT);
+
+    ashmem.UnmapAshmem();
+    ashmem.CloseAshmem();
+}
+Unixcoder Score: 0.11339197307825089
+--------------------------------------------------
+C_Code: 
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider dataProvider(data, size);
+    OHOS::AshmemTestFunc(&dataProvider);
+    return 0;
+}
+Function: 
+fn test_ashmem_ffi_write_read_001()
+{
+    let c_name = CString::new(MEMORY_NAME).expect("CString::new Failed!");
+    let ashmem = unsafe { ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE) };
+    assert!(!ashmem.is_null());
+    assert_eq!(ashmem.GetAshmemSize(), MEMORY_SIZE);
+
+    assert!(ashmem.MapAshmem(ashmem::PROT_READ | ashmem::PROT_WRITE));
+
+    ashmem.UnmapAshmem();
+    ashmem.CloseAshmem();
+}
+Unixcoder Score: 0.09563597291707993
+--------------------------------------------------
+C_Code: 
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider dataProvider(data, size);
+    OHOS::AshmemTestFunc(&dataProvider);
+    return 0;
+}
+Function: 
+fn test_ashmem_write_read_004()
+{
+    let ashmem = unsafe { ashmem::create_ashmem_instance(MEMORY_NAME, MEMORY_SIZE) };
+    assert!(ashmem.is_some());
+
+    let ashmem = ashmem.unwrap();
+    assert!(ashmem.map_read_write_ashmem());
+
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    unsafe {
+        assert!(ashmem.write_to_ashmem(c_content.as_ptr(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+    }
+
+    ashmem.unmap_ashmem();
+    assert!(ashmem.set_protection(ashmem::PROT_READ));
+    assert!(!ashmem.map_read_write_ashmem());
+    assert!(ashmem.map_read_only_ashmem());
+
+    let readout_ptr: *const c_char;
+    unsafe {
+        readout_ptr = ashmem.read_from_ashmem(MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0);
+        assert!(!readout_ptr.is_null());
+    }
+
+    // readout_ptr requires a valid nul terminator at the end of the string.
+    let readout_c_str: &CStr = unsafe { CStr::from_ptr(readout_ptr) };
+    let readout_str: &str = readout_c_str.to_str().expect("Bad encoding.");
+    assert_eq!(readout_str, MEMORY_CONTENT);
+
+    ashmem.unmap_ashmem();
+    ashmem.close_ashmem();
+}
+Unixcoder Score: 0.08281268924474716
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::OnRemoteRequest(uint32_t code,
+    MessageParcel& data, MessageParcel& reply, MessageOption &option)
+{
+    HILOGD("SAMStub::OnReceived, code = %{public}u, callerPid = %{public}d",
+        code, IPCSkeleton::GetCallingPid());
+    Samgr::MemoryGuard cacheGuard;
+    if (!EnforceInterceToken(data)) {
+        HILOGE("SAMStub::OnReceived, code = %{public}u, check interfaceToken failed", code);
+        return ERR_PERMISSION_DENIED;
+    }
+    auto itFunc = memberFuncMap_.find(code);
+    if (itFunc != memberFuncMap_.end()) {
+        return itFunc->second(this, data, reply);
+    }
+    HILOGW("SAMStub: default case, need check.");
+    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+}
+Function: 
+fn on_remote_request(
+        &mut self,
+        code: u32,
+        data: Pin<&mut MessageParcel>,
+        reply: Pin<&mut MessageParcel>,
+    ) -> i32 {
+        self.remote.on_remote_request(code, data, reply)
+    }
+Unixcoder Score: 0.029273349791765213
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+fn test_ashmem_ffi_invalid_006()
+{
+    let c_name = CString::new(MEMORY_NAME).expect("CString::new Failed!");
+    let ashmem = unsafe { ashmem::ffi::CreateAshmemStd(c_name.as_ptr(), MEMORY_SIZE) };
+    assert!(!ashmem.is_null());
+
+    assert!(ashmem.MapReadAndWriteAshmem());
+    let c_content = CString::new(MEMORY_CONTENT).expect("CString::new Failed!");
+    let c_content_ptr: *const ashmem::ffi::c_void = unsafe { ashmem::ffi::AsVoidPtr(c_content.as_ptr()) };
+    unsafe {
+        assert!(!ashmem.WriteToAshmem(ptr::null(), MEMORY_CONTENT.len().try_into().expect("Invalid content size."), 0));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), MEMORY_SIZE));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), MEMORY_SIZE + 1));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_CONTENT.len().try_into().expect("Invalid content size."), -1));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, MEMORY_SIZE + 1, 0));
+        assert!(!ashmem.WriteToAshmem(c_content_ptr, -1, 0));
+    }
+
+    ashmem.UnmapAshmem();
+    ashmem.CloseAshmem();
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_fragment": "if (iterator == nullptr) {\n        HILOGE(\"Failed to read lines of the file, error: %{public}d\", errno);\n        NError(errno).ThrowErr(env);\n        return nullptr;\n    }", "rust_fragment": "if iter.is_null() {\n        return Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"));\n    }", "description": "Null pointer check and error reporting for invalid input", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_api": "ReaderIterator(path.get())", "rust_api": "BufReader<File>", "mapping_type": "function", "description": "File reading iterator initialization", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_fragment": "auto iterator = ::ReaderIterator(path.get());\n    if (iterator == nullptr) {\n        HILOGE(\"Failed to read lines of the file, error: %{public}d\", errno);\n        NError(errno).ThrowErr(env);\n        return nullptr;\n    }", "rust_fragment": "let reader = &mut *(iter as *mut BufReader<File>);", "description": "File reader initialization and setup", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_api": "NError(errno).ThrowErr(env)", "rust_api": "Err(Error::new(ErrorKind::InvalidInput, \"Invalid input\"))", "mapping_type": "function", "description": "Error throwing/propagation", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Sync__idx7659_rank2.c", "source_rust_file": "Partial__Sync__idx7659_rank2.rs", "c_api": "read_line(&mut line)", "rust_api": "reader.read_line(&mut line)", "mapping_type": "method", "description": "Reading a line from file buffer", "reasoning": "[Task Analysis] C function `ReadLines::Sync` is a N-API wrapper for reading lines from a file, while Rust function `next_line` is a low-level iterator-based line reader. [Similarity] Names do not match (`ReadLines::Sync` vs `next_line`), but both perform file line reading logic. [Knowledge Extraction] Found partial structural match in file reading loop logic and error handling patterns, and API mapping for file reading operation."}]
+Unixcoder Score: 0.021189657971262932
+--------------------------------------------------
+C_Code: 
+int32_t UrlPolicy::CheckUrlDomain(std::string app_id, std::string domain_type, std::string url)
+{
+    int32_t res = -1;
+    if (!this->isInit || !this->libHandle) {
+        REQUEST_HILOGE("Policy so handle is not init");
+        return res;
+    }
+    if (!this->checkUrlFunc) {
+        REQUEST_HILOGE("Policy checkUrlFunc is nullptr");
+        return res;
+    }
+    res = this->checkUrlFunc(app_id, domain_type, url);
+    return res;
+}
+Function: 
+fn intercept_redirect_request(&self, request: &Request) -> Result<(), HttpClientError> {
+        let url = &request.uri().to_string();
+        info!(
+            "ApiPolicy Domain check redirect, bundle {}, domain_type {}, url {}",
+            &self.app_id, &self.domain_type, &url
+        );
+        match check_url_domain(&self.app_id, &self.domain_type, url).unwrap_or(true) {
+            true => Ok(()),
+            false => Err(HttpClientError::other(
+                "Intercept redirect request by domain check",
+            )),
+        }
+    }
+Unixcoder Score: 0.011927742511034012
+--------------------------------------------------
+C_Code: 
+bool CParcelWriteString(CParcel *parcel, const char *stringData, int32_t length)
+{
+    if (!IsValidParcel(parcel, __func__)) {
+        return false;
+    }
+    if (stringData == nullptr) {
+        if (length != -1) {
+            ZLOGE(LOG_LABEL, "%{public}s: stringData is null, len: %d\n", __func__, length);
+            return false;
+        }
+        std::string value;
+        return parcel->parcel_->WriteString(value);
+    }
+    if (length < 0) {
+        ZLOGE(LOG_LABEL, "%{public}s: stringData len is invalid: %d\n", __func__, length);
+        return false;
+    }
+    std::string value(stringData, length);
+    return parcel->parcel_->WriteString(value);
+}
+Function: 
+pub(crate) fn write_process<T>(
+        &mut self,
+        value: T,
+        f: fn(parcel: Pin<&mut MessageParcel>, value: T) -> bool,
+    ) -> IpcResult<()> {
+        match mem::replace(&mut self.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = f(p.pin_mut(), value);
+                self.inner = ParcelMem::Unique(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Borrow(p) => {
+                let w = unsafe { Pin::new_unchecked(&mut *p) };
+                let res = f(w, value);
+                self.inner = ParcelMem::Borrow(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Null => IpcResult::Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: 0.004288850352168083
+--------------------------------------------------
+C_Code: 
+bool CParcelWriteString(CParcel *parcel, const char *stringData, int32_t length)
+{
+    if (!IsValidParcel(parcel, __func__)) {
+        return false;
+    }
+    if (stringData == nullptr) {
+        if (length != -1) {
+            ZLOGE(LOG_LABEL, "%{public}s: stringData is null, len: %d\n", __func__, length);
+            return false;
+        }
+        std::string value;
+        return parcel->parcel_->WriteString(value);
+    }
+    if (length < 0) {
+        ZLOGE(LOG_LABEL, "%{public}s: stringData len is invalid: %d\n", __func__, length);
+        return false;
+    }
+    std::string value(stringData, length);
+    return parcel->parcel_->WriteString(value);
+}
+Function: 
+pub fn write_string16(&mut self, s: &str) -> IpcResult<()> {
+        match WriteString16(self.as_parcel_mut(), s) {
+            true => Ok(()),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.0012013844680041075
+--------------------------------------------------
+C_Code: 
+bool Ashmem::WriteToAshmem(const void *data, int32_t size, int32_t offset)
+#endif
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    if (!CheckValid(size, offset, PROT_WRITE)) {
+        UTILS_LOGE("%{public}s: invalid input or not map", __func__);
+        return false;
+    }
+
+    auto tmpData = reinterpret_cast<char *>(startAddr_);
+    int ret = memcpy_s(tmpData + offset, memorySize_ - offset, reinterpret_cast<const char *>(data), size);
+    if (ret != EOK) {
+        UTILS_LOGE("%{public}s: Failed to memcpy, ret = %{public}d", __func__, ret);
+        return false;
+    }
+
+    return true;
+}
+Function: 
+pub unsafe fn write_to_ashmem(&self, data: *const c_char, size: i32, offset: i32) -> bool {
+        let c_void_ptr = ffi::AsVoidPtr(data);
+        self.c_ashmem.WriteToAshmem(c_void_ptr, size, offset)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "file.seek(...)", "rust_api": "file.seek(...)", "mapping_type": "method", "description": "File position seeking", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "NError(...).ThrowErr(env)", "rust_api": "Err(Error)", "mapping_type": "function", "description": "Error throwing/propagation", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "File::from_raw_fd(fd as RawFd)", "rust_api": "unsafe { File::from_raw_fd(fd as RawFd) }", "mapping_type": "function", "description": "Raw file descriptor to File conversion", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "mem::forget(file)", "rust_api": "mem::forget(file)", "mapping_type": "function", "description": "Prevent resource cleanup (memory management)", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Sync__idx7660_rank5.c", "source_rust_file": "API_Mapping__Sync__idx7660_rank5.rs", "c_api": "HILOGE(...)", "rust_api": "log::error! or similar logging macro", "mapping_type": "function", "description": "Error logging", "reasoning": "[Task Analysis] C function is a N-API callback for reading lines from a file; Rust function is a low-level file seeking operation. [Similarity] Names refer to different concepts (ReadLines::Sync vs seek), and domains are different (file reading vs file positioning). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to file operations and error handling patterns."}]
+Unixcoder Score: -0.006925462279468775
+--------------------------------------------------
+C_Code: 
+int32_t UrlPolicy::CheckUrlDomain(std::string app_id, std::string domain_type, std::string url)
+{
+    int32_t res = -1;
+    if (!this->isInit || !this->libHandle) {
+        REQUEST_HILOGE("Policy so handle is not init");
+        return res;
+    }
+    if (!this->checkUrlFunc) {
+        REQUEST_HILOGE("Policy checkUrlFunc is nullptr");
+        return res;
+    }
+    res = this->checkUrlFunc(app_id, domain_type, url);
+    return res;
+}
+Function: 
+pub(crate) fn check_url_domain(app_id: &str, domain_type: &str, url: &str) -> Option<bool> {
+    match unsafe { PolicyCheckUrlDomain(app_id.into(), domain_type.into(), url.into()) } {
+        0 => Some(true),
+        1 => Some(false),
+        _ => None,
+    }
+}
+Unixcoder Score: -0.007440194953233004
+--------------------------------------------------

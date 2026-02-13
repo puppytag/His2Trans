@@ -1,0 +1,27 @@
+{
+  "project": "osal__0bc4f21396ad",
+  "func_key": "src_osal_sysevent_6",
+  "function_name": "HdfSysEventNotifyRegister",
+  "source_c_file": "src/osal_sysevent.c",
+  "c_code": "int32_t HdfSysEventNotifyRegister(struct HdfSysEventNotifyNode * notifierNode, uint64_t classSet)\n{\n    if (notifierNode == NULL) {\n        return HDF_ERR_INVALID_PARAM;\n    }\n\n    struct HdfSysEventNotifier *notifier = HdfSysEventNotifierGetInstance();\n\n    if (notifier == NULL) {\n        return HDF_DEV_ERR_NO_MEMORY;\n    }\n\n    OsalMutexLock(&notifier->mutex);\n    DListInsertTail(&notifierNode->listNode, &notifier->notifyNodeList);\n    notifierNode->classFilter = classSet;\n    int32_t ret = InitKeventIoServiceListenerLocked(notifier);\n    if (ret != HDF_SUCCESS) {\n        DListRemove(&notifierNode->listNode);\n    }\n    OsalMutexUnlock(&notifier->mutex);\n\n    return ret;\n}",
+  "rust_signature": "pub extern \"C\" fn HdfSysEventNotifyRegister(notifierNode: *mut HdfSysEventNotifyNode, classSet: u64) -> i32",
+  "rust_code": "pub extern \\\"C\\\" fn HdfSysEventNotifyRegister(notifierNode: *mut HdfSysEventNotifyNode, classSet: u64) -> i32 {\n    const HDF_SUCCESS: i32 = 0;\n    const HDF_ERR_INVALID_PARAM: i32 = -3;\n    const HDF_DEV_ERR_NO_MEMORY: i32 = -201;\n\n    unsafe fn dlist_insert_tail(node: *mut DListHead, head: *mut DListHead) {\n        (*node).prev = (*head).prev;\n        (*node).next = head;\n        (*(*head).prev).next = node;\n        (*head).prev = node;\n    }\n\n    unsafe fn dlist_remove(node: *mut DListHead) {\n        (*(*node).prev).next = (*node).next;\n        (*(*node).next).prev = (*node).prev;\n        (*node).next = node;\n        (*node).prev = node;\n    }\n\n    if notifierNode.is_null() {\n        return HDF_ERR_INVALID_PARAM;\n    }\n    let notifier = HdfSysEventNotifierGetInstance();\n    if notifier.is_null() {\n        return HDF_DEV_ERR_NO_MEMORY;\n    }\n    unsafe {\n        let _ = OsalMutexLock(core::ptr::addr_of_mut!((*notifier).mutex));\n        dlist_insert_tail(core::ptr::addr_of_mut!((*notifierNode).listNode), core::ptr::addr_of_mut!((*notifier).notifyNodeList));\n        (*notifierNode).classFilter = classSet;\n        let ret = InitKeventIoServiceListenerLocked(notifier);\n        if ret != HDF_SUCCESS {\n            dlist_remove(core::ptr::addr_of_mut!((*notifierNode).listNode));\n        }\n        let _ = OsalMutexUnlock(core::ptr::addr_of_mut!((*notifier).mutex));\n        ret\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

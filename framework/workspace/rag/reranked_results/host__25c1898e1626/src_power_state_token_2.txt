@@ -1,0 +1,324 @@
+C_Code: 
+void RequestDBUpdateInvalidRecords(OHOS::NativeRdb::RdbStore &store)
+{
+    REQUEST_HILOGI("Updates all invalid task to failed");
+
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutInt("state", static_cast<uint8_t>(State::Failed));
+
+    // Tasks in `WAITING` and `PAUSED` states need to be resumed,
+    // so they are not processed.
+    int changedRows = 0;
+    const uint8_t oldCreated = 0x60;
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("state", static_cast<uint8_t>(State::Running))
+        ->Or()
+        ->EqualTo("state", static_cast<uint8_t>(State::Retrying))
+        ->Or()
+        ->EqualTo("state", oldCreated);
+
+    if (store.Update(changedRows, values, rdbPredicates) != OHOS::NativeRdb::E_OK) {
+        REQUEST_HILOGE("Updates all invalid task to `FAILED` state failed");
+        return;
+    }
+    REQUEST_HILOGI("Updates all invalid task to `FAILED` state success");
+    return;
+}
+Function: 
+pub(crate) fn task_failed(&mut self, uid: u64, task_id: u32, reason: Reason) {
+        info!("task {} failed", task_id);
+        self.running_queue.task_finish(uid, task_id);
+
+        let database = RequestDb::get_instance();
+
+        if self.qos.remove_task(uid, task_id) {
+            self.schedule_if_not_scheduled();
+        }
+
+        if let Some(info) = database.get_task_qos_info(task_id) {
+            if info.state != State::Running.repr && info.state != State::Waiting.repr {
+                return;
+            }
+        }
+
+        database.update_task_state(task_id, State::Failed, reason);
+        if let Some(info) = database.get_task_info(task_id) {
+            let reason = info.common_data.reason;
+            Scheduler::notify_fail(info, &self.client_manager, Reason::from(reason));
+        }
+    }
+Unixcoder Score: 0.006029338110238314
+--------------------------------------------------
+C_Code: 
+void RequestDBUpdateInvalidRecords(OHOS::NativeRdb::RdbStore &store)
+{
+    REQUEST_HILOGI("Updates all invalid task to failed");
+
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutInt("state", static_cast<uint8_t>(State::Failed));
+
+    // Tasks in `WAITING` and `PAUSED` states need to be resumed,
+    // so they are not processed.
+    int changedRows = 0;
+    const uint8_t oldCreated = 0x60;
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("state", static_cast<uint8_t>(State::Running))
+        ->Or()
+        ->EqualTo("state", static_cast<uint8_t>(State::Retrying))
+        ->Or()
+        ->EqualTo("state", oldCreated);
+
+    if (store.Update(changedRows, values, rdbPredicates) != OHOS::NativeRdb::E_OK) {
+        REQUEST_HILOGE("Updates all invalid task to `FAILED` state failed");
+        return;
+    }
+    REQUEST_HILOGI("Updates all invalid task to `FAILED` state success");
+    return;
+}
+Function: 
+pub(crate) async fn upload(task: Arc<RequestTask>, abort_flag: Arc<AtomicBool>) {
+    RequestDb::get_instance()
+        .update_task_sizes(task.task_id(), &task.progress.lock().unwrap().sizes);
+    task.progress.lock().unwrap().common_data.state = State::Running.repr;
+    task.tries.store(0, Ordering::SeqCst);
+    loop {
+        if let Err(e) = upload_inner(task.clone(), abort_flag.clone()).await {
+            match e {
+                TaskError::Failed(reason) => {
+                    *task.running_result.lock().unwrap() = Some(Err(reason));
+                }
+                TaskError::Waiting(phase) => match phase {
+                    TaskPhase::NeedRetry => {
+                        continue;
+                    }
+                    TaskPhase::UserAbort => {}
+                    TaskPhase::NetworkOffline => {
+                        *task.running_result.lock().unwrap() = Some(Err(Reason::NetworkOffline));
+                    }
+                },
+            }
+        } else {
+            *task.running_result.lock().unwrap() = Some(Ok(()));
+        }
+        break;
+    }
+}
+Unixcoder Score: 0.001027442398481071
+--------------------------------------------------
+C_Code: 
+void RequestDBUpdateInvalidRecords(OHOS::NativeRdb::RdbStore &store)
+{
+    REQUEST_HILOGI("Updates all invalid task to failed");
+
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutInt("state", static_cast<uint8_t>(State::Failed));
+
+    // Tasks in `WAITING` and `PAUSED` states need to be resumed,
+    // so they are not processed.
+    int changedRows = 0;
+    const uint8_t oldCreated = 0x60;
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("state", static_cast<uint8_t>(State::Running))
+        ->Or()
+        ->EqualTo("state", static_cast<uint8_t>(State::Retrying))
+        ->Or()
+        ->EqualTo("state", oldCreated);
+
+    if (store.Update(changedRows, values, rdbPredicates) != OHOS::NativeRdb::E_OK) {
+        REQUEST_HILOGE("Updates all invalid task to `FAILED` state failed");
+        return;
+    }
+    REQUEST_HILOGI("Updates all invalid task to `FAILED` state success");
+    return;
+}
+Function: 
+pub(crate) fn clear_invalid_records(&self) {
+        let sql = format!(
+            "UPDATE request_task SET state = {} WHERE state = {} AND reason = {}",
+            State::Failed.repr,
+            State::Waiting.repr,
+            Reason::Default.repr,
+        );
+        let _ = self.execute(&sql);
+    }
+Unixcoder Score: -0.019398070871829987
+--------------------------------------------------
+C_Code: 
+void StateListener::OnAbilityNotLoadedLocked(int32_t systemAbilityId)
+{
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__get_state__idx140470_rank3.h", "source_rust_file": "API_Mapping__get_state__idx140470_rank3.rs", "c_api": "futex_wait", "rust_api": "futex_wait(&self.state, PARKED, Some(timeout))", "mapping_type": "function", "description": "Futex wait operation in both C and Rust", "reasoning": "[Task Analysis] C function returns a state variable; Rust function performs atomic operations and futex-based parking with timeout. [Similarity] No structural similarity at the block level; C just returns a value, Rust has complex atomic logic and system calls. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to state management and atomic operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__get_state__idx140470_rank3.h", "source_rust_file": "API_Mapping__get_state__idx140470_rank3.rs", "c_api": "state", "rust_api": "self.state", "mapping_type": "field_access", "description": "Access to state variable in both C and Rust", "reasoning": "[Task Analysis] C function returns a state variable; Rust function performs atomic operations and futex-based parking with timeout. [Similarity] No structural similarity at the block level; C just returns a value, Rust has complex atomic logic and system calls. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to state management and atomic operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__get_state__idx140470_rank3.h", "source_rust_file": "API_Mapping__get_state__idx140470_rank3.rs", "c_api": "return state", "rust_api": "self.state.fetch_sub(1, Acquire)", "mapping_type": "function", "description": "State transition and return in C vs atomic decrement and return in Rust", "reasoning": "[Task Analysis] C function returns a state variable; Rust function performs atomic operations and futex-based parking with timeout. [Similarity] No structural similarity at the block level; C just returns a value, Rust has complex atomic logic and system calls. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to state management and atomic operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__get_state__idx140470_rank3.h", "source_rust_file": "API_Mapping__get_state__idx140470_rank3.rs", "c_api": "state", "rust_api": "self.state.swap(EMPTY, Acquire)", "mapping_type": "function", "description": "State update in C vs atomic swap in Rust", "reasoning": "[Task Analysis] C function returns a state variable; Rust function performs atomic operations and futex-based parking with timeout. [Similarity] No structural similarity at the block level; C just returns a value, Rust has complex atomic logic and system calls. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to state management and atomic operations."}]
+Unixcoder Score: -0.023286718875169754
+--------------------------------------------------
+C_Code: 
+sptr<AppProcessState> AppProcessState::GetInstance()
+{
+    static sptr<AppProcessState> observer = new AppProcessState();
+    return observer;
+}
+Function: 
+pub fn new() -> Self {
+        Self {
+            active_counter: ActiveCounter::new(),
+            task_manager: Mutex::new(None),
+        }
+    }
+Unixcoder Score: -0.024087391793727875
+--------------------------------------------------
+C_Code: 
+rust_task_state get_state() { return state; }
+Function: 
+pub fn drop_port(&mut self) {
+        // Use an Acquire memory ordering in order to see the data that the
+        // senders are sending.
+        match self.state.swap(DISCONNECTED, atomics::Acquire) {
+            // An empty channel has nothing to do, and a remotely disconnected
+            // channel also has nothing to do b/c we're about to run the drop
+            // glue
+            DISCONNECTED | EMPTY => {}
+
+            // There's data on the channel, so make sure we destroy it promptly.
+            // This is why not using an arc is a little difficult (need the box
+            // to stay valid while we take the data).
+            DATA => { self.data.take_unwrap(); }
+
+            // We're the only ones that can block on this port
+            _ => unreachable!()
+        }
+    }
+Unixcoder Score: -0.030105896294116974
+--------------------------------------------------
+C_Code: 
+rust_task_state get_state() { return state; }
+Function: 
+fn run(self, builder: &Builder<'_>) {
+        let relative_path = Path::new("src").join("doc").join("book");
+        builder.update_submodule(&relative_path);
+
+        let compiler = self.compiler;
+        let target = self.target;
+
+        // build book
+        builder.ensure(RustbookSrc {
+            target,
+            name: INTERNER.intern_str("book"),
+            src: INTERNER.intern_path(builder.src.join(&relative_path)),
+            parent: Some(self),
+        });
+
+        // building older edition redirects
+        for edition in &["first-edition", "second-edition", "2018-edition"] {
+            builder.ensure(RustbookSrc {
+                target,
+                name: INTERNER.intern_string(format!("book/{}", edition)),
+                src: INTERNER.intern_path(builder.src.join(&relative_path).join(edition)),
+                // There should only be one book that is marked as the parent for each target, so
+                // treat the other editions as not having a parent.
+                parent: Option::<Self>::None,
+            });
+        }
+
+        // build the version info page and CSS
+        let shared_assets = builder.ensure(SharedAssets { target });
+
+        // build the redirect pages
+        builder.msg_doc(compiler, "book redirect pages", target);
+        for file in t!(fs::read_dir(builder.src.join(&relative_path).join("redirects"))) {
+            let file = t!(file);
+            let path = file.path();
+            let path = path.to_str().unwrap();
+
+            invoke_rustdoc(builder, compiler, &shared_assets, target, path);
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_fragment": "return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;", "rust_fragment": "if attrs.get(&Tag::UserId).is_some() { if unsafe { !CheckSystemHapPermission() } { return log_throw_error!(ErrCode::NotSystemApplication, \"[FATAL]The caller is not system application.\"); }", "description": "Both check for system HAP permission and return early on failure", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "IPCSkeleton::GetCallingTokenID()", "rust_api": "Skeleton::calling_uid()", "mapping_type": "function", "description": "Get calling process token/UID for permission validation", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "AccessTokenKit::GetTokenTypeFlag(tokenId)", "rust_api": "attrs.get(&Tag::UserId)", "mapping_type": "function", "description": "Check token type/attribute presence for system application validation", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "CheckSystemApp()", "rust_api": "CheckSystemHapPermission()", "mapping_type": "function", "description": "Validate if calling process is a system application", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemHapPermission__idx4477_rank1.c", "source_rust_file": "Partial__CheckSystemHapPermission__idx4477_rank1.rs", "c_api": "CheckPermission(permission.as_ptr())", "rust_api": "CheckPermission(permission.as_ptr())", "mapping_type": "function", "description": "Check specific permission using permission string", "reasoning": "[Task Analysis] C function checks system HAP permission using IPC and token type; Rust function performs comprehensive permission checks including UID, user ID, and system app validation. [Similarity] Names don't match but both perform permission validation logic. [Knowledge Extraction] No full structural match due to different scopes and control flow. Partial fragments found in conditional logic. API mappings identified for permission checking and token handling."}]
+Unixcoder Score: -0.03224183991551399
+--------------------------------------------------
+C_Code: 
+rust_task_state get_state() { return state; }
+Function: 
+pub unsafe fn park(self: Pin<&Self>) {
+        self.init_tid();
+
+        // Changes NOTIFIED to EMPTY and EMPTY to PARKED.
+        let mut state = self.state.fetch_sub(1, Acquire).wrapping_sub(1);
+        if state == PARKED {
+            // Loop to guard against spurious wakeups.
+            while state == PARKED {
+                park(self.state.as_ptr().addr());
+                state = self.state.load(Acquire);
+            }
+
+            // Since the state change has already been observed with acquire
+            // ordering, the state can be reset with a relaxed store instead
+            // of a swap.
+            self.state.store(EMPTY, Relaxed);
+        }
+    }
+Unixcoder Score: -0.03389577195048332
+--------------------------------------------------
+C_Code: 
+rust_task_state get_state() { return state; }
+Function: 
+fn enlist_in_taskgroup(state: TaskGroupInner, me: *rust_task,
+                       is_member: bool) -> bool {
+    let newstate = util::replace(state, None);
+    // If 'None', the group was failing. Can't enlist.
+    if newstate.is_some() {
+        let group = option::unwrap(move newstate);
+        taskset_insert(if is_member { &mut group.members }
+                       else         { &mut group.descendants }, me);
+        *state = Some(move group);
+        true
+    } else {
+        false
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateRequestTaskState__idx473_rank1.c", "source_rust_file": "Partial__UpdateRequestTaskState__idx473_rank1.rs", "c_api": "OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)", "rust_api": "self.execute(&sql)", "mapping_type": "function", "description": "Database update operation", "reasoning": "[Task Analysis] C function updates task state in DB; Rust function executes SQL update. [Similarity] Both perform database state updates, but C uses RDB API while Rust uses raw SQL. [Knowledge Extraction] Found partial structural match in update logic and API mapping for database update operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateRequestTaskState__idx473_rank1.c", "source_rust_file": "Partial__UpdateRequestTaskState__idx473_rank1.rs", "c_api": "OHOS::NativeRdb::RdbPredicates rdbPredicates(\"request_task\");\n    rdbPredicates.EqualTo(\"task_id\", std::to_string(taskId));", "rust_api": "WHERE task_id = {}", "mapping_type": "pattern", "description": "Database query predicate for task_id filtering", "reasoning": "[Task Analysis] C function updates task state in DB; Rust function executes SQL update. [Similarity] Both perform database state updates, but C uses RDB API while Rust uses raw SQL. [Knowledge Extraction] Found partial structural match in update logic and API mapping for database update operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__UpdateRequestTaskState__idx473_rank1.c", "source_rust_file": "Partial__UpdateRequestTaskState__idx473_rank1.rs", "c_api": "OHOS::NativeRdb::ValuesBucket values;", "rust_api": "state.repr", "mapping_type": "pattern", "description": "Data container for database update values", "reasoning": "[Task Analysis] C function updates task state in DB; Rust function executes SQL update. [Similarity] Both perform database state updates, but C uses RDB API while Rust uses raw SQL. [Knowledge Extraction] Found partial structural match in update logic and API mapping for database update operation."}, {"knowledge_type": "Partial", "source_c_file": "Partial__UpdateRequestTaskState__idx473_rank1.c", "source_rust_file": "Partial__UpdateRequestTaskState__idx473_rank1.rs", "c_fragment": "values.PutLong(\"mtime\", updateStateInfo->mtime);\n    values.PutInt(\"state\", updateStateInfo->state);\n    values.PutInt(\"reason\", updateStateInfo->reason);\n\n    OHOS::NativeRdb::RdbPredicates rdbPredicates(\"request_task\");\n    rdbPredicates.EqualTo(\"task_id\", std::to_string(taskId));\n    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {\n        REQUEST_HILOGE(\"Change request_task state failed, taskid: %{public}d\", taskId);\n        return false;\n    }\n    return true;", "rust_fragment": "let sql = format!(\n            \"UPDATE request_task SET state = {}, mtime = {}, reason = {} WHERE task_id = {}\",\n            state.repr,\n            get_current_timestamp(),\n            reason.repr,\n            task_id\n        );\n        let _ = self.execute(&sql);", "description": "Both update task state in database with similar fields (state, mtime, reason) and task_id condition", "reasoning": "[Task Analysis] C function updates task state in DB; Rust function executes SQL update. [Similarity] Both perform database state updates, but C uses RDB API while Rust uses raw SQL. [Knowledge Extraction] Found partial structural match in update logic and API mapping for database update operation."}]
+Unixcoder Score: -0.03447568789124489
+--------------------------------------------------
+C_Code: 
+rust_task_state get_state() { return state; }
+Function: 
+fn inner_process_event(&mut self, event: EventType) -> Result<(), i8> {
+        let new_state_creation_function = self
+            .transition_table
+            .iter()
+            .find(|(&event_typeid, _)| event_typeid == self.current_state.get_type_id_of_state())
+            .ok_or(1)?
+            .1
+            .iter()
+            .find(|(&event_type, _)| event == event_type)
+            //~^ ERROR cannot move out of a shared reference
+            .ok_or(2)?
+            .1;
+
+        self.current_state = new_state_creation_function();
+        Ok(())
+    }
+Unixcoder Score: -0.03485994413495064
+--------------------------------------------------

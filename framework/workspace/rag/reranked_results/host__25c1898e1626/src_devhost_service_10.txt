@@ -1,0 +1,266 @@
+C_Code: 
+void DownloadServiceAbility::OnStop()
+{
+    DOWNLOAD_HILOGI("OnStop started.");
+    if (state_ != ServiceRunningState::STATE_RUNNING) {
+        return;
+    }
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return;
+    }
+    instance->Destroy();
+    serviceHandler_ = nullptr;
+    instance_ = nullptr;
+    state_ = ServiceRunningState::STATE_NOT_START;
+    DOWNLOAD_HILOGI("OnStop end.");
+}
+Function: 
+pub fn stop(&mut self) {
+        debug!(LOG_LABEL, "stop");
+        if ServerRunState::NoStart == self.server_state {
+            return;
+        }
+        self.server_state = ServerRunState::NoStart;
+    }
+Unixcoder Score: -0.010948819108307362
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceHostImageCopyProperties
+Function: 
+struct BitmapMetrics {
+        // Outer glyph bearings that affect the computed bounds. We distinguish
+        // those here from `inner_bearing_*` to account for CoreText behavior in
+        // SBIX placement. Where the sbix originOffsetX/Y are applied only
+        // within the bounds. Specified in font units.
+        // 0 for CBDT, CBLC.
+        bearing_x: f32,
+        bearing_y: f32,
+        // Scale factors to scale image to 1em.
+        ppem_x: f32,
+        ppem_y: f32,
+        // Account for the fact that Sbix and CBDT/CBLC have a different origin
+        // definition.
+        placement_origin_bottom_left: bool,
+        // Specified as a pixel value, to be scaled by `ppem_*` as an
+        // offset applied to placing the image within the bounds rectangle.
+        inner_bearing_x: f32,
+        inner_bearing_y: f32,
+        // Some, but not all, bitmap glyphs have a special bitmap advance
+        advance: f32,
+    }
+Unixcoder Score: -0.012576323002576828
+--------------------------------------------------
+C_Code: 
+PhysicalDeviceMaintenance5Features( VkPhysicalDeviceMaintenance5Features const & rhs ) VULKAN_HPP_NOEXCEPT
+      : PhysicalDeviceMaintenance5Features( *reinterpret_cast<PhysicalDeviceMaintenance5Features const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::BufferSizes) -> Self {
+        Self {
+            path_reduced: src.path_reduced.size_in_bytes(),
+            path_reduced2: src.path_reduced2.size_in_bytes(),
+            path_reduced_scan: src.path_reduced_scan.size_in_bytes(),
+            path_monoids: src.path_monoids.size_in_bytes(),
+            path_bboxes: src.path_bboxes.size_in_bytes(),
+            draw_reduced: src.draw_reduced.size_in_bytes(),
+            draw_monoids: src.draw_monoids.size_in_bytes(),
+            info: src.info.size_in_bytes(),
+            clip_inps: src.clip_inps.size_in_bytes(),
+            clip_els: src.clip_els.size_in_bytes(),
+            clip_bics: src.clip_bics.size_in_bytes(),
+            clip_bboxes: src.clip_bboxes.size_in_bytes(),
+            draw_bboxes: src.draw_bboxes.size_in_bytes(),
+            bump_alloc: src.bump_alloc.size_in_bytes(),
+            indirect_count: src.indirect_count.size_in_bytes(),
+            bin_headers: src.bin_headers.size_in_bytes(),
+            paths: src.paths.size_in_bytes(),
+            lines: src.lines.size_in_bytes(),
+            bin_data: src.bin_data.size_in_bytes(),
+            tiles: src.tiles.size_in_bytes(),
+            seg_counts: src.seg_counts.size_in_bytes(),
+            segments: src.segments.size_in_bytes(),
+            ptcl: src.ptcl.size_in_bytes(),
+        }
+    }
+Unixcoder Score: -0.016178973019123077
+--------------------------------------------------
+C_Code: 
+struct HostImageCopyDevicePerformanceQuery
+Function: 
+struct BridgeScalerMetrics {
+        has_overlaps: bool,
+    }
+Unixcoder Score: -0.02441570535302162
+--------------------------------------------------
+C_Code: 
+PhysicalDeviceImageProcessingPropertiesQCOM( VkPhysicalDeviceImageProcessingPropertiesQCOM const & rhs ) VULKAN_HPP_NOEXCEPT
+      : PhysicalDeviceImageProcessingPropertiesQCOM( *reinterpret_cast<PhysicalDeviceImageProcessingPropertiesQCOM const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::WorkgroupCounts) -> Self {
+        Self {
+            use_large_path_scan: src.use_large_path_scan,
+            path_reduce: (&src.path_reduce).into(),
+            path_reduce2: (&src.path_reduce2).into(),
+            path_scan1: (&src.path_scan1).into(),
+            path_scan: (&src.path_scan).into(),
+            bbox_clear: (&src.bbox_clear).into(),
+            flatten: (&src.flatten).into(),
+            draw_reduce: (&src.draw_reduce).into(),
+            draw_leaf: (&src.draw_leaf).into(),
+            clip_reduce: (&src.clip_reduce).into(),
+            clip_leaf: (&src.clip_leaf).into(),
+            binning: (&src.binning).into(),
+            tile_alloc: (&src.tile_alloc).into(),
+            path_count_setup: (&src.path_count_setup).into(),
+            backdrop: (&src.backdrop).into(),
+            coarse: (&src.coarse).into(),
+            path_tiling_setup: (&src.path_tiling_setup).into(),
+            fine: (&src.fine).into(),
+        }
+    }
+Unixcoder Score: -0.03666476160287857
+--------------------------------------------------
+C_Code: 
+PhysicalDevicePipelineRobustnessProperties( VkPhysicalDevicePipelineRobustnessProperties const & rhs ) VULKAN_HPP_NOEXCEPT
+      : PhysicalDevicePipelineRobustnessProperties( *reinterpret_cast<PhysicalDevicePipelineRobustnessProperties const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::WorkgroupCounts) -> Self {
+        Self {
+            use_large_path_scan: src.use_large_path_scan,
+            path_reduce: (&src.path_reduce).into(),
+            path_reduce2: (&src.path_reduce2).into(),
+            path_scan1: (&src.path_scan1).into(),
+            path_scan: (&src.path_scan).into(),
+            bbox_clear: (&src.bbox_clear).into(),
+            flatten: (&src.flatten).into(),
+            draw_reduce: (&src.draw_reduce).into(),
+            draw_leaf: (&src.draw_leaf).into(),
+            clip_reduce: (&src.clip_reduce).into(),
+            clip_leaf: (&src.clip_leaf).into(),
+            binning: (&src.binning).into(),
+            tile_alloc: (&src.tile_alloc).into(),
+            path_count_setup: (&src.path_count_setup).into(),
+            backdrop: (&src.backdrop).into(),
+            coarse: (&src.coarse).into(),
+            path_tiling_setup: (&src.path_tiling_setup).into(),
+            fine: (&src.fine).into(),
+        }
+    }
+Unixcoder Score: -0.04204617068171501
+--------------------------------------------------
+C_Code: 
+DeviceImageMemoryRequirements( VkDeviceImageMemoryRequirements const & rhs ) VULKAN_HPP_NOEXCEPT
+      : DeviceImageMemoryRequirements( *reinterpret_cast<DeviceImageMemoryRequirements const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::BufferSizes) -> Self {
+        Self {
+            path_reduced: src.path_reduced.size_in_bytes(),
+            path_reduced2: src.path_reduced2.size_in_bytes(),
+            path_reduced_scan: src.path_reduced_scan.size_in_bytes(),
+            path_monoids: src.path_monoids.size_in_bytes(),
+            path_bboxes: src.path_bboxes.size_in_bytes(),
+            draw_reduced: src.draw_reduced.size_in_bytes(),
+            draw_monoids: src.draw_monoids.size_in_bytes(),
+            info: src.info.size_in_bytes(),
+            clip_inps: src.clip_inps.size_in_bytes(),
+            clip_els: src.clip_els.size_in_bytes(),
+            clip_bics: src.clip_bics.size_in_bytes(),
+            clip_bboxes: src.clip_bboxes.size_in_bytes(),
+            draw_bboxes: src.draw_bboxes.size_in_bytes(),
+            bump_alloc: src.bump_alloc.size_in_bytes(),
+            indirect_count: src.indirect_count.size_in_bytes(),
+            bin_headers: src.bin_headers.size_in_bytes(),
+            paths: src.paths.size_in_bytes(),
+            lines: src.lines.size_in_bytes(),
+            bin_data: src.bin_data.size_in_bytes(),
+            tiles: src.tiles.size_in_bytes(),
+            seg_counts: src.seg_counts.size_in_bytes(),
+            segments: src.segments.size_in_bytes(),
+            ptcl: src.ptcl.size_in_bytes(),
+        }
+    }
+Unixcoder Score: -0.051114771515131
+--------------------------------------------------
+C_Code: 
+struct PhysicalDeviceHostImageCopyProperties
+Function: 
+struct FfiPoint {
+        x: f32,
+        y: f32,
+    }
+Unixcoder Score: -0.05175105482339859
+--------------------------------------------------
+C_Code: 
+PhysicalDeviceVulkan13Properties( VkPhysicalDeviceVulkan13Properties const & rhs ) VULKAN_HPP_NOEXCEPT
+      : PhysicalDeviceVulkan13Properties( *reinterpret_cast<PhysicalDeviceVulkan13Properties const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::BufferSizes) -> Self {
+        Self {
+            path_reduced: src.path_reduced.size_in_bytes(),
+            path_reduced2: src.path_reduced2.size_in_bytes(),
+            path_reduced_scan: src.path_reduced_scan.size_in_bytes(),
+            path_monoids: src.path_monoids.size_in_bytes(),
+            path_bboxes: src.path_bboxes.size_in_bytes(),
+            draw_reduced: src.draw_reduced.size_in_bytes(),
+            draw_monoids: src.draw_monoids.size_in_bytes(),
+            info: src.info.size_in_bytes(),
+            clip_inps: src.clip_inps.size_in_bytes(),
+            clip_els: src.clip_els.size_in_bytes(),
+            clip_bics: src.clip_bics.size_in_bytes(),
+            clip_bboxes: src.clip_bboxes.size_in_bytes(),
+            draw_bboxes: src.draw_bboxes.size_in_bytes(),
+            bump_alloc: src.bump_alloc.size_in_bytes(),
+            indirect_count: src.indirect_count.size_in_bytes(),
+            bin_headers: src.bin_headers.size_in_bytes(),
+            paths: src.paths.size_in_bytes(),
+            lines: src.lines.size_in_bytes(),
+            bin_data: src.bin_data.size_in_bytes(),
+            tiles: src.tiles.size_in_bytes(),
+            seg_counts: src.seg_counts.size_in_bytes(),
+            segments: src.segments.size_in_bytes(),
+            ptcl: src.ptcl.size_in_bytes(),
+        }
+    }
+Unixcoder Score: -0.05184095725417137
+--------------------------------------------------
+C_Code: 
+PhysicalDevicePerformanceQueryFeaturesKHR( VkPhysicalDevicePerformanceQueryFeaturesKHR const & rhs ) VULKAN_HPP_NOEXCEPT
+      : PhysicalDevicePerformanceQueryFeaturesKHR( *reinterpret_cast<PhysicalDevicePerformanceQueryFeaturesKHR const *>( &rhs ) )
+    {
+    }
+Function: 
+fn from(src: &vello_encoding::WorkgroupCounts) -> Self {
+        Self {
+            use_large_path_scan: src.use_large_path_scan,
+            path_reduce: (&src.path_reduce).into(),
+            path_reduce2: (&src.path_reduce2).into(),
+            path_scan1: (&src.path_scan1).into(),
+            path_scan: (&src.path_scan).into(),
+            bbox_clear: (&src.bbox_clear).into(),
+            flatten: (&src.flatten).into(),
+            draw_reduce: (&src.draw_reduce).into(),
+            draw_leaf: (&src.draw_leaf).into(),
+            clip_reduce: (&src.clip_reduce).into(),
+            clip_leaf: (&src.clip_leaf).into(),
+            binning: (&src.binning).into(),
+            tile_alloc: (&src.tile_alloc).into(),
+            path_count_setup: (&src.path_count_setup).into(),
+            backdrop: (&src.backdrop).into(),
+            coarse: (&src.coarse).into(),
+            path_tiling_setup: (&src.path_tiling_setup).into(),
+            fine: (&src.fine).into(),
+        }
+    }
+Unixcoder Score: -0.05815000832080841
+--------------------------------------------------

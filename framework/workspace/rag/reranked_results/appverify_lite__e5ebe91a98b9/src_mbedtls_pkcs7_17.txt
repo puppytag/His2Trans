@@ -1,0 +1,412 @@
+C_Code: 
+static bool match(int* first, int* second, int count, int tol) {
+    int delta;
+    for (int i = 0; i < count; ++i) {
+        delta = first[i] - second[i];
+        if (delta > tol || delta < -tol) {
+            return false;
+        }
+    }
+
+    return true;
+}
+Function: 
+fn normalized_coords_equal(a: &BridgeNormalizedCoords, b: &BridgeNormalizedCoords) -> bool {
+    a.normalized_coords.coords() == b.normalized_coords.coords()
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__walk_vec2__idx117816_rank1.c", "source_rust_file": "Partial__walk_vec2__idx117816_rank1.rs", "c_fragment": "while (!result && sub.dp < data_end) {\n        sub.walk_reset();\n        result = sub.result;\n        sub.align = true;\n    }", "rust_fragment": "let mut order = unsafe { memcmp(left.as_ptr(), right.as_ptr(), len) as isize };", "description": "Loop-based iteration and state update in C matches memory comparison in Rust.", "reasoning": "[Task Analysis] C function performs vector walking and comparison logic; Rust function compares slices using memcmp and length. [Similarity] Names and domains differ (C: walk_vec2, Rust: compare), but both perform element-wise comparison with fallback to length. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for slice comparison via memcmp."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__walk_vec2__idx117816_rank1.c", "source_rust_file": "Partial__walk_vec2__idx117816_rank1.rs", "c_api": "memcmp", "rust_api": "memcmp", "mapping_type": "function", "description": "Memory comparison operation", "reasoning": "[Task Analysis] C function performs vector walking and comparison logic; Rust function compares slices using memcmp and length. [Similarity] Names and domains differ (C: walk_vec2, Rust: compare), but both perform element-wise comparison with fallback to length. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for slice comparison via memcmp."}]
+Unixcoder Score: -0.020560577511787415
+--------------------------------------------------
+C_Code: 
+void NError::ThrowErrAddData(napi_env env, int errCode, napi_value data)
+{
+    int32_t code = 0;
+    string msg;
+    if (errCodeTable.find(errCode) != errCodeTable.end()) {
+        code = errCodeTable.at(errCode).first;
+        msg = errCodeTable.at(errCode).second;
+    } else {
+        code = errCodeTable.at(UNKROWN_ERR).first;
+        msg = errCodeTable.at(UNKROWN_ERR).second;
+    }
+    errno_ = code;
+    errMsg_ = msg;
+    napi_value businessError = GenerateBusinessError(env, code, msg);
+    napi_status status = napi_set_named_property(env, businessError, FILEIO_TAG_ERR_DATA.c_str(), data);
+    if (status != napi_ok) {
+        HILOGE("Failed to set data property on Error, error message is %{public}s", msg.c_str());
+        return;
+    }
+    status = napi_throw(env, businessError);
+    if (status != napi_ok) {
+        HILOGE("Failed to throw a BusinessError, error message is %{public}s", msg.c_str());
+        return;
+    }
+}
+Function: 
+pub(crate) unsafe fn error_control(err: Error) {
+    let errno_pos = __errno_location();
+    if let Some(raw) = err.raw_os_error() {
+        *errno_pos = raw;
+    } else {
+        match err.kind() {
+            ErrorKind::NotFound => *errno_pos = 2,
+            ErrorKind::PermissionDenied => *errno_pos = 13,
+            ErrorKind::AlreadyExists => *errno_pos = 17,
+            ErrorKind::InvalidInput => *errno_pos = 22,
+            ErrorKind::InvalidData => *errno_pos = 61,
+            _ => {
+                *errno_pos = 13900042;
+                error!(LOG_LABEL, "Unknown error is : {}", @public(err));
+            }
+        }
+    }
+}
+Unixcoder Score: -0.034497205168008804
+--------------------------------------------------
+C_Code: 
+bool OnDemandReasonExtraData::Marshalling(Parcel& parcel) const
+{
+    if (!parcel.WriteInt32(code_)) {
+        return false;
+    }
+    if (!parcel.WriteString(data_)) {
+        return false;
+    }
+    nlohmann::json payload;
+    for (auto it = want_.begin(); it != want_.end(); ++it) {
+        payload[it->first] = it->second;
+    }
+    if (!parcel.WriteString(payload.dump())) {
+        return false;
+    }
+    return true;
+}
+Function: 
+pub fn want(self) -> HashMap<String, String> {
+        let mut res = HashMap::new();
+        let mut want = self.want.into_iter();
+        while let Some(k) = want.next() {
+            if let Some(v) = want.next() {
+                res.insert(k, v);
+            }
+        }
+        res
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__DisableTaskNotification__idx1201_rank5.h", "source_rust_file": "Partial__DisableTaskNotification__idx1201_rank5.rs", "c_api": "DisableTaskNotification", "rust_api": "DisableTaskNotification", "mapping_type": "function", "description": "Task notification disabling function", "reasoning": "[Filter 1: Entity Name Check] -> 'DisableTaskNotification' in C vs 'DisableTaskNotification' in Rust refer to the same concept. [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task notification logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C has definition, Rust has usage, but this is a test wrapper calling the function, so it's not a direct usage of the definition. However, since the Rust code is a test/main loop calling the C function, and the C function is a real implementation, we can proceed. [Full Classification] -> The C function is a simple wrapper that calls a method and prints results. The Rust code calls this function in a loop. The overall structure is not a full match due to different control flow and logic. [Partial Classification] -> There is a partial match in the function call pattern. [API Mappings] -> The function call pattern and usage are consistent between C and Rust, even though the names are the same. [Knowledge Extraction] -> Extract API mapping for function call and usage pattern."}, {"knowledge_type": "Partial", "source_c_file": "Partial__DisableTaskNotification__idx1201_rank5.h", "source_rust_file": "Partial__DisableTaskNotification__idx1201_rank5.rs", "c_fragment": "DisableTaskNotification(taskId)", "rust_fragment": "DisableTaskNotification(input.trim())", "description": "Function call with string parameter", "reasoning": "[Filter 1: Entity Name Check] -> 'DisableTaskNotification' in C vs 'DisableTaskNotification' in Rust refer to the same concept. [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both involve task notification logic, not unrelated domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C has definition, Rust has usage, but this is a test wrapper calling the function, so it's not a direct usage of the definition. However, since the Rust code is a test/main loop calling the C function, and the C function is a real implementation, we can proceed. [Full Classification] -> The C function is a simple wrapper that calls a method and prints results. The Rust code calls this function in a loop. The overall structure is not a full match due to different control flow and logic. [Partial Classification] -> There is a partial match in the function call pattern. [API Mappings] -> The function call pattern and usage are consistent between C and Rust, even though the names are the same. [Knowledge Extraction] -> Extract API mapping for function call and usage pattern."}]
+Unixcoder Score: -0.03673877194523811
+--------------------------------------------------
+C_Code: 
+inline void DisableTaskNotification(rust::str taskId)
+{
+    std::vector<std::string> tids = { std::string(taskId) };
+    auto w = std::unordered_map<std::string, ExceptionErrorCode>();
+    RequestAction::GetInstance()->DisableTaskNotification(tids, w);
+    for (auto &elem : w) {
+        std::cout << "task" << elem.first << static_cast<int32_t>(elem.second) << std::endl;
+    }
+Function: 
+fn main() {
+    SetAccessTokenPermission();
+    println!("Please Input Test CASE");
+    println!("1. Disable Task Notification Bar");
+    println!("2. Set Task Mode");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    match input.trim() {
+        "1" => loop {
+            println!("please input TaskId");
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            DisableTaskNotification(input.trim());
+        },
+        "2" => loop {
+            println!("please input TaskId");
+            let mut task_id = String::new();
+            std::io::stdin().read_line(&mut task_id).unwrap();
+            println!("please input Mode 0 for background 1 for foreground");
+            let mut mode = String::new();
+            std::io::stdin().read_line(&mut mode).unwrap();
+            let mode = match mode.trim() {
+                "0" => 0,
+                "1" => 1,
+                _ => {
+                    println!("invalid mode");
+                    continue;
+                }
+            };
+            SetMode(task_id.trim(), mode);
+        },
+        _ => {
+            println!("invalid inpu");
+        }
+    }
+}
+Unixcoder Score: -0.045729510486125946
+--------------------------------------------------
+C_Code: 
+int32_t CloudServiceStub::OnQueryStatistics(MessageParcel &data, MessageParcel &reply)
+{
+    std::string id;
+    std::string bundleName;
+    std::string storeId;
+    if (!ITypesUtil::Unmarshal(data, id, bundleName, storeId)) {
+        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto result = QueryStatistics(id, bundleName, storeId);
+    return ITypesUtil::Marshal(reply, result.first, result.second) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let app_id = parcel.read_string16()?;
+        let bundle_name = parcel.read_string16()?;
+        let cloud_switch = parcel.read::<i32>()? != 0;
+        let instance_id = parcel.read::<i32>()?;
+
+        let result = Self {
+            app_id,
+            bundle_name,
+            cloud_switch,
+            instance_id,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.051287952810525894
+--------------------------------------------------
+C_Code: 
+bool OnDemandReasonExtraData::Marshalling(Parcel& parcel) const
+{
+    if (!parcel.WriteInt32(code_)) {
+        return false;
+    }
+    if (!parcel.WriteString(data_)) {
+        return false;
+    }
+    nlohmann::json payload;
+    for (auto it = want_.begin(); it != want_.end(); ++it) {
+        payload[it->first] = it->second;
+    }
+    if (!parcel.WriteString(payload.dump())) {
+        return false;
+    }
+    return true;
+}
+Function: 
+fn serialize(&self, parcel: &mut MsgParcel) -> ipc::IpcResult<()> {
+        parcel.write(&self.name)?;
+        parcel.write(&self.value)?;
+        parcel.write(&self.reason_id)?;
+        parcel.write(&self.extra_data)?;
+        parcel.write(&self.extra_data_id)
+    }
+Unixcoder Score: -0.05196281895041466
+--------------------------------------------------
+C_Code: 
+bool OnDemandReasonExtraData::Marshalling(Parcel& parcel) const
+{
+    if (!parcel.WriteInt32(code_)) {
+        return false;
+    }
+    if (!parcel.WriteString(data_)) {
+        return false;
+    }
+    nlohmann::json payload;
+    for (auto it = want_.begin(); it != want_.end(); ++it) {
+        payload[it->first] = it->second;
+    }
+    if (!parcel.WriteString(payload.dump())) {
+        return false;
+    }
+    return true;
+}
+Function: 
+fn serialize(&self, parcel: &mut MsgParcel) -> ipc::IpcResult<()> {
+        if SerializeOnDemandReasonExtraData(self, parcel.pin_mut().unwrap()) {
+            Ok(())
+        } else {
+            Err(IpcStatusCode::Failed)
+        }
+    }
+Unixcoder Score: -0.051982298493385315
+--------------------------------------------------
+C_Code: 
+struct StringOffsetCompare {
+    explicit StringOffsetCompare(const std::vector<uint8_t> &buf)
+        : buf_(&buf) {}
+    bool operator()(const StringOffset &a, const StringOffset &b) const {
+      auto stra = buf_->data() + a.first;
+      auto strb = buf_->data() + b.first;
+      auto cr = memcmp(stra, strb, (std::min)(a.second, b.second) + 1);
+      return cr < 0 || (cr == 0 && a.second < b.second);
+    }
+Function: 
+pub struct Builder {
+    buffer: Vec<u8>,
+    values: Vec<Value>,
+    key_pool: Option<Vec<CachedKey>>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__StringOffsetCompare__idx175_rank4.h", "source_rust_file": "Partial__StringOffsetCompare__idx175_rank4.rs", "c_api": "memcmp(stra, strb, (std::min)(a.second, b.second) + 1)", "rust_api": "buffer: Vec<u8>", "mapping_type": "pattern", "description": "Memory comparison of string data in C vs vector-based string storage in Rust.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('StringOffsetCompare' vs 'Builder'), but both are data structures for handling string offsets and comparison logic. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve string comparison logic, so domain is consistent. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Task Analysis] -> C defines a comparator for string offsets; Rust defines a builder with string-related fields. [Similarity] -> No full structural match due to different purposes (comparator vs builder), but partial logic exists in how strings are handled. [Knowledge Extraction] -> Extract API mappings related to string handling and comparison logic."}, {"knowledge_type": "Partial", "source_c_file": "Partial__StringOffsetCompare__idx175_rank4.h", "source_rust_file": "Partial__StringOffsetCompare__idx175_rank4.rs", "c_fragment": "auto stra = buf_->data() + a.first;\n  auto strb = buf_->data() + b.first;\n  auto cr = memcmp(stra, strb, (std::min)(a.second, b.second) + 1);\n  return cr < 0 || (cr == 0 && a.second < b.second);", "rust_fragment": "buffer: Vec<u8>,\n    values: Vec<Value>,\n    key_pool: Option<Vec<CachedKey>>", "description": "Both handle string data access and comparison logic, though in different ways (C uses raw memory access and memcmp, Rust uses structured fields).", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('StringOffsetCompare' vs 'Builder'), but both are data structures for handling string offsets and comparison logic. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve string comparison logic, so domain is consistent. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Task Analysis] -> C defines a comparator for string offsets; Rust defines a builder with string-related fields. [Similarity] -> No full structural match due to different purposes (comparator vs builder), but partial logic exists in how strings are handled. [Knowledge Extraction] -> Extract API mappings related to string handling and comparison logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__StringOffsetCompare__idx175_rank4.h", "source_rust_file": "Partial__StringOffsetCompare__idx175_rank4.rs", "c_api": "buf_->data() + a.first", "rust_api": "buffer: Vec<u8>", "mapping_type": "pattern", "description": "Accessing raw string data in C vs using a vector in Rust.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('StringOffsetCompare' vs 'Builder'), but both are data structures for handling string offsets and comparison logic. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both involve string comparison logic, so domain is consistent. [Filter 5: Empty Structs] -> Both have fields. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Task Analysis] -> C defines a comparator for string offsets; Rust defines a builder with string-related fields. [Similarity] -> No full structural match due to different purposes (comparator vs builder), but partial logic exists in how strings are handled. [Knowledge Extraction] -> Extract API mappings related to string handling and comparison logic."}]
+Unixcoder Score: -0.057096876204013824
+--------------------------------------------------
+C_Code: 
+int utf8_range(const unsigned char *data, int len)
+{
+    if (len >= 16) {
+        uint8x16_t prev_input = vdupq_n_u8(0);
+        uint8x16_t prev_first_len = vdupq_n_u8(0);
+
+        /* Cached tables */
+        const uint8x16_t first_len_tbl = vld1q_u8(_first_len_tbl);
+        const uint8x16_t first_range_tbl = vld1q_u8(_first_range_tbl);
+        const uint8x16_t range_min_tbl = vld1q_u8(_range_min_tbl);
+        const uint8x16_t range_max_tbl = vld1q_u8(_range_max_tbl);
+        const uint8x16x2_t range_adjust_tbl = vld2q_u8(_range_adjust_tbl);
+
+        /* Cached values */
+        const uint8x16_t const_1 = vdupq_n_u8(1);
+        const uint8x16_t const_2 = vdupq_n_u8(2);
+        const uint8x16_t const_e0 = vdupq_n_u8(0xE0);
+
+        /* We use two error registers to remove a dependency. */
+        uint8x16_t error1 = vdupq_n_u8(0);
+        uint8x16_t error2 = vdupq_n_u8(0);
+
+        while (len >= 16) {
+            const uint8x16_t input = vld1q_u8(data);
+
+            /* high_nibbles = input >> 4 */
+            const uint8x16_t high_nibbles = vshrq_n_u8(input, 4);
+
+            /* first_len = legal character length minus 1 */
+            /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+            /* first_len = first_len_tbl[high_nibbles] */
+            const uint8x16_t first_len =
+                vqtbl1q_u8(first_len_tbl, high_nibbles);
+
+            /* First Byte: set range index to 8 for bytes within 0xC0 ~ 0xFF */
+            /* range = first_range_tbl[high_nibbles] */
+            uint8x16_t range = vqtbl1q_u8(first_range_tbl, high_nibbles);
+
+            /* Second Byte: set range index to first_len */
+            /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+            /* range |= (first_len, prev_first_len) << 1 byte */
+            range =
+                vorrq_u8(range, vextq_u8(prev_first_len, first_len, 15));
+
+            /* Third Byte: set range index to saturate_sub(first_len, 1) */
+            /* 0 for 00~7F, 0 for C0~DF, 1 for E0~EF, 2 for F0~FF */
+            uint8x16_t tmp1, tmp2;
+            /* tmp1 = (first_len, prev_first_len) << 2 bytes */
+            tmp1 = vextq_u8(prev_first_len, first_len, 14);
+            /* tmp1 = saturate_sub(tmp1, 1) */
+            tmp1 = vqsubq_u8(tmp1, const_1);
+            /* range |= tmp1 */
+            range = vorrq_u8(range, tmp1);
+
+            /* Fourth Byte: set range index to saturate_sub(first_len, 2) */
+            /* 0 for 00~7F, 0 for C0~DF, 0 for E0~EF, 1 for F0~FF */
+            /* tmp2 = (first_len, prev_first_len) << 3 bytes */
+            tmp2 = vextq_u8(prev_first_len, first_len, 13);
+            /* tmp2 = saturate_sub(tmp2, 2) */
+            tmp2 = vqsubq_u8(tmp2, const_2);
+            /* range |= tmp2 */
+            range = vorrq_u8(range, tmp2);
+
+            /*
+             * Now we have below range indices calculated
+             * Correct cases:
+             * - 8 for C0~FF
+             * - 3 for 1st byte after F0~FF
+             * - 2 for 1st byte after E0~EF or 2nd byte after F0~FF
+             * - 1 for 1st byte after C0~DF or 2nd byte after E0~EF or
+             *         3rd byte after F0~FF
+             * - 0 for others
+             * Error cases:
+             *   9,10,11 if non ascii First Byte overlaps
+             *   E.g., F1 80 C2 90 --> 8 3 10 2, where 10 indicates error
+             */
+
+            /* Adjust Second Byte range for special First Bytes(E0,ED,F0,F4) */
+            /* See _range_adjust_tbl[] definition for details */
+            /* Overlaps lead to index 9~15, which are illegal in range table */
+            uint8x16_t shift1 = vextq_u8(prev_input, input, 15);
+            uint8x16_t pos = vsubq_u8(shift1, const_e0);
+            range = vaddq_u8(range, vqtbl2q_u8(range_adjust_tbl, pos));
+
+            /* Load min and max values per calculated range index */
+            uint8x16_t minv = vqtbl1q_u8(range_min_tbl, range);
+            uint8x16_t maxv = vqtbl1q_u8(range_max_tbl, range);
+
+            /* Check value range */
+            error1 = vorrq_u8(error1, vcltq_u8(input, minv));
+            error2 = vorrq_u8(error2, vcgtq_u8(input, maxv));
+
+            prev_input = input;
+            prev_first_len = first_len;
+
+            data += 16;
+            len -= 16;
+        }
+        /* Merge our error counters together */
+        error1 = vorrq_u8(error1, error2);
+
+        /* Delay error check till loop ends */
+        if (vmaxvq_u8(error1))
+            return -1;
+
+        /* Find previous token (not 80~BF) */
+        uint32_t token4;
+        vst1q_lane_u32(&token4, vreinterpretq_u32_u8(prev_input), 3);
+
+        const int8_t *token = (const int8_t *)&token4;
+        int lookahead = 0;
+        if (token[3] > (int8_t)0xBF)
+            lookahead = 1;
+        else if (token[2] > (int8_t)0xBF)
+            lookahead = 2;
+        else if (token[1] > (int8_t)0xBF)
+            lookahead = 3;
+
+        data -= lookahead;
+        len += lookahead;
+    }
+
+    /* Check remaining bytes with naive method */
+    return utf8_naive(data, len);
+}
+Function: 
+pub fn utf8_chunks(&self) -> impl Iterator<Item = Result<&str, &[u8]>> + '_ {
+        Utf8Chunks::new(self.as_bytes()).flat_map(|chunk| {
+            let valid = chunk.valid();
+            let invalid = chunk.invalid();
+            (!valid.is_empty())
+                .then_some(Ok(valid))
+                .into_iter()
+                .chain((!invalid.is_empty()).then_some(Err(invalid)))
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5014_rank3.c", "source_rust_file": "API_Mapping__Convert__idx5014_rank3.rs", "c_api": "OhCloudExtVectorPush", "rust_api": "HashMap::default()", "mapping_type": "function", "description": "Adding elements to a data structure", "reasoning": "[Task Analysis] C function creates a vector and populates it with converted data; Rust function creates a hashmap. [Similarity] Names don't match but both involve creating and populating data structures. [Knowledge Extraction] No full structural match due to different data structures (vector vs hashmap), but API mappings can be extracted for similar operations like creation and population."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5014_rank3.c", "source_rust_file": "API_Mapping__Convert__idx5014_rank3.rs", "c_api": "OhCloudExtVectorNew", "rust_api": "OhCloudExtHashMapNew", "mapping_type": "function", "description": "Creation of a data structure (vector in C, hashmap in Rust)", "reasoning": "[Task Analysis] C function creates a vector and populates it with converted data; Rust function creates a hashmap. [Similarity] Names don't match but both involve creating and populating data structures. [Knowledge Extraction] No full structural match due to different data structures (vector vs hashmap), but API mappings can be extracted for similar operations like creation and population."}]
+Unixcoder Score: -0.06255801022052765
+--------------------------------------------------
+C_Code: 
+struct simple_pair {
+  T first;
+  U second;
+}
+Function: 
+pub struct CGlyphInfo {
+    pub codepoint: u32,
+    pub mask: u32,
+    pub cluster: u32,
+    pub var1: u32,
+    pub var2: u32,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5030_rank2.c", "source_rust_file": "API_Mapping__Convert__idx5030_rank2.rs", "c_api": "OhCloudExtHashMapInsert", "rust_api": "OhCloudExtHashMapInsert", "mapping_type": "function", "description": "Inserts a key-value pair into the hash map", "reasoning": "[FFI Check] -> The Rust code contains FFI calls like `OhCloudExtHashMapNew`, `OhCloudExtHashMapGetKeyTyp`, etc., and the C code also uses FFI-style functions like `OhCloudExtHashMapNew`, `OhCloudExtHashMapInsert`. -> [Task Analysis] -> The C code is a function that converts a bucket into a hash map, while the Rust code is a test function that checks behavior of hashmap operations with null pointers and basic insertions. -> [Similarity] -> The domain is the same (hashmap operations), but the C code is an implementation and the Rust code is a test, so they are not symmetric implementations. -> [Knowledge Extraction] -> There are API mappings between the FFI functions, but no full or partial structural match due to test vs implementation mismatch and FFI wrapper nature."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5030_rank2.c", "source_rust_file": "API_Mapping__Convert__idx5030_rank2.rs", "c_api": "OhCloudExtHashMapGetKeyTyp", "rust_api": "OhCloudExtHashMapGetKeyTyp", "mapping_type": "function", "description": "Gets the key type of the hash map", "reasoning": "[FFI Check] -> The Rust code contains FFI calls like `OhCloudExtHashMapNew`, `OhCloudExtHashMapGetKeyTyp`, etc., and the C code also uses FFI-style functions like `OhCloudExtHashMapNew`, `OhCloudExtHashMapInsert`. -> [Task Analysis] -> The C code is a function that converts a bucket into a hash map, while the Rust code is a test function that checks behavior of hashmap operations with null pointers and basic insertions. -> [Similarity] -> The domain is the same (hashmap operations), but the C code is an implementation and the Rust code is a test, so they are not symmetric implementations. -> [Knowledge Extraction] -> There are API mappings between the FFI functions, but no full or partial structural match due to test vs implementation mismatch and FFI wrapper nature."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5030_rank2.c", "source_rust_file": "API_Mapping__Convert__idx5030_rank2.rs", "c_api": "OhCloudExtHashMapNew", "rust_api": "OhCloudExtHashMapNew", "mapping_type": "function", "description": "Creates a new hash map", "reasoning": "[FFI Check] -> The Rust code contains FFI calls like `OhCloudExtHashMapNew`, `OhCloudExtHashMapGetKeyTyp`, etc., and the C code also uses FFI-style functions like `OhCloudExtHashMapNew`, `OhCloudExtHashMapInsert`. -> [Task Analysis] -> The C code is a function that converts a bucket into a hash map, while the Rust code is a test function that checks behavior of hashmap operations with null pointers and basic insertions. -> [Similarity] -> The domain is the same (hashmap operations), but the C code is an implementation and the Rust code is a test, so they are not symmetric implementations. -> [Knowledge Extraction] -> There are API mappings between the FFI functions, but no full or partial structural match due to test vs implementation mismatch and FFI wrapper nature."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5030_rank2.c", "source_rust_file": "API_Mapping__Convert__idx5030_rank2.rs", "c_api": "OhCloudExtHashMapFree", "rust_api": "OhCloudExtHashMapFree", "mapping_type": "function", "description": "Frees the memory allocated for the hash map", "reasoning": "[FFI Check] -> The Rust code contains FFI calls like `OhCloudExtHashMapNew`, `OhCloudExtHashMapGetKeyTyp`, etc., and the C code also uses FFI-style functions like `OhCloudExtHashMapNew`, `OhCloudExtHashMapInsert`. -> [Task Analysis] -> The C code is a function that converts a bucket into a hash map, while the Rust code is a test function that checks behavior of hashmap operations with null pointers and basic insertions. -> [Similarity] -> The domain is the same (hashmap operations), but the C code is an implementation and the Rust code is a test, so they are not symmetric implementations. -> [Knowledge Extraction] -> There are API mappings between the FFI functions, but no full or partial structural match due to test vs implementation mismatch and FFI wrapper nature."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5030_rank2.c", "source_rust_file": "API_Mapping__Convert__idx5030_rank2.rs", "c_api": "OhCloudExtHashMapGetLength", "rust_api": "OhCloudExtHashMapGetLength", "mapping_type": "function", "description": "Gets the length of the hash map", "reasoning": "[FFI Check] -> The Rust code contains FFI calls like `OhCloudExtHashMapNew`, `OhCloudExtHashMapGetKeyTyp`, etc., and the C code also uses FFI-style functions like `OhCloudExtHashMapNew`, `OhCloudExtHashMapInsert`. -> [Task Analysis] -> The C code is a function that converts a bucket into a hash map, while the Rust code is a test function that checks behavior of hashmap operations with null pointers and basic insertions. -> [Similarity] -> The domain is the same (hashmap operations), but the C code is an implementation and the Rust code is a test, so they are not symmetric implementations. -> [Knowledge Extraction] -> There are API mappings between the FFI functions, but no full or partial structural match due to test vs implementation mismatch and FFI wrapper nature."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__Convert__idx5030_rank2.c", "source_rust_file": "API_Mapping__Convert__idx5030_rank2.rs", "c_api": "OhCloudExtHashMapGetValueTyp", "rust_api": "OhCloudExtHashMapGetValueTyp", "mapping_type": "function", "description": "Gets the value type of the hash map", "reasoning": "[FFI Check] -> The Rust code contains FFI calls like `OhCloudExtHashMapNew`, `OhCloudExtHashMapGetKeyTyp`, etc., and the C code also uses FFI-style functions like `OhCloudExtHashMapNew`, `OhCloudExtHashMapInsert`. -> [Task Analysis] -> The C code is a function that converts a bucket into a hash map, while the Rust code is a test function that checks behavior of hashmap operations with null pointers and basic insertions. -> [Similarity] -> The domain is the same (hashmap operations), but the C code is an implementation and the Rust code is a test, so they are not symmetric implementations. -> [Knowledge Extraction] -> There are API mappings between the FFI functions, but no full or partial structural match due to test vs implementation mismatch and FFI wrapper nature."}]
+Unixcoder Score: -0.06296087801456451
+--------------------------------------------------

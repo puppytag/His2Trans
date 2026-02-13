@@ -1,0 +1,51 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_svcmgr_ioservice_1",
+  "function_name": "ProcessListenClass",
+  "source_c_file": "src/svcmgr_ioservice.c",
+  "c_code": "static int32_t ProcessListenClass(struct SvcMgrIoservice * svcmgrInst, uint16_t devClass, int cmdId)\n{\n    struct HdfSBuf *data = HdfSbufObtainDefaultSize();\n    if (data == NULL) {\n        return HDF_ERR_MALLOC_FAIL;\n    }\n\n    (void)HdfSbufWriteUint16(data, devClass);\n    if (svcmgrInst->iosvc == NULL || svcmgrInst->iosvc->dispatcher == NULL ||\n        svcmgrInst->iosvc->dispatcher->Dispatch == NULL) {\n        HdfSbufRecycle(data);\n        return HDF_ERR_INVALID_OBJECT;\n    }\n    int32_t ret = svcmgrInst->iosvc->dispatcher->Dispatch(\n        (struct HdfObject *)svcmgrInst->iosvc, cmdId, data, NULL);\n    HdfSbufRecycle(data);\n    return ret;\n}",
+  "rust_signature": "fn ProcessListenClass(svcmgrInst: *mut crate::types::SvcMgrIoservice, devClass: u16, cmdId: i32) -> i32",
+  "rust_code": "fn ProcessListenClass(svcmgrInst: *mut SvcMgrIoservice, devClass: u16, cmdId: i32) -> i32 {\n    unsafe {\n        let data = HdfSbufObtainDefaultSize();\n        if data.is_null() {\n            return HDF_ERR_MALLOC_FAIL;\n        }\n\n        let _ = HdfSbufWriteUint16(data, devClass);\n        if svcmgrInst.is_null() || (*svcmgrInst).iosvc.is_null() {\n            HdfSbufRecycle(data);\n            return HDF_ERR_INVALID_OBJECT;\n        }\n        let iosvc = (*svcmgrInst).iosvc;\n        if (*iosvc).dispatcher.is_null() || (*(*iosvc).dispatcher).Dispatch.is_none() {\n            HdfSbufRecycle(data);\n            return HDF_ERR_INVALID_OBJECT;\n        }\n\n        let dispatch = (*(*iosvc).dispatcher).Dispatch.unwrap();\n        let ret = dispatch(iosvc as *mut HdfObject, cmdId, data, core::ptr::null_mut());\n        HdfSbufRecycle(data);\n        ret as i32\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufObtain",
+      "rust_api": "HdfSbufObtain",
+      "description": "Allocate an HdfSBuf for IPC payload",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufObtainDefaultSize",
+      "rust_api": "HdfSbufObtainDefaultSize",
+      "description": "Allocate default-sized HdfSBuf",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "HdfSbufRecycle",
+      "rust_api": "HdfSbufRecycle",
+      "description": "Recycle HdfSBuf after use",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "svc->dispatcher->Dispatch(...)",
+      "rust_fragment": "(*dispatcher).Dispatch.unwrap()(...)",
+      "description": "Call function pointers via Option unwrap (avoid E0618)",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

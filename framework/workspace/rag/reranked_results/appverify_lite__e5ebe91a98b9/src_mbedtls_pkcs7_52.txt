@@ -1,0 +1,279 @@
+C_Code: 
+struct list_node {
+  struct list_node *prev;
+  struct list_node *next;
+  void* data;
+}
+Function: 
+struct StaticDoubleLinked {
+    prev: &'static StaticDoubleLinked,
+    next: &'static StaticDoubleLinked,
+    data: i32,
+    head: bool
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx72702_rank4.c", "source_rust_file": "API_Mapping__main__idx72702_rank4.rs", "c_api": "ap.arg::<i32>()", "rust_api": "ap.arg::<i32>()", "mapping_type": "function", "description": "Reading next argument from variadic list as i32", "reasoning": "[Task Analysis] C code is a test harness calling variadic functions; Rust code is a variadic function implementation. [Similarity] Names do not refer to same concept (main vs c_variadic), and domains are mismatched (test logic vs FFI implementation). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there are API mappings related to variadic argument handling."}]
+Unixcoder Score: 0.07064230740070343
+--------------------------------------------------
+C_Code: 
+struct list_node {
+  struct list_node *prev;
+  struct list_node *next;
+  void* data;
+}
+Function: 
+struct StaticDoubleLinked {
+    prev: &'static StaticDoubleLinked,
+    next: &'static StaticDoubleLinked,
+    data: i32,
+    head: bool
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx71281_rank1.c", "source_rust_file": "API_Mapping__main__idx71281_rank1.rs", "c_api": "assert(test_rust(...))", "rust_api": "pub unsafe extern \"C\" fn check_varargs_1(...)", "mapping_type": "function", "description": "Variadic function call with argument validation", "reasoning": "[Task Analysis] C code is a test driver calling multiple functions with various arguments; Rust code is a variadic function implementation using a macro 'continue_if!' to validate arguments. [Similarity] The C code calls functions with specific argument patterns, and the Rust code processes those arguments via variadic argument handling. [Knowledge Extraction] There is no direct structural match between the full functions, but there are API mappings related to variadic argument handling and function call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx71281_rank1.c", "source_rust_file": "API_Mapping__main__idx71281_rank1.rs", "c_api": "ap.arg::<c_char>()", "rust_api": "ap.arg::<c_char>()", "mapping_type": "method", "description": "Accessing variadic arguments by type", "reasoning": "[Task Analysis] C code is a test driver calling multiple functions with various arguments; Rust code is a variadic function implementation using a macro 'continue_if!' to validate arguments. [Similarity] The C code calls functions with specific argument patterns, and the Rust code processes those arguments via variadic argument handling. [Knowledge Extraction] There is no direct structural match between the full functions, but there are API mappings related to variadic argument handling and function call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx71281_rank1.c", "source_rust_file": "API_Mapping__main__idx71281_rank1.rs", "c_api": "ap.arg::<c_long>()", "rust_api": "ap.arg::<c_long>()", "mapping_type": "method", "description": "Accessing variadic arguments by type", "reasoning": "[Task Analysis] C code is a test driver calling multiple functions with various arguments; Rust code is a variadic function implementation using a macro 'continue_if!' to validate arguments. [Similarity] The C code calls functions with specific argument patterns, and the Rust code processes those arguments via variadic argument handling. [Knowledge Extraction] There is no direct structural match between the full functions, but there are API mappings related to variadic argument handling and function call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx71281_rank1.c", "source_rust_file": "API_Mapping__main__idx71281_rank1.rs", "c_api": "ap.arg::<c_longlong>()", "rust_api": "ap.arg::<c_longlong>()", "mapping_type": "method", "description": "Accessing variadic arguments by type", "reasoning": "[Task Analysis] C code is a test driver calling multiple functions with various arguments; Rust code is a variadic function implementation using a macro 'continue_if!' to validate arguments. [Similarity] The C code calls functions with specific argument patterns, and the Rust code processes those arguments via variadic argument handling. [Knowledge Extraction] There is no direct structural match between the full functions, but there are API mappings related to variadic argument handling and function call patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx71281_rank1.c", "source_rust_file": "API_Mapping__main__idx71281_rank1.rs", "c_api": "check_varargs_1(...)", "rust_api": "continue_if!(ap.arg::<c_double>().floor() == 3.14f64.floor())", "mapping_type": "pattern", "description": "Validation of variadic arguments using a macro", "reasoning": "[Task Analysis] C code is a test driver calling multiple functions with various arguments; Rust code is a variadic function implementation using a macro 'continue_if!' to validate arguments. [Similarity] The C code calls functions with specific argument patterns, and the Rust code processes those arguments via variadic argument handling. [Knowledge Extraction] There is no direct structural match between the full functions, but there are API mappings related to variadic argument handling and function call patterns."}]
+Unixcoder Score: 0.028599156066775322
+--------------------------------------------------
+C_Code: 
+struct list_node {
+  struct list_node *prev;
+  struct list_node *next;
+  void* data;
+}
+Function: 
+struct StaticDoubleLinked {
+    prev: &'static StaticDoubleLinked,
+    next: &'static StaticDoubleLinked,
+    data: i32,
+    head: bool
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx71283_rank1.c", "source_rust_file": "API_Mapping__main__idx71283_rank1.rs", "c_api": "assert(test_rust(...))", "rust_api": "pub unsafe extern \"C\" fn check_varargs_3(...)", "mapping_type": "function", "description": "Variadic function call with argument validation", "reasoning": "[Task Analysis] C code is a test harness calling multiple Rust functions with various arguments; Rust code is a variadic function implementing a specific check. [Similarity] The C code calls functions with specific arguments, and the Rust code processes those arguments using a variadic argument list. [Knowledge Extraction] The C calls are mapped to Rust function calls with similar argument patterns, and the Rust function uses variadic argument processing, which is a key API pattern here."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx71283_rank1.c", "source_rust_file": "API_Mapping__main__idx71283_rank1.rs", "c_api": "ap.arg::<c_int>()", "rust_api": "ap.arg::<c_int>()", "mapping_type": "method", "description": "Accessing variadic arguments by type", "reasoning": "[Task Analysis] C code is a test harness calling multiple Rust functions with various arguments; Rust code is a variadic function implementing a specific check. [Similarity] The C code calls functions with specific arguments, and the Rust code processes those arguments using a variadic argument list. [Knowledge Extraction] The C calls are mapped to Rust function calls with similar argument patterns, and the Rust function uses variadic argument processing, which is a key API pattern here."}]
+Unixcoder Score: 0.021334843710064888
+--------------------------------------------------
+C_Code: 
+static void LoadCaCertFromMemory(X509_STORE *store, const std::string &pemCerts)
+{
+    if (!store || pemCerts.empty() || pemCerts.size() > static_cast<size_t>(INT_MAX)) {
+        return;
+    }
+
+    auto cbio = BIO_new_mem_buf(pemCerts.data(), static_cast<int>(pemCerts.size()));
+    if (!cbio) {
+        return;
+    }
+
+    auto inf = PEM_X509_INFO_read_bio(cbio, nullptr, nullptr, nullptr);
+    if (!inf) {
+        BIO_free(cbio);
+        return;
+    }
+
+    /* add each entry from PEM file to x509_store */
+    for (int i = 0; i < static_cast<int>(sk_X509_INFO_num(inf)); ++i) {
+        auto itmp = sk_X509_INFO_value(inf, i);
+        if (!itmp) {
+            continue;
+        }
+        if (itmp->x509) {
+            X509_STORE_add_cert(store, itmp->x509);
+        }
+        if (itmp->crl) {
+            X509_STORE_add_crl(store, itmp->crl);
+        }
+    }
+
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    BIO_free(cbio);
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__run__idx31363_rank3.c", "source_rust_file": "Partial__run__idx31363_rank3.rs", "c_fragment": "for (int i = 0; i < COUNT; i++) {\n        list.append(i);\n    }", "rust_fragment": "list.insert(1);\n    list.insert(2);\n    list.insert(3);\n    list.insert(4);", "description": "Both use loops to populate a list with sequential values.", "reasoning": "[Task Analysis] C code implements a test for an array list with append, index_of, replace, and pop operations; Rust code implements a test for a TinyList with insert, remove, and contains operations. [Similarity] Names do not match exactly but both test list-like data structures with similar logical operations (insertion, lookup, removal). [Knowledge Extraction] Found partial structural match in loop-based testing patterns and API mappings for list operations like insert/append and remove/contains."}, {"knowledge_type": "Partial", "source_c_file": "Partial__run__idx31363_rank3.c", "source_rust_file": "Partial__run__idx31363_rank3.rs", "c_fragment": "for (int i = 0; i < COUNT; i++) {\n        CHECK (list.index_of(i) == i);\n    }", "rust_fragment": "assert!(list.contains(&1));\n    assert!(list.contains(&2));\n    assert!(list.contains(&3));", "description": "Both verify element presence in the list.", "reasoning": "[Task Analysis] C code implements a test for an array list with append, index_of, replace, and pop operations; Rust code implements a test for a TinyList with insert, remove, and contains operations. [Similarity] Names do not match exactly but both test list-like data structures with similar logical operations (insertion, lookup, removal). [Knowledge Extraction] Found partial structural match in loop-based testing patterns and API mappings for list operations like insert/append and remove/contains."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__run__idx31363_rank3.c", "source_rust_file": "Partial__run__idx31363_rank3.rs", "c_api": "list.pop(NULL)", "rust_api": "list.remove(&4)", "mapping_type": "method", "description": "Removing elements from a list", "reasoning": "[Task Analysis] C code implements a test for an array list with append, index_of, replace, and pop operations; Rust code implements a test for a TinyList with insert, remove, and contains operations. [Similarity] Names do not match exactly but both test list-like data structures with similar logical operations (insertion, lookup, removal). [Knowledge Extraction] Found partial structural match in loop-based testing patterns and API mappings for list operations like insert/append and remove/contains."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__run__idx31363_rank3.c", "source_rust_file": "Partial__run__idx31363_rank3.rs", "c_api": "list.replace(i, -i)", "rust_api": "list.remove(&4)", "mapping_type": "method", "description": "Removing elements from a list", "reasoning": "[Task Analysis] C code implements a test for an array list with append, index_of, replace, and pop operations; Rust code implements a test for a TinyList with insert, remove, and contains operations. [Similarity] Names do not match exactly but both test list-like data structures with similar logical operations (insertion, lookup, removal). [Knowledge Extraction] Found partial structural match in loop-based testing patterns and API mappings for list operations like insert/append and remove/contains."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__run__idx31363_rank3.c", "source_rust_file": "Partial__run__idx31363_rank3.rs", "c_api": "list.index_of(i)", "rust_api": "list.contains(&1)", "mapping_type": "method", "description": "Checking for element presence in a list", "reasoning": "[Task Analysis] C code implements a test for an array list with append, index_of, replace, and pop operations; Rust code implements a test for a TinyList with insert, remove, and contains operations. [Similarity] Names do not match exactly but both test list-like data structures with similar logical operations (insertion, lookup, removal). [Knowledge Extraction] Found partial structural match in loop-based testing patterns and API mappings for list operations like insert/append and remove/contains."}, {"knowledge_type": "Partial", "source_c_file": "Partial__run__idx31363_rank3.c", "source_rust_file": "Partial__run__idx31363_rank3.rs", "c_fragment": "for (int i = COUNT - 1; i >= 0; i--) {\n        CHECK (list.pop(NULL));\n    }", "rust_fragment": "assert!(list.remove(&4));\n    assert!(!list.contains(&4));", "description": "Both remove elements from the list and verify removal.", "reasoning": "[Task Analysis] C code implements a test for an array list with append, index_of, replace, and pop operations; Rust code implements a test for a TinyList with insert, remove, and contains operations. [Similarity] Names do not match exactly but both test list-like data structures with similar logical operations (insertion, lookup, removal). [Knowledge Extraction] Found partial structural match in loop-based testing patterns and API mappings for list operations like insert/append and remove/contains."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__run__idx31363_rank3.c", "source_rust_file": "Partial__run__idx31363_rank3.rs", "c_api": "list.append(i)", "rust_api": "list.insert(1)", "mapping_type": "method", "description": "Inserting elements into a list", "reasoning": "[Task Analysis] C code implements a test for an array list with append, index_of, replace, and pop operations; Rust code implements a test for a TinyList with insert, remove, and contains operations. [Similarity] Names do not match exactly but both test list-like data structures with similar logical operations (insertion, lookup, removal). [Knowledge Extraction] Found partial structural match in loop-based testing patterns and API mappings for list operations like insert/append and remove/contains."}, {"knowledge_type": "Partial", "source_c_file": "Partial__run__idx31363_rank3.c", "source_rust_file": "Partial__run__idx31363_rank3.rs", "c_fragment": "for (int i = 0; i < COUNT; i++) {\n        CHECK (list[i] == i);\n    }", "rust_fragment": "assert_eq!(list.len(), 4);", "description": "Both verify list contents or size after insertion.", "reasoning": "[Task Analysis] C code implements a test for an array list with append, index_of, replace, and pop operations; Rust code implements a test for a TinyList with insert, remove, and contains operations. [Similarity] Names do not match exactly but both test list-like data structures with similar logical operations (insertion, lookup, removal). [Knowledge Extraction] Found partial structural match in loop-based testing patterns and API mappings for list operations like insert/append and remove/contains."}]
+Unixcoder Score: -0.024258777499198914
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__release_alloc__idx76796_rank4.c", "source_rust_file": "API_Mapping__release_alloc__idx76796_rank4.rs", "c_api": "_allocation_list[alloc->index] = NULL", "rust_api": "unsafe { transmute(Slice { data: self.as_mut_ptr().offset(start as int) as *T, len: (end - start) }) }", "mapping_type": "pattern", "description": "Clearing allocation list entry vs unsafe slice construction", "reasoning": "[Task Analysis] C code manages memory deallocation with tracking logic; Rust code manipulates mutable slices with bounds checking. [Similarity] No structural similarity at function level due to different domains (memory management vs slice manipulation). [Knowledge Extraction] No full or partial match. API mappings identified: C 'free' pattern maps to Rust 'slice mutation' pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__release_alloc__idx76796_rank4.c", "source_rust_file": "API_Mapping__release_alloc__idx76796_rank4.rs", "c_api": "alloc->index = -1", "rust_api": "transmute(Slice { data: self.as_mut_ptr().offset(start as int) as *T, len: (end - start) })", "mapping_type": "pattern", "description": "Memory index reset to invalid state vs slice data pointer offset", "reasoning": "[Task Analysis] C code manages memory deallocation with tracking logic; Rust code manipulates mutable slices with bounds checking. [Similarity] No structural similarity at function level due to different domains (memory management vs slice manipulation). [Knowledge Extraction] No full or partial match. API mappings identified: C 'free' pattern maps to Rust 'slice mutation' pattern."}]
+Unixcoder Score: -0.03303883969783783
+--------------------------------------------------
+C_Code: 
+void CommonEventCollect::SaveCacheCommonEventSaExtraId(const OnDemandEvent& event,
+    const std::list<SaControlInfo>& saControlList)
+{
+    std::list<int32_t> saList = SamgrUtil::GetCacheCommonEventSa(event, saControlList);
+    if (saList.empty()) {
+        return;
+    }
+    for (auto& item : saList) {
+        SaveSaExtraDataId(item, event.extraDataId);
+    }
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__release_alloc__idx9734_rank3.c", "source_rust_file": "API_Mapping__release_alloc__idx9734_rank3.rs", "c_api": "free(ptr)", "rust_api": "libc::free(ptr as *mut libc::c_void)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C code manages memory deallocation with tracking logic; Rust code calls libc::free. [Similarity] Names don't match but both perform memory deallocation. [Knowledge Extraction] Found API mapping for memory deallocation pattern."}]
+Unixcoder Score: -0.04769284278154373
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn main() {
+    unsafe { assert_eq!(S, *(S as *const *const u8)); }
+
+    let mut test_vec = Vec::new();
+    let mut cur = &L1;
+    loop {
+        test_vec.push(cur.data);
+        cur = cur.next;
+        if cur.head { break }
+    }
+    assert_eq!(&test_vec, &[1,2,3]);
+
+    let mut test_vec = Vec::new();
+    let mut cur = &L1;
+    loop {
+        cur = cur.prev;
+        test_vec.push(cur.data);
+        if cur.head { break }
+    }
+    assert_eq!(&test_vec, &[3,2,1]);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__release_alloc__idx120705_rank5.c", "source_rust_file": "API_Mapping__release_alloc__idx120705_rank5.rs", "c_api": "free", "rust_api": "System.alloc", "mapping_type": "function", "description": "Memory deallocation in C vs system memory allocation in Rust", "reasoning": "[Task Analysis] C function `memory_region::release_alloc` frees memory and performs tracking checks; Rust function `__rdl_alloc` allocates memory using system allocator. [Similarity] Names do not refer to the same concept (release vs alloc), and domains are different (freeing memory vs allocating). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve memory management operations, so API mappings are extracted."}]
+Unixcoder Score: -0.057321514934301376
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+fn test_dlist_pop_tail() {
+        let l = from_vec(~[1,2,3]);
+        assert l.pop_tail().get() == 3;
+        assert l.tail() == 2;
+        assert l.head() == 1;
+        assert l.pop_tail().get() == 2;
+        assert l.tail() == 1;
+        assert l.head() == 1;
+        assert l.pop_tail().get() == 1;
+        assert l.is_empty();
+        assert l.pop_tail().is_none();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__release_alloc__idx9736_rank2.c", "source_rust_file": "API_Mapping__release_alloc__idx9736_rank2.rs", "c_api": "get_header(mem)", "rust_api": "get_header<'a>(ptr: *mut u8)", "mapping_type": "function", "description": "Retrieve header from memory pointer", "reasoning": "[Task Analysis] C code is a memory deallocation function (`release_alloc`) that manages tracked allocations, while Rust code defines a helper function to retrieve a header from a pointer. [Similarity] The functions do not share structural similarity as a whole; the Rust code is a simple pointer arithmetic operation, while the C code contains complex logic for allocation tracking and validation. [Knowledge Extraction] No full or partial match. However, both involve memory management operations, and the Rust function `get_header` is semantically related to the C operation `get_header(mem)` used in the C code, even though the names don't match exactly. [API Mapping] The C `get_header(mem)` call and the Rust `get_header` function both perform the same low-level memory operation of retrieving a header from a pointer, despite different names and contexts. [Final Classification] No full/partial match due to domain mismatch (C: allocation tracking, Rust: raw pointer manipulation), but API mapping is extracted."}]
+Unixcoder Score: -0.058990608900785446
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__release_alloc__idx90208_rank5.c", "source_rust_file": "API_Mapping__release_alloc__idx90208_rank5.rs", "c_api": "free", "rust_api": "dealloc", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code handles memory deallocation with tracking logic; Rust code performs raw memory allocation/deallocation. -> [Similarity] -> No structural similarity at function level; C has complex tracking logic, Rust has simple alloc/dealloc. -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings for memory deallocation patterns."}]
+Unixcoder Score: -0.07692994177341461
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        self.head.is_none()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__release_alloc__idx21231_rank3.c", "source_rust_file": "Partial__release_alloc__idx21231_rank3.rs", "c_fragment": "#   if RUSTRT_TRACK_ALLOCATIONS >= 2\n    if (((size_t) alloc->index) >= _allocation_list.size()) {\n        printf(\"free: ptr 0x%\" PRIxPTR \" (%s) index %d is beyond allocation_list of size %zu\\n\",\n               (uintptr_t) get_data(alloc), alloc->tag, alloc->index, _allocation_list.size());\n        maybe_print_backtrace(alloc);\n        assert(false && \"index beyond allocation_list\");\n    }\n    if (_allocation_list[alloc->index] != alloc) {\n        printf(\"free: ptr 0x%\" PRIxPTR \" (%s) is not in allocation_list\\n\",\n               (uintptr_t) get_data(alloc), alloc->tag);\n        maybe_print_backtrace(alloc);\n        assert(false && \"not in allocation_list\");\n    }\n    else {\n        // printf(\"freed index %d\\n\", index);\n        _allocation_list[alloc->index] = NULL;\n        alloc->index = -1;\n    }", "rust_fragment": "let alloc = if M::PANIC_ON_ALLOC_FAIL {\n            Allocation::uninit(size, align)\n        } else {\n            Allocation::try_uninit(size, align)?\n        };", "description": "Both handle memory allocation with error handling and tracking logic.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('release_alloc' vs 'allocate_ptr'), but both relate to memory allocation/deallocation logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both deal with memory management, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C function releases memory, Rust function allocates memory. [Similarity] -> Not full match due to different operations (free vs alloc), but both involve memory tracking and allocation logic. [Knowledge Extraction] -> Extract partial structural fragments and API mappings based on shared memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__release_alloc__idx21231_rank3.c", "source_rust_file": "Partial__release_alloc__idx21231_rank3.rs", "c_api": "dec_alloc();", "rust_api": "self.allocate_raw_ptr(alloc, kind)", "mapping_type": "function", "description": "Decrement allocation counter or finalize allocation", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('release_alloc' vs 'allocate_ptr'), but both relate to memory allocation/deallocation logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both deal with memory management, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C function releases memory, Rust function allocates memory. [Similarity] -> Not full match due to different operations (free vs alloc), but both involve memory tracking and allocation logic. [Knowledge Extraction] -> Extract partial structural fragments and API mappings based on shared memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__release_alloc__idx21231_rank3.c", "source_rust_file": "Partial__release_alloc__idx21231_rank3.rs", "c_api": "_allocation_list[alloc->index] = NULL;", "rust_api": "self.allocate_raw_ptr(alloc, kind)", "mapping_type": "function", "description": "Memory deallocation or marking as freed", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('release_alloc' vs 'allocate_ptr'), but both relate to memory allocation/deallocation logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both deal with memory management, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C function releases memory, Rust function allocates memory. [Similarity] -> Not full match due to different operations (free vs alloc), but both involve memory tracking and allocation logic. [Knowledge Extraction] -> Extract partial structural fragments and API mappings based on shared memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__release_alloc__idx21231_rank3.c", "source_rust_file": "Partial__release_alloc__idx21231_rank3.rs", "c_api": "alloc_header *alloc = get_header(mem);", "rust_api": "let alloc = if M::PANIC_ON_ALLOC_FAIL { Allocation::uninit(size, align) } else { Allocation::try_uninit(size, align)? };", "mapping_type": "function", "description": "Memory allocation initialization", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('release_alloc' vs 'allocate_ptr'), but both relate to memory allocation/deallocation logic. [Filter 2: Empty/Trivial Code] -> Neither side is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both deal with memory management, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls. [Task Analysis] -> C function releases memory, Rust function allocates memory. [Similarity] -> Not full match due to different operations (free vs alloc), but both involve memory tracking and allocation logic. [Knowledge Extraction] -> Extract partial structural fragments and API mappings based on shared memory management patterns."}]
+Unixcoder Score: -0.07837982475757599
+--------------------------------------------------

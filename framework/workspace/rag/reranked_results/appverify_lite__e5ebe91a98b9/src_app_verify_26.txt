@@ -1,0 +1,579 @@
+C_Code: 
+static void _upb_Decoder_VerifyUtf8(upb_Decoder* d, const char* buf, int len) {
+  if (!_upb_Decoder_VerifyUtf8Inline(buf, len)) {
+    _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_BadUtf8);
+  }
+}
+Function: 
+pub unsafe fn decode(
+    buf: &[u8],
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+    arena: &Arena,
+) -> Result<(), DecodeStatus> {
+    let len = buf.len();
+    let buf = buf.as_ptr();
+    let options = DecodeOption::CheckRequired as i32;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`
+    // - `buf` is legally readable for at least `buf_size` bytes.
+    // - `extreg` is null.
+    let status =
+        unsafe { upb_Decode(buf, len, msg, mini_table, core::ptr::null(), options, arena.raw()) };
+    match status {
+        DecodeStatus::Ok => Ok(()),
+        _ => Err(status),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx117480_rank1.h", "source_rust_file": "API_Mapping__arena_salloc__idx117480_rank1.rs", "c_api": "arena_salloc", "rust_api": "allocate", "mapping_type": "function", "description": "Allocation size retrieval and memory management", "reasoning": "[Task Analysis] C function `arena_salloc` computes the size of an allocation given a pointer, handling both small and large allocations. Rust function `allocate` delegates to an inner allocator. [Similarity] Names and domains differ significantly; C operates on memory chunks and page mappings, while Rust uses a generic allocator trait. [Knowledge Extraction] No full structural match due to domain mismatch and different abstraction levels. However, both involve allocation size computation and memory management logic. Extract API mapping for allocation size retrieval pattern."}]
+Unixcoder Score: 0.05825360119342804
+--------------------------------------------------
+C_Code: 
+bool TLSCertificate::CertificateFromDer(const std::string &data, CertType certType)
+{
+    if (data.empty()) {
+        NETSTACK_LOGE("The certificate file to be converted is empty");
+        return false;
+    }
+    std::string realPath;
+    if (!CheckFilePath(data, realPath)) {
+        NETSTACK_LOGE("file name is error");
+        return false;
+    }
+
+    FILE *fp = fopen(realPath.c_str(), FILE_OPEN_FLAG);
+    if (!fp) {
+        NETSTACK_LOGE("Couldn't open file for reading, error string %{public}s", strerror(errno));
+        return false;
+    }
+    unsigned char cert[FILE_READ_CERT_LEN] = {};
+    size_t certLen = fread(cert, 1, FILE_READ_CERT_LEN, fp);
+    fclose(fp);
+    if (!certLen) {
+        NETSTACK_LOGE("Insufficient size bytes were read");
+        return false;
+    }
+    const auto *cert_data = reinterpret_cast<const unsigned char *>(cert);
+    X509 *x509 = d2i_X509(nullptr, &cert_data, static_cast<long>(certLen));
+    if (!x509) {
+        NETSTACK_LOGE("x509 is null");
+        return false;
+    }
+    x509_ = X509_dup(x509);
+    if (!AnalysisCertificate(certType, x509)) {
+        NETSTACK_LOGE("Analysis certificate is false");
+        X509_free(x509);
+        return false;
+    }
+    X509_free(x509);
+    return true;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Unixcoder Score: 0.040329188108444214
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_salloc(const void *ptr, bool demote)
+{
+	size_t ret;
+	arena_chunk_t *chunk;
+	size_t pageind, binind;
+
+	assert(ptr != NULL);
+	assert(CHUNK_ADDR2BASE(ptr) != ptr);
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+	pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+	assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+	binind = arena_mapbits_binind_get(chunk, pageind);
+	if (binind == BININD_INVALID || (config_prof && demote == false &&
+	    prof_promote && arena_mapbits_large_get(chunk, pageind) != 0)) {
+		/*
+		 * Large allocation.  In the common case (demote == true), and
+		 * as this is an inline function, most callers will only end up
+		 * looking at binind to determine that ptr is a small
+		 * allocation.
+		 */
+		assert(((uintptr_t)ptr & PAGE_MASK) == 0);
+		ret = arena_mapbits_large_size_get(chunk, pageind);
+		assert(ret != 0);
+		assert(pageind + (ret>>LG_PAGE) <= chunk_npages);
+		assert(ret == PAGE || arena_mapbits_large_size_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1) == 0);
+		assert(binind == arena_mapbits_binind_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1));
+		assert(arena_mapbits_dirty_get(chunk, pageind) ==
+		    arena_mapbits_dirty_get(chunk, pageind+(ret>>LG_PAGE)-1));
+	} else {
+		/*
+		 * Small allocation (possibly promoted to a large object due to
+		 * prof_promote).
+		 */
+		assert(arena_mapbits_large_get(chunk, pageind) != 0 ||
+		    arena_ptr_small_binind_get(ptr, arena_mapbits_get(chunk,
+		    pageind)) == binind);
+		ret = arena_bin_info[binind].reg_size;
+	}
+
+	return (ret);
+}
+Function: 
+default fn alloc_from_iter(self, arena: &TypedArena<T>) -> &mut [T] {
+        let vec: SmallVec<[_; 8]> = self.into_iter().collect();
+        vec.alloc_from_iter(arena)
+    }
+Unixcoder Score: 0.014208701439201832
+--------------------------------------------------
+C_Code: 
+int ares__read_line(FILE *fp, char **buf, size_t *bufsize)
+{
+  char *newbuf;
+  size_t offset = 0;
+  size_t len;
+
+  if (*buf == NULL)
+    {
+      *buf = malloc(128);
+      if (!*buf)
+        return ARES_ENOMEM;
+      *bufsize = 128;
+    }
+
+  for (;;)
+    {
+      int bytestoread = aresx_uztosi(*bufsize - offset);
+
+      if (!fgets(*buf + offset, bytestoread, fp))
+        return (offset != 0) ? 0 : (ferror(fp)) ? ARES_EFILE : ARES_EOF;
+      len = offset + strlen(*buf + offset);
+      if ((*buf)[len - 1] == '\n')
+        {
+          (*buf)[len - 1] = 0;
+          break;
+        }
+      offset = len;
+      if(len < *bufsize - 1)
+        continue;
+
+      /* Allocate more space. */
+      newbuf = realloc(*buf, *bufsize * 2);
+      if (!newbuf)
+        return ARES_ENOMEM;
+      *buf = newbuf;
+      *bufsize *= 2;
+    }
+  return ARES_SUCCESS;
+}
+Function: 
+pub fn read_line(&self, buf: &mut String) -> io::Result<usize> {
+        self.lock().read_line(buf)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__QueryTasks__idx864_rank3.c", "source_rust_file": "Partial__QueryTasks__idx864_rank3.rs", "c_api": "SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret))", "rust_api": "sys_event!(\n                    ExecError,\n                    DfxCode::INVALID_IPC_MESSAGE_A18,\n                    &format!(\"Service show, failed: tid not valid: {}\", task_id)\n                );", "mapping_type": "function", "description": "Sending system event logs for fault reporting", "reasoning": "[Task Analysis] C function handles IPC request for querying tasks, Rust function implements service logic for showing tasks. [Similarity] Both involve reading data from parcel, processing a loop of items, and writing results back. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for parcel read/write, error handling, and task info handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__QueryTasks__idx864_rank3.c", "source_rust_file": "Partial__QueryTasks__idx864_rank3.rs", "c_fragment": "for (const std::string &tid : tids) {\n        data.WriteString(tid);\n    }", "rust_fragment": "for i in 0..len {\n            let task_id: String = data.read()?;\n            info!(\"Service show tid {}\", task_id);\n\n            let Ok(task_id) = task_id.parse::<u32>() else {\n                error!(\"Service show, failed: tid not valid: {}\", task_id);\n                sys_event!(\n                    ExecError,\n                    DfxCode::INVALID_IPC_MESSAGE_A18,\n                    &format!(\"Service show, failed: tid not valid: {}\", task_id)\n                );\n                set_code_with_index_other(&mut vec, i, ErrorCode::TaskNotFound);\n                continue;\n            };", "description": "Both process a list of identifiers (task IDs) from input data using a loop.", "reasoning": "[Task Analysis] C function handles IPC request for querying tasks, Rust function implements service logic for showing tasks. [Similarity] Both involve reading data from parcel, processing a loop of items, and writing results back. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for parcel read/write, error handling, and task info handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__QueryTasks__idx864_rank3.c", "source_rust_file": "Partial__QueryTasks__idx864_rank3.rs", "c_fragment": "for (uint32_t i = 0; i < len; i++) {\n        rets[i].code = static_cast<ExceptionErrorCode>(reply.ReadInt32());\n        TaskInfo info;\n        ParcelHelper::UnMarshal(reply, info);\n        rets[i].info = info;\n    }", "rust_fragment": "for (c, info) in vec {\n            reply.write(&(c as i32))?;\n            // TODO: Sends info only when ErrOk.\n            serialize_task_info(info, reply)?;\n        }", "description": "Both iterate over results and write them back to output parcel.", "reasoning": "[Task Analysis] C function handles IPC request for querying tasks, Rust function implements service logic for showing tasks. [Similarity] Both involve reading data from parcel, processing a loop of items, and writing results back. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for parcel read/write, error handling, and task info handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__QueryTasks__idx864_rank3.c", "source_rust_file": "Partial__QueryTasks__idx864_rank3.rs", "c_api": "data.WriteString(tid)", "rust_api": "let task_id: String = data.read()?;", "mapping_type": "function", "description": "Reading/writing string data in parcel", "reasoning": "[Task Analysis] C function handles IPC request for querying tasks, Rust function implements service logic for showing tasks. [Similarity] Both involve reading data from parcel, processing a loop of items, and writing results back. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for parcel read/write, error handling, and task info handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__QueryTasks__idx864_rank3.c", "source_rust_file": "Partial__QueryTasks__idx864_rank3.rs", "c_api": "ParcelHelper::UnMarshal(reply, info)", "rust_api": "serialize_task_info(info, reply)?;", "mapping_type": "function", "description": "Serializing/deserializing task info in parcel", "reasoning": "[Task Analysis] C function handles IPC request for querying tasks, Rust function implements service logic for showing tasks. [Similarity] Both involve reading data from parcel, processing a loop of items, and writing results back. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for parcel read/write, error handling, and task info handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__QueryTasks__idx864_rank3.c", "source_rust_file": "Partial__QueryTasks__idx864_rank3.rs", "c_api": "reply.ReadInt32()", "rust_api": "reply.write(&(c as i32))?;", "mapping_type": "function", "description": "Reading/writing integer data in parcel", "reasoning": "[Task Analysis] C function handles IPC request for querying tasks, Rust function implements service logic for showing tasks. [Similarity] Both involve reading data from parcel, processing a loop of items, and writing results back. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for parcel read/write, error handling, and task info handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__QueryTasks__idx864_rank3.c", "source_rust_file": "Partial__QueryTasks__idx864_rank3.rs", "c_api": "data.WriteUint32(len)", "rust_api": "let len: u32 = data.read()?;", "mapping_type": "function", "description": "Reading/writing length of data in parcel", "reasoning": "[Task Analysis] C function handles IPC request for querying tasks, Rust function implements service logic for showing tasks. [Similarity] Both involve reading data from parcel, processing a loop of items, and writing results back. [Knowledge Extraction] Found partial structural match in loop processing and API mappings for parcel read/write, error handling, and task info handling."}]
+Unixcoder Score: 0.0032043950632214546
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_salloc(const void *ptr, bool demote)
+{
+	size_t ret;
+	arena_chunk_t *chunk;
+	size_t pageind, binind;
+
+	assert(ptr != NULL);
+	assert(CHUNK_ADDR2BASE(ptr) != ptr);
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+	pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+	assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+	binind = arena_mapbits_binind_get(chunk, pageind);
+	if (binind == BININD_INVALID || (config_prof && demote == false &&
+	    prof_promote && arena_mapbits_large_get(chunk, pageind) != 0)) {
+		/*
+		 * Large allocation.  In the common case (demote == true), and
+		 * as this is an inline function, most callers will only end up
+		 * looking at binind to determine that ptr is a small
+		 * allocation.
+		 */
+		assert(((uintptr_t)ptr & PAGE_MASK) == 0);
+		ret = arena_mapbits_large_size_get(chunk, pageind);
+		assert(ret != 0);
+		assert(pageind + (ret>>LG_PAGE) <= chunk_npages);
+		assert(ret == PAGE || arena_mapbits_large_size_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1) == 0);
+		assert(binind == arena_mapbits_binind_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1));
+		assert(arena_mapbits_dirty_get(chunk, pageind) ==
+		    arena_mapbits_dirty_get(chunk, pageind+(ret>>LG_PAGE)-1));
+	} else {
+		/*
+		 * Small allocation (possibly promoted to a large object due to
+		 * prof_promote).
+		 */
+		assert(arena_mapbits_large_get(chunk, pageind) != 0 ||
+		    arena_ptr_small_binind_get(ptr, arena_mapbits_get(chunk,
+		    pageind)) == binind);
+		ret = arena_bin_info[binind].reg_size;
+	}
+
+	return (ret);
+}
+Function: 
+pub unsafe fn alloc(&mut self, layout: Layout) -> *mut u8 {
+        if layout.align() > 4096 || layout.size() > ARENA_SIZE {
+            return core::ptr::null_mut();
+        }
+
+        let align_minus_one = layout.align() - 1;
+        let start = (self.allocated + align_minus_one) & !align_minus_one; // round up
+        let new_cursor = start + layout.size();
+
+        if new_cursor >= ARENA_SIZE {
+            return core::ptr::null_mut();
+        }
+
+        self.allocated = new_cursor;
+        self.buf.as_mut_ptr().add(start)
+    }
+Unixcoder Score: 0.0015200437046587467
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_salloc(const void *ptr, bool demote)
+{
+	size_t ret;
+	arena_chunk_t *chunk;
+	size_t pageind, binind;
+
+	assert(ptr != NULL);
+	assert(CHUNK_ADDR2BASE(ptr) != ptr);
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+	pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+	assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+	binind = arena_mapbits_binind_get(chunk, pageind);
+	if (binind == BININD_INVALID || (config_prof && demote == false &&
+	    prof_promote && arena_mapbits_large_get(chunk, pageind) != 0)) {
+		/*
+		 * Large allocation.  In the common case (demote == true), and
+		 * as this is an inline function, most callers will only end up
+		 * looking at binind to determine that ptr is a small
+		 * allocation.
+		 */
+		assert(((uintptr_t)ptr & PAGE_MASK) == 0);
+		ret = arena_mapbits_large_size_get(chunk, pageind);
+		assert(ret != 0);
+		assert(pageind + (ret>>LG_PAGE) <= chunk_npages);
+		assert(ret == PAGE || arena_mapbits_large_size_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1) == 0);
+		assert(binind == arena_mapbits_binind_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1));
+		assert(arena_mapbits_dirty_get(chunk, pageind) ==
+		    arena_mapbits_dirty_get(chunk, pageind+(ret>>LG_PAGE)-1));
+	} else {
+		/*
+		 * Small allocation (possibly promoted to a large object due to
+		 * prof_promote).
+		 */
+		assert(arena_mapbits_large_get(chunk, pageind) != 0 ||
+		    arena_ptr_small_binind_get(ptr, arena_mapbits_get(chunk,
+		    pageind)) == binind);
+		ret = arena_bin_info[binind].reg_size;
+	}
+
+	return (ret);
+}
+Function: 
+fn allocate_zeroed() {
+    unsafe {
+        let layout = Layout::from_size_align(1024, 1).unwrap();
+        let ptr =
+            Global.allocate_zeroed(layout.clone()).unwrap_or_else(|_| handle_alloc_error(layout));
+
+        let mut i = ptr.as_non_null_ptr().as_ptr();
+        let end = i.add(layout.size());
+        while i < end {
+            assert_eq!(*i, 0);
+            i = i.add(1);
+        }
+        Global.deallocate(ptr.as_non_null_ptr(), layout);
+    }
+}
+Unixcoder Score: -0.0028640611562877893
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_salloc(const void *ptr, bool demote)
+{
+	size_t ret;
+	arena_chunk_t *chunk;
+	size_t pageind, binind;
+
+	assert(ptr != NULL);
+	assert(CHUNK_ADDR2BASE(ptr) != ptr);
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+	pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+	assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+	binind = arena_mapbits_binind_get(chunk, pageind);
+	if (binind == BININD_INVALID || (config_prof && demote == false &&
+	    prof_promote && arena_mapbits_large_get(chunk, pageind) != 0)) {
+		/*
+		 * Large allocation.  In the common case (demote == true), and
+		 * as this is an inline function, most callers will only end up
+		 * looking at binind to determine that ptr is a small
+		 * allocation.
+		 */
+		assert(((uintptr_t)ptr & PAGE_MASK) == 0);
+		ret = arena_mapbits_large_size_get(chunk, pageind);
+		assert(ret != 0);
+		assert(pageind + (ret>>LG_PAGE) <= chunk_npages);
+		assert(ret == PAGE || arena_mapbits_large_size_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1) == 0);
+		assert(binind == arena_mapbits_binind_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1));
+		assert(arena_mapbits_dirty_get(chunk, pageind) ==
+		    arena_mapbits_dirty_get(chunk, pageind+(ret>>LG_PAGE)-1));
+	} else {
+		/*
+		 * Small allocation (possibly promoted to a large object due to
+		 * prof_promote).
+		 */
+		assert(arena_mapbits_large_get(chunk, pageind) != 0 ||
+		    arena_ptr_small_binind_get(ptr, arena_mapbits_get(chunk,
+		    pageind)) == binind);
+		ret = arena_bin_info[binind].reg_size;
+	}
+
+	return (ret);
+}
+Function: 
+unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        // SAFETY: Pointers returned by `allocate` satisfy the guarantees of `System`
+        let zeroed = true;
+        unsafe { allocate(layout, zeroed) }
+    }
+Unixcoder Score: -0.003939539659768343
+--------------------------------------------------
+C_Code: 
+size_t
+je_malloc_usable_size(JEMALLOC_USABLE_SIZE_CONST void *ptr)
+{
+	size_t ret;
+
+	assert(malloc_initialized || IS_INITIALIZER);
+	malloc_thread_init();
+
+	if (config_ivsalloc)
+		ret = ivsalloc(ptr, config_prof);
+	else
+		ret = (ptr != NULL) ? isalloc(ptr, config_prof) : 0;
+
+	return (ret);
+}
+Function: 
+unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // jemalloc provides alignment less than MIN_ALIGN for small allocations.
+        // So only rely on MIN_ALIGN if size >= align.
+        // Also see <https://github.com/rust-lang/rust/issues/45955> and
+        // <https://github.com/rust-lang/rust/issues/62251#issuecomment-507580914>.
+        if layout.align() <= MIN_ALIGN && layout.align() <= layout.size() {
+            unsafe { libc::malloc(layout.size()) as *mut u8 }
+        } else {
+            // `posix_memalign` returns a non-aligned value if supplied a very
+            // large alignment on older versions of Apple's platforms (unknown
+            // exactly which version range, but the issue is definitely
+            // present in macOS 10.14 and iOS 13.3).
+            //
+            // <https://github.com/rust-lang/rust/issues/30170>
+            #[cfg(target_vendor = "apple")]
+            {
+                if layout.align() > (1 << 31) {
+                    return ptr::null_mut();
+                }
+            }
+            unsafe { aligned_malloc(&layout) }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx92002_rank5.h", "source_rust_file": "API_Mapping__arena_salloc__idx92002_rank5.rs", "c_api": "Vec::new()", "rust_api": "arena_salloc", "mapping_type": "function", "description": "Container initialization", "reasoning": "[Task Analysis] C code is a memory allocator helper function that retrieves the size of an allocation given a pointer, while Rust code is a constructor for a generic Arena struct. [Similarity] No structural similarity at the function level; C operates on raw memory pointers and chunk metadata, while Rust creates a new Vec-based Arena. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and container creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__arena_salloc__idx92002_rank5.h", "source_rust_file": "API_Mapping__arena_salloc__idx92002_rank5.rs", "c_api": "arena_salloc", "rust_api": "Arena::new", "mapping_type": "function", "description": "Memory arena initialization", "reasoning": "[Task Analysis] C code is a memory allocator helper function that retrieves the size of an allocation given a pointer, while Rust code is a constructor for a generic Arena struct. [Similarity] No structural similarity at the function level; C operates on raw memory pointers and chunk metadata, while Rust creates a new Vec-based Arena. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and container creation."}]
+Unixcoder Score: -0.007587812375277281
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_salloc(const void *ptr, bool demote)
+{
+	size_t ret;
+	arena_chunk_t *chunk;
+	size_t pageind, binind;
+
+	assert(ptr != NULL);
+	assert(CHUNK_ADDR2BASE(ptr) != ptr);
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+	pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+	assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+	binind = arena_mapbits_binind_get(chunk, pageind);
+	if (binind == BININD_INVALID || (config_prof && demote == false &&
+	    prof_promote && arena_mapbits_large_get(chunk, pageind) != 0)) {
+		/*
+		 * Large allocation.  In the common case (demote == true), and
+		 * as this is an inline function, most callers will only end up
+		 * looking at binind to determine that ptr is a small
+		 * allocation.
+		 */
+		assert(((uintptr_t)ptr & PAGE_MASK) == 0);
+		ret = arena_mapbits_large_size_get(chunk, pageind);
+		assert(ret != 0);
+		assert(pageind + (ret>>LG_PAGE) <= chunk_npages);
+		assert(ret == PAGE || arena_mapbits_large_size_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1) == 0);
+		assert(binind == arena_mapbits_binind_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1));
+		assert(arena_mapbits_dirty_get(chunk, pageind) ==
+		    arena_mapbits_dirty_get(chunk, pageind+(ret>>LG_PAGE)-1));
+	} else {
+		/*
+		 * Small allocation (possibly promoted to a large object due to
+		 * prof_promote).
+		 */
+		assert(arena_mapbits_large_get(chunk, pageind) != 0 ||
+		    arena_ptr_small_binind_get(ptr, arena_mapbits_get(chunk,
+		    pageind)) == binind);
+		ret = arena_bin_info[binind].reg_size;
+	}
+
+	return (ret);
+}
+Function: 
+pub const fn new() -> Arena<T> {
+        Arena { data: Vec::new() }
+    }
+Unixcoder Score: -0.01999964378774166
+--------------------------------------------------
+C_Code: 
+JEMALLOC_ALWAYS_INLINE size_t
+arena_salloc(const void *ptr, bool demote)
+{
+	size_t ret;
+	arena_chunk_t *chunk;
+	size_t pageind, binind;
+
+	assert(ptr != NULL);
+	assert(CHUNK_ADDR2BASE(ptr) != ptr);
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+	pageind = ((uintptr_t)ptr - (uintptr_t)chunk) >> LG_PAGE;
+	assert(arena_mapbits_allocated_get(chunk, pageind) != 0);
+	binind = arena_mapbits_binind_get(chunk, pageind);
+	if (binind == BININD_INVALID || (config_prof && demote == false &&
+	    prof_promote && arena_mapbits_large_get(chunk, pageind) != 0)) {
+		/*
+		 * Large allocation.  In the common case (demote == true), and
+		 * as this is an inline function, most callers will only end up
+		 * looking at binind to determine that ptr is a small
+		 * allocation.
+		 */
+		assert(((uintptr_t)ptr & PAGE_MASK) == 0);
+		ret = arena_mapbits_large_size_get(chunk, pageind);
+		assert(ret != 0);
+		assert(pageind + (ret>>LG_PAGE) <= chunk_npages);
+		assert(ret == PAGE || arena_mapbits_large_size_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1) == 0);
+		assert(binind == arena_mapbits_binind_get(chunk,
+		    pageind+(ret>>LG_PAGE)-1));
+		assert(arena_mapbits_dirty_get(chunk, pageind) ==
+		    arena_mapbits_dirty_get(chunk, pageind+(ret>>LG_PAGE)-1));
+	} else {
+		/*
+		 * Small allocation (possibly promoted to a large object due to
+		 * prof_promote).
+		 */
+		assert(arena_mapbits_large_get(chunk, pageind) != 0 ||
+		    arena_ptr_small_binind_get(ptr, arena_mapbits_get(chunk,
+		    pageind)) == binind);
+		ret = arena_bin_info[binind].reg_size;
+	}
+
+	return (ret);
+}
+Function: 
+pub fn alloc_from_iter<T, I: IntoIterator<Item = T>>(&self, iter: I) -> &mut [T] {
+        let iter = iter.into_iter();
+        assert!(mem::size_of::<T>() != 0);
+        assert!(!mem::needs_drop::<T>());
+
+        let size_hint = iter.size_hint();
+
+        match size_hint {
+            (min, Some(max)) if min == max => {
+                // We know the exact number of elements the iterator will produce here
+                let len = min;
+
+                if len == 0 {
+                    return &mut [];
+                }
+
+                let mem = self.alloc_raw(Layout::array::<T>(len).unwrap()) as *mut T;
+                unsafe { self.write_from_iter(iter, len, mem) }
+            }
+            (_, _) => {
+                cold_path(move || -> &mut [T] {
+                    let mut vec: SmallVec<[_; 8]> = iter.collect();
+                    if vec.is_empty() {
+                        return &mut [];
+                    }
+                    // Move the content to the arena by copying it and then forgetting
+                    // the content of the SmallVec
+                    unsafe {
+                        let len = vec.len();
+                        let start_ptr =
+                            self.alloc_raw(Layout::for_value::<[T]>(vec.as_slice())) as *mut T;
+                        vec.as_ptr().copy_to_nonoverlapping(start_ptr, len);
+                        vec.set_len(0);
+                        slice::from_raw_parts_mut(start_ptr, len)
+                    }
+                })
+            }
+        }
+    }
+Unixcoder Score: -0.024967264384031296
+--------------------------------------------------

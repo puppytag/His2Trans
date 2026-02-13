@@ -1,0 +1,586 @@
+C_Code: 
+void
+rust_scheduler::destroy_task_thread(rust_sched_launcher *thread) {
+    KLOG(kernel, kern, "deleting task thread: " PTR, thread);
+    delete thread;
+}
+Function: 
+fn terminate_active_thread(&mut self) -> InterpResult<'tcx> {
+        let this = self.eval_context_mut();
+        let thread = this.active_thread_mut();
+        assert!(thread.stack.is_empty(), "only threads with an empty stack can be terminated");
+        thread.state = ThreadState::Terminated;
+
+        let current_span = this.machine.current_span();
+        for ptr in
+            this.machine.threads.thread_terminated(this.machine.data_race.as_mut(), current_span)
+        {
+            this.deallocate_ptr(ptr.into(), None, MiriMemoryKind::Tls.into())?;
+        }
+        Ok(())
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__place_task_in_tls__idx77600_rank1.c", "source_rust_file": "Full__place_task_in_tls__idx77600_rank1.rs", "c_api": "pthread_setspecific(task_key, task)", "rust_api": "pthread_setspecific(key, value)", "mapping_type": "function", "description": "Thread-local storage assignment using pthread_setspecific", "reasoning": "[Task Analysis] C function `place_task_in_tls` sets a task in TLS using `pthread_setspecific`, and calls a method on the task. Rust function `set` also calls `pthread_setspecific` with similar parameters. [Similarity] Names don't match (`place_task_in_tls` vs `set`), but both perform the same core operation: setting a value in thread-local storage via `pthread_setspecific`. [Knowledge Extraction] Full structural match on the core logic of setting TLS; partial match on the method call (`task->record_stack_limit()` vs `fail_unless!`), but the core API mapping is clear. Extract both full structural match and API mapping."}, {"knowledge_type": "Full", "source_c_file": "Full__place_task_in_tls__idx77600_rank1.c", "source_rust_file": "Full__place_task_in_tls__idx77600_rank1.rs", "reasoning": "[Task Analysis] C function `place_task_in_tls` sets a task in TLS using `pthread_setspecific`, and calls a method on the task. Rust function `set` also calls `pthread_setspecific` with similar parameters. [Similarity] Names don't match (`place_task_in_tls` vs `set`), but both perform the same core operation: setting a value in thread-local storage via `pthread_setspecific`. [Knowledge Extraction] Full structural match on the core logic of setting TLS; partial match on the method call (`task->record_stack_limit()` vs `fail_unless!`), but the core API mapping is clear. Extract both full structural match and API mapping.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__place_task_in_tls__idx77600_rank1.c", "source_rust_file": "Full__place_task_in_tls__idx77600_rank1.rs", "c_fragment": "int result = pthread_setspecific(task_key, task);\n    assert(!result && \"Couldn't place the task in TLS!\");", "rust_fragment": "unsafe { fail_unless!(0 == pthread_setspecific(key, value)); }", "description": "Setting a value in thread-local storage using pthread_setspecific with error checking.", "reasoning": "[Task Analysis] C function `place_task_in_tls` sets a task in TLS using `pthread_setspecific`, and calls a method on the task. Rust function `set` also calls `pthread_setspecific` with similar parameters. [Similarity] Names don't match (`place_task_in_tls` vs `set`), but both perform the same core operation: setting a value in thread-local storage via `pthread_setspecific`. [Knowledge Extraction] Full structural match on the core logic of setting TLS; partial match on the method call (`task->record_stack_limit()` vs `fail_unless!`), but the core API mapping is clear. Extract both full structural match and API mapping."}]
+Unixcoder Score: 0.046344365924596786
+--------------------------------------------------
+C_Code: 
+void
+rust_scheduler::destroy_task_thread(rust_sched_launcher *thread) {
+    KLOG(kernel, kern, "deleting task thread: " PTR, thread);
+    delete thread;
+}
+Function: 
+fn thread_terminated(
+        &mut self,
+        mut data_race: Option<&mut data_race::GlobalState>,
+        current_span: Span,
+    ) -> Vec<Pointer<Provenance>> {
+        let mut free_tls_statics = Vec::new();
+        {
+            let mut thread_local_statics = self.thread_local_alloc_ids.borrow_mut();
+            thread_local_statics.retain(|&(_def_id, thread), &mut alloc_id| {
+                if thread != self.active_thread {
+                    // Keep this static around.
+                    return true;
+                }
+                // Delete this static from the map and from memory.
+                // We cannot free directly here as we cannot use `?` in this context.
+                free_tls_statics.push(alloc_id);
+                false
+            });
+        }
+        // Set the thread into a terminated state in the data-race detector.
+        if let Some(ref mut data_race) = data_race {
+            data_race.thread_terminated(self, current_span);
+        }
+        // Check if we need to unblock any threads.
+        let mut joined_threads = vec![]; // store which threads joined, we'll need it
+        for (i, thread) in self.threads.iter_enumerated_mut() {
+            if thread.state == ThreadState::BlockedOnJoin(self.active_thread) {
+                // The thread has terminated, mark happens-before edge to joining thread
+                if data_race.is_some() {
+                    joined_threads.push(i);
+                }
+                trace!("unblocking {:?} because {:?} terminated", i, self.active_thread);
+                thread.state = ThreadState::Enabled;
+            }
+        }
+        for &i in &joined_threads {
+            data_race.as_mut().unwrap().thread_joined(self, i, self.active_thread);
+        }
+        free_tls_statics
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__place_task_in_tls__idx77603_rank3.c", "source_rust_file": "API_Mapping__place_task_in_tls__idx77603_rank3.rs", "c_api": "pthread_setspecific(task_key, task)", "rust_api": "TlsSetValue(key, value)", "mapping_type": "function", "description": "Setting a value in thread-local storage", "reasoning": "[Task Analysis] C function `place_task_in_tls` sets a task in thread-local storage using `pthread_setspecific`, while Rust function `set` uses `TlsSetValue` from Windows API. Both are TLS manipulation functions. [Similarity] Names don't match but the semantic domain is the same: setting a value in thread-local storage. [Knowledge Extraction] Extract API mapping for TLS setting operations, but no full/partial structural match due to different control flow and logic structure."}]
+Unixcoder Score: 0.031114909797906876
+--------------------------------------------------
+C_Code: 
+void
+cleanup_task(cleanup_args *args) {
+    spawn_args *a = args->spargs;
+    bool threw_exception = args->threw_exception;
+    rust_task *task = a->task;
+
+    {
+        scoped_lock with(task->lifecycle_lock);
+        if (task->killed && !threw_exception) {
+            LOG(task, task, "Task killed during termination");
+            threw_exception = true;
+        }
+    }
+
+    // Clean up TLS. This will only be set if TLS was used to begin with.
+    // Because this is a crust function, it must be called from the C stack.
+    if (task->task_local_data_cleanup != NULL) {
+        // This assert should hold but it's not our job to ensure it (and
+        // the condition might change). Handled in libcore/task.rs.
+        // assert(task->task_local_data != NULL);
+        task->task_local_data_cleanup(task->task_local_data);
+        task->task_local_data = NULL;
+    } else if (threw_exception && task->id == INIT_TASK_ID) {
+        // Edge case: If main never spawns any tasks, but fails anyway, TLS
+        // won't be around to take down the kernel (task.rs:kill_taskgroup,
+        // rust_task_kill_all). Do it here instead.
+        // (Note that children tasks can not init their TLS if they were
+        // killed too early, so we need to check main's task id too.)
+        task->fail_sched_loop();
+        // This must not happen twice.
+        static bool main_task_failed_without_spawning = false;
+        assert(!main_task_failed_without_spawning);
+        main_task_failed_without_spawning = true;
+    }
+
+    // Call the box annihilator.
+    cratemap* map = reinterpret_cast<cratemap*>(global_crate_map);
+    task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()));
+
+    task->die();
+
+#ifdef __WIN32__
+    assert(!threw_exception && "No exception-handling yet on windows builds");
+#endif
+}
+Function: 
+fn main() {
+    let task: Box<dyn Fn(isize) -> isize> = Box::new(|x| x);
+    task(0);
+
+    let mut task: Box<dyn FnMut(isize) -> isize> = Box::new(|x| x);
+    task(0);
+
+    call(|x| x, 22);
+}
+Unixcoder Score: 0.013607888482511044
+--------------------------------------------------
+C_Code: 
+void
+cleanup_task(cleanup_args *args) {
+    spawn_args *a = args->spargs;
+    bool threw_exception = args->threw_exception;
+    rust_task *task = a->task;
+
+    {
+        scoped_lock with(task->lifecycle_lock);
+        if (task->killed && !threw_exception) {
+            LOG(task, task, "Task killed during termination");
+            threw_exception = true;
+        }
+    }
+
+    // Clean up TLS. This will only be set if TLS was used to begin with.
+    // Because this is a crust function, it must be called from the C stack.
+    if (task->task_local_data_cleanup != NULL) {
+        // This assert should hold but it's not our job to ensure it (and
+        // the condition might change). Handled in libcore/task.rs.
+        // assert(task->task_local_data != NULL);
+        task->task_local_data_cleanup(task->task_local_data);
+        task->task_local_data = NULL;
+    } else if (threw_exception && task->id == INIT_TASK_ID) {
+        // Edge case: If main never spawns any tasks, but fails anyway, TLS
+        // won't be around to take down the kernel (task.rs:kill_taskgroup,
+        // rust_task_kill_all). Do it here instead.
+        // (Note that children tasks can not init their TLS if they were
+        // killed too early, so we need to check main's task id too.)
+        task->fail_sched_loop();
+        // This must not happen twice.
+        static bool main_task_failed_without_spawning = false;
+        assert(!main_task_failed_without_spawning);
+        main_task_failed_without_spawning = true;
+    }
+
+    // Call the box annihilator.
+    cratemap* map = reinterpret_cast<cratemap*>(global_crate_map);
+    task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()));
+
+    task->die();
+
+#ifdef __WIN32__
+    assert(!threw_exception && "No exception-handling yet on windows builds");
+#endif
+}
+Function: 
+pub fn with_join<T: Send>(self, f: proc():Send -> T) -> JoinGuard<T> {
+        // We need the address of the packet to fill in to be stable so when
+        // `main` fills it in it's still valid, so allocate an extra box to do
+        // so.
+        let my_packet = box Err(box 0); // sentinel value
+        let their_packet: *mut Result<T> = unsafe {
+            *mem::transmute::<&Box<Result<T>>, *const *mut Result<T>>(&my_packet)
+        };
+
+        let (native, thread) = self.core_spawn(f, proc(result) {
+            *their_packet = result;
+        });
+
+        JoinGuard {
+            native: native,
+            joined: false,
+            packet: my_packet,
+            thread: thread,
+        }
+    }
+Unixcoder Score: 0.011461785063147545
+--------------------------------------------------
+C_Code: 
+void
+cleanup_task(cleanup_args *args) {
+    spawn_args *a = args->spargs;
+    bool threw_exception = args->threw_exception;
+    rust_task *task = a->task;
+
+    {
+        scoped_lock with(task->lifecycle_lock);
+        if (task->killed && !threw_exception) {
+            LOG(task, task, "Task killed during termination");
+            threw_exception = true;
+        }
+    }
+
+    // Clean up TLS. This will only be set if TLS was used to begin with.
+    // Because this is a crust function, it must be called from the C stack.
+    if (task->task_local_data_cleanup != NULL) {
+        // This assert should hold but it's not our job to ensure it (and
+        // the condition might change). Handled in libcore/task.rs.
+        // assert(task->task_local_data != NULL);
+        task->task_local_data_cleanup(task->task_local_data);
+        task->task_local_data = NULL;
+    } else if (threw_exception && task->id == INIT_TASK_ID) {
+        // Edge case: If main never spawns any tasks, but fails anyway, TLS
+        // won't be around to take down the kernel (task.rs:kill_taskgroup,
+        // rust_task_kill_all). Do it here instead.
+        // (Note that children tasks can not init their TLS if they were
+        // killed too early, so we need to check main's task id too.)
+        task->fail_sched_loop();
+        // This must not happen twice.
+        static bool main_task_failed_without_spawning = false;
+        assert(!main_task_failed_without_spawning);
+        main_task_failed_without_spawning = true;
+    }
+
+    // Call the box annihilator.
+    cratemap* map = reinterpret_cast<cratemap*>(global_crate_map);
+    task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()));
+
+    task->die();
+
+#ifdef __WIN32__
+    assert(!threw_exception && "No exception-handling yet on windows builds");
+#endif
+}
+Function: 
+fn make_child_wrapper(child: *rust_task, +child_arc: TaskGroupArc,
+                          +ancestors: AncestorList, is_main: bool,
+                          +notify_chan: Option<Chan<Notification>>,
+                          +f: fn~()) -> fn~() {
+        let child_data = ~mut Some((move child_arc, move ancestors));
+        return fn~(move notify_chan, move child_data, move f) {
+            // Agh. Get move-mode items into the closure. FIXME (#2829)
+            let mut (child_arc, ancestors) = option::swap_unwrap(child_data);
+            // Child task runs this code.
+
+            // Even if the below code fails to kick the child off, we must
+            // send Something on the notify channel.
+
+            //let mut notifier = None;//notify_chan.map(|c| AutoNotify(c));
+            let notifier = match notify_chan {
+                Some(notify_chan_value) => {
+                    let moved_ncv = move_it!(notify_chan_value);
+                    Some(AutoNotify(move moved_ncv))
+                }
+                _ => None
+            };
+
+            if enlist_many(child, &child_arc, &mut ancestors) {
+                let group = @TCB(child, move child_arc, move ancestors,
+                                 is_main, move notifier);
+                unsafe {
+                    local_set(child, taskgroup_key!(), group);
+                }
+
+                // Run the child's body.
+                f();
+
+                // TLS cleanup code will exit the taskgroup.
+            }
+
+            // Run the box annihilator.
+            // XXX: Crashy.
+            // unsafe { cleanup::annihilate(); }
+        };
+
+        // Set up membership in taskgroup and descendantship in all ancestor
+        // groups. If any enlistment fails, Some task was already failing, so
+        // don't let the child task run, and undo every successful enlistment.
+        fn enlist_many(child: *rust_task, child_arc: &TaskGroupArc,
+                       ancestors: &mut AncestorList) -> bool {
+            // Join this taskgroup.
+            let mut result =
+                do access_group(child_arc) |child_tg| {
+                    enlist_in_taskgroup(child_tg, child, true) // member
+                };
+            if result {
+                // Unwinding function in case any ancestral enlisting fails
+                let bail = |tg: TaskGroupInner| {
+                    leave_taskgroup(tg, child, false)
+                };
+                // Attempt to join every ancestor group.
+                result =
+                    for each_ancestor(ancestors, Some(bail)) |ancestor_tg| {
+                        // Enlist as a descendant, not as an actual member.
+                        // Descendants don't kill ancestor groups on failure.
+                        if !enlist_in_taskgroup(ancestor_tg, child, false) {
+                            break;
+                        }
+                    };
+                // If any ancestor group fails, need to exit this group too.
+                if !result {
+                    do access_group(child_arc) |child_tg| {
+                        leave_taskgroup(child_tg, child, true); // member
+                    }
+                }
+            }
+            result
+        }
+    }
+Unixcoder Score: 0.006975114811211824
+--------------------------------------------------
+C_Code: 
+void
+cleanup_task(cleanup_args *args) {
+    spawn_args *a = args->spargs;
+    bool threw_exception = args->threw_exception;
+    rust_task *task = a->task;
+
+    {
+        scoped_lock with(task->lifecycle_lock);
+        if (task->killed && !threw_exception) {
+            LOG(task, task, "Task killed during termination");
+            threw_exception = true;
+        }
+    }
+
+    // Clean up TLS. This will only be set if TLS was used to begin with.
+    // Because this is a crust function, it must be called from the C stack.
+    if (task->task_local_data_cleanup != NULL) {
+        // This assert should hold but it's not our job to ensure it (and
+        // the condition might change). Handled in libcore/task.rs.
+        // assert(task->task_local_data != NULL);
+        task->task_local_data_cleanup(task->task_local_data);
+        task->task_local_data = NULL;
+    } else if (threw_exception && task->id == INIT_TASK_ID) {
+        // Edge case: If main never spawns any tasks, but fails anyway, TLS
+        // won't be around to take down the kernel (task.rs:kill_taskgroup,
+        // rust_task_kill_all). Do it here instead.
+        // (Note that children tasks can not init their TLS if they were
+        // killed too early, so we need to check main's task id too.)
+        task->fail_sched_loop();
+        // This must not happen twice.
+        static bool main_task_failed_without_spawning = false;
+        assert(!main_task_failed_without_spawning);
+        main_task_failed_without_spawning = true;
+    }
+
+    // Call the box annihilator.
+    cratemap* map = reinterpret_cast<cratemap*>(global_crate_map);
+    task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()));
+
+    task->die();
+
+#ifdef __WIN32__
+    assert(!threw_exception && "No exception-handling yet on windows builds");
+#endif
+}
+Function: 
+fn main() {
+    test();
+
+    let (tx, rx) = channel();
+    TaskBuilder::new().native().spawn(proc() {
+        tx.send(test());
+    });
+    rx.recv();
+}
+Unixcoder Score: 0.005785786546766758
+--------------------------------------------------
+C_Code: 
+void
+cleanup_task(cleanup_args *args) {
+    spawn_args *a = args->spargs;
+    bool threw_exception = args->threw_exception;
+    rust_task *task = a->task;
+
+    {
+        scoped_lock with(task->lifecycle_lock);
+        if (task->killed && !threw_exception) {
+            LOG(task, task, "Task killed during termination");
+            threw_exception = true;
+        }
+    }
+
+    // Clean up TLS. This will only be set if TLS was used to begin with.
+    // Because this is a crust function, it must be called from the C stack.
+    if (task->task_local_data_cleanup != NULL) {
+        // This assert should hold but it's not our job to ensure it (and
+        // the condition might change). Handled in libcore/task.rs.
+        // assert(task->task_local_data != NULL);
+        task->task_local_data_cleanup(task->task_local_data);
+        task->task_local_data = NULL;
+    } else if (threw_exception && task->id == INIT_TASK_ID) {
+        // Edge case: If main never spawns any tasks, but fails anyway, TLS
+        // won't be around to take down the kernel (task.rs:kill_taskgroup,
+        // rust_task_kill_all). Do it here instead.
+        // (Note that children tasks can not init their TLS if they were
+        // killed too early, so we need to check main's task id too.)
+        task->fail_sched_loop();
+        // This must not happen twice.
+        static bool main_task_failed_without_spawning = false;
+        assert(!main_task_failed_without_spawning);
+        main_task_failed_without_spawning = true;
+    }
+
+    // Call the box annihilator.
+    cratemap* map = reinterpret_cast<cratemap*>(global_crate_map);
+    task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()));
+
+    task->die();
+
+#ifdef __WIN32__
+    assert(!threw_exception && "No exception-handling yet on windows builds");
+#endif
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            if self.ptr != 0 as *mut RcBox<T> {
+                (*self.ptr).strong -= 1;
+                if (*self.ptr).strong == 0 {
+                    read_ptr(self.borrow()); // destroy the contained object
+                    if (*self.ptr).weak == 0 {
+                        exchange_free(self.ptr as *mut u8 as *i8)
+                    }
+                }
+            }
+        }
+    }
+Unixcoder Score: -0.0034060082398355007
+--------------------------------------------------
+C_Code: 
+void
+cleanup_task(cleanup_args *args) {
+    spawn_args *a = args->spargs;
+    bool threw_exception = args->threw_exception;
+    rust_task *task = a->task;
+
+    {
+        scoped_lock with(task->lifecycle_lock);
+        if (task->killed && !threw_exception) {
+            LOG(task, task, "Task killed during termination");
+            threw_exception = true;
+        }
+    }
+
+    // Clean up TLS. This will only be set if TLS was used to begin with.
+    // Because this is a crust function, it must be called from the C stack.
+    if (task->task_local_data_cleanup != NULL) {
+        // This assert should hold but it's not our job to ensure it (and
+        // the condition might change). Handled in libcore/task.rs.
+        // assert(task->task_local_data != NULL);
+        task->task_local_data_cleanup(task->task_local_data);
+        task->task_local_data = NULL;
+    } else if (threw_exception && task->id == INIT_TASK_ID) {
+        // Edge case: If main never spawns any tasks, but fails anyway, TLS
+        // won't be around to take down the kernel (task.rs:kill_taskgroup,
+        // rust_task_kill_all). Do it here instead.
+        // (Note that children tasks can not init their TLS if they were
+        // killed too early, so we need to check main's task id too.)
+        task->fail_sched_loop();
+        // This must not happen twice.
+        static bool main_task_failed_without_spawning = false;
+        assert(!main_task_failed_without_spawning);
+        main_task_failed_without_spawning = true;
+    }
+
+    // Call the box annihilator.
+    cratemap* map = reinterpret_cast<cratemap*>(global_crate_map);
+    task->call_on_rust_stack(NULL, const_cast<void*>(map->annihilate_fn()));
+
+    task->die();
+
+#ifdef __WIN32__
+    assert(!threw_exception && "No exception-handling yet on windows builds");
+#endif
+}
+Function: 
+pub unsafe fn local_modify<T: 'static>(
+    handle: Handle, key: local_data::Key<@T>,
+    modify_fn: &fn(Option<@T>) -> Option<@T>) {
+
+    // Could be more efficient by doing the lookup work, but this is easy.
+    let newdata = modify_fn(local_pop(handle, key));
+    if newdata.is_some() {
+        local_set(handle, key, newdata.unwrap());
+    }
+}
+Unixcoder Score: -0.005146421957761049
+--------------------------------------------------
+C_Code: 
+void
+rust_sched_loop::activate(rust_task *task) {
+    lock.must_have_lock();
+    task->ctx.next = &c_context;
+    DLOG(this, task, "descheduling...");
+    lock.unlock();
+    prepare_c_stack(task);
+    task->ctx.swap(c_context);
+    task->cleanup_after_turn();
+    unprepare_c_stack();
+    lock.lock();
+    DLOG(this, task, "task has returned");
+}
+Function: 
+fn deschedule(mut ~self, times: uint, mut cur_task: ~Task,
+                  f: |BlockedTask| -> Result<(), BlockedTask>) {
+        let my_lock: *mut Mutex = &mut self.lock as *mut Mutex;
+        cur_task.put_runtime(self as ~rt::Runtime);
+
+        unsafe {
+            let cur_task_dupe = *cast::transmute::<&~Task, &uint>(&cur_task);
+            let task = BlockedTask::block(cur_task);
+
+            if times == 1 {
+                (*my_lock).lock();
+                match f(task) {
+                    Ok(()) => (*my_lock).wait(),
+                    Err(task) => { cast::forget(task.wake()); }
+                }
+                (*my_lock).unlock();
+            } else {
+                let mut iter = task.make_selectable(times);
+                (*my_lock).lock();
+                let success = iter.all(|task| {
+                    match f(task) {
+                        Ok(()) => true,
+                        Err(task) => {
+                            cast::forget(task.wake());
+                            false
+                        }
+                    }
+                });
+                if success {
+                    (*my_lock).wait();
+                }
+                (*my_lock).unlock();
+            }
+            // re-acquire ownership of the task
+            cur_task = cast::transmute::<uint, ~Task>(cur_task_dupe);
+        }
+
+        // put the task back in TLS, and everything is as it once was.
+        Local::put(cur_task);
+    }
+Unixcoder Score: -0.0068526435643434525
+--------------------------------------------------
+C_Code: 
+bool UpdateRequestTaskTime(uint32_t taskId, uint64_t taskTime)
+{
+    REQUEST_HILOGD("update request task time");
+    OHOS::NativeRdb::ValuesBucket values;
+    values.PutLong("task_time", taskTime);
+
+    OHOS::NativeRdb::RdbPredicates rdbPredicates("request_task");
+    rdbPredicates.EqualTo("task_id", std::to_string(taskId));
+    if (!OHOS::Request::RequestDataBase::GetInstance(OHOS::Request::DB_NAME, true).Update(values, rdbPredicates)) {
+        REQUEST_HILOGE("update request task time failed, task_id: %{public}d", taskId);
+        return false;
+    }
+    return true;
+}
+Function: 
+pub(crate) fn update_task_time(&self, task_id: u32, task_time: u64) {
+        let ret = unsafe { UpdateRequestTaskTime(task_id, task_time) };
+        debug!("Update task time in database, ret is {}", ret);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__place_task_in_tls__idx8126_rank1.c", "source_rust_file": "API_Mapping__place_task_in_tls__idx8126_rank1.rs", "c_api": "pthread_setspecific(task_key, task)", "rust_api": "Local::put(cur_task)", "mapping_type": "function", "description": "Placing a task in thread-local storage", "reasoning": "[Task Analysis] C function `place_task_in_tls` sets a task in TLS using `pthread_setspecific`, while Rust function `maybe_yield` places a task in TLS using `Local::put`. Both involve TLS manipulation but with different APIs and control flow. [Similarity] Names don't refer to the same concept (`place_task_in_tls` vs `maybe_yield`), and domains differ slightly (C: direct TLS placement, Rust: task runtime management). [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both involve TLS-related operations, so API mapping is extracted. No partial fragments found due to structural mismatch. No FFI detected."}]
+Unixcoder Score: -0.0069904387928545475
+--------------------------------------------------

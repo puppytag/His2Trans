@@ -1,0 +1,281 @@
+C_Code: 
+sptr<IRemoteObject> IPCProcessSkeleton::GetSAMgrObject()
+{
+    if (g_interface == nullptr) {
+        return nullptr;
+    }
+    return GetDBinderCallbackStubInterface()->GetSAMgrObject();
+}
+Function: 
+pub unsafe fn from_ciremote(remote: *mut IRemoteObject) -> Option<Self> {
+        if remote.is_null() {
+            return None;
+        }
+
+        let inner = FromCIRemoteObject(remote);
+        if inner.is_null() {
+            return None;
+        }
+
+        Some(Self { inner })
+    }
+Unixcoder Score: 0.027993278577923775
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.019652903079986572
+--------------------------------------------------
+C_Code: 
+CStringWrapper GetHost()
+{
+    return SysNetProxyManager::GetInstance().GetHost();
+}
+Function: 
+pub(crate) fn host(&self) -> String {
+        unsafe { GetHost() }.to_string()
+    }
+Unixcoder Score: 0.010929835960268974
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.0006766636506654322
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: 0.0003071208484470844
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: -0.0035589346662163734
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.004083370789885521
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetSystemAbility(int32_t systemAbilityId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    auto ability = sysm->GetSystemAbility(systemAbilityId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn load_system_ability(said: i32, timeout: i32) -> Option<RemoteObj> {
+        info!("load system ability {}", said);
+        RemoteObj::from_sptr(LoadSystemAbility(said, timeout))
+    }
+Unixcoder Score: -0.004402092192322016
+--------------------------------------------------
+C_Code: 
+bool ReadRemoteObject(IpcIo *io, SvcIdentity *svc)
+{
+    if (io == NULL || svc == NULL) {
+        return false;
+    }
+    struct flat_binder_object *obj = IpcIoPopRef(io);
+    if (obj == NULL) {
+        RPC_LOG_ERROR("ReadRemoteObject failed: obj is null");
+        return false;
+    }
+    if (obj->type == BINDER_TYPE_BINDER) {
+        svc->token = obj->binder;
+        svc->handle = IPC_INVALID_HANDLE;
+        svc->cookie = obj->cookie;
+    } else {
+        svc->handle = (int32_t)obj->handle;
+        svc->cookie = obj->cookie;
+        WaitForProxyInit(svc);
+    }
+    return true;
+}
+Function: 
+fn read_remote_process(
+            parcel: Pin<&mut MessageParcel>,
+        ) -> IpcResult<UniquePtr<IRemoteObjectWrapper>> {
+            let remote = ReadRemoteObject(parcel);
+            if remote.is_null() {
+                Err(IpcStatusCode::Failed)
+            } else {
+                Ok(remote)
+            }
+        }
+Unixcoder Score: -0.0044309645891189575
+--------------------------------------------------
+C_Code: 
+sptr<DownloadServiceAbility> DownloadServiceAbility::GetInstance()
+{
+    if (instance_ == nullptr) {
+        std::lock_guard<std::mutex> autoLock(instanceLock_);
+        if (instance_ == nullptr) {
+            instance_ = new DownloadServiceAbility(DOWNLOAD_SERVICE_ID, true);
+        }
+    }
+    return instance_;
+}
+Function: 
+pub fn get_ability_instance() -> &'static mut RequestAbility {
+        static mut REQUESTABILITY: Option<RequestAbility> = None;
+        static ONCE: Once = Once::new();
+        unsafe {
+            ONCE.call_once(|| {
+                REQUESTABILITY = Some(RequestAbility::new(
+                    ServerRunState::NoStart,
+                    Mutex::new(HashMap::new()),
+                ));
+            });
+            REQUESTABILITY.as_mut().unwrap()
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "appInfo.ret = false", "rust_api": "None", "mapping_type": "pattern", "description": "Failed result handling returning None", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "bundleMgr->GetNameAndIndexForUid", "rust_api": "ffi::GetNameAndIndex", "mapping_type": "function", "description": "Retrieves bundle name and index for a given UID from bundle manager", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "appInfo.ret = true", "rust_api": "Some((app_info.index, app_info.name))", "mapping_type": "pattern", "description": "Successful result handling returning tuple of index and name", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "systemAbilityManager->GetSystemAbility", "rust_api": "ffi::GetNameAndIndex", "mapping_type": "function", "description": "Calls system ability manager to get remote object for bundle manager", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetNameAndIndex__idx392_rank1.c", "source_rust_file": "API_Mapping__GetNameAndIndex__idx392_rank1.rs", "c_api": "GetNameAndIndex", "rust_api": "get_name_and_index", "mapping_type": "function", "description": "Retrieves app name and index by UID, with error handling and system service interaction", "reasoning": "[FFI Check] -> The Rust code calls an FFI function `ffi::GetNameAndIndex(uid)` which is a wrapper around the C function. [Task Analysis] -> The C function performs system ability lookup and bundle manager interaction to retrieve app info, while the Rust function wraps this in a safe Option return. [Similarity] -> The Rust function is a direct wrapper that translates the C function's behavior into a Rust-friendly API, but the core logic is in the C side. [Knowledge Extraction] -> Full classification blocked by FFI wrapper and semantic mismatch (C does system calls, Rust just wraps), but API mapping can be extracted for the FFI call pattern and return value handling."}]
+Unixcoder Score: -0.00462148804217577
+--------------------------------------------------

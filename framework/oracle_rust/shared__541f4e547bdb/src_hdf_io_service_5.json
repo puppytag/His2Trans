@@ -1,0 +1,35 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_io_service_5",
+  "function_name": "HdfIoServiceDispatch",
+  "source_c_file": "src/hdf_io_service.c",
+  "c_code": "int32_t HdfIoServiceDispatch(struct HdfIoService * ioService, int cmdId, struct HdfSBuf * data, struct HdfSBuf * reply)\n{\n    if (ioService == NULL || ioService->dispatcher == NULL || ioService->dispatcher->Dispatch == NULL) {\n        return HDF_ERR_INVALID_OBJECT;\n    }\n\n    return ioService->dispatcher->Dispatch(&ioService->object, cmdId, data, reply);\n}",
+  "rust_signature": "pub extern \"C\" fn HdfIoServiceDispatch(ioService: *mut crate::types::HdfIoService, cmdId: ::core::ffi::c_int, data: *mut crate::types::HdfSBuf, reply: *mut crate::types::HdfSBuf) -> i32",
+  "rust_code": "pub extern \\\"C\\\" fn HdfIoServiceDispatch(ioService: *mut HdfIoService, cmdId: core::ffi::c_int, data: *mut HdfSBuf, reply: *mut HdfSBuf) -> i32 {\n    unsafe {\n        if ioService.is_null() || (*ioService).dispatcher.is_null() {\n            return HDF_ERR_INVALID_OBJECT;\n        }\n        let dispatcher = (*ioService).dispatcher;\n        if (*dispatcher).Dispatch.is_none() {\n            return HDF_ERR_INVALID_OBJECT;\n        }\n        (*dispatcher).Dispatch.unwrap()(&mut (*ioService).object, cmdId, data, reply) as i32\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "NULL check",
+      "rust_api": "ptr.is_null()",
+      "description": "Use Rust pointer null check instead of NULL compare",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "svc->dispatcher->Dispatch(...)",
+      "rust_fragment": "(*dispatcher).Dispatch.unwrap()(...)",
+      "description": "Call function pointers via Option unwrap (avoid E0618)",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

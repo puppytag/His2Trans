@@ -1,0 +1,286 @@
+C_Code: 
+void
+bufrelease(struct buf *buf)
+{
+	if (!buf)
+		return;
+
+	free(buf->data);
+	free(buf);
+}
+Function: 
+extern "C" fn drop(b: Buffer) {
+            mem::drop(to_vec(b));
+        }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__regular_multiply__idx79764_rank3.c", "source_rust_file": "Partial__regular_multiply__idx79764_rank3.rs", "c_api": "biR->comps[c1 + c2] += bia->comps[c1] * bib->comps[c2];", "rust_api": "let ll = sLo * oLo;", "mapping_type": "pattern", "description": "Component-wise multiplication and accumulation in big integer arithmetic.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__regular_multiply__idx79764_rank3.c", "source_rust_file": "Partial__regular_multiply__idx79764_rank3.rs", "c_api": "normalize( biR );", "rust_api": "return ll + mm.shl_unit(half_len) + hh.shl_unit(half_len * 2);", "mapping_type": "function", "description": "Normalization of result components in big integer multiplication.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__regular_multiply__idx79764_rank3.c", "source_rust_file": "Partial__regular_multiply__idx79764_rank3.rs", "c_api": "bi_free( bia );\n    bi_free( bib );", "rust_api": "fn mul_digit(a: &BigUint, n: BigDigit) -> BigUint", "mapping_type": "function", "description": "Memory deallocation in C vs helper function for digit multiplication in Rust.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "Partial", "source_c_file": "Partial__regular_multiply__idx79764_rank3.c", "source_rust_file": "Partial__regular_multiply__idx79764_rank3.rs", "c_fragment": "for ( c1 = 0; c1 < bia->num_comps; ++c1 )\n\t{\n\tfor ( c2 = 0; c2 < bib->num_comps; ++c2 )\n\t    biR->comps[c1 + c2] += bia->comps[c1] * bib->comps[c2];\n\t/* Normalize after each inner loop to avoid overflowing any\n\t** components.  But be sure to reset biR's components count,\n\t** in case a previous normalization lowered it.\n\t*/\n\tbiR->num_comps = new_comps;\n\tnormalize( biR );\n\t}", "rust_fragment": "let ll = sLo * oLo;\n        let hh = sHi * oHi;\n        let mm =  match (sub_sign(sHi, sLo), sub_sign(oHi, oLo)) {\n            ((s1, n1), (s2, n2)) if s1 * s2 < 0 => hh + ll + (n1 * n2),\n            ((s1, n1), (s2, n2)) if s1 * s2 > 0 => hh + ll - (n1 * n2),\n            _   => hh + ll,\n        };", "description": "Both perform nested multiplication of components with normalization or intermediate computation steps.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__regular_multiply__idx79764_rank3.c", "source_rust_file": "Partial__regular_multiply__idx79764_rank3.rs", "c_api": "biR->sign = bia->sign * bib->sign;", "rust_api": "match a.cmp(&b) {\n                s if s < 0 => (s, b - a),\n                s if s > 0 => (s, a - b),\n                _          => (0, BigUint::zero())\n            }", "mapping_type": "pattern", "description": "Sign handling in multiplication operations.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Full/Partial/API Mapping] -> [Final Classification]"}]
+Unixcoder Score: 0.01258343830704689
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.006924538407474756
+--------------------------------------------------
+C_Code: 
+static void LoadCaCertFromMemory(X509_STORE *store, const std::string &pemCerts)
+{
+    if (!store || pemCerts.empty() || pemCerts.size() > static_cast<size_t>(INT_MAX)) {
+        return;
+    }
+
+    auto cbio = BIO_new_mem_buf(pemCerts.data(), static_cast<int>(pemCerts.size()));
+    if (!cbio) {
+        return;
+    }
+
+    auto inf = PEM_X509_INFO_read_bio(cbio, nullptr, nullptr, nullptr);
+    if (!inf) {
+        BIO_free(cbio);
+        return;
+    }
+
+    /* add each entry from PEM file to x509_store */
+    for (int i = 0; i < static_cast<int>(sk_X509_INFO_num(inf)); ++i) {
+        auto itmp = sk_X509_INFO_value(inf, i);
+        if (!itmp) {
+            continue;
+        }
+        if (itmp->x509) {
+            X509_STORE_add_cert(store, itmp->x509);
+        }
+        if (itmp->crl) {
+            X509_STORE_add_crl(store, itmp->crl);
+        }
+    }
+
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    BIO_free(cbio);
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_int_divide", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Integer division operation", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_free", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Memory deallocation for big integer", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_divide", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Division operation with large integer handling", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_copy", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Copy of a big integer", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_m1", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Minus one value for big integer", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_1", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "One value for big integer", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_compare", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Comparison of two big integers", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_negate", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Negation of a big integer", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "bi_0", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Zero value for big integer", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bi_divide__idx119344_rank2.c", "source_rust_file": "API_Mapping__bi_divide__idx119344_rank2.rs", "c_api": "multi_divide", "rust_api": "udiv_1e19", "mapping_type": "function", "description": "Multi-precision division operation", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C code implements bigint division with sign handling, comparison, and conditional logic. Rust code implements a specialized 128-bit unsigned division by 1e19 with bit manipulation. -> [Similarity] -> No structural similarity at the function level due to different domains (arbitrary precision math vs optimized fixed-size division). -> [Knowledge Extraction] -> No full or partial match. However, both involve division operations and arithmetic logic, but with different purposes and implementations. Extract API mappings based on shared operations like division and arithmetic."}]
+Unixcoder Score: -0.0009058428695425391
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: -0.005861209239810705
+--------------------------------------------------
+C_Code: 
+void
+LLVMRustFreeThinLTOData(LLVMRustThinLTOData *Data) {
+  delete Data;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            super::LLVMRustDestroyArchive(&mut *(self.raw as *mut _));
+        }
+    }
+Unixcoder Score: -0.011877872049808502
+--------------------------------------------------
+C_Code: 
+void
+LLVMRustFreeThinLTOData(LLVMRustThinLTOData *Data) {
+  delete Data;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            super::LLVMRustArchiveChildFree(&mut *(self.raw as *mut _));
+        }
+    }
+Unixcoder Score: -0.012893283739686012
+--------------------------------------------------
+C_Code: 
+void
+LLVMRustFreeThinLTOData(LLVMRustThinLTOData *Data) {
+  delete Data;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            llvm::LLVMRustFreeThinLTOData(&mut *(self.0 as *mut _));
+        }
+    }
+Unixcoder Score: -0.014510482549667358
+--------------------------------------------------
+C_Code: 
+int
+bi_is_negative( bigint obi )
+    {
+    real_bigint bi = (real_bigint) obi;
+    int r;
+
+    check( bi );
+    r = ( bi->sign == -1 );
+    bi_free( bi );
+    return r;
+    }
+Function: 
+fn is_negative(self) -> bool {
+        self.sign
+    }
+Unixcoder Score: -0.01490824855864048
+--------------------------------------------------
+C_Code: 
+void
+LLVMRustFreeThinLTOData(LLVMRustThinLTOData *Data) {
+  delete Data;
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            llvm::LLVMRustFreeThinLTOData(&mut *(self.0 as *mut _));
+        }
+    }
+Unixcoder Score: -0.015343492850661278
+--------------------------------------------------
+C_Code: 
+void
+LLVMRustFreeThinLTOData(LLVMRustThinLTOData *Data) {
+  delete Data;
+}
+Function: 
+fn from_thin_lto_modules(
+        data: &ThinData,
+        modules: &[llvm::ThinLTOModule],
+        names: &[CString],
+    ) -> Self {
+        let keys = iter::zip(modules, names)
+            .map(|(module, name)| {
+                let key = build_string(|rust_str| unsafe {
+                    llvm::LLVMRustComputeLTOCacheKey(rust_str, module.identifier, data.0);
+                })
+                .expect("Invalid ThinLTO module key");
+                (name.clone().into_string().unwrap(), key)
+            })
+            .collect();
+        Self { keys }
+    }
+Unixcoder Score: -0.01558556966483593
+--------------------------------------------------

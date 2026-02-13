@@ -1,0 +1,333 @@
+C_Code: 
+int QrCode::getFormatBits(Ecc ecl) {
+	switch (ecl) {
+		case Ecc::LOW     :  return 1;
+		case Ecc::MEDIUM  :  return 0;
+		case Ecc::QUARTILE:  return 3;
+		case Ecc::HIGH    :  return 2;
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		default:  return -1; //This scenario does not exist after adaptation.
+#else
+		default:  throw std::logic_error("Unreachable");
+#endif
+	}
+}
+Function: 
+fn table_get(table: &'static [[i8; 41]; 4], ver: Version, ecl: QrCodeEcc) -> usize {
+		table[ecl.ordinal()][usize::from(ver.value())] as usize
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115779_rank2.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115779_rank2.rs", "c_api": "OPTION_TAG_NONE", "rust_api": "&mut None", "mapping_type": "pattern", "description": "Absent value in Option", "reasoning": "[Task Analysis] C function unpacks a tagged enum option to extract a u64 value, while Rust test verifies as_deref_mut behavior on Option types. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to Option handling and deref operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115779_rank2.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115779_rank2.rs", "c_api": "OPTION_TAG_SOME", "rust_api": "Some(&mut val)", "mapping_type": "pattern", "description": "Present value in Option", "reasoning": "[Task Analysis] C function unpacks a tagged enum option to extract a u64 value, while Rust test verifies as_deref_mut behavior on Option types. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to Option handling and deref operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115779_rank2.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115779_rank2.rs", "c_api": "o.tag", "rust_api": "ref_option.as_deref_mut()", "mapping_type": "function", "description": "Checking tag and extracting value from tagged enum option", "reasoning": "[Task Analysis] C function unpacks a tagged enum option to extract a u64 value, while Rust test verifies as_deref_mut behavior on Option types. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to Option handling and deref operations."}]
+Unixcoder Score: 0.06443485617637634
+--------------------------------------------------
+C_Code: 
+int32_t
+rust_dbg_unpack_option_u64(struct U8TaggedEnumOptionU64 o, uint64_t *into) {
+    assert(into);
+    switch (o.tag) {
+    case OPTION_TAG_SOME:
+        *into = o.some;
+        return 1;
+    case OPTION_TAG_NONE:
+        return 0;
+    default:
+        assert(0 && "unexpected tag");
+        return 0;
+    }
+}
+Function: 
+pub fn main() {
+    let x = Some(3);
+    let Some(y) = x else {
+        panic!("let-else panicked");
+    };
+    assert_eq!(y, 3);
+    let Some(_) = x else {
+        panic!("bad match");
+    };
+    assert!(none());
+    assert!(ok());
+
+    assert!((|| {
+        let 1 = 2 else {
+            return true;
+        };
+        false
+    })());
+
+    enum Foo {
+        One,
+        Two(usize),
+        Three(String, isize),
+    }
+
+    let foo = Foo::Three("three".to_string(), 42);
+    let one = || {
+        let Foo::One = foo else {
+            return true;
+        };
+        false
+    };
+    assert!(one());
+    let two = || {
+        let Foo::Two(_x) = foo else {
+            return true;
+        };
+        false
+    };
+    assert!(two());
+    let three = || {
+        let Foo::Three(s, _x) = foo else {
+            return false;
+        };
+        s == "three"
+    };
+    assert!(three());
+
+    let a@Foo::Two(_) = Foo::Two(42_usize) else {
+        panic!("bad match")
+    };
+    let Foo::Two(b) = a else {
+        panic!("panic in nested `if let`");
+    };
+    assert_eq!(b, 42_usize);
+}
+Unixcoder Score: 0.05810585245490074
+--------------------------------------------------
+C_Code: 
+int QrCode::getFormatBits(Ecc ecl) {
+	switch (ecl) {
+		case Ecc::LOW     :  return 1;
+		case Ecc::MEDIUM  :  return 0;
+		case Ecc::QUARTILE:  return 3;
+		case Ecc::HIGH    :  return 2;
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		default:  return -1; //This scenario does not exist after adaptation.
+#else
+		default:  throw std::logic_error("Unreachable");
+#endif
+	}
+}
+Function: 
+fn ordinal(self) -> usize {
+		use QrCodeEcc::*;
+		match self {
+			Low      => 0,
+			Medium   => 1,
+			Quartile => 2,
+			High     => 3,
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__rust_dbg_unpack_option_u64__idx115766_rank1.c", "source_rust_file": "Partial__rust_dbg_unpack_option_u64__idx115766_rank1.rs", "c_fragment": "switch (o.tag) {\n    case OPTION_TAG_SOME:\n        *into = o.some;\n        return 1;\n    case OPTION_TAG_NONE:\n        return 0;\n    default:\n        assert(0 && \"unexpected tag\");\n        return 0;\n    }", "rust_fragment": "let x: Option<isize> = Some(1);\n    assert_eq!(x.unwrap_or_else(two), 1);\n\n    let x: Option<isize> = None;\n    assert_eq!(x.unwrap_or_else(two), 2);", "description": "Both handle optional values with fallback logic: C unpacks an Option-like enum, Rust uses unwrap_or_else to provide a default value.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('rust_dbg_unpack_option_u64' vs 'test_unwrap_or_else'), but both involve Option-like logic. [Filter 2: Empty/Trivial Code] -> C code has logic, Rust code has logic. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both deal with Option/nullable logic, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C is a function definition, Rust is a test function; however, they are both implementations (not one being a call). [Full Blockers] -> Lengths are similar, no impl vs test mismatch, domains are consistent, not trivial. [Partial/Full Decision] -> Full match is blocked due to naming mismatch, but there is a semantic alignment in Option handling. [API Mapping Check] -> C function handles Option-like unpacking, Rust uses unwrap_or_else which is semantically equivalent. [Knowledge Extraction] -> Extract both structural alignment and API mapping."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__rust_dbg_unpack_option_u64__idx115766_rank1.c", "source_rust_file": "Partial__rust_dbg_unpack_option_u64__idx115766_rank1.rs", "c_api": "switch (o.tag) {\n    case OPTION_TAG_SOME:\n        *into = o.some;\n        return 1;\n    case OPTION_TAG_NONE:\n        return 0;\n    default:\n        assert(0 && \"unexpected tag\");\n        return 0;\n    }", "rust_api": "unwrap_or_else(two)", "mapping_type": "function", "description": "C unpacks an Option-like enum with tag-based branching, Rust uses unwrap_or_else to handle None case with a fallback.", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly match ('rust_dbg_unpack_option_u64' vs 'test_unwrap_or_else'), but both involve Option-like logic. [Filter 2: Empty/Trivial Code] -> C code has logic, Rust code has logic. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> Both deal with Option/nullable logic, so domain is consistent. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> C is a function definition, Rust is a test function; however, they are both implementations (not one being a call). [Full Blockers] -> Lengths are similar, no impl vs test mismatch, domains are consistent, not trivial. [Partial/Full Decision] -> Full match is blocked due to naming mismatch, but there is a semantic alignment in Option handling. [API Mapping Check] -> C function handles Option-like unpacking, Rust uses unwrap_or_else which is semantically equivalent. [Knowledge Extraction] -> Extract both structural alignment and API mapping."}]
+Unixcoder Score: 0.04697978124022484
+--------------------------------------------------
+C_Code: 
+int32_t
+rust_dbg_unpack_option_u64(struct U8TaggedEnumOptionU64 o, uint64_t *into) {
+    assert(into);
+    switch (o.tag) {
+    case OPTION_TAG_SOME:
+        *into = o.some;
+        return 1;
+    case OPTION_TAG_NONE:
+        return 0;
+    default:
+        assert(0 && "unexpected tag");
+        return 0;
+    }
+}
+Function: 
+fn test_option_as_deref() {
+    // Some: &Option<T: Deref>::Some(T) -> Option<&T::Deref::Target>::Some(&*T)
+    let ref_option = &Some(&42);
+    assert_eq!(ref_option.as_deref(), Some(&42));
+
+    let ref_option = &Some(String::from("a result"));
+    assert_eq!(ref_option.as_deref(), Some("a result"));
+
+    let ref_option = &Some(vec![1, 2, 3, 4, 5]);
+    assert_eq!(ref_option.as_deref(), Some([1, 2, 3, 4, 5].as_slice()));
+
+    // None: &Option<T: Deref>>::None -> None
+    let ref_option: &Option<&i32> = &None;
+    assert_eq!(ref_option.as_deref(), None);
+}
+Unixcoder Score: 0.04594802483916283
+--------------------------------------------------
+C_Code: 
+int QrCode::getFormatBits(Ecc ecl) {
+	switch (ecl) {
+		case Ecc::LOW     :  return 1;
+		case Ecc::MEDIUM  :  return 0;
+		case Ecc::QUARTILE:  return 3;
+		case Ecc::HIGH    :  return 2;
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		default:  return -1; //This scenario does not exist after adaptation.
+#else
+		default:  throw std::logic_error("Unreachable");
+#endif
+	}
+}
+Function: 
+fn format_bits(self) -> u8 {
+		use QrCodeEcc::*;
+		match self {
+			Low      => 1,
+			Medium   => 0,
+			Quartile => 3,
+			High     => 2,
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__rust_dbg_unpack_option_u64__idx115785_rank1.c", "source_rust_file": "Full__rust_dbg_unpack_option_u64__idx115785_rank1.rs", "c_api": "switch (o.tag) {\n    case OPTION_TAG_SOME:\n        *into = o.some;\n        return 1;\n    case OPTION_TAG_NONE:\n        return 0;\n    default:\n        assert(0 && \"unexpected tag\");\n        return 0;\n    }", "rust_api": "match o {\n            Some(v) => v,\n            None => panic!(),\n        }", "mapping_type": "pattern", "description": "Unpacking tagged enum option to extract value or handle missing case", "reasoning": "[Task Analysis] C function unpacks a tagged enum option to extract a value or return error; Rust function unwraps an Option or panics. [Similarity] Names don't match but logic is semantically equivalent: both handle optional values with failure cases. [Knowledge Extraction] Full match on logic and behavior; API mappings identified for option unpacking patterns."}, {"knowledge_type": "Full", "source_c_file": "Full__rust_dbg_unpack_option_u64__idx115785_rank1.c", "source_rust_file": "Full__rust_dbg_unpack_option_u64__idx115785_rank1.rs", "reasoning": "[Task Analysis] C function unpacks a tagged enum option to extract a value or return error; Rust function unwraps an Option or panics. [Similarity] Names don't match but logic is semantically equivalent: both handle optional values with failure cases. [Knowledge Extraction] Full match on logic and behavior; API mappings identified for option unpacking patterns.", "description": "Full structural translation"}, {"knowledge_type": "Partial", "source_c_file": "Full__rust_dbg_unpack_option_u64__idx115785_rank1.c", "source_rust_file": "Full__rust_dbg_unpack_option_u64__idx115785_rank1.rs", "c_fragment": "switch (o.tag) {\n    case OPTION_TAG_SOME:\n        *into = o.some;\n        return 1;\n    case OPTION_TAG_NONE:\n        return 0;\n    default:\n        assert(0 && \"unexpected tag\");\n        return 0;\n    }", "rust_fragment": "match o {\n            Some(v) => v,\n            None => panic!(),\n        }", "description": "Both handle optional value extraction with explicit failure case (return 0 vs panic!)", "reasoning": "[Task Analysis] C function unpacks a tagged enum option to extract a value or return error; Rust function unwraps an Option or panics. [Similarity] Names don't match but logic is semantically equivalent: both handle optional values with failure cases. [Knowledge Extraction] Full match on logic and behavior; API mappings identified for option unpacking patterns."}]
+Unixcoder Score: 0.03520135208964348
+--------------------------------------------------
+C_Code: 
+int QrCode::getFormatBits(Ecc ecl) {
+	switch (ecl) {
+		case Ecc::LOW     :  return 1;
+		case Ecc::MEDIUM  :  return 0;
+		case Ecc::QUARTILE:  return 3;
+		case Ecc::HIGH    :  return 2;
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		default:  return -1; //This scenario does not exist after adaptation.
+#else
+		default:  throw std::logic_error("Unreachable");
+#endif
+	}
+}
+Function: 
+fn ordinal(self) -> usize {
+		use QrCodeEcc::*;
+		match self {
+			Low      => 0,
+			Medium   => 1,
+			Quartile => 2,
+			High     => 3,
+		}
+	}
+Unixcoder Score: 0.034753184765577316
+--------------------------------------------------
+C_Code: 
+int QrCode::getFormatBits(Ecc ecl) {
+	switch (ecl) {
+		case Ecc::LOW     :  return 1;
+		case Ecc::MEDIUM  :  return 0;
+		case Ecc::QUARTILE:  return 3;
+		case Ecc::HIGH    :  return 2;
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		default:  return -1; //This scenario does not exist after adaptation.
+#else
+		default:  throw std::logic_error("Unreachable");
+#endif
+	}
+}
+Function: 
+fn ordinal(self) -> usize {
+		use QrCodeEcc::*;
+		match self {
+			Low      => 0,
+			Medium   => 1,
+			Quartile => 2,
+			High     => 3,
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115754_rank2.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115754_rank2.rs", "c_api": "switch (o.tag)", "rust_api": "Option::and", "mapping_type": "function", "description": "Conditional handling of optional values based on tag/state", "reasoning": "[Task Analysis] C function handles unpacking an option-like enum into a value, while Rust test verifies the behavior of the `and` method on `Option`. [Similarity] Names do not refer to the same concept (e.g., `rust_dbg_unpack_option_u64` vs `test_and`), and the domains are different: C manipulates a tagged enum, Rust tests `Option` behavior. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, there is a semantic mapping between the C enum unpacking logic and Rust's `Option::and` method, which both handle optional value chaining."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115754_rank2.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115754_rank2.rs", "c_api": "case OPTION_TAG_NONE", "rust_api": "None", "mapping_type": "pattern", "description": "Handling of absent optional value", "reasoning": "[Task Analysis] C function handles unpacking an option-like enum into a value, while Rust test verifies the behavior of the `and` method on `Option`. [Similarity] Names do not refer to the same concept (e.g., `rust_dbg_unpack_option_u64` vs `test_and`), and the domains are different: C manipulates a tagged enum, Rust tests `Option` behavior. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, there is a semantic mapping between the C enum unpacking logic and Rust's `Option::and` method, which both handle optional value chaining."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115754_rank2.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115754_rank2.rs", "c_api": "case OPTION_TAG_SOME", "rust_api": "Some(2)", "mapping_type": "pattern", "description": "Handling of present optional value", "reasoning": "[Task Analysis] C function handles unpacking an option-like enum into a value, while Rust test verifies the behavior of the `and` method on `Option`. [Similarity] Names do not refer to the same concept (e.g., `rust_dbg_unpack_option_u64` vs `test_and`), and the domains are different: C manipulates a tagged enum, Rust tests `Option` behavior. [Knowledge Extraction] No full or partial structural match due to domain mismatch and different function purposes. However, there is a semantic mapping between the C enum unpacking logic and Rust's `Option::and` method, which both handle optional value chaining."}]
+Unixcoder Score: 0.033414650708436966
+--------------------------------------------------
+C_Code: 
+int QrCode::getFormatBits(Ecc ecl) {
+	switch (ecl) {
+		case Ecc::LOW     :  return 1;
+		case Ecc::MEDIUM  :  return 0;
+		case Ecc::QUARTILE:  return 3;
+		case Ecc::HIGH    :  return 2;
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		default:  return -1; //This scenario does not exist after adaptation.
+#else
+		default:  throw std::logic_error("Unreachable");
+#endif
+	}
+}
+Function: 
+fn ordinal(self) -> usize {
+		use QrCodeEcc::*;
+		match self {
+			Low      => 0,
+			Medium   => 1,
+			Quartile => 2,
+			High     => 3,
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115787_rank1.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115787_rank1.rs", "c_api": "switch (o.tag)", "rust_api": "x.zip(y)", "mapping_type": "pattern", "description": "Option unpacking and combination logic", "reasoning": "[Task Analysis] C function handles unpacking an option-like enum, Rust function demonstrates zip operation on Options. [Similarity] Names and domains do not match; C deals with tagged enum unpacking, Rust with Option zipping. [Knowledge Extraction] No full structural match, no partial match, but both involve Option-like logic and pattern matching. Extract API mappings for Option handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115787_rank1.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115787_rank1.rs", "c_api": "case OPTION_TAG_SOME", "rust_api": "Some((10, \"foo\"))", "mapping_type": "pattern", "description": "Successful option combination", "reasoning": "[Task Analysis] C function handles unpacking an option-like enum, Rust function demonstrates zip operation on Options. [Similarity] Names and domains do not match; C deals with tagged enum unpacking, Rust with Option zipping. [Knowledge Extraction] No full structural match, no partial match, but both involve Option-like logic and pattern matching. Extract API mappings for Option handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115787_rank1.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx115787_rank1.rs", "c_api": "case OPTION_TAG_NONE", "rust_api": "None", "mapping_type": "pattern", "description": "Empty option combination", "reasoning": "[Task Analysis] C function handles unpacking an option-like enum, Rust function demonstrates zip operation on Options. [Similarity] Names and domains do not match; C deals with tagged enum unpacking, Rust with Option zipping. [Knowledge Extraction] No full structural match, no partial match, but both involve Option-like logic and pattern matching. Extract API mappings for Option handling patterns."}]
+Unixcoder Score: 0.033232562243938446
+--------------------------------------------------
+C_Code: 
+struct TextLiteralCase {
+  uint32_t bitwidth;
+  const char* text;
+  bool is_signed;
+  bool success;
+  std::vector<uint32_t> expected_values;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx70680_rank1.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx70680_rank1.rs", "c_api": "case OPTION_TAG_NONE:", "rust_api": "_ =>", "mapping_type": "pattern", "description": "Handling of 'none' variant in tagged enum vs default case in Option matching", "reasoning": "[Task Analysis] C function handles unpacking a tagged enum option into a u64, while Rust function performs pattern matching on two Options. [Similarity] Names do not refer to the same concept (rust_dbg_unpack_option_u64 vs opt1), and domains are different: C handles low-level tagged enum unpacking, Rust handles high-level Option matching. [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve handling optional values, so API mappings can be extracted for the Option-like behavior."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx70680_rank1.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx70680_rank1.rs", "c_api": "switch (o.tag)", "rust_api": "match (x, y)", "mapping_type": "pattern", "description": "Pattern matching on optional value tags", "reasoning": "[Task Analysis] C function handles unpacking a tagged enum option into a u64, while Rust function performs pattern matching on two Options. [Similarity] Names do not refer to the same concept (rust_dbg_unpack_option_u64 vs opt1), and domains are different: C handles low-level tagged enum unpacking, Rust handles high-level Option matching. [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve handling optional values, so API mappings can be extracted for the Option-like behavior."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__rust_dbg_unpack_option_u64__idx70680_rank1.c", "source_rust_file": "API_Mapping__rust_dbg_unpack_option_u64__idx70680_rank1.rs", "c_api": "case OPTION_TAG_SOME:", "rust_api": "(Some(a), Some(b)) =>", "mapping_type": "pattern", "description": "Handling of 'some' variant in tagged enum vs Option", "reasoning": "[Task Analysis] C function handles unpacking a tagged enum option into a u64, while Rust function performs pattern matching on two Options. [Similarity] Names do not refer to the same concept (rust_dbg_unpack_option_u64 vs opt1), and domains are different: C handles low-level tagged enum unpacking, Rust handles high-level Option matching. [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve handling optional values, so API mappings can be extracted for the Option-like behavior."}]
+Unixcoder Score: 0.0325433723628521
+--------------------------------------------------
+C_Code: 
+int QrCode::getFormatBits(Ecc ecl) {
+	switch (ecl) {
+		case Ecc::LOW     :  return 1;
+		case Ecc::MEDIUM  :  return 0;
+		case Ecc::QUARTILE:  return 3;
+		case Ecc::HIGH    :  return 2;
+#if defined(ACE_ENGINE_QRCODE_ABLE)
+		default:  return -1; //This scenario does not exist after adaptation.
+#else
+		default:  throw std::logic_error("Unreachable");
+#endif
+	}
+}
+Function: 
+fn format_bits(self) -> u8 {
+		use QrCodeEcc::*;
+		match self {
+			Low      => 1,
+			Medium   => 0,
+			Quartile => 3,
+			High     => 2,
+		}
+	}
+Unixcoder Score: 0.03099735639989376
+--------------------------------------------------

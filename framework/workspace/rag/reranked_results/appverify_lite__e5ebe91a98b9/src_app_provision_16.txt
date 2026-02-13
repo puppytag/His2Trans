@@ -1,0 +1,222 @@
+C_Code: 
+uint32_t VerifyCert(const CertBlob *cert, const CertBlob *caCert)
+{
+    uint32_t verifyResult = SSL_X509_V_ERR_UNSPECIFIED;
+    X509 *certX509 = nullptr;
+    X509 *caX509 = nullptr;
+    X509_STORE *store = nullptr;
+    X509_STORE_CTX *ctx = nullptr;
+    do {
+        certX509 = CertBlobToX509(cert);
+        if (certX509 == nullptr) {
+            NETSTACK_LOGE("x509 of cert is nullptr\n");
+        }
+        caX509 = CertBlobToX509(caCert);
+        if (caX509 == nullptr) {
+            NETSTACK_LOGE("x509 of ca is nullptr\n");
+        }
+        store = X509_STORE_new();
+        if (store == nullptr) {
+            continue;
+        }
+        if (X509_STORE_add_cert(store, caX509) != VERIFY_RESULT_SUCCESS) {
+            NETSTACK_LOGE("add ca to store failed\n");
+        }
+        ctx = X509_STORE_CTX_new();
+        if (ctx == nullptr) {
+            continue;
+        }
+        X509_STORE_CTX_init(ctx, store, certX509, nullptr);
+        verifyResult = static_cast<uint32_t>(X509_verify_cert(ctx));
+        if (verifyResult != VERIFY_RESULT_SUCCESS) {
+            verifyResult = static_cast<uint32_t>(X509_STORE_CTX_get_error(ctx) + SSL_ERROR_CODE_BASE);
+            NETSTACK_LOGE("failed to verify certificate: %{public}s (%{public}d)\n",
+                          X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)), verifyResult);
+            break;
+        } else {
+            verifyResult = X509_V_OK;
+            NETSTACK_LOGD("certificate validation succeeded.\n");
+        }
+    } while (false);
+
+    FreeResources(&certX509, &caX509, &store, &ctx);
+    return verifyResult;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CheckFilePath__idx170_rank2.c", "source_rust_file": "Partial__CheckFilePath__idx170_rank2.rs", "c_fragment": "SysEventLog::SendSysEventLog(STATISTIC_EVENT, APP_ERROR_00, config.bundleName, \"\", error.errInfo);", "rust_fragment": "let (event, rx) = TaskManagerEvent::construct(config);\n    TASK_MANGER.send_event(event);\n    rx.get().unwrap().unwrap();", "description": "Both involve sending events or logging errors, though C uses SysEventLog while Rust uses TaskManagerEvent.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks file paths and config, handles download/upload logic with error reporting; Rust function is a test that constructs a task manager with config. -> [Similarity] -> No full structural similarity due to different domains (validation logic vs test construction). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and config building patterns exist. API mappings found for config building and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckFilePath__idx170_rank2.c", "source_rust_file": "Partial__CheckFilePath__idx170_rank2.rs", "c_api": ".mode(Mode::BackGround)", "rust_api": ".mode(Mode::BackGround)", "mapping_type": "method", "description": "Setting execution mode in config", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks file paths and config, handles download/upload logic with error reporting; Rust function is a test that constructs a task manager with config. -> [Similarity] -> No full structural similarity due to different domains (validation logic vs test construction). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and config building patterns exist. API mappings found for config building and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckFilePath__idx170_rank2.c", "source_rust_file": "Partial__CheckFilePath__idx170_rank2.rs", "c_api": "ConfigBuilder::new()", "rust_api": "ConfigBuilder::new()", "mapping_type": "function", "description": "Configuration object initialization", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks file paths and config, handles download/upload logic with error reporting; Rust function is a test that constructs a task manager with config. -> [Similarity] -> No full structural similarity due to different domains (validation logic vs test construction). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and config building patterns exist. API mappings found for config building and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckFilePath__idx170_rank2.c", "source_rust_file": "Partial__CheckFilePath__idx170_rank2.rs", "c_api": "SysEventLog::SendSysEventLog", "rust_api": "TaskManagerEvent::construct", "mapping_type": "function", "description": "Error reporting and event construction", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks file paths and config, handles download/upload logic with error reporting; Rust function is a test that constructs a task manager with config. -> [Similarity] -> No full structural similarity due to different domains (validation logic vs test construction). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and config building patterns exist. API mappings found for config building and error reporting."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckFilePath__idx170_rank2.c", "source_rust_file": "Partial__CheckFilePath__idx170_rank2.rs", "c_fragment": "if (!CheckDownloadFile(context, config, error)) {\n            SysEventLog::SendSysEventLog(STATISTIC_EVENT, APP_ERROR_00, config.bundleName, \"\", error.errInfo);\n            return false;\n        }", "rust_fragment": "let config = ConfigBuilder::new()\n    .action(Action::Download)\n    .mode(Mode::BackGround)\n    .file_spec(file)\n    .url(\"https://www.gitee.com/tiga-ultraman/downloadTests/releases/download/v1.01/test.txt\")\n    .redirect(true)\n    .build();", "description": "Both handle configuration and error reporting, though C checks file paths while Rust builds a config object.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks file paths and config, handles download/upload logic with error reporting; Rust function is a test that constructs a task manager with config. -> [Similarity] -> No full structural similarity due to different domains (validation logic vs test construction). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and config building patterns exist. API mappings found for config building and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckFilePath__idx170_rank2.c", "source_rust_file": "Partial__CheckFilePath__idx170_rank2.rs", "c_api": ".action(Action::DOWNLOAD)", "rust_api": ".action(Action::Download)", "mapping_type": "method", "description": "Setting action type in config", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function checks file paths and config, handles download/upload logic with error reporting; Rust function is a test that constructs a task manager with config. -> [Similarity] -> No full structural similarity due to different domains (validation logic vs test construction). -> [Knowledge Extraction] -> No full match, but partial logic in error handling and config building patterns exist. API mappings found for config building and error reporting."}]
+Unixcoder Score: 0.10988610982894897
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Unixcoder Score: 0.06730374693870544
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Unixcoder Score: 0.06490661948919296
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Unixcoder Score: 0.06252282857894897
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Unixcoder Score: 0.06073801591992378
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+struct CertInfo {
+    cert: Option<Vec<Certificate>>,
+}
+Unixcoder Score: 0.05458267778158188
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Unixcoder Score: 0.05205817148089409
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string &bundleName)
+{
+    SchemaMeta schemaMeta;
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
+        ZLOGD("network is not available");
+        return { NETWORK_ERROR, schemaMeta };
+    }
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        return { SERVER_UNAVAILABLE, schemaMeta };
+    }
+    int32_t status = E_OK;
+    std::tie(status, schemaMeta) = instance->GetAppSchema(user, bundleName);
+    if (status != E_OK || !schemaMeta.IsValid()) {
+        ZLOGE("schema is InValid, user:%{public}d, bundleName:%{public}s, status:%{public}d", user, bundleName.c_str(),
+            status);
+        return { status == E_NOT_SUPPORT ? NOT_SUPPORT : SCHEMA_INVALID, schemaMeta };
+    }
+    return { SUCCESS, schemaMeta };
+}
+Function: 
+pub(crate) fn get_app_brief_info(
+        &mut self,
+        user_id: i32,
+    ) -> ConnectResult<RwLockReadGuard<AppInfos>> {
+        self.infos.entry(user_id).or_default();
+        let infos = self.infos.get_mut(&user_id).unwrap();
+
+        let mut lock = infos.app_infos.write().unwrap();
+
+        let mut msg_parcel = MsgParcel::new();
+
+        let function_number = GetAppBriefInfo as u32;
+        let remote_obj = self
+            .remote_obj
+            .as_ref()
+            .ok_or(Error::GetProxyObjectFailed)?;
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
+            .map_err(|_| Error::SendRequestFailed)?;
+
+        lock.0 = receive
+            .read::<AppInfos>()
+            .map_err(|_| Error::ReadMsgParcelFailed)?
+            .0;
+
+        drop(lock);
+
+        Ok(infos.app_infos.read().unwrap())
+    }
+Unixcoder Score: 0.05153528228402138
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string &bundleName)
+{
+    SchemaMeta schemaMeta;
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
+        ZLOGD("network is not available");
+        return { NETWORK_ERROR, schemaMeta };
+    }
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        return { SERVER_UNAVAILABLE, schemaMeta };
+    }
+    int32_t status = E_OK;
+    std::tie(status, schemaMeta) = instance->GetAppSchema(user, bundleName);
+    if (status != E_OK || !schemaMeta.IsValid()) {
+        ZLOGE("schema is InValid, user:%{public}d, bundleName:%{public}s, status:%{public}d", user, bundleName.c_str(),
+            status);
+        return { status == E_NOT_SUPPORT ? NOT_SUPPORT : SCHEMA_INVALID, schemaMeta };
+    }
+    return { SUCCESS, schemaMeta };
+}
+Function: 
+pub fn get_app_schema(&mut self, bundle_name: &str) -> SyncResult<SchemaMeta> {
+        let schema_ipc = self.connect.get_app_schema(self.user_id, bundle_name)?;
+        Ok(SchemaMeta::from(schema_ipc.deref()))
+    }
+Unixcoder Score: 0.04718099907040596
+--------------------------------------------------
+C_Code: 
+struct CertInfo
+Function: 
+pub(crate) struct CertManager {
+    info: Arc<RwLock<CertInfo>>,
+}
+Unixcoder Score: 0.042577266693115234
+--------------------------------------------------

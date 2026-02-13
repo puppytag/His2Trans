@@ -1,0 +1,393 @@
+C_Code: 
+bool Serializable::GetValue(const json &node, const std::string &name, uint64_t &value)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null() || !subNode.is_number_unsigned()) {
+        return false;
+    }
+    subNode.get_to(value);
+    return true;
+}
+Function: 
+pub(crate) fn vec_raw_read<T: Deserialize>(msg_parcel: &mut MsgParcel) -> IpcResult<Vec<T>> {
+    let length = msg_parcel.read::<i32>()? as usize;
+    let mut vector = Vec::with_capacity(length);
+    for _ in 0..length {
+        let value = msg_parcel.read::<T>()?;
+        vector.push(value);
+    }
+    Ok(vector)
+}
+Unixcoder Score: -0.02339339815080166
+--------------------------------------------------
+C_Code: 
+bool MessageParcel::WriteRemoteObject(const sptr<IRemoteObject> &object)
+{
+    if (object == nullptr) {
+        return false;
+    }
+    // Increase object's refcount temporarily in case of premature deallocation,
+    // object's refcount will be decreased when this MessageParcel destroyed.
+    if (object->AttemptIncStrongRef(this) != true) {
+        return false;
+    }
+    holders_.push_back(object);
+    object->DecStrongRef(this);
+#ifndef CONFIG_IPC_SINGLE
+    if (object->IsProxyObject()) {
+        const IPCObjectProxy *proxy = reinterpret_cast<const IPCObjectProxy *>(object.GetRefPtr());
+        const uint32_t handle = proxy ? proxy->GetHandle() : 0;
+        if (IPCProcessSkeleton::IsHandleMadeByUser(handle)) {
+            /* this is a fake proxy which handle get by MakeRemoteHandle(), Not binder driver of kernel */
+            ZLOGI(LOG_LABEL, "send a dbinder proxy to another process in this device");
+            return WriteDBinderProxy(object, handle, 0);
+        }
+    }
+#endif
+
+#ifndef CONFIG_IPC_SINGLE
+    auto offset = GetWritePosition();
+#endif
+    if (!WriteObject<IRemoteObject>(object)) {
+        return false;
+    }
+#ifndef CONFIG_IPC_SINGLE
+    if (!UpdateDBinderDataOffset(offset)) {
+        RewindWrite(offset);
+        return false;
+    }
+#endif
+    return true;
+}
+Function: 
+pub(crate) fn write_process<T>(
+        &mut self,
+        value: T,
+        f: fn(parcel: Pin<&mut MessageParcel>, value: T) -> bool,
+    ) -> IpcResult<()> {
+        match mem::replace(&mut self.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = f(p.pin_mut(), value);
+                self.inner = ParcelMem::Unique(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Borrow(p) => {
+                let w = unsafe { Pin::new_unchecked(&mut *p) };
+                let res = f(w, value);
+                self.inner = ParcelMem::Borrow(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Null => IpcResult::Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.03248031064867973
+--------------------------------------------------
+C_Code: 
+bool MessageParcel::WriteRemoteObject(const sptr<IRemoteObject> &object)
+{
+    if (object == nullptr) {
+        return false;
+    }
+    // Increase object's refcount temporarily in case of premature deallocation,
+    // object's refcount will be decreased when this MessageParcel destroyed.
+    if (object->AttemptIncStrongRef(this) != true) {
+        return false;
+    }
+    holders_.push_back(object);
+    object->DecStrongRef(this);
+#ifndef CONFIG_IPC_SINGLE
+    if (object->IsProxyObject()) {
+        const IPCObjectProxy *proxy = reinterpret_cast<const IPCObjectProxy *>(object.GetRefPtr());
+        const uint32_t handle = proxy ? proxy->GetHandle() : 0;
+        if (IPCProcessSkeleton::IsHandleMadeByUser(handle)) {
+            /* this is a fake proxy which handle get by MakeRemoteHandle(), Not binder driver of kernel */
+            ZLOGI(LOG_LABEL, "send a dbinder proxy to another process in this device");
+            return WriteDBinderProxy(object, handle, 0);
+        }
+    }
+#endif
+
+#ifndef CONFIG_IPC_SINGLE
+    auto offset = GetWritePosition();
+#endif
+    if (!WriteObject<IRemoteObject>(object)) {
+        return false;
+    }
+#ifndef CONFIG_IPC_SINGLE
+    if (!UpdateDBinderDataOffset(offset)) {
+        RewindWrite(offset);
+        return false;
+    }
+#endif
+    return true;
+}
+Function: 
+pub fn write_remote(&mut self, remote: RemoteObj) -> IpcResult<()> {
+        self.write_process(remote.inner, WriteRemoteObject)
+    }
+Unixcoder Score: -0.037307944148778915
+--------------------------------------------------
+C_Code: 
+bool MessageParcel::WriteRemoteObject(const sptr<IRemoteObject> &object)
+{
+    if (object == nullptr) {
+        return false;
+    }
+    // Increase object's refcount temporarily in case of premature deallocation,
+    // object's refcount will be decreased when this MessageParcel destroyed.
+    if (object->AttemptIncStrongRef(this) != true) {
+        return false;
+    }
+    holders_.push_back(object);
+    object->DecStrongRef(this);
+#ifndef CONFIG_IPC_SINGLE
+    if (object->IsProxyObject()) {
+        const IPCObjectProxy *proxy = reinterpret_cast<const IPCObjectProxy *>(object.GetRefPtr());
+        const uint32_t handle = proxy ? proxy->GetHandle() : 0;
+        if (IPCProcessSkeleton::IsHandleMadeByUser(handle)) {
+            /* this is a fake proxy which handle get by MakeRemoteHandle(), Not binder driver of kernel */
+            ZLOGI(LOG_LABEL, "send a dbinder proxy to another process in this device");
+            return WriteDBinderProxy(object, handle, 0);
+        }
+    }
+#endif
+
+#ifndef CONFIG_IPC_SINGLE
+    auto offset = GetWritePosition();
+#endif
+    if (!WriteObject<IRemoteObject>(object)) {
+        return false;
+    }
+#ifndef CONFIG_IPC_SINGLE
+    if (!UpdateDBinderDataOffset(offset)) {
+        RewindWrite(offset);
+        return false;
+    }
+#endif
+    return true;
+}
+Function: 
+pub fn write_remote(&mut self, remote: RemoteObj) -> IpcResult<()> {
+        self.write_process(remote.inner, WriteRemoteObject)
+    }
+Unixcoder Score: -0.03966190665960312
+--------------------------------------------------
+C_Code: 
+static int32_t IpcSetMaxWorkThread(int32_t maxThreadNum)
+{
+    if (g_connector == NULL) {
+        RPC_LOG_ERROR("ipc driver not init");
+        return ERR_FAILED;
+    }
+    int32_t ret = ioctl(g_connector->fd, BINDER_SET_MAX_THREADS, &maxThreadNum);
+    return ret;
+}
+Function: 
+pub fn set_max_work_thread_num(max_thread_num: i32) -> bool {
+        SetMaxWorkThreadNum(max_thread_num)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5190_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5190_rank2.rs", "c_api": "GetValue(node, GET_NAME(colName), colName)", "rust_api": "col_name: value.col_name.clone()", "mapping_type": "field_access", "description": "Extracting and assigning column name field", "reasoning": "[Task Analysis] C function 'Field::Unmarshal' deserializes a JSON object into a Field struct, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match exactly but both represent data deserialization logic. [Knowledge Extraction] Found partial structural match in field assignment logic and API mappings for field access and conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5190_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5190_rank2.rs", "c_api": "GetValue(node, GET_NAME(type), type)", "rust_api": "typ: ipc_conn::FieldType::try_from(value.typ)?", "mapping_type": "function", "description": "Converting type field with error handling", "reasoning": "[Task Analysis] C function 'Field::Unmarshal' deserializes a JSON object into a Field struct, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match exactly but both represent data deserialization logic. [Knowledge Extraction] Found partial structural match in field assignment logic and API mappings for field access and conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5190_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5190_rank2.rs", "c_api": "GetValue(node, GET_NAME(primary), primary)", "rust_api": "primary: value.primary", "mapping_type": "field_access", "description": "Extracting and assigning primary key flag", "reasoning": "[Task Analysis] C function 'Field::Unmarshal' deserializes a JSON object into a Field struct, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match exactly but both represent data deserialization logic. [Knowledge Extraction] Found partial structural match in field assignment logic and API mappings for field access and conversion patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__Unmarshal__idx5190_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5190_rank2.rs", "c_fragment": "GetValue(node, GET_NAME(colName), colName);\n    GetValue(node, GET_NAME(alias), alias);\n    GetValue(node, GET_NAME(type), type);\n    GetValue(node, GET_NAME(primary), primary);\n    GetValue(node, GET_NAME(primaryKey), primary);\n    GetValue(node, GET_NAME(nullable), nullable);\n    GetValue(node, GET_NAME(columnName), colName);\n    GetValue(node, GET_NAME(notNull), nullable);", "rust_fragment": "col_name: value.col_name.clone(),\n            alias: value.alias.clone(),\n            typ: ipc_conn::FieldType::try_from(value.typ)?,\n            primary: value.primary,\n            nullable: value.nullable,", "description": "Field assignment logic from JSON to struct members", "reasoning": "[Task Analysis] C function 'Field::Unmarshal' deserializes a JSON object into a Field struct, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match exactly but both represent data deserialization logic. [Knowledge Extraction] Found partial structural match in field assignment logic and API mappings for field access and conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5190_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5190_rank2.rs", "c_api": "GetValue(node, GET_NAME(alias), alias)", "rust_api": "alias: value.alias.clone()", "mapping_type": "field_access", "description": "Extracting and assigning alias field", "reasoning": "[Task Analysis] C function 'Field::Unmarshal' deserializes a JSON object into a Field struct, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match exactly but both represent data deserialization logic. [Knowledge Extraction] Found partial structural match in field assignment logic and API mappings for field access and conversion patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__Unmarshal__idx5190_rank2.c", "source_rust_file": "Partial__Unmarshal__idx5190_rank2.rs", "c_api": "GetValue(node, GET_NAME(nullable), nullable)", "rust_api": "nullable: value.nullable", "mapping_type": "field_access", "description": "Extracting and assigning nullable flag", "reasoning": "[Task Analysis] C function 'Field::Unmarshal' deserializes a JSON object into a Field struct, while Rust function 'try_from' converts a Field into an ipc_conn::Field. [Similarity] Names don't match exactly but both represent data deserialization logic. [Knowledge Extraction] Found partial structural match in field assignment logic and API mappings for field access and conversion patterns."}]
+Unixcoder Score: -0.04143642634153366
+--------------------------------------------------
+C_Code: 
+bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(bundleName), bundleName);
+            GetValue(node, GET_NAME(accountId), accountId);
+            GetValue(node, GET_NAME(storeId), storeId);
+            return true;
+        }
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let version = parcel.read::<i32>()?;
+        let bundle_name = parcel.read_string16()?;
+        let databases = parcel.read::<Databases>()?;
+
+        let result = Schema {
+            version,
+            bundle_name,
+            databases,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.0433751605451107
+--------------------------------------------------
+C_Code: 
+bool MessageParcel::WriteRemoteObject(const sptr<IRemoteObject> &object)
+{
+    if (object == nullptr) {
+        return false;
+    }
+    // Increase object's refcount temporarily in case of premature deallocation,
+    // object's refcount will be decreased when this MessageParcel destroyed.
+    if (object->AttemptIncStrongRef(this) != true) {
+        return false;
+    }
+    holders_.push_back(object);
+    object->DecStrongRef(this);
+#ifndef CONFIG_IPC_SINGLE
+    if (object->IsProxyObject()) {
+        const IPCObjectProxy *proxy = reinterpret_cast<const IPCObjectProxy *>(object.GetRefPtr());
+        const uint32_t handle = proxy ? proxy->GetHandle() : 0;
+        if (IPCProcessSkeleton::IsHandleMadeByUser(handle)) {
+            /* this is a fake proxy which handle get by MakeRemoteHandle(), Not binder driver of kernel */
+            ZLOGI(LOG_LABEL, "send a dbinder proxy to another process in this device");
+            return WriteDBinderProxy(object, handle, 0);
+        }
+    }
+#endif
+
+#ifndef CONFIG_IPC_SINGLE
+    auto offset = GetWritePosition();
+#endif
+    if (!WriteObject<IRemoteObject>(object)) {
+        return false;
+    }
+#ifndef CONFIG_IPC_SINGLE
+    if (!UpdateDBinderDataOffset(offset)) {
+        RewindWrite(offset);
+        return false;
+    }
+#endif
+    return true;
+}
+Function: 
+pub(crate) fn write_process<T>(
+        &mut self,
+        value: T,
+        f: fn(parcel: Pin<&mut MessageParcel>, value: T) -> bool,
+    ) -> IpcResult<()> {
+        match mem::replace(&mut self.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = f(p.pin_mut(), value);
+                self.inner = ParcelMem::Unique(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Borrow(p) => {
+                let w = unsafe { Pin::new_unchecked(&mut *p) };
+                let res = f(w, value);
+                self.inner = ParcelMem::Borrow(p);
+                match res {
+                    true => Ok(()),
+                    false => Err(IpcStatusCode::Failed),
+                }
+            }
+            ParcelMem::Null => IpcResult::Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.04354749619960785
+--------------------------------------------------
+C_Code: 
+bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(bundleName), bundleName);
+            GetValue(node, GET_NAME(accountId), accountId);
+            GetValue(node, GET_NAME(storeId), storeId);
+            return true;
+        }
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let app_id = parcel.read_string16()?;
+        let bundle_name = parcel.read_string16()?;
+        let cloud_switch = parcel.read::<i32>()? != 0;
+        let instance_id = parcel.read::<i32>()?;
+
+        let result = Self {
+            app_id,
+            bundle_name,
+            cloud_switch,
+            instance_id,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.04602760449051857
+--------------------------------------------------
+C_Code: 
+bool MessageParcel::WriteRemoteObject(const sptr<IRemoteObject> &object)
+{
+    if (object == nullptr) {
+        return false;
+    }
+    // Increase object's refcount temporarily in case of premature deallocation,
+    // object's refcount will be decreased when this MessageParcel destroyed.
+    if (object->AttemptIncStrongRef(this) != true) {
+        return false;
+    }
+    holders_.push_back(object);
+    object->DecStrongRef(this);
+#ifndef CONFIG_IPC_SINGLE
+    if (object->IsProxyObject()) {
+        const IPCObjectProxy *proxy = reinterpret_cast<const IPCObjectProxy *>(object.GetRefPtr());
+        const uint32_t handle = proxy ? proxy->GetHandle() : 0;
+        if (IPCProcessSkeleton::IsHandleMadeByUser(handle)) {
+            /* this is a fake proxy which handle get by MakeRemoteHandle(), Not binder driver of kernel */
+            ZLOGI(LOG_LABEL, "send a dbinder proxy to another process in this device");
+            return WriteDBinderProxy(object, handle, 0);
+        }
+    }
+#endif
+
+#ifndef CONFIG_IPC_SINGLE
+    auto offset = GetWritePosition();
+#endif
+    if (!WriteObject<IRemoteObject>(object)) {
+        return false;
+    }
+#ifndef CONFIG_IPC_SINGLE
+    if (!UpdateDBinderDataOffset(offset)) {
+        RewindWrite(offset);
+        return false;
+    }
+#endif
+    return true;
+}
+Function: 
+pub fn write<T: Serialize + ?Sized>(&mut self, value: &T) -> IpcResult<()> {
+        value.serialize(self)
+    }
+Unixcoder Score: -0.04630653187632561
+--------------------------------------------------
+C_Code: 
+struct DirectDriverLoadingInfoLUNARG
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx98656_rank3.c", "source_rust_file": "API_Mapping__main__idx98656_rank3.rs", "c_api": "memset(pushback, '\\0', PUSHBACK_LEN)", "rust_api": "std::mem::forget(file)", "mapping_type": "pattern", "description": "Memory initialization vs. memory handling", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function with file I/O and syntax tree handling. [Similarity] No structural similarity at the function level due to different domains (memory management vs. parsing + syntax tree). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to parsing and memory handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx98656_rank3.c", "source_rust_file": "API_Mapping__main__idx98656_rank3.rs", "c_api": "rsparse()", "rust_api": "SourceFile::parse(&text).tree()", "mapping_type": "function", "description": "Parsing function call", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function with file I/O and syntax tree handling. [Similarity] No structural similarity at the function level due to different domains (memory management vs. parsing + syntax tree). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to parsing and memory handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx98656_rank3.c", "source_rust_file": "API_Mapping__main__idx98656_rank3.rs", "c_api": "strcmp(argv[1], \"-v\") == 0", "rust_api": "!self.no_dump", "mapping_type": "pattern", "description": "Command-line argument check for verbose mode", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function with file I/O and syntax tree handling. [Similarity] No structural similarity at the function level due to different domains (memory management vs. parsing + syntax tree). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to parsing and memory handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__main__idx98656_rank3.c", "source_rust_file": "API_Mapping__main__idx98656_rank3.rs", "c_api": "free(tmp)", "rust_api": "std::mem::forget(file)", "mapping_type": "pattern", "description": "Memory deallocation vs. memory handling", "reasoning": "[Task Analysis] C code is a main function handling command-line args, parsing, and memory cleanup; Rust code is a parsing function with file I/O and syntax tree handling. [Similarity] No structural similarity at the function level due to different domains (memory management vs. parsing + syntax tree). [Knowledge Extraction] No full match, no partial match, but there are some API mappings related to parsing and memory handling."}]
+Unixcoder Score: -0.046472836285829544
+--------------------------------------------------

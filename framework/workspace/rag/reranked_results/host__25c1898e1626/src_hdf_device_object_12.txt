@@ -1,0 +1,254 @@
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn test_dlist_insert_n_after() {
+        let l = create::<int>();
+        l.assert_consistent(); let one = l.push_n(1);
+        l.assert_consistent(); let _two = l.push_n(2);
+        l.assert_consistent(); let three = create_node(3);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); l.insert_n_after(three, one);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 2;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.pop().get() == 2;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113782_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113782_rank1.rs", "c_api": "old_node->prev->next = new_node", "rust_api": "tail.as_mut().next = Some(other_head)", "mapping_type": "field_access", "description": "Updating next pointer of previous node to point to new node", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function appends one doubly-linked list to another. [Similarity] Both involve linked list manipulation and pointer/reference adjustments, but the domain is memory management (pointer manipulation) vs high-level list operations. [Knowledge Extraction] The structural similarity is limited to list manipulation patterns, but the semantic domains differ significantly (low-level pointer vs high-level list operations). No full match due to domain mismatch. Partial match exists in list node adjustment logic. API mappings found for list node linking operations."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__insert_in_list__idx113782_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113782_rank1.rs", "c_fragment": "new_node->next = old_node;\n  new_node->prev = old_node->prev;\n  old_node->prev->next = new_node;\n  old_node->prev = new_node;", "rust_fragment": "unsafe {\n                        tail.as_mut().next = Some(other_head);\n                        other_head.as_mut().prev = Some(tail);\n                    }", "description": "Both code blocks perform node linking operations in a doubly-linked list structure.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function appends one doubly-linked list to another. [Similarity] Both involve linked list manipulation and pointer/reference adjustments, but the domain is memory management (pointer manipulation) vs high-level list operations. [Knowledge Extraction] The structural similarity is limited to list manipulation patterns, but the semantic domains differ significantly (low-level pointer vs high-level list operations). No full match due to domain mismatch. Partial match exists in list node adjustment logic. API mappings found for list node linking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113782_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113782_rank1.rs", "c_api": "new_node->prev = old_node->prev", "rust_api": "other_head.as_mut().prev = Some(tail)", "mapping_type": "field_access", "description": "Assignment of prev pointer in doubly-linked list node", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function appends one doubly-linked list to another. [Similarity] Both involve linked list manipulation and pointer/reference adjustments, but the domain is memory management (pointer manipulation) vs high-level list operations. [Knowledge Extraction] The structural similarity is limited to list manipulation patterns, but the semantic domains differ significantly (low-level pointer vs high-level list operations). No full match due to domain mismatch. Partial match exists in list node adjustment logic. API mappings found for list node linking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113782_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113782_rank1.rs", "c_api": "new_node->next = old_node", "rust_api": "tail.as_mut().next = Some(other_head)", "mapping_type": "field_access", "description": "Assignment of next pointer in doubly-linked list node", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function appends one doubly-linked list to another. [Similarity] Both involve linked list manipulation and pointer/reference adjustments, but the domain is memory management (pointer manipulation) vs high-level list operations. [Knowledge Extraction] The structural similarity is limited to list manipulation patterns, but the semantic domains differ significantly (low-level pointer vs high-level list operations). No full match due to domain mismatch. Partial match exists in list node adjustment logic. API mappings found for list node linking operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__insert_in_list__idx113782_rank1.c", "source_rust_file": "Partial__ares__insert_in_list__idx113782_rank1.rs", "c_api": "old_node->prev = new_node", "rust_api": "other_head.as_mut().prev = Some(tail)", "mapping_type": "field_access", "description": "Updating prev pointer of old node to point to new node", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by inserting a node between two existing nodes; Rust function appends one doubly-linked list to another. [Similarity] Both involve linked list manipulation and pointer/reference adjustments, but the domain is memory management (pointer manipulation) vs high-level list operations. [Knowledge Extraction] The structural similarity is limited to list manipulation patterns, but the semantic domains differ significantly (low-level pointer vs high-level list operations). No full match due to domain mismatch. Partial match exists in list node adjustment logic. API mappings found for list node linking operations."}]
+Unixcoder Score: -0.008207621984183788
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_before_n(+data: T, neighbour: dlist_node<T>) -> dlist_node<T> {
+        let mut nobe = self.new_link(data);
+        self.insert_left(nobe, neighbour);
+        option::get(nobe)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8870_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8870_rank2.rs", "c_api": "pointer_t *node", "rust_api": "Option<Box<List<T>>>,", "mapping_type": "type", "description": "Pointer-based node representation in C maps to boxed optional node in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list). However, there are API mappings between C's pointer manipulation and Rust's Option<Box<>> pattern matching and linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8870_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8870_rank2.rs", "c_api": "node_t *node = new node_t()", "rust_api": "Box::new(List { ... })", "mapping_type": "function", "description": "Dynamic allocation of node in C maps to heap allocation in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list). However, there are API mappings between C's pointer manipulation and Rust's Option<Box<>> pattern matching and linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8870_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8870_rank2.rs", "c_api": "tail.node = node", "rust_api": "next: Some(Box::new(...))", "mapping_type": "field_access", "description": "Assignment of tail node in C maps to setting next field in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list). However, there are API mappings between C's pointer manipulation and Rust's Option<Box<>> pattern matching and linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8870_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8870_rank2.rs", "c_api": "head.node = node", "rust_api": "next: Some(Box::new(...))", "mapping_type": "field_access", "description": "Assignment of head node in C maps to setting next field in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list). However, there are API mappings between C's pointer manipulation and Rust's Option<Box<>> pattern matching and linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8870_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8870_rank2.rs", "c_api": "sync::compare_and_swap", "rust_api": "AtomicPtr::compare_exchange", "mapping_type": "function", "description": "Atomic compare-and-swap in C maps to atomic compare-exchange in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list). However, there are API mappings between C's pointer manipulation and Rust's Option<Box<>> pattern matching and linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8870_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8870_rank2.rs", "c_api": "node_t *node", "rust_api": "Box<List<T>>", "mapping_type": "type", "description": "Node pointer in C maps to boxed node in Rust", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list). However, there are API mappings between C's pointer manipulation and Rust's Option<Box<>> pattern matching and linking."}]
+Unixcoder Score: -0.03517129272222519
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn link(+before: dlist_link<T>, +after: dlist_link<T>) {
+        alt before {
+            some(neighbour) { neighbour.next = after; }
+            none            { self.hd        = after; }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx20551_rank3.h", "source_rust_file": "API_Mapping__pointer_t__idx20551_rank3.rs", "c_api": "compare_and_swap", "rust_api": "mpmc::Sender", "mapping_type": "type", "description": "Concurrent communication channel abstraction", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers and CAS operations; Rust code defines a SyncSender struct using mpmc::Sender. [Similarity] No structural similarity due to domain mismatch (low-level memory management vs high-level channel abstraction). [Knowledge Extraction] No full/partial match, but API mapping can be inferred from conceptual equivalence of concurrent communication patterns."}]
+Unixcoder Score: -0.03525340184569359
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+pub fn insert_after(&mut self, item: T) {
+        unsafe {
+            let spliced_node = Box::leak(Box::new_in(Node::new(item), &self.list.alloc)).into();
+            let node_next = match self.current {
+                None => self.list.head,
+                Some(node) => node.as_ref().next,
+            };
+            self.list.splice_nodes(self.current, node_next, spliced_node, spliced_node, 1);
+            if self.current.is_none() {
+                // The "ghost" non-element's index has changed.
+                self.index = self.list.len;
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx8871_rank2.h", "source_rust_file": "Partial__pointer_t__idx8871_rank2.rs", "c_api": "new node_t()", "rust_api": "Box::new(List<T>)", "mapping_type": "function", "description": "Heap allocation of a new node in C vs Rust's Box allocation.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs no direct equivalent). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx8871_rank2.h", "source_rust_file": "Partial__pointer_t__idx8871_rank2.rs", "c_api": "compare_and_swap", "rust_api": "atomic compare_exchange", "mapping_type": "function", "description": "Atomic compare and swap operation for thread-safe pointer updates.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs no direct equivalent). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx8871_rank2.h", "source_rust_file": "Partial__pointer_t__idx8871_rank2.rs", "c_fragment": "node_t *node = new node_t();\n\n        // Head and tail both start out pointing to the dummy node.\n        head.node = node;\n        tail.node = node;", "rust_fragment": "struct List<T> {\n    value: T,\n    next: Option<Box<List<T>>>,\n}", "description": "C initializes a dummy node for head/tail; Rust defines a node structure with optional next pointer.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs no direct equivalent). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx8871_rank2.h", "source_rust_file": "Partial__pointer_t__idx8871_rank2.rs", "c_fragment": "pointer_t head;\n\n    // Always points to a node in the list, (not necessarily the last).\n    pointer_t tail;", "rust_fragment": "struct List<T> {\n    value: T,\n    next: Option<Box<List<T>>>,\n}", "description": "Both represent a list structure with head/tail pointers and node references.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs no direct equivalent). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx8871_rank2.h", "source_rust_file": "Partial__pointer_t__idx8871_rank2.rs", "c_api": "pointer_t *address,\n        pointer_t *oldValue,\n        pointer_t newValue", "rust_api": "atomic compare_exchange", "mapping_type": "pattern", "description": "CAS operation parameters in C mapped to atomic compare_exchange in Rust.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs no direct equivalent). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns."}]
+Unixcoder Score: -0.03637971729040146
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_n_before(nobe: dlist_node<T>, neighbour: dlist_node<T>) {
+        self.make_mine(nobe);
+        self.insert_left(some(nobe), neighbour);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx23226_rank3.h", "source_rust_file": "API_Mapping__pointer_t__idx23226_rank3.rs", "c_api": "sync::compare_and_swap", "rust_api": "atomics::AtomicUint", "mapping_type": "function", "description": "Atomic compare and swap operation", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly map to same concept (e.g., 'pointer_t' vs 'Node'), but we can still extract API mappings. -> [Filter 2: Empty/Trivial Code] -> Neither code is trivial or empty. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are about linked list structures and atomic operations, so domain is consistent. -> [Filter 5: Empty Structs] -> Both structs have fields. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. -> [Full Classification] -> Code lengths are not vastly different, and both are implementation-level code. -> [Partial Classification] -> No clear partial match due to structural differences in how the data structures are defined. -> [API Mapping Extraction] -> Extract mappings based on semantic similarity in operations like atomic access and node creation. -> [Knowledge Extraction] -> Found API mappings for atomic operations and node creation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx23226_rank3.h", "source_rust_file": "API_Mapping__pointer_t__idx23226_rank3.rs", "c_api": "new node_t()", "rust_api": "Node<T>", "mapping_type": "type", "description": "Node creation in a lock-free queue", "reasoning": "[Filter 1: Entity Name Check] -> Names do not directly map to same concept (e.g., 'pointer_t' vs 'Node'), but we can still extract API mappings. -> [Filter 2: Empty/Trivial Code] -> Neither code is trivial or empty. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are about linked list structures and atomic operations, so domain is consistent. -> [Filter 5: Empty Structs] -> Both structs have fields. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. -> [Full Classification] -> Code lengths are not vastly different, and both are implementation-level code. -> [Partial Classification] -> No clear partial match due to structural differences in how the data structures are defined. -> [API Mapping Extraction] -> Extract mappings based on semantic similarity in operations like atomic access and node creation. -> [Knowledge Extraction] -> Found API mappings for atomic operations and node creation patterns."}]
+Unixcoder Score: -0.03663656860589981
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_n_before(nobe: dlist_node<T>, neighbour: dlist_node<T>) {
+        self.make_mine(nobe);
+        self.insert_left(some(nobe), neighbour);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx19809_rank5.h", "source_rust_file": "Partial__pointer_t__idx19809_rank5.rs", "c_fragment": "struct pointer_t {\n        node_t *node;\n        uint32_t count;\n        pointer_t() : node(NULL), count(0) {\n        }\n        pointer_t(node_t *node, uint32_t count) {\n            this->node = node;\n            this->count = count;\n        }\n        bool equals(pointer_t &other) {\n            return node == other.node && count == other.count;\n        }\n    };", "rust_fragment": "pub struct LinkedList<\n    T,\n    #[unstable(feature = \"allocator_api\", issue = \"32838\")] A: Allocator = Global,\n> {\n    head: Option<NonNull<Node<T>>>,\n    tail: Option<NonNull<Node<T>>>,\n    len: usize,\n    alloc: A,\n    marker: PhantomData<Box<Node<T>, A>>,\n}", "description": "Both define structures for managing a list of nodes with head/tail pointers, though C uses counted pointers and manual memory management while Rust uses Option<NonNull<Node<T>>> and allocators.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a linked list with head/tail pointers and allocator support. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'LinkedList', 'node_t' vs 'Node'); C uses manual memory management and CAS, Rust uses owned types and allocators. [Knowledge Extraction] No full structural match due to domain mismatch (low-level memory management vs high-level data structure abstraction). However, there are partial structural fragments and API mappings related to list operations and pointer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx19809_rank5.h", "source_rust_file": "Partial__pointer_t__idx19809_rank5.rs", "c_api": "sync::compare_and_swap", "rust_api": "atomic operations", "mapping_type": "function", "description": "C's compare-and-swap operation maps to Rust's atomic operations for thread-safe updates.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a linked list with head/tail pointers and allocator support. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'LinkedList', 'node_t' vs 'Node'); C uses manual memory management and CAS, Rust uses owned types and allocators. [Knowledge Extraction] No full structural match due to domain mismatch (low-level memory management vs high-level data structure abstraction). However, there are partial structural fragments and API mappings related to list operations and pointer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx19809_rank5.h", "source_rust_file": "Partial__pointer_t__idx19809_rank5.rs", "c_api": "new node_t()", "rust_api": "Box::new(Node<T>)", "mapping_type": "function", "description": "C's dynamic allocation of node_t maps to Rust's Box::new for heap allocation.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a linked list with head/tail pointers and allocator support. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'LinkedList', 'node_t' vs 'Node'); C uses manual memory management and CAS, Rust uses owned types and allocators. [Knowledge Extraction] No full structural match due to domain mismatch (low-level memory management vs high-level data structure abstraction). However, there are partial structural fragments and API mappings related to list operations and pointer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx19809_rank5.h", "source_rust_file": "Partial__pointer_t__idx19809_rank5.rs", "c_api": "head.node = node;\n        tail.node = node;", "rust_api": "head: Option<NonNull<Node<T>>>,\n    tail: Option<NonNull<Node<T>>>", "mapping_type": "field_access", "description": "C's assignment of head/tail pointers maps to Rust's head/tail fields in LinkedList.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a linked list with head/tail pointers and allocator support. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'LinkedList', 'node_t' vs 'Node'); C uses manual memory management and CAS, Rust uses owned types and allocators. [Knowledge Extraction] No full structural match due to domain mismatch (low-level memory management vs high-level data structure abstraction). However, there are partial structural fragments and API mappings related to list operations and pointer handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx19809_rank5.h", "source_rust_file": "Partial__pointer_t__idx19809_rank5.rs", "c_fragment": "bool compare_and_swap(pointer_t *address,\n        pointer_t *oldValue,\n        pointer_t newValue) {\n\n        // FIXME (#2701) this is requiring us to pass -fno-strict-aliasing\n        // to GCC (possibly there are other, similar problems)\n        if (sync::compare_and_swap(\n                (uint64_t*) address,\n                *(uint64_t*) oldValue,\n                *(uint64_t*) &newValue)) {\n            return true;\n        }\n        return false;\n    }", "rust_fragment": "head: Option<NonNull<Node<T>>>,\n    tail: Option<NonNull<Node<T>>>,\n    len: usize,\n    alloc: A,\n    marker: PhantomData<Box<Node<T>, A>>", "description": "C uses compare-and-swap for atomic updates of pointer values; Rust's LinkedList uses atomic operations internally via the allocator and Option<NonNull<Node<T>>> for safe access.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a linked list with head/tail pointers and allocator support. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'LinkedList', 'node_t' vs 'Node'); C uses manual memory management and CAS, Rust uses owned types and allocators. [Knowledge Extraction] No full structural match due to domain mismatch (low-level memory management vs high-level data structure abstraction). However, there are partial structural fragments and API mappings related to list operations and pointer handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx19809_rank5.h", "source_rust_file": "Partial__pointer_t__idx19809_rank5.rs", "c_api": "pointer_t *address", "rust_api": "Option<NonNull<Node<T>>>", "mapping_type": "type", "description": "C counted pointer type maps to Rust's Option<NonNull<Node<T>>> for safe pointer handling.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a linked list with head/tail pointers and allocator support. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'LinkedList', 'node_t' vs 'Node'); C uses manual memory management and CAS, Rust uses owned types and allocators. [Knowledge Extraction] No full structural match due to domain mismatch (low-level memory management vs high-level data structure abstraction). However, there are partial structural fragments and API mappings related to list operations and pointer handling."}]
+Unixcoder Score: -0.036870576441287994
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+pub fn splice_before(&mut self, list: LinkedList<T>) {
+        unsafe {
+            let (splice_head, splice_tail, splice_len) = match list.detach_all_nodes() {
+                Some(parts) => parts,
+                _ => return,
+            };
+            let node_prev = match self.current {
+                None => self.list.tail,
+                Some(node) => node.as_ref().prev,
+            };
+            self.list.splice_nodes(node_prev, self.current, splice_head, splice_tail, splice_len);
+            self.index += splice_len;
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx15769_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx15769_rank2.rs", "c_api": "new node_t()", "rust_api": "Node::new()", "mapping_type": "function", "description": "Creation of a new node in a lock-free queue", "reasoning": "[Task Analysis] The C code defines a lock-free queue using counted pointers and atomic operations, while the Rust code defines a node structure with atomic pointers and optional values. [Similarity] The domain is memory management and concurrent data structures, but the implementation details differ significantly (C uses manual pointer management and CAS, Rust uses atomic types). [Knowledge Extraction] There are no full structural matches due to domain mismatch and different data structures. However, there are API mappings related to atomic operations and node creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx15769_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx15769_rank2.rs", "c_api": "sync::compare_and_swap", "rust_api": "AtomicPtr::compare_exchange", "mapping_type": "function", "description": "Atomic compare and swap operation for pointer types", "reasoning": "[Task Analysis] The C code defines a lock-free queue using counted pointers and atomic operations, while the Rust code defines a node structure with atomic pointers and optional values. [Similarity] The domain is memory management and concurrent data structures, but the implementation details differ significantly (C uses manual pointer management and CAS, Rust uses atomic types). [Knowledge Extraction] There are no full structural matches due to domain mismatch and different data structures. However, there are API mappings related to atomic operations and node creation."}]
+Unixcoder Score: -0.037335705012083054
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn test_dlist_insert_n_before() {
+        let l = create::<int>();
+        l.assert_consistent(); let _one = l.push_n(1);
+        l.assert_consistent(); let two = l.push_n(2);
+        l.assert_consistent(); let three = create_node(3);
+        l.assert_consistent(); assert l.len() == 2;
+        l.assert_consistent(); l.insert_n_before(three, two);
+        l.assert_consistent(); assert l.len() == 3;
+        l.assert_consistent(); assert l.head() == 1;
+        l.assert_consistent(); assert l.tail() == 2;
+        l.assert_consistent(); assert l.pop().get() == 1;
+        l.assert_consistent(); assert l.pop().get() == 3;
+        l.assert_consistent(); assert l.pop().get() == 2;
+        l.assert_consistent(); assert l.is_empty();
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8708_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8708_rank2.rs", "c_api": "node_t *node = new node_t();", "rust_api": "next: Option<Box<List<T>>>,", "mapping_type": "pattern", "description": "Node allocation and linking in a list", "reasoning": "[Task Analysis] The C code defines a lock-free queue using counted pointers and atomic compare-and-swap operations, while the Rust code defines a simple singly-linked list with Option<Box<>> for next node. [Similarity] The domain is mismatched: C uses low-level memory management and atomic operations for concurrency, while Rust uses high-level ownership semantics. [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, there are API mappings related to list construction and node linking."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx8708_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx8708_rank2.rs", "c_api": "head.node = node; tail.node = node;", "rust_api": "value: T,", "mapping_type": "pattern", "description": "Initialization of list head/tail with dummy node", "reasoning": "[Task Analysis] The C code defines a lock-free queue using counted pointers and atomic compare-and-swap operations, while the Rust code defines a simple singly-linked list with Option<Box<>> for next node. [Similarity] The domain is mismatched: C uses low-level memory management and atomic operations for concurrency, while Rust uses high-level ownership semantics. [Knowledge Extraction] No full structural match due to domain mismatch and different data structures. However, there are API mappings related to list construction and node linking."}]
+Unixcoder Score: -0.03734934702515602
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+fn insert_left(nobe: dlist_link<T>, neighbour: dlist_node<T>) {
+        self.assert_mine(neighbour);
+        assert self.size > 0;
+        self.link(neighbour.prev, nobe);
+        self.link(nobe, some(neighbour));
+        self.size += 1;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx8713_rank2.h", "source_rust_file": "Partial__pointer_t__idx8713_rank2.rs", "c_fragment": "node_t *node = new node_t();", "rust_fragment": "next: Option<Box<List<T>>>,", "description": "C allocates a new node using 'new', Rust uses 'Option<Box<List<T>>>' to represent a node with optional next element.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns (e.g., node creation, pointer-like behavior)."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx8713_rank2.h", "source_rust_file": "Partial__pointer_t__idx8713_rank2.rs", "c_api": "pointer_t *address,\n        pointer_t *oldValue,\n        pointer_t newValue", "rust_api": "Option<Box<List<T>>>,", "mapping_type": "pattern", "description": "C uses atomic compare-and-swap on counted pointers; Rust uses Option<Box<>> for safe linked list manipulation.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns (e.g., node creation, pointer-like behavior)."}, {"knowledge_type": "Partial", "source_c_file": "Partial__pointer_t__idx8713_rank2.h", "source_rust_file": "Partial__pointer_t__idx8713_rank2.rs", "c_fragment": "head.node = node;\n        tail.node = node;", "rust_fragment": "value: T,\n    next: Option<Box<List<T>>>,", "description": "C initializes head and tail to point to a dummy node; Rust defines a node structure with value and next pointer.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns (e.g., node creation, pointer-like behavior)."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__pointer_t__idx8713_rank2.h", "source_rust_file": "Partial__pointer_t__idx8713_rank2.rs", "c_api": "node_t *node;\n        uint32_t count;", "rust_api": "List<T> {\n    value: T,\n    next: Option<Box<List<T>>>,\n}", "mapping_type": "type", "description": "C defines a counted pointer structure; Rust defines a node structure with value and optional next node.", "reasoning": "[Task Analysis] C code defines a lock-free queue using counted pointers and CAS operations; Rust code defines a simple singly-linked list with Option<Box<>>. [Similarity] Names and concepts do not align (e.g., 'pointer_t' vs 'List<T>', 'compare_and_swap' vs 'Option<Box<>>' logic). [Knowledge Extraction] No full structural match due to domain mismatch (memory management vs simple linked list), but partial structural fragments and API mappings can be extracted where logic aligns (e.g., node creation, pointer-like behavior)."}]
+Unixcoder Score: -0.03742123767733574
+--------------------------------------------------
+C_Code: 
+void ares__insert_in_list(struct list_node* new_node,
+                          struct list_node* old_node) {
+  new_node->next = old_node;
+  new_node->prev = old_node->prev;
+  old_node->prev->next = new_node;
+  old_node->prev = new_node;
+}
+Function: 
+unsafe fn split_off_after_node(
+        &mut self,
+        split_node: Option<NonNull<Node<T>>>,
+        at: usize,
+    ) -> Self
+    where
+        A: Clone,
+    {
+        // The split node is the new tail node of the first part and owns
+        // the head of the second part.
+        if let Some(mut split_node) = split_node {
+            let second_part_head;
+            let second_part_tail;
+            unsafe {
+                second_part_head = split_node.as_mut().next.take();
+            }
+            if let Some(mut head) = second_part_head {
+                unsafe {
+                    head.as_mut().prev = None;
+                }
+                second_part_tail = self.tail;
+            } else {
+                second_part_tail = None;
+            }
+
+            let second_part = LinkedList {
+                head: second_part_head,
+                tail: second_part_tail,
+                len: self.len - at,
+                alloc: self.alloc.clone(),
+                marker: PhantomData,
+            };
+
+            // Fix the tail ptr of the first part
+            self.tail = Some(split_node);
+            self.len = at;
+
+            second_part
+        } else {
+            mem::replace(self, LinkedList::new_in(self.alloc.clone()))
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx19812_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx19812_rank2.rs", "c_api": "compare_and_swap", "rust_api": "sync::compare_and_swap", "mapping_type": "function", "description": "Atomic compare and swap operation for synchronization", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and memory management; Rust code defines an iterator struct for a linked list. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs iterator). [Knowledge Extraction] No full match, no partial match, but there are API mappings between the concepts of node traversal and pointer handling in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx19812_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx19812_rank2.rs", "c_api": "tail", "rust_api": "tail", "mapping_type": "field_access", "description": "Tail pointer to a node in the list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and memory management; Rust code defines an iterator struct for a linked list. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs iterator). [Knowledge Extraction] No full match, no partial match, but there are API mappings between the concepts of node traversal and pointer handling in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx19812_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx19812_rank2.rs", "c_api": "head", "rust_api": "head", "mapping_type": "field_access", "description": "Head pointer to the first node in the list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and memory management; Rust code defines an iterator struct for a linked list. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs iterator). [Knowledge Extraction] No full match, no partial match, but there are API mappings between the concepts of node traversal and pointer handling in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx19812_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx19812_rank2.rs", "c_api": "pointer_t", "rust_api": "Option<NonNull<Node<T>>>", "mapping_type": "type", "description": "Pointer type representing optional node reference in a linked list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and memory management; Rust code defines an iterator struct for a linked list. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs iterator). [Knowledge Extraction] No full match, no partial match, but there are API mappings between the concepts of node traversal and pointer handling in both languages."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__pointer_t__idx19812_rank2.h", "source_rust_file": "API_Mapping__pointer_t__idx19812_rank2.rs", "c_api": "node_t", "rust_api": "Node<T>", "mapping_type": "type", "description": "Node structure in a linked list", "reasoning": "[Task Analysis] C code defines a lock-free queue with counted pointers using C++ structs and memory management; Rust code defines an iterator struct for a linked list. [Similarity] No structural similarity at the function level due to different domains (lock-free queue vs iterator). [Knowledge Extraction] No full match, no partial match, but there are API mappings between the concepts of node traversal and pointer handling in both languages."}]
+Unixcoder Score: -0.0374370701611042
+--------------------------------------------------

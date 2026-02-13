@@ -1,0 +1,366 @@
+C_Code: 
+static upb_EncodeStatus _upb_Encode(const upb_Message* msg,
+                                    const upb_MiniTable* l, int options,
+                                    upb_Arena* arena, char** buf, size_t* size,
+                                    bool prepend_len) {
+  upb_encstate e;
+  unsigned depth = (unsigned)options >> 16;
+
+  e.status = kUpb_EncodeStatus_Ok;
+  e.arena = arena;
+  e.buf = NULL;
+  e.limit = NULL;
+  e.ptr = NULL;
+  e.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
+  e.options = options;
+  _upb_mapsorter_init(&e.sorter);
+
+  return upb_Encoder_Encode(&e, msg, l, buf, size, prepend_len);
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.022323625162243843
+--------------------------------------------------
+C_Code: 
+void
+bufput(struct buf *buf, const void *data, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (buf->size + len > buf->asize && bufgrow(buf, buf->size + len) < 0)
+		return;
+
+	memcpy(buf->data + buf->size, data, len);
+	buf->size += len;
+}
+Function: 
+pub(crate) fn extend_from_slice(&mut self, other: &[u8]) {
+        self.inner.extend_from_slice(other);
+    }
+Unixcoder Score: -0.028347371146082878
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus _upb_Encode(const upb_Message* msg,
+                                    const upb_MiniTable* l, int options,
+                                    upb_Arena* arena, char** buf, size_t* size,
+                                    bool prepend_len) {
+  upb_encstate e;
+  unsigned depth = (unsigned)options >> 16;
+
+  e.status = kUpb_EncodeStatus_Ok;
+  e.arena = arena;
+  e.buf = NULL;
+  e.limit = NULL;
+  e.ptr = NULL;
+  e.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
+  e.options = options;
+  _upb_mapsorter_init(&e.sorter);
+
+  return upb_Encoder_Encode(&e, msg, l, buf, size, prepend_len);
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.03299008682370186
+--------------------------------------------------
+C_Code: 
+void
+bufput(struct buf *buf, const void *data, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (buf->size + len > buf->asize && bufgrow(buf, buf->size + len) < 0)
+		return;
+
+	memcpy(buf->data + buf->size, data, len);
+	buf->size += len;
+}
+Function: 
+fn basic() {
+    let mut buf = HtmlWithLimit::new(60);
+    buf.push("Hello ");
+    buf.open_tag("em");
+    buf.push("world");
+    buf.close_tag();
+    buf.push("!");
+    assert_eq!(buf.finish(), "Hello <em>world</em>!");
+}
+Unixcoder Score: -0.03303396701812744
+--------------------------------------------------
+C_Code: 
+void
+bufput(struct buf *buf, const void *data, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (buf->size + len > buf->asize && bufgrow(buf, buf->size + len) < 0)
+		return;
+
+	memcpy(buf->data + buf->size, data, len);
+	buf->size += len;
+}
+Function: 
+pub fn push_back(&mut self, value: T) {
+        if self.is_full() {
+            self.grow();
+        }
+
+        unsafe { self.buffer_write(self.to_physical_idx(self.len), value) }
+        self.len += 1;
+    }
+Unixcoder Score: -0.03950231522321701
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus _upb_Encode(const upb_Message* msg,
+                                    const upb_MiniTable* l, int options,
+                                    upb_Arena* arena, char** buf, size_t* size,
+                                    bool prepend_len) {
+  upb_encstate e;
+  unsigned depth = (unsigned)options >> 16;
+
+  e.status = kUpb_EncodeStatus_Ok;
+  e.arena = arena;
+  e.buf = NULL;
+  e.limit = NULL;
+  e.ptr = NULL;
+  e.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
+  e.options = options;
+  _upb_mapsorter_init(&e.sorter);
+
+  return upb_Encoder_Encode(&e, msg, l, buf, size, prepend_len);
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.04105937480926514
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus _upb_Encode(const upb_Message* msg,
+                                    const upb_MiniTable* l, int options,
+                                    upb_Arena* arena, char** buf, size_t* size,
+                                    bool prepend_len) {
+  upb_encstate e;
+  unsigned depth = (unsigned)options >> 16;
+
+  e.status = kUpb_EncodeStatus_Ok;
+  e.arena = arena;
+  e.buf = NULL;
+  e.limit = NULL;
+  e.ptr = NULL;
+  e.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
+  e.options = options;
+  _upb_mapsorter_init(&e.sorter);
+
+  return upb_Encoder_Encode(&e, msg, l, buf, size, prepend_len);
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.04112058877944946
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus _upb_Encode(const upb_Message* msg,
+                                    const upb_MiniTable* l, int options,
+                                    upb_Arena* arena, char** buf, size_t* size,
+                                    bool prepend_len) {
+  upb_encstate e;
+  unsigned depth = (unsigned)options >> 16;
+
+  e.status = kUpb_EncodeStatus_Ok;
+  e.arena = arena;
+  e.buf = NULL;
+  e.limit = NULL;
+  e.ptr = NULL;
+  e.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
+  e.options = options;
+  _upb_mapsorter_init(&e.sorter);
+
+  return upb_Encoder_Encode(&e, msg, l, buf, size, prepend_len);
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.04198009520769119
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus _upb_Encode(const upb_Message* msg,
+                                    const upb_MiniTable* l, int options,
+                                    upb_Arena* arena, char** buf, size_t* size,
+                                    bool prepend_len) {
+  upb_encstate e;
+  unsigned depth = (unsigned)options >> 16;
+
+  e.status = kUpb_EncodeStatus_Ok;
+  e.arena = arena;
+  e.buf = NULL;
+  e.limit = NULL;
+  e.ptr = NULL;
+  e.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
+  e.options = options;
+  _upb_mapsorter_init(&e.sorter);
+
+  return upb_Encoder_Encode(&e, msg, l, buf, size, prepend_len);
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.042039524763822556
+--------------------------------------------------
+C_Code: 
+static upb_EncodeStatus _upb_Encode(const upb_Message* msg,
+                                    const upb_MiniTable* l, int options,
+                                    upb_Arena* arena, char** buf, size_t* size,
+                                    bool prepend_len) {
+  upb_encstate e;
+  unsigned depth = (unsigned)options >> 16;
+
+  e.status = kUpb_EncodeStatus_Ok;
+  e.arena = arena;
+  e.buf = NULL;
+  e.limit = NULL;
+  e.ptr = NULL;
+  e.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
+  e.options = options;
+  _upb_mapsorter_init(&e.sorter);
+
+  return upb_Encoder_Encode(&e, msg, l, buf, size, prepend_len);
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: -0.04296274110674858
+--------------------------------------------------

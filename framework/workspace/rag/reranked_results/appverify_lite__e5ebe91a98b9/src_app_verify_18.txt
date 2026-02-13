@@ -1,0 +1,524 @@
+C_Code: 
+void GenerateMessageFunctionsInHeader(upb::MessageDefPtr message,
+                                      const Options& options, Output& output) {
+  // TODO: The generated code here does not check the return values
+  // from upb_Encode(). How can we even fix this without breaking other things?
+  output(
+      R"cc(
+        UPB_INLINE $0* $0_new(upb_Arena* arena) {
+          return ($0*)_upb_Message_New($1, arena);
+        }
+        UPB_INLINE $0* $0_parse(const char* buf, size_t size, upb_Arena* arena) {
+          $0* ret = $0_new(arena);
+          if (!ret) return NULL;
+          if (upb_Decode(buf, size, UPB_UPCAST(ret), $1, NULL, 0, arena) !=
+              kUpb_DecodeStatus_Ok) {
+            return NULL;
+          }
+          return ret;
+        }
+        UPB_INLINE $0* $0_parse_ex(const char* buf, size_t size,
+                                   const upb_ExtensionRegistry* extreg,
+                                   int options, upb_Arena* arena) {
+          $0* ret = $0_new(arena);
+          if (!ret) return NULL;
+          if (upb_Decode(buf, size, UPB_UPCAST(ret), $1, extreg, options,
+                         arena) != kUpb_DecodeStatus_Ok) {
+            return NULL;
+          }
+          return ret;
+        }
+        UPB_INLINE char* $0_serialize(const $0* msg, upb_Arena* arena, size_t* len) {
+          char* ptr;
+          (void)upb_Encode(UPB_UPCAST(msg), $1, 0, arena, &ptr, len);
+          return ptr;
+        }
+        UPB_INLINE char* $0_serialize_ex(const $0* msg, int options,
+                                         upb_Arena* arena, size_t* len) {
+          char* ptr;
+          (void)upb_Encode(UPB_UPCAST(msg), $1, options, arena, &ptr, len);
+          return ptr;
+        }
+      )cc",
+      MessageType(message), MessageMiniTableRef(message, options));
+}
+Function: 
+pub unsafe fn encode(
+    msg: RawMessage,
+    mini_table: *const upb_MiniTable,
+) -> Result<Vec<u8>, EncodeStatus> {
+    let arena = Arena::new();
+    let mut buf: *mut u8 = core::ptr::null_mut();
+    let mut len = 0usize;
+
+    // SAFETY:
+    // - `mini_table` is the one associated with `msg`.
+    // - `buf` and `buf_size` are legally writable.
+    let status = unsafe { upb_Encode(msg, mini_table, 0, arena.raw(), &mut buf, &mut len) };
+
+    if status == EncodeStatus::Ok {
+        assert!(!buf.is_null()); // EncodeStatus Ok should never return NULL data, even for len=0.
+        // SAFETY: upb guarantees that `buf` is valid to read for `len`.
+        Ok(unsafe { &*core::ptr::slice_from_raw_parts(buf, len) }.to_vec())
+    } else {
+        Err(status)
+    }
+}
+Unixcoder Score: 0.054915837943553925
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertDataList(struct CRequestCerts *certs)
+{
+    for (uint32_t i = 0; i < certs->len; i++) {
+        FreeCertData(certs->certDataList[i]);
+    }
+    free(certs->certDataList);
+    free(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.04705743119120598
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertDataList(struct CRequestCerts *certs)
+{
+    for (uint32_t i = 0; i < certs->len; i++) {
+        FreeCertData(certs->certDataList[i]);
+    }
+    free(certs->certDataList);
+    free(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: 0.03169216588139534
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn compress(input_bytes: &[u8]) -> [u32; 8] {
+    let mut compress = SHA256_H;
+    let chunk_num = input_bytes.len() / BYTES_PER_CHUNK;
+    for i in 0..chunk_num {
+        // the try_into of array cannot be failed, for the length of plain_chunk is sure to be 64 as expected
+        let expanded_chunk =
+            expand_chunk(input_bytes[i * BYTES_PER_CHUNK..(i + 1) * BYTES_PER_CHUNK].try_into().unwrap());
+        let compressed_chunk: [u32; 8] = compress_chunk(expanded_chunk);
+        for j in 0..8 {
+            compress[j] = compress[j].wrapping_add(compressed_chunk[j]);
+        }
+    }
+    compress
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__CreateEncodedInfo__idx7630_rank1.c", "source_rust_file": "API_Mapping__CreateEncodedInfo__idx7630_rank1.rs", "c_api": "reader.output_bits_per_component()", "rust_api": "self.reader.output_color_type().1 as u8", "mapping_type": "method", "description": "Access bits per component from reader", "reasoning": "[Task Analysis] C function creates an SkEncodedInfo using data from a rust_png::Reader, while Rust function only retrieves bits per component. [Similarity] No structural similarity at function level; C does complex logic with color type conversion, profile creation, and SkEncodedInfo construction, while Rust only returns a single value. [Knowledge Extraction] No full match, no partial match, but there is a data access pattern mapping: C reads bits_per_component from reader, Rust also accesses bits_per_component from reader (though in different context)."}]
+Unixcoder Score: 0.020902736112475395
+--------------------------------------------------
+C_Code: 
+SkEncodedInfo CreateEncodedInfo(const rust_png::Reader& reader) {
+    rust_png::ColorType rustColor = reader.output_color_type();
+    SkEncodedInfo::Color skColor = ToColor(rustColor);
+
+    std::unique_ptr<SkEncodedInfo::ICCProfile> profile = CreateColorProfile(reader);
+    if (!SkPngCodecBase::isCompatibleColorProfileAndType(profile.get(), skColor)) {
+        profile = nullptr;
+    }
+
+    static_assert(sizeof(int) >= sizeof(int32_t), "Is it ok to use Sk64_pin_to_s32 below?");
+    return SkEncodedInfo::Make(Sk64_pin_to_s32(reader.width()),
+                               Sk64_pin_to_s32(reader.height()),
+                               skColor,
+                               ToAlpha(rustColor, reader),
+                               reader.output_bits_per_component(),
+                               std::move(profile));
+}
+Function: 
+fn output_bits_per_component(&self) -> u8 {
+        self.reader.output_color_type().1 as u8
+    }
+Unixcoder Score: -0.0010986508568748832
+--------------------------------------------------
+C_Code: 
+bool GetSaProfile(int32_t saId, CommonSaProfile& saProfile)
+    {
+        std::lock_guard<samgr::mutex> autoLock(saProfileMapLock_);
+        auto iter = saProfileMap_.find(saId);
+        if (iter == saProfileMap_.end()) {
+            return false;
+        } else {
+            saProfile = iter->second;
+        }
+        return true;
+    }
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: -0.004915657918900251
+--------------------------------------------------
+C_Code: 
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
+{
+    if (input == NULL || intputLen == 0 || output == NULL) {
+        LOGE("invalid input for sha256");
+        return;
+    }
+
+    (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+Function: 
+fn into_vec_u8(hash: &[u32; 8]) -> Vec<u8> {
+    let mut ret = [0; SHA256_LEN];
+    for i in 0..hash.len() {
+        ret[i * U8_PER_U32] = ((hash[i] >> 24) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 1] = ((hash[i] >> 16) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 2] = ((hash[i] >> 8) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 3] = (hash[i] & LOWER_BYTES_MASK) as u8;
+    }
+
+    ret.to_vec()
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "free", "rust_api": "free", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_fragment": "for (uint32_t i = 0; i < certs->len; i++) {\n        FreeCertData(certs->certDataList[i]);\n    }\n    free(certs->certDataList);\n    free(certs);", "rust_fragment": "for item in c_cert_list_ptr.iter() {\n            let cert = unsafe { &**item };\n            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };\n            match Certificate::from_pem(cert_slice) {\n                Ok(cert) => {\n                    certificates.push(cert);\n                }\n                Err(e) => {\n                    error!(\"parse security cert path failed, error is {:?}\", e);\n                    return;\n                }\n            };\n        }\n        unsafe { FreeCertDataList(c_certs_ptr) };", "description": "Both iterate over a list of certificate data and free memory, though Rust also includes parsing logic.", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertDataList", "rust_api": "FreeCertDataList", "mapping_type": "function", "description": "Memory deallocation of certificate data list", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__FreeCertDataList__idx555_rank1.c", "source_rust_file": "Partial__FreeCertDataList__idx555_rank1.rs", "c_api": "FreeCertData", "rust_api": "FreeCertData", "mapping_type": "function", "description": "Free individual certificate data", "reasoning": "[Task Analysis] C function frees a list of certificate data and the container itself; Rust function retrieves certificate data from C, processes it into Rust objects, and calls the C free function. [Similarity] Names don't match but the core logic of iterating over a list and freeing memory is present in both. [Knowledge Extraction] Full structural match on the loop and memory management pattern, API mappings found for FreeCertDataList and FreeCertData, and memory access patterns."}]
+Unixcoder Score: -0.015227194875478745
+--------------------------------------------------
+C_Code: 
+bool GetSaProfile(int32_t saId, CommonSaProfile& saProfile)
+    {
+        std::lock_guard<samgr::mutex> autoLock(saProfileMapLock_);
+        auto iter = saProfileMap_.find(saId);
+        if (iter == saProfileMap_.end()) {
+            return false;
+        } else {
+            saProfile = iter->second;
+        }
+        return true;
+    }
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: -0.018851203843951225
+--------------------------------------------------
+C_Code: 
+int utf8_naive(const unsigned char *data, int len)
+{
+    int err_pos = 1;
+
+    while (len) {
+        int bytes;
+        const unsigned char byte1 = data[0];
+
+        /* 00..7F */
+        if (byte1 <= 0x7F) {
+            bytes = 1;
+        /* C2..DF, 80..BF */
+        } else if (len >= 2 && byte1 >= 0xC2 && byte1 <= 0xDF &&
+                (signed char)data[1] <= (signed char)0xBF) {
+            bytes = 2;
+        } else if (len >= 3) {
+            const unsigned char byte2 = data[1];
+
+            /* Is byte2, byte3 between 0x80 ~ 0xBF */
+            const int byte2_ok = (signed char)byte2 <= (signed char)0xBF;
+            const int byte3_ok = (signed char)data[2] <= (signed char)0xBF;
+
+            if (byte2_ok && byte3_ok &&
+                     /* E0, A0..BF, 80..BF */
+                    ((byte1 == 0xE0 && byte2 >= 0xA0) ||
+                     /* E1..EC, 80..BF, 80..BF */
+                     (byte1 >= 0xE1 && byte1 <= 0xEC) ||
+                     /* ED, 80..9F, 80..BF */
+                     (byte1 == 0xED && byte2 <= 0x9F) ||
+                     /* EE..EF, 80..BF, 80..BF */
+                     (byte1 >= 0xEE && byte1 <= 0xEF))) {
+                bytes = 3;
+            } else if (len >= 4) {
+                /* Is byte4 between 0x80 ~ 0xBF */
+                const int byte4_ok = (signed char)data[3] <= (signed char)0xBF;
+
+                if (byte2_ok && byte3_ok && byte4_ok &&
+                         /* F0, 90..BF, 80..BF, 80..BF */
+                        ((byte1 == 0xF0 && byte2 >= 0x90) ||
+                         /* F1..F3, 80..BF, 80..BF, 80..BF */
+                         (byte1 >= 0xF1 && byte1 <= 0xF3) ||
+                         /* F4, 80..8F, 80..BF, 80..BF */
+                         (byte1 == 0xF4 && byte2 <= 0x8F))) {
+                    bytes = 4;
+                } else {
+                    return err_pos;
+                }
+            } else {
+                return err_pos;
+            }
+        } else {
+            return err_pos;
+        }
+
+        len -= bytes;
+        err_pos += bytes;
+        data += bytes;
+    }
+
+    return 0;
+}
+Function: 
+fn next(&mut self) -> Option<Utf8Chunk<'a>> {
+        if self.source.is_empty() {
+            return None;
+        }
+
+        const TAG_CONT_U8: u8 = 128;
+        fn safe_get(xs: &[u8], i: usize) -> u8 {
+            *xs.get(i).unwrap_or(&0)
+        }
+
+        let mut i = 0;
+        let mut valid_up_to = 0;
+        while i < self.source.len() {
+            // SAFETY: `i < self.source.len()` per previous line.
+            // For some reason the following are both significantly slower:
+            // while let Some(&byte) = self.source.get(i) {
+            // while let Some(byte) = self.source.get(i).copied() {
+            let byte = unsafe { *self.source.get_unchecked(i) };
+            i += 1;
+
+            if byte < 128 {
+                // This could be a `1 => ...` case in the match below, but for
+                // the common case of all-ASCII inputs, we bypass loading the
+                // sizeable UTF8_CHAR_WIDTH table into cache.
+            } else {
+                let w = utf8_char_width(byte);
+
+                match w {
+                    2 => {
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    3 => {
+                        match (byte, safe_get(self.source, i)) {
+                            (0xE0, 0xA0..=0xBF) => (),
+                            (0xE1..=0xEC, 0x80..=0xBF) => (),
+                            (0xED, 0x80..=0x9F) => (),
+                            (0xEE..=0xEF, 0x80..=0xBF) => (),
+                            _ => break,
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    4 => {
+                        match (byte, safe_get(self.source, i)) {
+                            (0xF0, 0x90..=0xBF) => (),
+                            (0xF1..=0xF3, 0x80..=0xBF) => (),
+                            (0xF4, 0x80..=0x8F) => (),
+                            _ => break,
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                        if safe_get(self.source, i) & 192 != TAG_CONT_U8 {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    _ => break,
+                }
+            }
+
+            valid_up_to = i;
+        }
+
+        /// # Safety
+        /// `index` must be in-bounds for `x`
+        unsafe fn split_at_unchecked(x: &[u8], index: usize) -> (&[u8], &[u8]) {
+            // SAFETY: in-bounds as promised by the caller
+            unsafe { (x.get_unchecked(..index), x.get_unchecked(index..)) }
+        }
+
+        // SAFETY: `i <= self.source.len()` because it is only ever incremented
+        // via `i += 1` and in between every single one of those increments, `i`
+        // is compared against `self.source.len()`. That happens either
+        // literally by `i < self.source.len()` in the while-loop's condition,
+        // or indirectly by `safe_get(self.source, i) & 192 != TAG_CONT_U8`. The
+        // loop is terminated as soon as the latest `i += 1` has made `i` no
+        // longer less than `self.source.len()`, which means it'll be at most
+        // equal to `self.source.len()`.
+        let (inspected, remaining) = unsafe { split_at_unchecked(self.source, i) };
+        self.source = remaining;
+
+        // SAFETY: `valid_up_to <= i` because it is only ever assigned via
+        // `valid_up_to = i` and `i` only increases.
+        let (valid, invalid) = unsafe { split_at_unchecked(inspected, valid_up_to) };
+
+        Some(Utf8Chunk {
+            // SAFETY: All bytes up to `valid_up_to` are valid UTF-8.
+            valid: unsafe { from_utf8_unchecked(valid) },
+            invalid,
+        })
+    }
+Unixcoder Score: -0.018859466537833214
+--------------------------------------------------
+C_Code: 
+int utf8_naive(const unsigned char *data, int len)
+{
+    int err_pos = 1;
+
+    while (len) {
+        int bytes;
+        const unsigned char byte1 = data[0];
+
+        /* 00..7F */
+        if (byte1 <= 0x7F) {
+            bytes = 1;
+        /* C2..DF, 80..BF */
+        } else if (len >= 2 && byte1 >= 0xC2 && byte1 <= 0xDF &&
+                (signed char)data[1] <= (signed char)0xBF) {
+            bytes = 2;
+        } else if (len >= 3) {
+            const unsigned char byte2 = data[1];
+
+            /* Is byte2, byte3 between 0x80 ~ 0xBF */
+            const int byte2_ok = (signed char)byte2 <= (signed char)0xBF;
+            const int byte3_ok = (signed char)data[2] <= (signed char)0xBF;
+
+            if (byte2_ok && byte3_ok &&
+                     /* E0, A0..BF, 80..BF */
+                    ((byte1 == 0xE0 && byte2 >= 0xA0) ||
+                     /* E1..EC, 80..BF, 80..BF */
+                     (byte1 >= 0xE1 && byte1 <= 0xEC) ||
+                     /* ED, 80..9F, 80..BF */
+                     (byte1 == 0xED && byte2 <= 0x9F) ||
+                     /* EE..EF, 80..BF, 80..BF */
+                     (byte1 >= 0xEE && byte1 <= 0xEF))) {
+                bytes = 3;
+            } else if (len >= 4) {
+                /* Is byte4 between 0x80 ~ 0xBF */
+                const int byte4_ok = (signed char)data[3] <= (signed char)0xBF;
+
+                if (byte2_ok && byte3_ok && byte4_ok &&
+                         /* F0, 90..BF, 80..BF, 80..BF */
+                        ((byte1 == 0xF0 && byte2 >= 0x90) ||
+                         /* F1..F3, 80..BF, 80..BF, 80..BF */
+                         (byte1 >= 0xF1 && byte1 <= 0xF3) ||
+                         /* F4, 80..8F, 80..BF, 80..BF */
+                         (byte1 == 0xF4 && byte2 <= 0x8F))) {
+                    bytes = 4;
+                } else {
+                    return err_pos;
+                }
+            } else {
+                return err_pos;
+            }
+        } else {
+            return err_pos;
+        }
+
+        len -= bytes;
+        err_pos += bytes;
+        data += bytes;
+    }
+
+    return 0;
+}
+Function: 
+const fn utf8_char_width(b: u8) -> usize {
+    UTF8_CHAR_WIDTH[b as usize] as usize
+}
+Unixcoder Score: -0.02977660857141018
+--------------------------------------------------

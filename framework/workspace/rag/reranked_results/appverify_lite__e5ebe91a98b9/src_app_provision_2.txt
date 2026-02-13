@@ -1,0 +1,619 @@
+C_Code: 
+SkLanguage(const char* tag, size_t len) : fTag(tag, len) { }
+Function: 
+fn populate_axes(font_ref: &BridgeFontRef, mut axis_wrapper: Pin<&mut AxisWrapper>) -> isize {
+    font_ref
+        .with_font(|f| {
+            let axes = f.axes();
+            // Populate incoming allocated SkFontParameters::Variation::Axis[] only when a
+            // buffer is passed.
+            if axis_wrapper.as_ref().size() > 0 {
+                for (i, axis) in axes.iter().enumerate() {
+                    if !axis_wrapper.as_mut().populate_axis(
+                        i,
+                        u32::from_be_bytes(axis.tag().into_bytes()),
+                        axis.min_value(),
+                        axis.default_value(),
+                        axis.max_value(),
+                        axis.is_hidden(),
+                    ) {
+                        return None;
+                    }
+                }
+            }
+            isize::try_from(axes.len()).ok()
+        })
+        .unwrap_or(-1)
+}
+Unixcoder Score: 0.09282273799180984
+--------------------------------------------------
+C_Code: 
+std::string JSUtil::Convert2String(napi_env env, napi_value jsString)
+{
+    size_t maxLen = JSUtil::MAX_LEN;
+    napi_status status = napi_get_value_string_utf8(env, jsString, NULL, 0, &maxLen);
+    if (status != napi_ok) {
+        GET_AND_THROW_LAST_ERROR((env));
+        maxLen = JSUtil::MAX_LEN;
+    }
+    if (maxLen == 0) {
+        return std::string();
+    }
+    char *buf = new char[maxLen + 1];
+    if (buf == nullptr) {
+        return std::string();
+    }
+    size_t len = 0;
+    status = napi_get_value_string_utf8(env, jsString, buf, maxLen + 1, &len);
+    if (status != napi_ok) {
+        GET_AND_THROW_LAST_ERROR((env));
+    }
+    buf[len] = 0;
+    std::string value(buf);
+    delete[] buf;
+    return value;
+}
+Function: 
+pub fn to_string(&self) -> String {
+        if self.c_str.is_null() || self.len == 0 {
+            return String::new();
+        }
+        let c_str = unsafe { CStr::from_ptr(self.c_str) };
+        let str_slice = c_str.to_str().unwrap();
+        let str = str_slice.to_string();
+        unsafe { DeleteChar(self.c_str) };
+        str
+    }
+Unixcoder Score: 0.07435446977615356
+--------------------------------------------------
+C_Code: 
+CFormItemArr Convert2CFormItemArr(const std::vector<FileSpec> &files, const std::vector<FormItem> &forms)
+{
+    CFormItemArr out = {NULL};
+    size_t filesLen = files.size();
+    size_t formsLen = forms.size();
+    size_t len = filesLen + formsLen;
+    if (len == 0) {
+        return out;
+    }
+
+    out.head = static_cast<CFormItem *>(malloc(sizeof(CFormItem) * len));
+    if (out.head == NULL) {
+        return out;
+    }
+    memset_s(out.head, sizeof(CFormItem) * len, 0, sizeof(CFormItem) * len);
+    size_t i = 0;
+    for (; i < formsLen; ++i) {
+        out.head[i].name = MallocCString(forms[i].name);
+        out.head[i].value.str = MallocCString(forms[i].value);
+        out.head[i].value.type = CFORM_ITEM_VALUE_TYPE_STRING;
+    }
+
+    for (size_t j = 0; j < filesLen; ++j) {
+        out.head[i].name = MallocCString(files[j].name);
+        out.head[i].value.file.path = MallocCString(files[j].uri);
+        out.head[i].value.file.mimeType = MallocCString(files[j].type);
+        out.head[i].value.file.filename = MallocCString(files[j].filename);
+        out.head[i].value.type = CFORM_ITEM_VALUE_TYPE_FILE;
+        ++i;
+    }
+
+    out.size = static_cast<int64_t>(i);
+    return out;
+}
+Function: 
+pub(crate) fn to_c_struct(&self) -> CFormItem {
+        CFormItem {
+            name: CStringWrapper::from(&self.name),
+            value: CStringWrapper::from(&self.value),
+        }
+    }
+Unixcoder Score: 0.02301035076379776
+--------------------------------------------------
+C_Code: 
+int rust_get_path_array(void * p, size_t * sz)
+{
+  char *path, *str;
+  char **buf;
+  int i, num;
+  size_t len;
+
+  if ((p == NULL) && (sz == NULL))
+    return -1;
+
+  /* get the length of the PATH value */
+  if (rust_get_path(NULL, &len) == -1)
+    return -1;
+
+  if (len == 0)
+    return -1;
+
+  /* allocate the buffer */
+  if ((path = calloc(len, sizeof(char))) == NULL)
+    return -1;
+
+  /* get the PATH value */
+  if (rust_get_path(path, &len) == -1)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* count the number of parts in the PATH */
+  num = 1;
+  for(str = path; *str != '\0'; str++)
+  {
+    if (*str == ':')
+      num++;
+  }
+
+  /* calculate the size of the buffer for the 2D array */
+  len = (num * sizeof(char*) + 1) + strlen(path) + 1;
+
+  if (p == NULL)
+  {
+    free(path);
+    *sz = len;
+    return 0;
+  }
+
+  /* make sure we have enough buffer space */
+  if (*sz < len)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* zero out the buffer */
+  buf = (char**)p;
+  memset(buf, 0, *sz);
+
+  /* copy the data into the right place */
+  str = p + ((num+1) * sizeof(char*));
+  memcpy(str, path, strlen(path));
+
+  /* parse the path into it's parts */
+  for (i = 0; i < num && (buf[i] = strsep(&str, ":")) != NULL; i++) {;}
+  buf[num] = NULL;
+
+  free(path);
+  return 0;
+}
+Function: 
+fn to_c_str(&self) -> CString {
+        do self.as_imm_buf |self_buf, self_len| {
+            unsafe {
+                let buf = libc::malloc(self_len as u64 + 1) as *mut u8;
+                if buf.is_null() {
+                    fail!("failed to allocate memory!");
+                }
+
+                ptr::copy_memory(buf, self_buf, self_len);
+                *ptr::mut_offset(buf, self_len as int) = 0;
+                CString { buf: buf as *libc::c_char }
+            }
+        }
+    }
+Unixcoder Score: -0.003990711644291878
+--------------------------------------------------
+C_Code: 
+bool Session::Unmarshal(const json &node)
+{
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(sourceDeviceId), sourceDeviceId) && ret;
+    ret = GetValue(node, GET_NAME(targetDeviceId), targetDeviceId) && ret;
+    ret = GetValue(node, GET_NAME(sourceUserId), sourceUserId) && ret;
+    ret = GetValue(node, GET_NAME(targetUserIds), targetUserIds) && ret;
+    ret = GetValue(node, GET_NAME(appId), appId) && ret;
+    ret = GetValue(node, GET_NAME(storeId), storeId) && ret;
+    ret = GetValue(node, GET_NAME(accountId), accountId) && ret;
+    return ret;
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let result = AppInfos(string_hash_map_raw_read::<AppInfo>(parcel)?);
+        Ok(result)
+    }
+Unixcoder Score: -0.006763397715985775
+--------------------------------------------------
+C_Code: 
+bool CheckMatchAttrResultSdk(const AssetAttr *attrs, uint32_t attrCnt, const AssetResult *result)
+{
+    for (uint32_t i = 0; i < attrCnt; i++) {
+        if (attrs[i].tag == SEC_ASSET_TAG_CONFLICT_RESOLUTION || attrs[i].tag == SEC_ASSET_TAG_USER_ID) {
+            continue;
+        }
+        AssetAttr *res = AssetParseAttr(result, static_cast<AssetTag>(attrs[i].tag));
+        if (res == nullptr) {
+            return false;
+        }
+        switch (attrs[i].tag & SEC_ASSET_TAG_TYPE_MASK) {
+            case SEC_ASSET_TYPE_BOOL:
+                if (attrs[i].value.boolean != res->value.boolean) {
+                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.boolean, res->value.boolean);
+                    return false;
+                }
+                break;
+            case SEC_ASSET_TYPE_NUMBER:
+                if (attrs[i].value.u32 != res->value.u32) {
+                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.u32, res->value.u32);
+                    return false;
+                }
+                break;
+            case SEC_ASSET_TYPE_BYTES:
+                if (!CompareBlobSdk(&attrs[i].value.blob, &res->value.blob)) {
+                    printf("tag is %x, len %u vs len %u", attrs[i].tag, attrs[i].value.blob.size, res->value.blob.size);
+                    return false;
+                }
+                break;
+            default:
+                return false;
+        };
+    }
+    return true;
+}
+Function: 
+pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+    let (db_path, db_key) = if is_ce {
+        let db_path = fmt_ce_db_path_with_name(user_id, db_name);
+        check_validity_of_db_key(&db_path, user_id)?;
+        let db_key = match DbKey::get_db_key(user_id) {
+            Ok(db_key) => Some(db_key),
+            Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
+                loge!(
+                    "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
+                    e.code
+                );
+                remove_ce_files(user_id)?;
+                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+            },
+            Err(e) => return Err(e),
+        };
+        (db_path, db_key)
+    } else {
+        let db_path = fmt_de_db_path_with_name(user_id, db_name);
+        (db_path, None)
+    };
+
+    get_db_by_type(user_id, db_name, db_path, db_key.as_ref())
+}
+Unixcoder Score: -0.010073952376842499
+--------------------------------------------------
+C_Code: 
+int rust_get_path_array(void * p, size_t * sz)
+{
+  char *path, *str;
+  char **buf;
+  int i, num;
+  size_t len;
+
+  if ((p == NULL) && (sz == NULL))
+    return -1;
+
+  /* get the length of the PATH value */
+  if (rust_get_path(NULL, &len) == -1)
+    return -1;
+
+  if (len == 0)
+    return -1;
+
+  /* allocate the buffer */
+  if ((path = calloc(len, sizeof(char))) == NULL)
+    return -1;
+
+  /* get the PATH value */
+  if (rust_get_path(path, &len) == -1)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* count the number of parts in the PATH */
+  num = 1;
+  for(str = path; *str != '\0'; str++)
+  {
+    if (*str == ':')
+      num++;
+  }
+
+  /* calculate the size of the buffer for the 2D array */
+  len = (num * sizeof(char*) + 1) + strlen(path) + 1;
+
+  if (p == NULL)
+  {
+    free(path);
+    *sz = len;
+    return 0;
+  }
+
+  /* make sure we have enough buffer space */
+  if (*sz < len)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* zero out the buffer */
+  buf = (char**)p;
+  memset(buf, 0, *sz);
+
+  /* copy the data into the right place */
+  str = p + ((num+1) * sizeof(char*));
+  memcpy(str, path, strlen(path));
+
+  /* parse the path into it's parts */
+  for (i = 0; i < num && (buf[i] = strsep(&str, ":")) != NULL; i++) {;}
+  buf[num] = NULL;
+
+  free(path);
+  return 0;
+}
+Function: 
+pub fn dylib_path() -> Vec<PathBuf> {
+    let var = match env::var_os(dylib_path_var()) {
+        Some(v) => v,
+        None => return vec![],
+    };
+    env::split_paths(&var).collect()
+}
+Unixcoder Score: -0.013014291413128376
+--------------------------------------------------
+C_Code: 
+ExceptionErrorCode RequestServiceProxy::StopTasks(
+    const std::vector<std::string> &tids, std::vector<ExceptionErrorCode> &rets)
+{
+    uint32_t len = static_cast<uint32_t>(tids.size());
+    rets.resize(len, ExceptionErrorCode::E_OTHER);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(GetDescriptor());
+    data.WriteUint32(len);
+    for (const std::string &tid : tids) {
+        data.WriteString(tid);
+    }
+    int32_t ret = Remote()->SendRequest(static_cast<uint32_t>(RequestInterfaceCode::CMD_STOP), data, reply, option);
+    if (ret != ERR_NONE) {
+        REQUEST_HILOGE("End Request StopTasks, failed: %{public}d", ret);
+        if (ret != REMOTE_DIED_ERROR) {
+            SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_00, std::to_string(ret));
+        }
+        return ExceptionErrorCode::E_SERVICE_ERROR;
+    }
+    ExceptionErrorCode code = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    if (code != ExceptionErrorCode::E_OK) {
+        REQUEST_HILOGE("End Request StopTasks, failed: %{public}d", code);
+        SysEventLog::SendSysEventLog(FAULT_EVENT, IPC_FAULT_01, std::to_string(code));
+        return code;
+    }
+    for (uint32_t i = 0; i < len; i++) {
+        rets[i] = static_cast<ExceptionErrorCode>(reply.ReadInt32());
+    }
+    return ExceptionErrorCode::E_OK;
+}
+Function: 
+pub(crate) fn stop(&self, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+        info!("Service stop");
+        let permission = PermissionChecker::check_down_permission();
+        let len: u32 = data.read()?;
+        let len = len as usize;
+
+        if len > CONTROL_MAX {
+            info!("Service stop: out of size: {}", len);
+            reply.write(&(ErrorCode::Other as i32))?;
+            return Err(IpcStatusCode::Failed);
+        }
+
+        let ipc_uid = ipc::Skeleton::calling_uid();
+        let mut vec = vec![ErrorCode::Other; len];
+        for i in 0..len {
+            let task_id: String = data.read()?;
+            info!("Service stop tid {}", task_id);
+
+            let Ok(task_id) = task_id.parse::<u32>() else {
+                error!("Service stop, failed: tid not valid: {}", task_id);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A16,
+                    &format!("Service stop, failed: tid not valid: {}", task_id)
+                );
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            };
+
+            let task_uid = match RequestDb::get_instance().query_task_uid(task_id) {
+                Some(uid) => uid,
+                None => {
+                    set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                    continue;
+                }
+            };
+
+            if !check_current_account(task_uid) {
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                continue;
+            }
+
+            if (task_uid != ipc_uid) && !permission {
+                set_code_with_index(&mut vec, i, ErrorCode::TaskNotFound);
+                error!(
+                    "Service stop, failed: check task uid. tid: {}, uid: {}",
+                    task_id, ipc_uid
+                );
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A16,
+                    &format!(
+                        "Service stop, failed: check task uid. tid: {}, uid: {}",
+                        task_id, ipc_uid
+                    )
+                );
+                continue;
+            }
+
+            let (event, rx) = TaskManagerEvent::stop(task_uid, task_id);
+            if !self.task_manager.lock().unwrap().send_event(event) {
+                error!("Service stop, failed: task_manager err: {}", task_id);
+                set_code_with_index(&mut vec, i, ErrorCode::Other);
+                continue;
+            }
+            let ret = match rx.get() {
+                Some(ret) => ret,
+                None => {
+                    error!(
+                        "Service stop, tid: {}, failed: receives ret failed",
+                        task_id
+                    );
+                    set_code_with_index(&mut vec, i, ErrorCode::Other);
+                    continue;
+                }
+            };
+            set_code_with_index(&mut vec, i, ret);
+            if ret != ErrorCode::ErrOk {
+                error!("Service stop, tid: {}, failed: {}", task_id, ret as i32);
+                sys_event!(
+                    ExecError,
+                    DfxCode::INVALID_IPC_MESSAGE_A16,
+                    &format!("Service stop, tid: {}, failed: {}", task_id, ret as i32)
+                );
+            }
+        }
+
+        reply.write(&(ErrorCode::ErrOk as i32))?;
+        for ret in vec {
+            reply.write(&(ret as i32))?;
+        }
+        Ok(())
+    }
+Unixcoder Score: -0.013564780354499817
+--------------------------------------------------
+C_Code: 
+int rust_get_path_array(void * p, size_t * sz)
+{
+  char *path, *str;
+  char **buf;
+  int i, num;
+  size_t len;
+
+  if ((p == NULL) && (sz == NULL))
+    return -1;
+
+  /* get the length of the PATH value */
+  if (rust_get_path(NULL, &len) == -1)
+    return -1;
+
+  if (len == 0)
+    return -1;
+
+  /* allocate the buffer */
+  if ((path = calloc(len, sizeof(char))) == NULL)
+    return -1;
+
+  /* get the PATH value */
+  if (rust_get_path(path, &len) == -1)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* count the number of parts in the PATH */
+  num = 1;
+  for(str = path; *str != '\0'; str++)
+  {
+    if (*str == ':')
+      num++;
+  }
+
+  /* calculate the size of the buffer for the 2D array */
+  len = (num * sizeof(char*) + 1) + strlen(path) + 1;
+
+  if (p == NULL)
+  {
+    free(path);
+    *sz = len;
+    return 0;
+  }
+
+  /* make sure we have enough buffer space */
+  if (*sz < len)
+  {
+    free(path);
+    return -1;
+  }
+
+  /* zero out the buffer */
+  buf = (char**)p;
+  memset(buf, 0, *sz);
+
+  /* copy the data into the right place */
+  str = p + ((num+1) * sizeof(char*));
+  memcpy(str, path, strlen(path));
+
+  /* parse the path into it's parts */
+  for (i = 0; i < num && (buf[i] = strsep(&str, ":")) != NULL; i++) {;}
+  buf[num] = NULL;
+
+  free(path);
+  return 0;
+}
+Function: 
+fn prune(root: &CString, dirs: Vec<Path>) -> Vec<Path> {
+        let root = unsafe { CString::new(root.as_ptr(), false) };
+        let root = Path::new(root);
+
+        dirs.into_iter().filter(|path| {
+            path.as_vec() != b"." && path.as_vec() != b".."
+        }).map(|path| root.join(path)).collect()
+    }
+Unixcoder Score: -0.015015488490462303
+--------------------------------------------------
+C_Code: 
+bool CheckMatchAttrResultSdk(const AssetAttr *attrs, uint32_t attrCnt, const AssetResult *result)
+{
+    for (uint32_t i = 0; i < attrCnt; i++) {
+        if (attrs[i].tag == SEC_ASSET_TAG_CONFLICT_RESOLUTION || attrs[i].tag == SEC_ASSET_TAG_USER_ID) {
+            continue;
+        }
+        AssetAttr *res = AssetParseAttr(result, static_cast<AssetTag>(attrs[i].tag));
+        if (res == nullptr) {
+            return false;
+        }
+        switch (attrs[i].tag & SEC_ASSET_TAG_TYPE_MASK) {
+            case SEC_ASSET_TYPE_BOOL:
+                if (attrs[i].value.boolean != res->value.boolean) {
+                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.boolean, res->value.boolean);
+                    return false;
+                }
+                break;
+            case SEC_ASSET_TYPE_NUMBER:
+                if (attrs[i].value.u32 != res->value.u32) {
+                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.u32, res->value.u32);
+                    return false;
+                }
+                break;
+            case SEC_ASSET_TYPE_BYTES:
+                if (!CompareBlobSdk(&attrs[i].value.blob, &res->value.blob)) {
+                    printf("tag is %x, len %u vs len %u", attrs[i].tag, attrs[i].value.blob.size, res->value.blob.size);
+                    return false;
+                }
+                break;
+            default:
+                return false;
+        };
+    }
+    return true;
+}
+Function: 
+fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
+    common::check_tag_validity(attributes, &valid_tags)?;
+    common::check_group_validity(attributes, calling_info)?;
+    common::check_value_validity(attributes)?;
+    common::check_system_permission(attributes)
+}
+Unixcoder Score: -0.016423670575022697
+--------------------------------------------------

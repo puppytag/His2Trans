@@ -1,0 +1,269 @@
+C_Code: 
+void DownloadServiceAbility::OnStart()
+{
+    DOWNLOAD_HILOGI("DownloadServiceAbility::Enter OnStart.");
+    if (instance_ == nullptr) {
+        instance_ = this;
+    }
+    if (state_ == ServiceRunningState::STATE_RUNNING) {
+        DOWNLOAD_HILOGI("DownloadServiceAbility is already running.");
+        return;
+    }
+    InitServiceHandler();
+    TaskStatistics::GetInstance().StartTimerThread();
+
+    int32_t ret = Init();
+    if (ret != ERR_OK) {
+        TaskFault::GetInstance().ReportServiceStartFault(ret);
+        auto callback = [=]() { Init(); };
+        serviceHandler_->PostTask(callback, INIT_INTERVAL);
+        DOWNLOAD_HILOGE("DownloadServiceAbility Init failed. Try again 5s later");
+        return;
+    }
+    state_ = ServiceRunningState::STATE_RUNNING;
+
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return;
+    }
+    instance->StartTimerForQuitSa();
+    return;
+}
+Function: 
+pub fn start(&mut self) {
+        debug!(LOG_LABEL, "start");
+        if self.server_state == ServerRunState::Running {
+            info!(LOG_LABEL, "DownloadServiceAbility is already running");
+            return;
+        }
+        unsafe {
+            request_binding::InitServiceHandler();
+        }
+        let ret = self.init();
+        if ret != 0 {
+            unsafe {
+                extern "C" fn ability_init() {
+                    RequestAbility::get_ability_instance().init();
+                }
+                request_binding::PostTask(ability_init);
+            }
+        }
+        self.server_state = ServerRunState::Running;
+    }
+Unixcoder Score: 0.03128841891884804
+--------------------------------------------------
+C_Code: 
+void DownloadServiceAbility::OnStop()
+{
+    DOWNLOAD_HILOGI("OnStop started.");
+    if (state_ != ServiceRunningState::STATE_RUNNING) {
+        return;
+    }
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return;
+    }
+    instance->Destroy();
+    serviceHandler_ = nullptr;
+    instance_ = nullptr;
+    state_ = ServiceRunningState::STATE_NOT_START;
+    DOWNLOAD_HILOGI("OnStop end.");
+}
+Function: 
+pub fn stop(&mut self) {
+        debug!(LOG_LABEL, "stop");
+        if ServerRunState::NoStart == self.server_state {
+            return;
+        }
+        self.server_state = ServerRunState::NoStart;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetSystemAbility__idx4851_rank1.c", "source_rust_file": "Partial__GetSystemAbility__idx4851_rank1.rs", "c_fragment": "if (sysm == nullptr) {\n        return nullptr;\n    }", "rust_fragment": "info!(\"get system ability {}\", said);\n        RemoteObj::from_sptr(GetSystemAbility(said))", "description": "Null check and early return logic", "reasoning": "[Task Analysis] C function returns a smart pointer from a system ability manager, Rust function wraps that with logging and conversion. [Similarity] Both perform system ability lookup with null checks, but Rust uses a different API name and adds logging. [Knowledge Extraction] Full match on logic flow and null handling, but names differ. API mappings found for system ability lookup and smart pointer creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSystemAbility__idx4851_rank1.c", "source_rust_file": "Partial__GetSystemAbility__idx4851_rank1.rs", "c_api": "sysm->GetSystemAbility(systemAbilityId)", "rust_api": "GetSystemAbility(said)", "mapping_type": "function", "description": "System ability lookup", "reasoning": "[Task Analysis] C function returns a smart pointer from a system ability manager, Rust function wraps that with logging and conversion. [Similarity] Both perform system ability lookup with null checks, but Rust uses a different API name and adds logging. [Knowledge Extraction] Full match on logic flow and null handling, but names differ. API mappings found for system ability lookup and smart pointer creation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSystemAbility__idx4851_rank1.c", "source_rust_file": "Partial__GetSystemAbility__idx4851_rank1.rs", "c_api": "std::make_unique<SptrIRemoteObject>(std::move(ability))", "rust_api": "RemoteObj::from_sptr(GetSystemAbility(said))", "mapping_type": "function", "description": "Smart pointer creation and object wrapping", "reasoning": "[Task Analysis] C function returns a smart pointer from a system ability manager, Rust function wraps that with logging and conversion. [Similarity] Both perform system ability lookup with null checks, but Rust uses a different API name and adds logging. [Knowledge Extraction] Full match on logic flow and null handling, but names differ. API mappings found for system ability lookup and smart pointer creation."}]
+Unixcoder Score: 0.01233768928796053
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetContextManager()
+{
+    sptr<IRemoteObject> saMgr = IPCSkeleton::GetContextObject();
+    if (saMgr == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(saMgr));
+}
+Function: 
+pub fn get_context_manager() -> Option<RemoteObj> {
+        info!("get context manager");
+        RemoteObj::from_sptr(GetContextManager())
+    }
+Unixcoder Score: 0.006880590226501226
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::QueryMimeType(uint32_t taskId, std::string &mimeType)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility QueryMimeType started.");
+    return instance->QueryMimeType(taskId, IPCSkeleton::GetCallingUid(), mimeType);
+}
+Function: 
+pub fn query_mime_type(&self, uid: u64, task_id: u32) -> String {
+        log_debug!("Query a task mime type");
+        let task_map_guard = self.task_map.lock().unwrap();
+        let task = self.get_task(uid, task_id, &task_map_guard);
+        match task {
+            Some(value) => {
+                log_debug!("Query task mime type by memory");
+                let mimt_type = value.query_mime_type();
+                return mimt_type;
+            }
+            None => {
+                // API10 query in database
+                return "".into();
+            }
+        }
+    }
+Unixcoder Score: 0.006321558263152838
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetContextManager()
+{
+    sptr<IRemoteObject> saMgr = IPCSkeleton::GetContextObject();
+    if (saMgr == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(saMgr));
+}
+Function: 
+pub fn get_context_manager() -> Option<RemoteObj> {
+        info!("get context manager");
+        RemoteObj::from_sptr(GetContextManager())
+    }
+Unixcoder Score: 0.004554092418402433
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetContextManager()
+{
+    sptr<IRemoteObject> saMgr = IPCSkeleton::GetContextObject();
+    if (saMgr == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(saMgr));
+}
+Function: 
+pub fn get_context_manager() -> Option<RemoteObj> {
+        info!("get context manager");
+        RemoteObj::from_sptr(GetContextManager())
+    }
+Unixcoder Score: -0.014743125066161156
+--------------------------------------------------
+C_Code: 
+void FreeCertDataList(struct CRequestCerts *certs)
+{
+    RequestCertManager::GetInstance().FreeCertDataList(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "ob->OnRunningTaskCountUpdate(...)", "rust_api": "ylong_runtime::block_on(rx).unwrap()", "mapping_type": "function", "description": "Callback invocation / result retrieval", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "RequestManagerImpl::GetInstance()->SubscribeSA()", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Service subscription / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "RequestManagerImpl::GetInstance()->SubRunCount(listener)", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Subscription request / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.c", "source_rust_file": "API_Mapping__SubscribeRunningTaskCount__idx851_rank1.rs", "c_api": "FwkRunningTaskCountManager::GetInstance()->AttachObserver(ob)", "rust_api": "self.send_event(event)", "mapping_type": "function", "description": "Observer attachment / event sending", "reasoning": "[Task Analysis] C function handles observer subscription with error checking and IPC calls; Rust function sends an event via a channel. [Similarity] No high structural similarity due to different domains (C: memory management, observer pattern, IPC; Rust: async event handling). [Knowledge Extraction] No full match, no partial match, but there are API mappings related to observer/subscription logic and event handling."}]
+Unixcoder Score: -0.015183985233306885
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetContextManager()
+{
+    sptr<IRemoteObject> saMgr = IPCSkeleton::GetContextObject();
+    if (saMgr == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(saMgr));
+}
+Function: 
+pub fn get_system_ability(said: i32) -> Option<RemoteObj> {
+        info!("get system ability {}", said);
+        RemoteObj::from_sptr(GetSystemAbility(said))
+    }
+Unixcoder Score: -0.015649836510419846
+--------------------------------------------------
+C_Code: 
+bool DownloadServiceAbility::QueryMimeType(uint32_t taskId, std::string &mimeType)
+{
+    ManualStart();
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return false;
+    }
+    DOWNLOAD_HILOGI("DownloadServiceAbility QueryMimeType started.");
+    return instance->QueryMimeType(taskId, IPCSkeleton::GetCallingUid(), mimeType);
+}
+Function: 
+pub fn query_mime_type(&self, task_id: u32, mime: &mut String) -> ErrorCode {
+        *mime = TaskManager::get_instance().query_mime_type(get_calling_uid(), task_id);
+        if mime.is_empty() {
+            return ErrorCode::MimeType_not_found;
+        }
+        ErrorCode::ErrOk
+    }
+Unixcoder Score: -0.017367860302329063
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> GetContextManager()
+{
+    sptr<IRemoteObject> saMgr = IPCSkeleton::GetContextObject();
+    if (saMgr == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(saMgr));
+}
+Function: 
+pub fn get_context_manager() -> Option<RemoteObj> {
+        info!("get context manager");
+        RemoteObj::from_sptr(GetContextManager())
+    }
+Unixcoder Score: -0.019679417833685875
+--------------------------------------------------

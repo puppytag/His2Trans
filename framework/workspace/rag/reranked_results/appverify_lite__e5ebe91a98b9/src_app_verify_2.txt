@@ -1,0 +1,325 @@
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+pub fn check_links<T>(list: &LinkedList<T>) {
+    unsafe {
+        let mut len = 0;
+        let mut last_ptr: Option<&Node<T>> = None;
+        let mut node_ptr: &Node<T>;
+        match list.head {
+            None => {
+                // tail node should also be None.
+                assert!(list.tail.is_none());
+                assert_eq!(0, list.len);
+                return;
+            }
+            Some(node) => node_ptr = &*node.as_ptr(),
+        }
+        loop {
+            match (last_ptr, node_ptr.prev) {
+                (None, None) => {}
+                (None, _) => panic!("prev link for head"),
+                (Some(p), Some(pptr)) => {
+                    assert_eq!(p as *const Node<T>, pptr.as_ptr() as *const Node<T>);
+                }
+                _ => panic!("prev link is none, not good"),
+            }
+            match node_ptr.next {
+                Some(next) => {
+                    last_ptr = Some(node_ptr);
+                    node_ptr = &*next.as_ptr();
+                    len += 1;
+                }
+                None => {
+                    len += 1;
+                    break;
+                }
+            }
+        }
+
+        // verify that the tail node points to the last node.
+        let tail = list.tail.as_ref().expect("some tail node").as_ref();
+        assert_eq!(tail as *const Node<T>, node_ptr as *const Node<T>);
+        // check that len matches interior links.
+        assert_eq!(len, list.len);
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx117675_rank3.h", "source_rust_file": "API_Mapping__dequeue__idx117675_rank3.rs", "c_api": "compare_and_swap(&this->head, &head, pointer_t(next.node, head.count + 1))", "rust_api": "self.compare_exchange(current, new, order, strongest_failure_ordering(order))", "mapping_type": "function", "description": "Atomic compare-and-swap operation", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap (CAS) primitives; Rust code implements a wrapper around atomic compare-and-exchange. [Similarity] Names do not match but both involve atomic CAS operations. [Knowledge Extraction] No full structural match due to different domains (C memory management vs Rust atomic operations), but API mapping exists for CAS behavior."}]
+Unixcoder Score: 0.04169011861085892
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+pub fn check_links<T>(list: &LinkedList<T>) {
+    unsafe {
+        let mut len = 0;
+        let mut last_ptr: Option<&Node<T>> = None;
+        let mut node_ptr: &Node<T>;
+        match list.head {
+            None => {
+                // tail node should also be None.
+                assert!(list.tail.is_none());
+                assert_eq!(0, list.len);
+                return;
+            }
+            Some(node) => node_ptr = &*node.as_ptr(),
+        }
+        loop {
+            match (last_ptr, node_ptr.prev) {
+                (None, None) => {}
+                (None, _) => panic!("prev link for head"),
+                (Some(p), Some(pptr)) => {
+                    assert_eq!(p as *const Node<T>, pptr.as_ptr() as *const Node<T>);
+                }
+                _ => panic!("prev link is none, not good"),
+            }
+            match node_ptr.next {
+                Some(next) => {
+                    last_ptr = Some(node_ptr);
+                    node_ptr = &*next.as_ptr();
+                    len += 1;
+                }
+                None => {
+                    len += 1;
+                    break;
+                }
+            }
+        }
+
+        // verify that the tail node points to the last node.
+        let tail = list.tail.as_ref().expect("some tail node").as_ref();
+        assert_eq!(tail as *const Node<T>, node_ptr as *const Node<T>);
+        // check that len matches interior links.
+        assert_eq!(len, list.len);
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx117656_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx117656_rank4.rs", "c_api": "compare_and_swap(&this->head, &head, pointer_t(next.node, head.count + 1))", "rust_api": "atomic_compare_exchange(self.v.get(), current as u8, new as u8, success, failure)", "mapping_type": "function", "description": "Atomic compare-and-swap operation for concurrent programming", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap (CAS) primitives, while Rust code implements an atomic compare-and-exchange function. [Similarity] The core operation in both is atomic CAS logic, but the domains are different: C is about concurrent data structure manipulation, Rust is about atomic memory operations. [Knowledge Extraction] The structural similarity is limited to the use of atomic operations, but the semantic domains differ significantly (queue logic vs atomic primitives). However, there are API mappings between the CAS operations in both code snippets."}]
+Unixcoder Score: 0.028965365141630173
+--------------------------------------------------
+C_Code: 
+int ares__is_list_empty(struct list_node* head) {
+  return ((head->next == head) && (head->prev == head));
+}
+Function: 
+pub fn is_empty(&self) -> bool {
+        if self.head_tail_entry.is_some() {
+            let first = unsafe { self.head_tail.as_ref() }.next;
+            if first == self.head_tail {
+                // ,-------> /---------\ next ---,
+                // |         |head_tail|         |
+                // `--- prev \---------/ <-------`
+                // SAFETY: `self.head_tail` must meet all requirements for a reference.
+                unsafe { rtassert!(self.head_tail.as_ref().prev == first) };
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx113806_rank3.h", "source_rust_file": "API_Mapping__dequeue__idx113806_rank3.rs", "c_api": "this->head.node->next", "rust_api": "self.0.pop_front_node()", "mapping_type": "method", "description": "Accessing next node in a queue structure", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap and pointer manipulation; Rust code implements a drop function that repeatedly pops nodes from a queue. [Similarity] Names do not refer to the same concept (dequeue vs drop), and domains are different (low-level concurrent data structure vs high-level resource cleanup). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve queue node removal logic, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx113806_rank3.h", "source_rust_file": "API_Mapping__dequeue__idx113806_rank3.rs", "c_api": "delete head.node", "rust_api": "self.0.pop_front_node()", "mapping_type": "method", "description": "Removing and freeing a node from the queue", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap and pointer manipulation; Rust code implements a drop function that repeatedly pops nodes from a queue. [Similarity] Names do not refer to the same concept (dequeue vs drop), and domains are different (low-level concurrent data structure vs high-level resource cleanup). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve queue node removal logic, so API mappings are extracted."}]
+Unixcoder Score: 0.022652549669146538
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+unsafe fn init(&mut self) {
+        if self.head_tail_entry.is_none() {
+            self.head_tail_entry = Some(UnsafeListEntry::dummy());
+            // SAFETY: `head_tail_entry` must be non-null, which it is because we assign it above.
+            self.head_tail =
+                unsafe { NonNull::new_unchecked(self.head_tail_entry.as_mut().unwrap()) };
+            // SAFETY: `self.head_tail` must meet all requirements for a mutable reference.
+            unsafe { self.head_tail.as_mut() }.next = self.head_tail;
+            unsafe { self.head_tail.as_mut() }.prev = self.head_tail;
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx113854_rank5.h", "source_rust_file": "API_Mapping__dequeue__idx113854_rank5.rs", "c_api": "this->head.node->next", "rust_api": "self.list.pop_front()", "mapping_type": "method", "description": "Access and remove the first element in a queue", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap and pointer manipulation; Rust code implements a simple pop_front on a list. [Similarity] Names do not refer to the same concept (dequeue vs next), and domains are different (low-level concurrent data structure vs high-level collection API). [Knowledge Extraction] No full or partial match due to domain mismatch and different conceptual tasks. However, both involve removing elements from a queue-like structure, so API mapping is extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx113854_rank5.h", "source_rust_file": "API_Mapping__dequeue__idx113854_rank5.rs", "c_api": "dequeue", "rust_api": "next", "mapping_type": "function", "description": "Remove and return the next element from a queue-like structure", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap and pointer manipulation; Rust code implements a simple pop_front on a list. [Similarity] Names do not refer to the same concept (dequeue vs next), and domains are different (low-level concurrent data structure vs high-level collection API). [Knowledge Extraction] No full or partial match due to domain mismatch and different conceptual tasks. However, both involve removing elements from a queue-like structure, so API mapping is extracted."}]
+Unixcoder Score: 0.012403584085404873
+--------------------------------------------------
+C_Code: 
+struct BlockSplit {
+  size_t num_types;  /* Amount of distinct types */
+  size_t num_blocks;  /* Amount of values in types and length */
+  uint8_t* types;
+  uint32_t* lengths;
+
+  size_t types_alloc_size;
+  size_t lengths_alloc_size;
+}
+Function: 
+struct BufferSizes {
+        // Known size buffers
+        path_reduced: u32,
+        path_reduced2: u32,
+        path_reduced_scan: u32,
+        path_monoids: u32,
+        path_bboxes: u32,
+        draw_reduced: u32,
+        draw_monoids: u32,
+        info: u32,
+        clip_inps: u32,
+        clip_els: u32,
+        clip_bics: u32,
+        clip_bboxes: u32,
+        draw_bboxes: u32,
+        bump_alloc: u32,
+        indirect_count: u32,
+        bin_headers: u32,
+        paths: u32,
+        // Bump allocated buffers
+        lines: u32,
+        bin_data: u32,
+        tiles: u32,
+        seg_counts: u32,
+        segments: u32,
+        ptcl: u32,
+    }
+Unixcoder Score: 0.0044529433362185955
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+pub fn peek_next(&self) -> Option<&'a T> {
+        unsafe {
+            let next = match self.current {
+                None => self.list.head,
+                Some(current) => current.as_ref().next,
+            };
+            next.map(|next| &(*next.as_ptr()).element)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx79422_rank1.h", "source_rust_file": "API_Mapping__dequeue__idx79422_rank1.rs", "c_api": "dequeue", "rust_api": "steal", "mapping_type": "function", "description": "Queue dequeue operation", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap and pointer manipulation; Rust code implements a steal operation on a deque, delegating to an unsafe raw pointer call. [Similarity] Names do not match ('dequeue' vs 'steal'), and domains are different (low-level memory management vs high-level concurrent data structure access). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different semantics. However, both involve concurrent access patterns and queue-like operations, so API mappings can be extracted for similar operations like 'dequeue' vs 'steal' and 'delete' vs 'drop'."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx79422_rank1.h", "source_rust_file": "API_Mapping__dequeue__idx79422_rank1.rs", "c_api": "delete head.node", "rust_api": "drop", "mapping_type": "pattern", "description": "Memory deallocation after use", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap and pointer manipulation; Rust code implements a steal operation on a deque, delegating to an unsafe raw pointer call. [Similarity] Names do not match ('dequeue' vs 'steal'), and domains are different (low-level memory management vs high-level concurrent data structure access). [Knowledge Extraction] No full or partial structural match due to domain mismatch and different semantics. However, both involve concurrent access patterns and queue-like operations, so API mappings can be extracted for similar operations like 'dequeue' vs 'steal' and 'delete' vs 'drop'."}]
+Unixcoder Score: 0.0019107988337054849
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+fn pop_front_node(&mut self) -> Option<Box<Node<T>, &A>> {
+        // This method takes care not to create mutable references to whole nodes,
+        // to maintain validity of aliasing pointers into `element`.
+        self.head.map(|node| unsafe {
+            let node = Box::from_raw_in(node.as_ptr(), &self.alloc);
+            self.head = node.next;
+
+            match self.head {
+                None => self.tail = None,
+                // Not creating new mutable (unique!) references overlapping `element`.
+                Some(head) => (*head.as_ptr()).prev = None,
+            }
+
+            self.len -= 1;
+            node
+        })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx117676_rank3.h", "source_rust_file": "API_Mapping__dequeue__idx117676_rank3.rs", "c_api": "compare_and_swap(&this->head, &head, pointer_t(next.node, head.count + 1))", "rust_api": "atomic_compare_exchange(self.p.get(), current, new, success, failure)", "mapping_type": "function", "description": "Atomic compare-and-swap operation for thread-safe memory updates", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap (CAS) primitives, while Rust code provides a wrapper around an atomic compare-and-exchange function. [Similarity] The core operation involves atomic CAS logic, but the structural patterns differ significantly due to language differences (C uses manual loop + conditionals, Rust uses a method call). [Knowledge Extraction] No full structural match due to domain mismatch (C is low-level memory management, Rust is high-level atomic operations), but there is a semantic mapping between CAS operations in both languages."}]
+Unixcoder Score: 0.0010690029012039304
+--------------------------------------------------
+C_Code: 
+inline_size void
+wlist_del (WL *head, WL elem)
+{
+  while (*head)
+    {
+      if (expect_true (*head == elem))
+        {
+          *head = elem->next;
+          break;
+        }
+
+      head = &(*head)->next;
+    }
+}
+Function: 
+fn clear(head: &mut Option<Box<Node<dyn Send>>>) {
+    match head.take() {
+        Some(node) => *head = node.next,
+        None => (),
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx112478_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx112478_rank4.rs", "c_api": "next.node == NULL", "rust_api": "out.push_front(push_back + b)", "mapping_type": "function", "description": "Checking for null next node in queue vs pushing element to front of deque", "reasoning": "[FFI Check] -> No FFI calls detected in either code. -> [Task Analysis] -> C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code tests VecDeque operations including append and iteration. -> [Similarity] -> No structural similarity at the function level due to different domains (lock-free queue vs VecDeque testing). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between queue-like operations and VecDeque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx112478_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx112478_rank4.rs", "c_api": "delete head.node", "rust_api": "assert!(src.is_empty())", "mapping_type": "function", "description": "Freeing memory node in queue vs asserting source deque is empty after append", "reasoning": "[FFI Check] -> No FFI calls detected in either code. -> [Task Analysis] -> C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code tests VecDeque operations including append and iteration. -> [Similarity] -> No structural similarity at the function level due to different domains (lock-free queue vs VecDeque testing). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between queue-like operations and VecDeque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx112478_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx112478_rank4.rs", "c_api": "compare_and_swap(&this->head, &head, pointer_t(next.node, head.count + 1))", "rust_api": "dst.append(&mut src)", "mapping_type": "function", "description": "Atomic update of head pointer in queue vs appending one deque to another", "reasoning": "[FFI Check] -> No FFI calls detected in either code. -> [Task Analysis] -> C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code tests VecDeque operations including append and iteration. -> [Similarity] -> No structural similarity at the function level due to different domains (lock-free queue vs VecDeque testing). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between queue-like operations and VecDeque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx112478_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx112478_rank4.rs", "c_api": "head.node->next", "rust_api": "src.iter().chain(dst.iter()).cloned().collect::<Vec<usize>>", "mapping_type": "function", "description": "Accessing next node in queue vs iterating over elements in deque", "reasoning": "[FFI Check] -> No FFI calls detected in either code. -> [Task Analysis] -> C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code tests VecDeque operations including append and iteration. -> [Similarity] -> No structural similarity at the function level due to different domains (lock-free queue vs VecDeque testing). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between queue-like operations and VecDeque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx112478_rank4.h", "source_rust_file": "API_Mapping__dequeue__idx112478_rank4.rs", "c_api": "head.equals(this->head)", "rust_api": "out.push_back(a)", "mapping_type": "function", "description": "Checking head equality in queue vs pushing element to back of deque", "reasoning": "[FFI Check] -> No FFI calls detected in either code. -> [Task Analysis] -> C code implements a lock-free queue dequeue operation with CAS and pointer manipulation; Rust code tests VecDeque operations including append and iteration. -> [Similarity] -> No structural similarity at the function level due to different domains (lock-free queue vs VecDeque testing). -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between queue-like operations and VecDeque operations."}]
+Unixcoder Score: 0.001061069662682712
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+pub unsafe fn push<'a>(&mut self, entry: &'a mut UnsafeListEntry<T>) -> &'a T {
+        unsafe { self.init() };
+
+        // BEFORE:
+        //     /---------\ next ---> /---------\
+        // ... |prev_tail|           |head_tail| ...
+        //     \---------/ <--- prev \---------/
+        //
+        // AFTER:
+        //     /---------\ next ---> /-----\ next ---> /---------\
+        // ... |prev_tail|           |entry|           |head_tail| ...
+        //     \---------/ <--- prev \-----/ <--- prev \---------/
+        let mut entry = unsafe { NonNull::new_unchecked(entry) };
+        let mut prev_tail = mem::replace(&mut unsafe { self.head_tail.as_mut() }.prev, entry);
+        // SAFETY: `entry` must meet all requirements for a mutable reference.
+        unsafe { entry.as_mut() }.prev = prev_tail;
+        unsafe { entry.as_mut() }.next = self.head_tail;
+        // SAFETY: `prev_tail` must meet all requirements for a mutable reference.
+        unsafe { prev_tail.as_mut() }.next = entry;
+        // unwrap ok: always `Some` on non-dummy entries
+        unsafe { (*entry.as_ptr()).value.as_ref() }.unwrap()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx134539_rank5.h", "source_rust_file": "API_Mapping__dequeue__idx134539_rank5.rs", "c_api": "dequeue", "rust_api": "pop", "mapping_type": "function", "description": "Queue removal operation that returns an element", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap (CAS) for thread safety; Rust code implements a simple pop operation that maps to a node's data. [Similarity] Names do not match (dequeue vs pop), and domains differ (low-level memory management vs high-level data access). [Knowledge Extraction] No full structural match due to domain mismatch and different abstraction levels. However, both represent queue/deque operations with similar intent (removing and returning an element). API mappings found for the core operation pattern (dequeue/pop), and the data access pattern (reading value/data)."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx134539_rank5.h", "source_rust_file": "API_Mapping__dequeue__idx134539_rank5.rs", "c_api": "*value = next.node->value", "rust_api": "nobe.data", "mapping_type": "field_access", "description": "Accessing the data field of a node", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap (CAS) for thread safety; Rust code implements a simple pop operation that maps to a node's data. [Similarity] Names do not match (dequeue vs pop), and domains differ (low-level memory management vs high-level data access). [Knowledge Extraction] No full structural match due to domain mismatch and different abstraction levels. However, both represent queue/deque operations with similar intent (removing and returning an element). API mappings found for the core operation pattern (dequeue/pop), and the data access pattern (reading value/data)."}]
+Unixcoder Score: 0.0004311363445594907
+--------------------------------------------------
+C_Code: 
+void ares__init_list_head(struct list_node* head) {
+  head->prev = head;
+  head->next = head;
+  head->data = NULL;
+}
+Function: 
+unsafe fn init(&mut self) {
+        if self.head_tail_entry.is_none() {
+            self.head_tail_entry = Some(UnsafeListEntry::dummy());
+            // SAFETY: `head_tail_entry` must be non-null, which it is because we assign it above.
+            self.head_tail =
+                unsafe { NonNull::new_unchecked(self.head_tail_entry.as_mut().unwrap()) };
+            // SAFETY: `self.head_tail` must meet all requirements for a mutable reference.
+            unsafe { self.head_tail.as_mut() }.next = self.head_tail;
+            unsafe { self.head_tail.as_mut() }.prev = self.head_tail;
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dequeue__idx113801_rank3.h", "source_rust_file": "API_Mapping__dequeue__idx113801_rank3.rs", "c_api": "dequeue", "rust_api": "pop_back", "mapping_type": "function", "description": "Remove and return the last element from a queue-like structure", "reasoning": "[Task Analysis] C code implements a lock-free queue dequeue operation using compare-and-swap and pointer manipulation; Rust code implements a simple pop_back operation on a list. [Similarity] Names do not refer to the same concept (dequeue vs pop_back), and domains are different (low-level concurrent data structure vs high-level container). [Knowledge Extraction] No full or partial match due to domain mismatch and different logic. However, both involve removing elements from a queue-like structure, so API mapping is extracted."}]
+Unixcoder Score: -9.215889440383762e-05
+--------------------------------------------------

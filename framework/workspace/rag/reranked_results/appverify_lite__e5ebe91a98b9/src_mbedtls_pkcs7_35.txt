@@ -1,0 +1,846 @@
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+unsafe fn reallocate(ptr: *mut u8, old: Layout, new: Layout) -> *mut u8 {
+        if PRINT {
+            println!("reallocate({:?}, old={:?}, new={:?})", ptr, old, new);
+        }
+
+        let memory = if new.size() > old.size() {
+            Global.grow(NonNull::new_unchecked(ptr), old, new)
+        } else {
+            Global.shrink(NonNull::new_unchecked(ptr), old, new)
+        };
+
+        let ptr = memory.unwrap_or_else(|_| handle_alloc_error(new));
+
+        if PRINT {
+            println!("reallocate({:?}, old={:?}, new={:?}) = {:?}", ptr, old, new, ptr);
+        }
+        ptr.as_mut_ptr()
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__prof_malloc__idx59972_rank2.h", "source_rust_file": "API_Mapping__prof_malloc__idx59972_rank2.rs", "c_api": "cnt->epoch++", "rust_api": "self.cur_ops.set(self.cur_ops.get() + 1)", "mapping_type": "pattern", "description": "Incrementing a counter/epoch value", "reasoning": "[Filter 1: Entity Name Check] -> Names 'prof_malloc' and 'alloc' refer to different concepts (profiling vs allocation), so not Full/Partial. [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code is about profiling memory allocation; Rust code is about generic allocation with failure injection. These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage. [Classification] -> Since domains are mismatched, no Full or Partial match. However, there are potential API mappings based on similar operations like incrementing counters and pushing data. [Knowledge Extraction] -> Extract API mappings for similar operations despite naming differences."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__prof_malloc__idx59972_rank2.h", "source_rust_file": "API_Mapping__prof_malloc__idx59972_rank2.rs", "c_api": "data.push(true)", "rust_api": "data.push(true)", "mapping_type": "method", "description": "Appending a value to a data structure", "reasoning": "[Filter 1: Entity Name Check] -> Names 'prof_malloc' and 'alloc' refer to different concepts (profiling vs allocation), so not Full/Partial. [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code is about profiling memory allocation; Rust code is about generic allocation with failure injection. These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not usage. [Classification] -> Since domains are mismatched, no Full or Partial match. However, there are potential API mappings based on similar operations like incrementing counters and pushing data. [Knowledge Extraction] -> Extract API mappings for similar operations despite naming differences."}]
+Unixcoder Score: 0.015364458784461021
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+unsafe fn test_4(ascend: &mut [*mut u8]) {
+        let old_size = idx_to_size(COUNT - 1);
+        let old = Layout::from_size_align(old_size, ALIGN).unwrap();
+        for i in (0..COUNT / 2).rev() {
+            let (p0, p1, new_size) = (ascend[2 * i], ascend[2 * i + 1], idx_to_size(i));
+            assert!(new_size < old_size);
+            let new = Layout::from_size_align(new_size, ALIGN).unwrap();
+
+            ascend[2 * i + 1] = reallocate(p1, old.clone(), new.clone());
+            sanity_check(&*ascend);
+
+            ascend[2 * i] = reallocate(p0, old.clone(), new.clone());
+            sanity_check(&*ascend);
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__prof_malloc__idx124648_rank2.h", "source_rust_file": "API_Mapping__prof_malloc__idx124648_rank2.rs", "c_api": "libc::malloc", "rust_api": "libc::malloc", "mapping_type": "function", "description": "Memory allocation", "reasoning": "[Task Analysis] C function `prof_malloc` is a memory profiling helper, while Rust function `alloc` is a memory allocator. [Similarity] Names do not refer to the same concept, and domains differ: C is profiling-related, Rust is allocation. [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, both involve memory operations, so API mappings are extracted."}]
+Unixcoder Score: 0.01346613559871912
+--------------------------------------------------
+C_Code: 
+int32_t AddAsset(const AssetAttr *attributes, uint32_t attrCnt)
+{
+    return AddAssetC2Rust(attributes, attrCnt);
+}
+Function: 
+pub extern "C" fn add_asset(attributes: *const Asset_Attr, attr_cnt: u32) -> i32 {
+    let map = match into_map(attributes, attr_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e as i32,
+    };
+
+    if let Err(e) = manager.add(&map) {
+        e as i32
+    } else {
+        RESULT_CODE_SUCCESS
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__AssetPostQuery__idx4602_rank1.c", "source_rust_file": "Full__AssetPostQuery__idx4602_rank1.rs", "c_api": "RESULT_CODE_SUCCESS", "rust_api": "RESULT_CODE_SUCCESS", "mapping_type": "constant", "description": "Success return code constant.", "reasoning": "[Task Analysis] C function is a wrapper that delegates to Rust function; Rust function implements the logic. [Similarity] Names don't match exactly but refer to same concept (asset post-query). [Knowledge Extraction] Full structural match in logic flow and control flow; API mappings found for function call and error handling patterns."}, {"knowledge_type": "Full", "source_c_file": "Full__AssetPostQuery__idx4602_rank1.c", "source_rust_file": "Full__AssetPostQuery__idx4602_rank1.rs", "reasoning": "[Task Analysis] C function is a wrapper that delegates to Rust function; Rust function implements the logic. [Similarity] Names don't match exactly but refer to same concept (asset post-query). [Knowledge Extraction] Full structural match in logic flow and control flow; API mappings found for function call and error handling patterns.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__AssetPostQuery__idx4602_rank1.c", "source_rust_file": "Full__AssetPostQuery__idx4602_rank1.rs", "c_api": "return e.code as i32", "rust_api": "Err(e) => return e.code as i32", "mapping_type": "pattern", "description": "Error code propagation from manager error handling.", "reasoning": "[Task Analysis] C function is a wrapper that delegates to Rust function; Rust function implements the logic. [Similarity] Names don't match exactly but refer to same concept (asset post-query). [Knowledge Extraction] Full structural match in logic flow and control flow; API mappings found for function call and error handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Full__AssetPostQuery__idx4602_rank1.c", "source_rust_file": "Full__AssetPostQuery__idx4602_rank1.rs", "c_fragment": "int32_t AssetPostQuery(const AssetAttr *handle, uint32_t handleCnt)\n{\n    return post_query_asset(handle, handleCnt);\n}", "rust_fragment": "pub extern \"C\" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) -> i32 {\n    let map = match into_map(handle, handle_cnt) {\n        Some(map) => map,\n        None => return ErrCode::InvalidArgument as i32,\n    };\n\n    let mut manager = match Manager::build() {\n        Ok(manager) => manager,\n        Err(e) => return e.code as i32,\n    };\n\n    if let Err(e) = manager.post_query(&map) {\n        e.code as i32\n    } else {\n        RESULT_CODE_SUCCESS\n    }\n}", "description": "C wrapper function delegates to Rust implementation with matching parameters and return value handling.", "reasoning": "[Task Analysis] C function is a wrapper that delegates to Rust function; Rust function implements the logic. [Similarity] Names don't match exactly but refer to same concept (asset post-query). [Knowledge Extraction] Full structural match in logic flow and control flow; API mappings found for function call and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__AssetPostQuery__idx4602_rank1.c", "source_rust_file": "Full__AssetPostQuery__idx4602_rank1.rs", "c_api": "post_query_asset(handle, handleCnt)", "rust_api": "post_query_asset(handle: *const AssetAttr, handle_cnt: u32) -> i32", "mapping_type": "function", "description": "Function call delegation from C to Rust with same parameters and return type.", "reasoning": "[Task Analysis] C function is a wrapper that delegates to Rust function; Rust function implements the logic. [Similarity] Names don't match exactly but refer to same concept (asset post-query). [Knowledge Extraction] Full structural match in logic flow and control flow; API mappings found for function call and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__AssetPostQuery__idx4602_rank1.c", "source_rust_file": "Full__AssetPostQuery__idx4602_rank1.rs", "c_api": "return ErrCode::InvalidArgument as i32", "rust_api": "None => return ErrCode::InvalidArgument as i32", "mapping_type": "pattern", "description": "Error code propagation for invalid argument case.", "reasoning": "[Task Analysis] C function is a wrapper that delegates to Rust function; Rust function implements the logic. [Similarity] Names don't match exactly but refer to same concept (asset post-query). [Knowledge Extraction] Full structural match in logic flow and control flow; API mappings found for function call and error handling patterns."}]
+Unixcoder Score: 0.0008449566666968167
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        // SAFETY: DLMALLOC access is guaranteed to be safe because the lock gives us unique and non-reentrant access.
+        // Calling realloc() is safe because preconditions on this function match the trait method preconditions.
+        let _lock = lock::lock();
+        unsafe { DLMALLOC.realloc(ptr, layout.size(), layout.align(), new_size) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__prof_malloc__idx30748_rank1.h", "source_rust_file": "API_Mapping__prof_malloc__idx30748_rank1.rs", "c_api": "mb_write()", "rust_api": "short_write(...)", "mapping_type": "function", "description": "Memory barrier/write operation in serialized context", "reasoning": "[Task Analysis] C function 'prof_malloc' is a memory profiling helper, updating allocation counters and context tracking; Rust function 'write_u16' writes a u16 value to a buffer. [Similarity] No structural similarity at the function level due to different domains (profiling vs serialization). [Knowledge Extraction] No full/partial match. API mappings identified: C 'mb_write()' corresponds to Rust 'short_write(...)' as both perform memory barrier/write operations in a serialized context."}]
+Unixcoder Score: -0.005549901630729437
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        // SAFETY: DLMALLOC access is guaranteed to be safe because the lock gives us unique and non-reentrant access.
+        // Calling realloc() is safe because preconditions on this function match the trait method preconditions.
+        let _lock = lock::lock();
+        unsafe { DLMALLOC.realloc(ptr, layout.size(), layout.align(), new_size) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4503_rank4.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4503_rank4.rs", "c_api": "GenerateRandom", "rust_api": "GenerateRandom", "mapping_type": "function", "description": "Random data generation", "reasoning": "[Task Analysis] C function calls a helper function, Rust function generates a database key with random data and error handling. [Similarity] No structural similarity at the function level; C is a thin wrapper, Rust has complex logic with error handling and memory management. [Knowledge Extraction] No full match, no partial match, but there's a potential API mapping between the random generation logic."}]
+Unixcoder Score: -0.006540161091834307
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        // SAFETY: DLMALLOC access is guaranteed to be safe because the lock gives us unique and non-reentrant access.
+        // Calling calloc() is safe because preconditions on this function match the trait method preconditions.
+        let _lock = lock::lock();
+        unsafe { DLMALLOC.calloc(layout.size(), layout.align()) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__prof_malloc__idx140194_rank2.h", "source_rust_file": "API_Mapping__prof_malloc__idx140194_rank2.rs", "c_api": "prof_malloc", "rust_api": "alloc_zeroed", "mapping_type": "function", "description": "Memory allocation with associated profiling context", "reasoning": "[Task Analysis] C function `prof_malloc` is a profiling function for memory allocation, handling sampling and context tracking; Rust function `alloc_zeroed` is a memory allocator implementation using DLMALLOC. [Similarity] Names and domains differ significantly; C is profiling-related, Rust is raw allocation. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both involve memory allocation operations and can be mapped at the API level."}]
+Unixcoder Score: -0.007187072187662125
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // SAFETY: DLMALLOC access is guaranteed to be safe because the lock gives us unique and non-reentrant access.
+        // Calling malloc() is safe because preconditions on this function match the trait method preconditions.
+        let _lock = lock::lock();
+        unsafe { DLMALLOC.malloc(layout.size(), layout.align()) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4622_rank2.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4622_rank2.rs", "c_api": "return", "rust_api": "Ok(reply)", "mapping_type": "pattern", "description": "Successful response return", "reasoning": "[Task Analysis] C function calls a helper function with same signature; Rust function performs IPC request with error handling and response parsing. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to IPC communication and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4622_rank2.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4622_rank2.rs", "c_api": "return", "rust_api": "throw_error!", "mapping_type": "pattern", "description": "Error response handling", "reasoning": "[Task Analysis] C function calls a helper function with same signature; Rust function performs IPC request with error handling and response parsing. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to IPC communication and error handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4622_rank2.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4622_rank2.rs", "c_api": "pre_query_asset", "rust_api": "self.remote.send_request", "mapping_type": "function", "description": "IPC request sending", "reasoning": "[Task Analysis] C function calls a helper function with same signature; Rust function performs IPC request with error handling and response parsing. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to IPC communication and error handling."}]
+Unixcoder Score: -0.008339780382812023
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+unsafe fn test_2(ascend: &mut [*mut u8]) {
+        let old_size = idx_to_size(COUNT - 1);
+        let old = Layout::from_size_align(old_size, ALIGN).unwrap();
+        for i in 0..COUNT / 2 {
+            let (p0, p1, new_size) = (ascend[2 * i], ascend[2 * i + 1], idx_to_size(i));
+            assert!(new_size < old_size);
+            let new = Layout::from_size_align(new_size, ALIGN).unwrap();
+
+            ascend[2 * i] = reallocate(p0, old.clone(), new.clone());
+            sanity_check(&*ascend);
+
+            ascend[2 * i + 1] = reallocate(p1, old.clone(), new.clone());
+            sanity_check(&*ascend);
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__AssetPreQuery__idx4605_rank2.c", "source_rust_file": "Partial__AssetPreQuery__idx4605_rank2.rs", "c_api": "AssetMalloc", "rust_api": "AssetMalloc", "mapping_type": "function", "description": "Memory allocation for asset blob data", "reasoning": "[Task Analysis] C function calls a helper function, Rust implements a conversion from Vec<u8> to AssetBlob with memory allocation and copying. [Similarity] Names don't match but logic involves asset blob creation and memory handling. [Knowledge Extraction] Found partial structural match in memory allocation and data copying, and API mapping for memory allocation pattern."}, {"knowledge_type": "Partial", "source_c_file": "Partial__AssetPreQuery__idx4605_rank2.c", "source_rust_file": "Partial__AssetPreQuery__idx4605_rank2.rs", "c_fragment": "blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };", "rust_fragment": "blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };", "description": "Both sides perform unsafe memory allocation for asset blob data using a similar API call pattern.", "reasoning": "[Task Analysis] C function calls a helper function, Rust implements a conversion from Vec<u8> to AssetBlob with memory allocation and copying. [Similarity] Names don't match but logic involves asset blob creation and memory handling. [Knowledge Extraction] Found partial structural match in memory allocation and data copying, and API mapping for memory allocation pattern."}]
+Unixcoder Score: -0.008574963547289371
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+fn main() {
+    let mut first_or = Vec::<i32>::new();
+    let mut or_two = Vec::<i32>::new();
+    let mut range_from = Vec::<i32>::new();
+    let mut bottom = Vec::<i32>::new();
+    let mut errors_only = Vec::<i32>::new();
+
+    for x in -9 + 1..=(9 - 2) {
+        match x as i32 {
+            0..=(5+1) => errors_only.push(x),
+            //~^ error: inclusive range with no end
+            //~| error: expected one of `=>`, `if`, or `|`, found `(`
+            1 | -3..0 => first_or.push(x),
+            y @ (0..5 | 6) => or_two.push(y),
+            y @ 0..const { 5 + 1 } => assert_eq!(y, 5),
+            y @ -5.. => range_from.push(y),
+            y @ ..-7 => assert_eq!(y, -8),
+            y => bottom.push(y),
+        }
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4372_rank4.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4372_rank4.rs", "c_api": "return", "rust_api": "Ok(query_data)", "mapping_type": "pattern", "description": "Successful return value wrapping", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not match ('AssetPreQuery' vs 'query'), but both perform pre-query logic. [Knowledge Extraction] No full structural match due to domain mismatch (C calls a single function, Rust has complex logic with loops and error handling). However, there are API mappings related to query operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4372_rank4.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4372_rank4.rs", "c_api": "pre_query_asset", "rust_api": "db.query_datas", "mapping_type": "function", "description": "Query operation on database", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not match ('AssetPreQuery' vs 'query'), but both perform pre-query logic. [Knowledge Extraction] No full structural match due to domain mismatch (C calls a single function, Rust has complex logic with loops and error handling). However, there are API mappings related to query operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__AssetPreQuery__idx4372_rank4.c", "source_rust_file": "API_Mapping__AssetPreQuery__idx4372_rank4.rs", "c_api": "return", "rust_api": "map_err(|e| e.code as u32)", "mapping_type": "pattern", "description": "Error code conversion and propagation", "reasoning": "[Task Analysis] C function calls a pre_query_asset function, Rust function performs database queries and data collection. [Similarity] Names do not match ('AssetPreQuery' vs 'query'), but both perform pre-query logic. [Knowledge Extraction] No full structural match due to domain mismatch (C calls a single function, Rust has complex logic with loops and error handling). However, there are API mappings related to query operations and error handling patterns."}]
+Unixcoder Score: -0.011247022077441216
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_realloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt,
+    size_t old_size, prof_ctx_t *old_ctx)
+{
+	prof_thr_cnt_t *told_cnt;
+
+	cassert(config_prof);
+	assert(ptr != NULL || (uintptr_t)cnt <= (uintptr_t)1U);
+
+	if (ptr != NULL) {
+		assert(size == isalloc(ptr, true));
+		if (opt_lg_prof_sample != 0) {
+			if (prof_sample_accum_update(size)) {
+				/*
+				 * Don't sample.  The size passed to
+				 * PROF_ALLOC_PREP() was larger than what
+				 * actually got allocated, so a backtrace was
+				 * captured for this allocation, even though
+				 * its actual size was insufficient to cross
+				 * the sample threshold.
+				 */
+				cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+			}
+		}
+	}
+
+	if ((uintptr_t)old_ctx > (uintptr_t)1U) {
+		told_cnt = prof_lookup(old_ctx->bt);
+		if (told_cnt == NULL) {
+			/*
+			 * It's too late to propagate OOM for this realloc(),
+			 * so operate directly on old_cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(old_ctx->lock);
+			old_ctx->cnt_merged.curobjs--;
+			old_ctx->cnt_merged.curbytes -= old_size;
+			malloc_mutex_unlock(old_ctx->lock);
+			told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+		}
+	} else
+		told_cnt = (prof_thr_cnt_t *)(uintptr_t)1U;
+
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+		cnt->epoch++;
+	} else if (ptr != NULL)
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U) {
+		told_cnt->cnts.curobjs--;
+		told_cnt->cnts.curbytes -= old_size;
+	}
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+	}
+	/*********/
+	mb_write();
+	/*********/
+	if ((uintptr_t)told_cnt > (uintptr_t)1U)
+		told_cnt->epoch++;
+	if ((uintptr_t)cnt > (uintptr_t)1U)
+		cnt->epoch++;
+	/*********/
+	mb_write(); /* Not strictly necessary. */
+}
+Function: 
+unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        // SAFETY: DLMALLOC access is guaranteed to be safe because the lock gives us unique and non-reentrant access.
+        // Calling malloc() is safe because preconditions on this function match the trait method preconditions.
+        let _lock = lock::lock();
+        unsafe { DLMALLOC.malloc(layout.size(), layout.align()) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__prof_malloc__idx126775_rank1.h", "source_rust_file": "API_Mapping__prof_malloc__idx126775_rank1.rs", "c_api": "prof_malloc", "rust_api": "alloc_zeroed", "mapping_type": "function", "description": "Memory allocation with profiling context handling", "reasoning": "[Task Analysis] C function `prof_malloc` is a profiling function for memory allocation, handling sampling and context tracking. Rust function `alloc_zeroed` is a memory allocator implementation using DLMALLOC. [Similarity] Names and domains differ significantly; C is profiling-related, Rust is raw allocation. [Knowledge Extraction] No full structural match due to domain mismatch and different logic. However, both involve memory allocation operations. Extract API mapping for allocation pattern."}]
+Unixcoder Score: -0.011494153179228306
+--------------------------------------------------

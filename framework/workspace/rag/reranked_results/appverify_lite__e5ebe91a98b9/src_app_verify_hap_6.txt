@@ -1,0 +1,501 @@
+C_Code: 
+static int fd_read(struct current *current)
+{
+#ifdef USE_UTF8
+    char buf[4];
+    int n;
+    int i;
+    int c;
+
+    if (read(current->fd, &buf[0], 1) != 1) {
+        return -1;
+    }
+    n = utf8_charlen(buf[0]);
+    if (n < 1 || n > 3) {
+        return -1;
+    }
+    for (i = 1; i < n; i++) {
+        if (read(current->fd, &buf[i], 1) != 1) {
+            return -1;
+        }
+    }
+    buf[n] = 0;
+    /* decode and return the character */
+    utf8_tounicode(buf, &c);
+    return c;
+#else
+    return fd_read_char(current->fd, -1);
+#endif
+}
+Function: 
+fn read_u8(buf: &mut &[u8]) -> Result<u8, ()> {
+    if buf.len() < 1 { return Err(()) }
+    let val = buf[0];
+    *buf = &buf[1..];
+    Ok(val)
+}
+Unixcoder Score: 0.027124330401420593
+--------------------------------------------------
+C_Code: 
+static int fd_read(struct current *current)
+{
+#ifdef USE_UTF8
+    char buf[4];
+    int n;
+    int i;
+    int c;
+
+    if (read(current->fd, &buf[0], 1) != 1) {
+        return -1;
+    }
+    n = utf8_charlen(buf[0]);
+    if (n < 1 || n > 3) {
+        return -1;
+    }
+    for (i = 1; i < n; i++) {
+        if (read(current->fd, &buf[i], 1) != 1) {
+            return -1;
+        }
+    }
+    buf[n] = 0;
+    /* decode and return the character */
+    utf8_tounicode(buf, &c);
+    return c;
+#else
+    return fd_read_char(current->fd, -1);
+#endif
+}
+Function: 
+fn utf8_char_width(b: u8) -> uint {
+    let byte: uint = b as uint;
+    if byte < 128u { ret 1u; }
+    if byte < 192u {
+        ret 0u; // Not a valid start byte
+
+    }
+    if byte < 224u { ret 2u; }
+    if byte < 240u { ret 3u; }
+    if byte < 248u { ret 4u; }
+    if byte < 252u { ret 5u; }
+    ret 6u;
+}
+Unixcoder Score: 0.006793395150452852
+--------------------------------------------------
+C_Code: 
+static uv_buf_t on_pipe_read_alloc(uv_handle_t* handle,
+    size_t suggested_size) {
+  uv_buf_t buf;
+  buf.base = (char*)malloc(suggested_size);
+  buf.len = suggested_size;
+  return buf;
+}
+Function: 
+pub fn new(loop_: &uv::Loop, ipc: bool) -> Pipe {
+        unsafe {
+            let handle = uvll::malloc_handle(uvll::UV_NAMED_PIPE);
+            assert!(handle.is_not_null());
+            let ipc = ipc as libc::c_int;
+            assert_eq!(uvll::pipe_init(loop_.native_handle(), handle, ipc), 0);
+            let mut ret: Pipe =
+                    uv::NativeHandle::from_native_handle(handle);
+            ret.install_watcher_data();
+            ret
+        }
+    }
+Unixcoder Score: 0.001626134617254138
+--------------------------------------------------
+C_Code: 
+static int completeLine(struct current *current) {
+    linenoiseCompletions lc = { 0, NULL };
+    int c = 0;
+
+    completionCallback(current->buf,&lc);
+    if (lc.len == 0) {
+        beep();
+    } else {
+        size_t stop = 0, i = 0;
+
+        while(!stop) {
+            /* Show completion or original buffer */
+            if (i < lc.len) {
+                struct current tmp = *current;
+                tmp.buf = lc.cvec[i];
+                tmp.pos = tmp.len = strlen(tmp.buf);
+                tmp.chars = utf8_strlen(tmp.buf, tmp.len);
+                refreshLine(current->prompt, &tmp);
+            } else {
+                refreshLine(current->prompt, current);
+            }
+
+            c = fd_read(current);
+            if (c == -1) {
+                break;
+            }
+
+            switch(c) {
+                case '\t': /* tab */
+                    i = (i+1) % (lc.len+1);
+                    if (i == lc.len) beep();
+                    break;
+                case 27: /* escape */
+                    /* Re-show original buffer */
+                    if (i < lc.len) {
+                        refreshLine(current->prompt, current);
+                    }
+                    stop = 1;
+                    break;
+                default:
+                    /* Update buffer and return */
+                    if (i < lc.len) {
+                        set_current(current,lc.cvec[i]);
+                    }
+                    stop = 1;
+                    break;
+            }
+        }
+    }
+
+    freeCompletions(&lc);
+    return c; /* Return last read character */
+}
+Function: 
+extern fn callback(line: *c_char, completions: *()) unsafe {
+		let cb: CompletionCb = copy *task::local_data::local_data_get(complete_key).get();
+
+		do cb(str::raw::from_c_str(line)) |suggestion| {
+			do str::as_c_str(suggestion) |buf| {
+				linenoise::linenoiseAddCompletion(completions, buf);
+			}
+		}
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_fragment": "switch (Linkage) {\n  case LLVMRustLinkage::ExternalLinkage:\n    return LLVMExternalLinkage;\n  case LLVMRustLinkage::AvailableExternallyLinkage:\n    return LLVMAvailableExternallyLinkage;\n  case LLVMRustLinkage::LinkOnceAnyLinkage:\n    return LLVMLinkOnceAnyLinkage;\n  case LLVMRustLinkage::LinkOnceODRLinkage:\n    return LLVMLinkOnceODRLinkage;\n  case LLVMRustLinkage::WeakAnyLinkage:\n    return LLVMWeakAnyLinkage;\n  case LLVMRustLinkage::WeakODRLinkage:\n    return LLVMWeakODRLinkage;\n  case LLVMRustLinkage::AppendingLinkage:\n    return LLVMAppendingLinkage;\n  case LLVMRustLinkage::InternalLinkage:\n    return LLVMInternalLinkage;\n  case LLVMRustLinkage::PrivateLinkage:\n    return LLVMPrivateLinkage;\n  case LLVMRustLinkage::ExternalWeakLinkage:\n    return LLVMExternalWeakLinkage;\n  case LLVMRustLinkage::CommonLinkage:\n    return LLVMCommonLinkage;\n  }\n  report_fatal_error(\"Invalid LLVMRustLinkage value!\");", "rust_fragment": "match linkage {\n        Linkage::External => llvm::Linkage::ExternalLinkage,\n        Linkage::AvailableExternally => llvm::Linkage::AvailableExternallyLinkage,\n        Linkage::LinkOnceAny => llvm::Linkage::LinkOnceAnyLinkage,\n        Linkage::LinkOnceODR => llvm::Linkage::LinkOnceODRLinkage,\n        Linkage::WeakAny => llvm::Linkage::WeakAnyLinkage,\n        Linkage::WeakODR => llvm::Linkage::WeakODRLinkage,\n        Linkage::Appending => llvm::Linkage::AppendingLinkage,\n        Linkage::Internal => llvm::Linkage::InternalLinkage,\n        Linkage::Private => llvm::Linkage::PrivateLinkage,\n        Linkage::ExternalWeak => llvm::Linkage::ExternalWeakLinkage,\n        Linkage::Common => llvm::Linkage::CommonLinkage,\n    }", "description": "Converts a Rust linkage enum to an LLVM linkage enum using a switch/match statement.", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::WeakODRLinkage", "rust_api": "Linkage::WeakODR", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::InternalLinkage", "rust_api": "Linkage::Internal", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "Full", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::AvailableExternallyLinkage", "rust_api": "Linkage::AvailableExternally", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::LinkOnceAnyLinkage", "rust_api": "Linkage::LinkOnceAny", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::CommonLinkage", "rust_api": "Linkage::Common", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::AppendingLinkage", "rust_api": "Linkage::Appending", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::ExternalLinkage", "rust_api": "Linkage::External", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::ExternalWeakLinkage", "rust_api": "Linkage::ExternalWeak", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::PrivateLinkage", "rust_api": "Linkage::Private", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::WeakAnyLinkage", "rust_api": "Linkage::WeakAny", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__fromRust__idx17739_rank1.c", "source_rust_file": "Full__fromRust__idx17739_rank1.rs", "c_api": "LLVMRustLinkage::LinkOnceODRLinkage", "rust_api": "Linkage::LinkOnceODR", "mapping_type": "enum", "description": "Maps C linkage enum to Rust linkage enum", "reasoning": "[Filter 1: Entity Name Check] -> Names refer to different concepts ('fromRust' vs 'linkage_to_llvm') but both represent conversion logic between C and Rust linkage enums. [Filter 2: Empty/Trivial Code] -> Neither code is empty. [Filter 3: FFI Wrapper] -> No FFI call detected. [Filter 4: Semantic Domain Mismatch] -> Both operate on enum conversion, same domain. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not calls. [Full Classification] -> Names don't match exactly but represent same concept (enum conversion), structure is fully aligned. [Partial Classification] -> Full match, no partial needed. [API Mappings] -> Extract all enum value mappings between C and Rust linkage types. [Knowledge Extraction] -> High structural similarity, full match on logic and control flow, API mappings identified."}]
+Unixcoder Score: -0.013655784539878368
+--------------------------------------------------
+C_Code: 
+int process_copy_output(process_info_t *p, int fd) {
+  DWORD read;
+  char buf[1024];
+
+  if (SetFilePointer(p->stdio_out, 0, 0, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+    return -1;
+
+  while (ReadFile(p->stdio_out, (void*)&buf, sizeof(buf), &read, NULL) &&
+         read > 0)
+    write(fd, buf, read);
+
+  if (GetLastError() != ERROR_HANDLE_EOF)
+    return -1;
+
+  return 0;
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        unsafe { ManuallyDrop::new(FileDesc::from_raw_fd(libc::STDOUT_FILENO)).write(buf) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx27980_rank5.c", "source_rust_file": "API_Mapping__fromRust__idx27980_rank5.rs", "c_api": "switch (Linkage)", "rust_api": "self.linkage.set(FunctionType::Extern)", "mapping_type": "pattern", "description": "Linkage setting based on input value", "reasoning": "[Filter 1] Names do not refer to the same concept ('fromRust' vs 'declare_func') but API mapping is possible. [Filter 2] Neither code is empty/trivial. [Filter 3] Not an FFI wrapper. [Filter 4] Semantic domains are different: C is about enum/switch translation, Rust is about function declaration. [Filter 5] Both are function definitions, not structs. [Filter 6] This is a definition vs definition match. [Task Analysis] C function translates Rust enum to LLVM enum; Rust function declares a function. [Similarity] No full or partial structural match due to domain mismatch. [Knowledge Extraction] Extract API mappings between the enum conversion and function declaration logic."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx27980_rank5.c", "source_rust_file": "API_Mapping__fromRust__idx27980_rank5.rs", "c_api": "report_fatal_error(\"Invalid LLVMRustLinkage value!\")", "rust_api": "declare_raw_fn(...)", "mapping_type": "function", "description": "Error handling for invalid input", "reasoning": "[Filter 1] Names do not refer to the same concept ('fromRust' vs 'declare_func') but API mapping is possible. [Filter 2] Neither code is empty/trivial. [Filter 3] Not an FFI wrapper. [Filter 4] Semantic domains are different: C is about enum/switch translation, Rust is about function declaration. [Filter 5] Both are function definitions, not structs. [Filter 6] This is a definition vs definition match. [Task Analysis] C function translates Rust enum to LLVM enum; Rust function declares a function. [Similarity] No full or partial structural match due to domain mismatch. [Knowledge Extraction] Extract API mappings between the enum conversion and function declaration logic."}]
+Unixcoder Score: -0.015085902996361256
+--------------------------------------------------
+C_Code: 
+static int completeLine(struct current *current) {
+    linenoiseCompletions lc = { 0, NULL };
+    int c = 0;
+
+    completionCallback(current->buf,&lc);
+    if (lc.len == 0) {
+        beep();
+    } else {
+        size_t stop = 0, i = 0;
+
+        while(!stop) {
+            /* Show completion or original buffer */
+            if (i < lc.len) {
+                struct current tmp = *current;
+                tmp.buf = lc.cvec[i];
+                tmp.pos = tmp.len = strlen(tmp.buf);
+                tmp.chars = utf8_strlen(tmp.buf, tmp.len);
+                refreshLine(current->prompt, &tmp);
+            } else {
+                refreshLine(current->prompt, current);
+            }
+
+            c = fd_read(current);
+            if (c == -1) {
+                break;
+            }
+
+            switch(c) {
+                case '\t': /* tab */
+                    i = (i+1) % (lc.len+1);
+                    if (i == lc.len) beep();
+                    break;
+                case 27: /* escape */
+                    /* Re-show original buffer */
+                    if (i < lc.len) {
+                        refreshLine(current->prompt, current);
+                    }
+                    stop = 1;
+                    break;
+                default:
+                    /* Update buffer and return */
+                    if (i < lc.len) {
+                        set_current(current,lc.cvec[i]);
+                    }
+                    stop = 1;
+                    break;
+            }
+        }
+    }
+
+    freeCompletions(&lc);
+    return c; /* Return last read character */
+}
+Function: 
+pub fn complete(cb: CompletionCb) unsafe {
+	task::local_data::local_data_set(complete_key, @(move cb));
+
+	extern fn callback(line: *c_char, completions: *()) unsafe {
+		let cb: CompletionCb = copy *task::local_data::local_data_get(complete_key).get();
+
+		do cb(str::raw::from_c_str(line)) |suggestion| {
+			do str::as_c_str(suggestion) |buf| {
+				linenoise::linenoiseAddCompletion(completions, buf);
+			}
+		}
+	}
+
+	linenoise::linenoiseSetCompletionCallback(callback);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx27414_rank3.c", "source_rust_file": "Partial__fromRust__idx27414_rank3.rs", "c_api": "return LLVMExternalLinkage;", "rust_api": "abi::Abi::Rust", "mapping_type": "function", "description": "Return of a specific enum variant from a conversion function.", "reasoning": "[Filter 1] Names do not refer to the same concept: 'fromRust' (C) vs 'lower_extern' (Rust); however, both are conversion functions. [Filter 2] Neither code is empty/trivial. [Filter 3] Not an FFI wrapper. [Filter 4] Semantic domains differ: C function converts from a Rust enum to LLVM linkage (low-level compiler IR), while Rust function lowers extern declarations to ABIs (high-level interface). [Filter 5] Both are functions, not structs. [Filter 6] Both are function definitions, not usage calls. [Task Analysis] The C code maps a Rust enum to C enum values via switch-case, while Rust maps an enum to another enum via match. [Similarity] No full structural similarity due to domain mismatch and different logic. [Knowledge Extraction] Extract partial structural fragments and API mappings based on enum conversion patterns and control flow structure."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx27414_rank3.c", "source_rust_file": "Partial__fromRust__idx27414_rank3.rs", "c_api": "return LLVMAvailableExternallyLinkage;", "rust_api": "abi::Abi::FALLBACK", "mapping_type": "function", "description": "Return of a specific enum variant from a conversion function.", "reasoning": "[Filter 1] Names do not refer to the same concept: 'fromRust' (C) vs 'lower_extern' (Rust); however, both are conversion functions. [Filter 2] Neither code is empty/trivial. [Filter 3] Not an FFI wrapper. [Filter 4] Semantic domains differ: C function converts from a Rust enum to LLVM linkage (low-level compiler IR), while Rust function lowers extern declarations to ABIs (high-level interface). [Filter 5] Both are functions, not structs. [Filter 6] Both are function definitions, not usage calls. [Task Analysis] The C code maps a Rust enum to C enum values via switch-case, while Rust maps an enum to another enum via match. [Similarity] No full structural similarity due to domain mismatch and different logic. [Knowledge Extraction] Extract partial structural fragments and API mappings based on enum conversion patterns and control flow structure."}, {"knowledge_type": "Partial", "source_c_file": "Partial__fromRust__idx27414_rank3.c", "source_rust_file": "Partial__fromRust__idx27414_rank3.rs", "c_fragment": "switch (Linkage) {\n  case LLVMRustLinkage::ExternalLinkage:\n    return LLVMExternalLinkage;\n  case LLVMRustLinkage::AvailableExternallyLinkage:\n    return LLVMAvailableExternallyLinkage;\n  case LLVMRustLinkage::LinkOnceAnyLinkage:\n    return LLVMLinkOnceAnyLinkage;\n  case LLVMRustLinkage::LinkOnceODRLinkage:\n    return LLVMLinkOnceODRLinkage;\n  case LLVMRustLinkage::WeakAnyLinkage:\n    return LLVMWeakAnyLinkage;\n  case LLVMRustLinkage::WeakODRLinkage:\n    return LLVMWeakODRLinkage;\n  case LLVMRustLinkage::AppendingLinkage:\n    return LLVMAppendingLinkage;\n  case LLVMRustLinkage::InternalLinkage:\n    return LLVMInternalLinkage;\n  case LLVMRustLinkage::PrivateLinkage:\n    return LLVMPrivateLinkage;\n  case LLVMRustLinkage::ExternalWeakLinkage:\n    return LLVMExternalWeakLinkage;\n  case LLVMRustLinkage::CommonLinkage:\n    return LLVMCommonLinkage;\n  }\n  report_fatal_error(\"Invalid LLVMRustLinkage value!\");", "rust_fragment": "match ext {\n            Extern::None => abi::Abi::Rust,\n            Extern::Implicit(_) => abi::Abi::FALLBACK,\n            Extern::Explicit(abi, _) => self.lower_abi(abi),\n        }", "description": "Both functions perform enum-based dispatch to return a corresponding value, though the specific types and logic differ.", "reasoning": "[Filter 1] Names do not refer to the same concept: 'fromRust' (C) vs 'lower_extern' (Rust); however, both are conversion functions. [Filter 2] Neither code is empty/trivial. [Filter 3] Not an FFI wrapper. [Filter 4] Semantic domains differ: C function converts from a Rust enum to LLVM linkage (low-level compiler IR), while Rust function lowers extern declarations to ABIs (high-level interface). [Filter 5] Both are functions, not structs. [Filter 6] Both are function definitions, not usage calls. [Task Analysis] The C code maps a Rust enum to C enum values via switch-case, while Rust maps an enum to another enum via match. [Similarity] No full structural similarity due to domain mismatch and different logic. [Knowledge Extraction] Extract partial structural fragments and API mappings based on enum conversion patterns and control flow structure."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__fromRust__idx27414_rank3.c", "source_rust_file": "Partial__fromRust__idx27414_rank3.rs", "c_api": "switch (Linkage)", "rust_api": "match ext", "mapping_type": "pattern", "description": "Enum dispatch pattern: switch-case in C maps to match expression in Rust.", "reasoning": "[Filter 1] Names do not refer to the same concept: 'fromRust' (C) vs 'lower_extern' (Rust); however, both are conversion functions. [Filter 2] Neither code is empty/trivial. [Filter 3] Not an FFI wrapper. [Filter 4] Semantic domains differ: C function converts from a Rust enum to LLVM linkage (low-level compiler IR), while Rust function lowers extern declarations to ABIs (high-level interface). [Filter 5] Both are functions, not structs. [Filter 6] Both are function definitions, not usage calls. [Task Analysis] The C code maps a Rust enum to C enum values via switch-case, while Rust maps an enum to another enum via match. [Similarity] No full structural similarity due to domain mismatch and different logic. [Knowledge Extraction] Extract partial structural fragments and API mappings based on enum conversion patterns and control flow structure."}]
+Unixcoder Score: -0.0263307336717844
+--------------------------------------------------
+C_Code: 
+int process_copy_output(process_info_t *p, int fd) {
+  DWORD read;
+  char buf[1024];
+
+  if (SetFilePointer(p->stdio_out, 0, 0, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+    return -1;
+
+  while (ReadFile(p->stdio_out, (void*)&buf, sizeof(buf), &read, NULL) &&
+         read > 0)
+    write(fd, buf, read);
+
+  if (GetLastError() != ERROR_HANDLE_EOF)
+    return -1;
+
+  return 0;
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        unsafe { ManuallyDrop::new(FileDesc::from_raw_fd(libc::STDOUT_FILENO)).write(buf) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx109620_rank2.c", "source_rust_file": "API_Mapping__fromRust__idx109620_rank2.rs", "c_api": "switch (Linkage) { ... }", "rust_api": "match s { ... }", "mapping_type": "pattern", "description": "Control flow for value mapping from enum/string to enum", "reasoning": "[Filter 1: Entity Name Check] -> Names 'fromRust' and 'from_str' do not refer to the same concept; 'fromRust' converts from a Rust enum to an LLVM enum, while 'from_str' converts from a string to an enum. [Filter 2: Empty/Trivial Code] -> Neither code block is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code handles LLVM linkage conversion (low-level), while Rust code handles string-to-enum conversion (high-level). These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. [Task Analysis] -> The C code performs a switch-case mapping from a Rust enum to an LLVM enum, while the Rust code performs a match-case mapping from a string to an enum. [Similarity] -> While both use control flow to map values, the semantic domains and data types are fundamentally different. [Knowledge Extraction] -> No full or partial match due to domain mismatch. However, there are API mappings between the switch/match constructs and their corresponding value mappings."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx109620_rank2.c", "source_rust_file": "API_Mapping__fromRust__idx109620_rank2.rs", "c_api": "case LLVMRustLinkage::ExternalLinkage: return LLVMExternalLinkage;", "rust_api": "\"thin-local\" => Ok(RustcLto::ThinLocal),", "mapping_type": "pattern", "description": "Mapping of specific enum/string value to corresponding Rust/LLVM enum value", "reasoning": "[Filter 1: Entity Name Check] -> Names 'fromRust' and 'from_str' do not refer to the same concept; 'fromRust' converts from a Rust enum to an LLVM enum, while 'from_str' converts from a string to an enum. [Filter 2: Empty/Trivial Code] -> Neither code block is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code handles LLVM linkage conversion (low-level), while Rust code handles string-to-enum conversion (high-level). These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. [Task Analysis] -> The C code performs a switch-case mapping from a Rust enum to an LLVM enum, while the Rust code performs a match-case mapping from a string to an enum. [Similarity] -> While both use control flow to map values, the semantic domains and data types are fundamentally different. [Knowledge Extraction] -> No full or partial match due to domain mismatch. However, there are API mappings between the switch/match constructs and their corresponding value mappings."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx109620_rank2.c", "source_rust_file": "API_Mapping__fromRust__idx109620_rank2.rs", "c_api": "report_fatal_error(\"Invalid LLVMRustLinkage value!\");", "rust_api": "_ => Err(format!(\"Invalid value for rustc LTO: {}\", s)),", "mapping_type": "pattern", "description": "Error handling for invalid input values in enum/string mapping", "reasoning": "[Filter 1: Entity Name Check] -> Names 'fromRust' and 'from_str' do not refer to the same concept; 'fromRust' converts from a Rust enum to an LLVM enum, while 'from_str' converts from a string to an enum. [Filter 2: Empty/Trivial Code] -> Neither code block is empty. [Filter 3: FFI Wrapper] -> No FFI calls detected. [Filter 4: Semantic Domain Mismatch] -> C code handles LLVM linkage conversion (low-level), while Rust code handles string-to-enum conversion (high-level). These are different domains. [Filter 5: Empty Structs] -> Not applicable. [Filter 6: Definition vs Usage Asymmetry] -> Both are function definitions, not calls or tests. [Task Analysis] -> The C code performs a switch-case mapping from a Rust enum to an LLVM enum, while the Rust code performs a match-case mapping from a string to an enum. [Similarity] -> While both use control flow to map values, the semantic domains and data types are fundamentally different. [Knowledge Extraction] -> No full or partial match due to domain mismatch. However, there are API mappings between the switch/match constructs and their corresponding value mappings."}]
+Unixcoder Score: -0.02805529721081257
+--------------------------------------------------
+C_Code: 
+int process_copy_output(process_info_t *p, int fd) {
+  DWORD read;
+  char buf[1024];
+
+  if (SetFilePointer(p->stdio_out, 0, 0, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+    return -1;
+
+  while (ReadFile(p->stdio_out, (void*)&buf, sizeof(buf), &read, NULL) &&
+         read > 0)
+    write(fd, buf, read);
+
+  if (GetLastError() != ERROR_HANDLE_EOF)
+    return -1;
+
+  return 0;
+}
+Function: 
+pub fn read_at(&self, buf: &mut [u8], offset: u64) -> io::Result<usize> {
+        let res =
+            unsafe { self.synchronous_read(buf.as_mut_ptr().cast(), buf.len(), Some(offset)) };
+
+        match res {
+            Ok(read) => Ok(read as usize),
+            Err(ref e) if e.raw_os_error() == Some(c::ERROR_HANDLE_EOF as i32) => Ok(0),
+            Err(e) => Err(e),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fromRust__idx17874_rank5.c", "source_rust_file": "API_Mapping__fromRust__idx17874_rank5.rs", "c_api": "switch (Linkage)", "rust_api": "link_binary(...)", "mapping_type": "function", "description": "Enum value mapping to LLVM linkage constants in C vs linking operation in Rust", "reasoning": "[Filter 1] Names do not refer to the same concept: 'fromRust' (C) vs 'link' (Rust). [Filter 2] Neither code block is empty. [Filter 3] Not an FFI wrapper; both contain logic. [Filter 4] Semantic domains differ: C function maps Rust enum values to LLVM linkage constants, while Rust function performs linking using a builder. [Filter 5] Not applicable - both are functions, not structs. [Filter 6] Not applicable - both are function definitions, not usage calls. [Task Analysis] C function translates an enum to another enum, Rust function performs a linking operation. [Similarity] No full or partial structural match due to domain mismatch. [Knowledge Extraction] No full match, no partial match, but API mappings may exist between enum conversion and linking logic."}]
+Unixcoder Score: -0.03389599174261093
+--------------------------------------------------
+C_Code: 
+static void uv__read(uv_stream_t* stream) {
+  uv_buf_t buf;
+  ssize_t nread;
+  struct msghdr msg;
+  struct cmsghdr* cmsg;
+  char cmsg_space[64];
+  struct ev_loop* ev = stream->loop->ev;
+
+  /* XXX: Maybe instead of having UV_READING we just test if
+   * tcp->read_cb is NULL or not?
+   */
+  while ((stream->read_cb || stream->read2_cb) &&
+         stream->flags & UV_READING) {
+    assert(stream->alloc_cb);
+    buf = stream->alloc_cb((uv_handle_t*)stream, 64 * 1024);
+
+    assert(buf.len > 0);
+    assert(buf.base);
+    assert(stream->fd >= 0);
+
+    if (stream->read_cb) {
+      do {
+        nread = read(stream->fd, buf.base, buf.len);
+      }
+      while (nread < 0 && errno == EINTR);
+    } else {
+      assert(stream->read2_cb);
+      /* read2_cb uses recvmsg */
+      msg.msg_flags = 0;
+      msg.msg_iov = (struct iovec*) &buf;
+      msg.msg_iovlen = 1;
+      msg.msg_name = NULL;
+      msg.msg_namelen = 0;
+      /* Set up to receive a descriptor even if one isn't in the message */
+      msg.msg_controllen = 64;
+      msg.msg_control = (void *) cmsg_space;
+
+      do {
+        nread = recvmsg(stream->fd, &msg, 0);
+      }
+      while (nread < 0 && errno == EINTR);
+    }
+
+
+    if (nread < 0) {
+      /* Error */
+      if (errno == EAGAIN) {
+        /* Wait for the next one. */
+        if (stream->flags & UV_READING) {
+          ev_io_start(ev, &stream->read_watcher);
+        }
+        uv__set_sys_error(stream->loop, EAGAIN);
+
+        if (stream->read_cb) {
+          stream->read_cb(stream, 0, buf);
+        } else {
+          stream->read2_cb((uv_pipe_t*)stream, 0, buf, UV_UNKNOWN_HANDLE);
+        }
+
+        return;
+      } else {
+        /* Error. User should call uv_close(). */
+        uv__set_sys_error(stream->loop, errno);
+
+        if (stream->read_cb) {
+          stream->read_cb(stream, -1, buf);
+        } else {
+          stream->read2_cb((uv_pipe_t*)stream, -1, buf, UV_UNKNOWN_HANDLE);
+        }
+
+        assert(!ev_is_active(&stream->read_watcher));
+        return;
+      }
+
+    } else if (nread == 0) {
+      /* EOF */
+      uv__set_artificial_error(stream->loop, UV_EOF);
+      ev_io_stop(ev, &stream->read_watcher);
+
+      if (stream->read_cb) {
+        stream->read_cb(stream, -1, buf);
+      } else {
+        stream->read2_cb((uv_pipe_t*)stream, -1, buf, UV_UNKNOWN_HANDLE);
+      }
+      return;
+    } else {
+      /* Successful read */
+      ssize_t buflen = buf.len;
+
+      if (stream->read_cb) {
+        stream->read_cb(stream, nread, buf);
+      } else {
+        assert(stream->read2_cb);
+
+        /*
+         * XXX: Some implementations can send multiple file descriptors in a
+         * single message. We should be using CMSG_NXTHDR() to walk the
+         * chain to get at them all. This would require changing the API to
+         * hand these back up the caller, is a pain.
+         */
+
+        for (cmsg = CMSG_FIRSTHDR(&msg);
+             msg.msg_controllen > 0 && cmsg != NULL;
+             cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+
+          if (cmsg->cmsg_type == SCM_RIGHTS) {
+            if (stream->accepted_fd != -1) {
+              fprintf(stderr, "(libuv) ignoring extra FD received\n");
+            }
+
+            stream->accepted_fd = *(int *) CMSG_DATA(cmsg);
+
+          } else {
+            fprintf(stderr, "ignoring non-SCM_RIGHTS ancillary data: %d\n",
+                cmsg->cmsg_type);
+          }
+        }
+
+
+        if (stream->accepted_fd >= 0) {
+          stream->read2_cb((uv_pipe_t*)stream, nread, buf, UV_TCP);
+        } else {
+          stream->read2_cb((uv_pipe_t*)stream, nread, buf, UV_UNKNOWN_HANDLE);
+        }
+      }
+
+      /* Return if we didn't fill the buffer, there is no more data to read. */
+      if (nread < buflen) {
+        return;
+      }
+    }
+  }
+}
+Function: 
+pub unsafe fn read_start(stream: *uv_stream_t,
+                         on_alloc: uv_alloc_cb,
+                         on_read: uv_read_cb) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+
+    return rust_uv_read_start(stream as *c_void, on_alloc, on_read);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__toRust__idx136138_rank1.c", "source_rust_file": "API_Mapping__toRust__idx136138_rank1.rs", "c_api": "LLVMLinkage Linkage", "rust_api": "linkage: Linkage", "mapping_type": "parameter", "description": "Parameter representing linkage type in function signature", "reasoning": "[Task Analysis] C function 'toRust' converts an LLVM linkage enum to a Rust enum; Rust function 'declare_function' declares a function with a given linkage. [Similarity] Names do not refer to the same concept (toRust vs declare_function), and domains are different (enum conversion vs function declaration). [Knowledge Extraction] No full or partial match due to domain mismatch and name mismatch. However, there is a semantic correspondence in the handling of 'linkage' parameter between the two functions, which can be considered an API mapping."}]
+Unixcoder Score: -0.03766341134905815
+--------------------------------------------------
+C_Code: 
+int process_copy_output(process_info_t *p, int fd) {
+  DWORD read;
+  char buf[1024];
+
+  if (SetFilePointer(p->stdio_out, 0, 0, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+    return -1;
+
+  while (ReadFile(p->stdio_out, (void*)&buf, sizeof(buf), &read, NULL) &&
+         read > 0)
+    write(fd, buf, read);
+
+  if (GetLastError() != ERROR_HANDLE_EOF)
+    return -1;
+
+  return 0;
+}
+Function: 
+fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        (&*self).write(buf)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMAvailableExternallyLinkage", "rust_api": "Linkage::AvailableExternally", "mapping_type": "enum", "description": "Maps LLVM available externally linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMAppendingLinkage", "rust_api": "Linkage::Appending", "mapping_type": "enum", "description": "Maps LLVM appending linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMExternalWeakLinkage", "rust_api": "Linkage::ExternalWeak", "mapping_type": "enum", "description": "Maps LLVM external weak linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMWeakAnyLinkage", "rust_api": "Linkage::WeakAny", "mapping_type": "enum", "description": "Maps LLVM weak any linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "Full", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMCommonLinkage", "rust_api": "Linkage::Common", "mapping_type": "enum", "description": "Maps LLVM common linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMInternalLinkage", "rust_api": "Linkage::Internal", "mapping_type": "enum", "description": "Maps LLVM internal linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMExternalLinkage", "rust_api": "Linkage::External", "mapping_type": "enum", "description": "Maps LLVM external linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMLinkOnceODRLinkage", "rust_api": "Linkage::LinkOnceODR", "mapping_type": "enum", "description": "Maps LLVM linkonce ODR linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMPrivateLinkage", "rust_api": "Linkage::Private", "mapping_type": "enum", "description": "Maps LLVM private linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMLinkOnceAnyLinkage", "rust_api": "Linkage::LinkOnceAny", "mapping_type": "enum", "description": "Maps LLVM linkonce any linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_api": "LLVMWeakODRLinkage", "rust_api": "Linkage::WeakODR", "mapping_type": "enum", "description": "Maps LLVM weak ODR linkage enum value", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}, {"knowledge_type": "Partial", "source_c_file": "Full__toRust__idx17739_rank2.c", "source_rust_file": "Full__toRust__idx17739_rank2.rs", "c_fragment": "switch (Linkage) {\n  case LLVMExternalLinkage:\n    return LLVMRustLinkage::ExternalLinkage;\n  case LLVMAvailableExternallyLinkage:\n    return LLVMRustLinkage::AvailableExternallyLinkage;\n  case LLVMLinkOnceAnyLinkage:\n    return LLVMRustLinkage::LinkOnceAnyLinkage;\n  case LLVMLinkOnceODRLinkage:\n    return LLVMRustLinkage::LinkOnceODRLinkage;\n  case LLVMWeakAnyLinkage:\n    return LLVMRustLinkage::WeakAnyLinkage;\n  case LLVMWeakODRLinkage:\n    return LLVMRustLinkage::WeakODRLinkage;\n  case LLVMAppendingLinkage:\n    return LLVMRustLinkage::AppendingLinkage;\n  case LLVMInternalLinkage:\n    return LLVMRustLinkage::InternalLinkage;\n  case LLVMPrivateLinkage:\n    return LLVMRustLinkage::PrivateLinkage;\n  case LLVMExternalWeakLinkage:\n    return LLVMRustLinkage::ExternalWeakLinkage;\n  case LLVMCommonLinkage:\n    return LLVMRustLinkage::CommonLinkage;\n  default:\n    report_fatal_error(\"Invalid LLVMRustLinkage value!\");\n}", "rust_fragment": "match linkage {\n        Linkage::External => llvm::Linkage::ExternalLinkage,\n        Linkage::AvailableExternally => llvm::Linkage::AvailableExternallyLinkage,\n        Linkage::LinkOnceAny => llvm::Linkage::LinkOnceAnyLinkage,\n        Linkage::LinkOnceODR => llvm::Linkage::LinkOnceODRLinkage,\n        Linkage::WeakAny => llvm::Linkage::WeakAnyLinkage,\n        Linkage::WeakODR => llvm::Linkage::WeakODRLinkage,\n        Linkage::Appending => llvm::Linkage::AppendingLinkage,\n        Linkage::Internal => llvm::Linkage::InternalLinkage,\n        Linkage::Private => llvm::Linkage::PrivateLinkage,\n        Linkage::ExternalWeak => llvm::Linkage::ExternalWeakLinkage,\n        Linkage::Common => llvm::Linkage::CommonLinkage,\n    }", "description": "Converts LLVM linkage enum values from C to Rust equivalent using switch/match statements.", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] -> [Filter 1: Entity Name Check] -> Names refer to different concepts ('toRust' vs 'linkage_to_llvm') but both perform same logical mapping operation. -> [Filter 2: Empty/Trivial Code] -> Neither code is empty/trivial. -> [Filter 3: FFI Wrapper] -> No FFI calls detected. -> [Filter 4: Semantic Domain Mismatch] -> Both are type conversion/mapping operations, not domain mismatch. -> [Filter 5: Empty Structs] -> Not applicable. -> [Filter 6: Definition vs Usage Asymmetry] -> Both are definitions, not usage. -> [Full Classification] -> Names don't match exactly but conceptually map same operation; code lengths similar; no impl/test mismatch; semantic consistency maintained. -> [Partial Classification] -> Full match is possible, but partial fragments also exist. -> [API Mappings] -> Extract all corresponding switch/match cases and their mappings. -> [Knowledge Extraction] -> Extract full structural match, API mappings, and partial fragments."}]
+Unixcoder Score: -0.04159354045987129
+--------------------------------------------------

@@ -1,0 +1,475 @@
+C_Code: 
+void c95_types() {
+  printf("    mod c95 {\n");
+
+  put_type("c_char", char);
+  put_type("c_schar", signed char);
+  put_type("c_uchar", unsigned char);
+
+  put_type("c_short", short);
+  put_type("c_ushort", unsigned short);
+
+  put_type("c_int", int);
+  put_type("c_uint", unsigned int);
+
+  put_type("c_long", long);
+  put_type("c_ulong", unsigned long);
+
+  put_ftype("c_float", float);
+  put_ftype("c_double", double);
+
+  put_type("size_t", size_t);
+  put_type("ptrdiff_t", ptrdiff_t);
+
+  put_type("clock_t", clock_t);
+  put_type("time_t", time_t);
+
+  put_type("wchar_t", wchar_t);
+
+  printf("    }\n");
+}
+Function: 
+pub fn decode_error(errno: i32) -> IoError {
+    // FIXME: this should probably be a bit more descriptive...
+    let (kind, desc) = match errno {
+        libc::EOF => (io::EndOfFile, "end of file"),
+        libc::ECONNREFUSED => (io::ConnectionRefused, "connection refused"),
+        libc::ECONNRESET => (io::ConnectionReset, "connection reset"),
+        libc::EPERM | libc::EACCES =>
+            (io::PermissionDenied, "permission denied"),
+        libc::EPIPE => (io::BrokenPipe, "broken pipe"),
+        libc::ENOTCONN => (io::NotConnected, "not connected"),
+        libc::ECONNABORTED => (io::ConnectionAborted, "connection aborted"),
+        libc::EADDRNOTAVAIL => (io::ConnectionRefused, "address not available"),
+        libc::EADDRINUSE => (io::ConnectionRefused, "address in use"),
+        libc::ENOENT => (io::FileNotFound, "no such file or directory"),
+        libc::EISDIR => (io::InvalidInput, "illegal operation on a directory"),
+        libc::ENOSYS => (io::IoUnavailable, "function not implemented"),
+        libc::EINVAL => (io::InvalidInput, "invalid argument"),
+        libc::ENOTTY =>
+            (io::MismatchedFileTypeForOperation,
+             "file descriptor is not a TTY"),
+        libc::ETIMEDOUT => (io::TimedOut, "operation timed out"),
+        libc::ECANCELED => (io::TimedOut, "operation aborted"),
+
+        // These two constants can have the same value on some systems,
+        // but different values on others, so we can't use a match
+        // clause
+        x if x == libc::EAGAIN || x == libc::EWOULDBLOCK =>
+            (io::ResourceUnavailable, "resource temporarily unavailable"),
+
+        _ => (io::OtherIoError, "unknown error")
+    };
+    IoError { kind: kind, desc: desc, detail: None }
+}
+Unixcoder Score: 0.09442093223333359
+--------------------------------------------------
+C_Code: 
+short add_int16(short x) {
+  return x + 3;
+}
+Function: 
+fn main() {
+    unsafe {
+        // test function that adds 2 to a provided int
+        assert_eq!(add_one_int(1), 3);
+
+        // test function that takes the sum of its 12 arguments
+        assert_eq!(test_stack_spill(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), 78);
+
+        // test function that adds 3 to a 16 bit int
+        assert_eq!(add_int16(-1i16), 2i16);
+
+        // test function that adds an i16 to an i64
+        assert_eq!(add_short_to_long(-1i16, 123456789123i64), 123456789122i64);
+
+        // test function that returns -10 as an unsigned int
+        assert_eq!(get_unsigned_int(), (-10i32) as u32);
+
+        // test void function that prints from C
+        printer();
+    }
+}
+Unixcoder Score: 0.07866207510232925
+--------------------------------------------------
+C_Code: 
+struct  FT_WinFNT_HeaderRec_
+  {
+    FT_UShort  version;
+    FT_ULong   file_size;
+    FT_Byte    copyright[60];
+    FT_UShort  file_type;
+    FT_UShort  nominal_point_size;
+    FT_UShort  vertical_resolution;
+    FT_UShort  horizontal_resolution;
+    FT_UShort  ascent;
+    FT_UShort  internal_leading;
+    FT_UShort  external_leading;
+    FT_Byte    italic;
+    FT_Byte    underline;
+    FT_Byte    strike_out;
+    FT_UShort  weight;
+    FT_Byte    charset;
+    FT_UShort  pixel_width;
+    FT_UShort  pixel_height;
+    FT_Byte    pitch_and_family;
+    FT_UShort  avg_width;
+    FT_UShort  max_width;
+    FT_Byte    first_char;
+    FT_Byte    last_char;
+    FT_Byte    default_char;
+    FT_Byte    break_char;
+    FT_UShort  bytes_per_row;
+    FT_ULong   device_offset;
+    FT_ULong   face_name_offset;
+    FT_ULong   bits_pointer;
+    FT_ULong   bits_offset;
+    FT_Byte    reserved;
+    FT_ULong   flags;
+    FT_UShort  A_space;
+    FT_UShort  B_space;
+    FT_UShort  C_space;
+    FT_UShort  color_table_offset;
+    FT_ULong   reserved1[4];
+
+  }
+Function: 
+struct Metrics {
+        top: f32,
+        ascent: f32,
+        descent: f32,
+        bottom: f32,
+        leading: f32,
+        avg_char_width: f32,
+        max_char_width: f32,
+        x_min: f32,
+        x_max: f32,
+        x_height: f32,
+        cap_height: f32,
+        underline_position: f32,
+        underline_thickness: f32,
+        strikeout_position: f32,
+        strikeout_thickness: f32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5019_rank1.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5019_rank1.rs", "c_api": "OhCloudExtHashMapIterGetKeyValuePair(value, &valKeys, &valValues)", "rust_api": "OhCloudExtHashMap::get_inner_ref(hash_map, SafetyCheckId::HashMap)", "mapping_type": "function", "description": "Retrieval of key-value vectors from a hash map", "reasoning": "[Task Analysis] C function `ConvertBucket` is a data conversion utility that iterates over a hash map and builds a `DBVBucket` from key-value pairs. Rust function `OhCloudExtHashMapIterGetKeyValuePair` is an FFI wrapper that retrieves key-value vectors from a hash map. [Similarity] Names do not refer to the same concept (`ConvertBucket` vs `OhCloudExtHashMapIterGetKeyValuePair`), and domains are different: C does data conversion while Rust does FFI retrieval. [Knowledge Extraction] No full or partial structural match. However, both involve iterating over key-value pairs and extracting data from containers, so API mappings can be extracted for the core operations like vector access and data retrieval."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5019_rank1.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5019_rank1.rs", "c_api": "OhCloudExtVectorGet(pValValues.get(), j, &valueItem, reinterpret_cast<unsigned int *>(&valueItemLen))", "rust_api": "map.values().cloned().collect()", "mapping_type": "function", "description": "Accessing values from a map", "reasoning": "[Task Analysis] C function `ConvertBucket` is a data conversion utility that iterates over a hash map and builds a `DBVBucket` from key-value pairs. Rust function `OhCloudExtHashMapIterGetKeyValuePair` is an FFI wrapper that retrieves key-value vectors from a hash map. [Similarity] Names do not refer to the same concept (`ConvertBucket` vs `OhCloudExtHashMapIterGetKeyValuePair`), and domains are different: C does data conversion while Rust does FFI retrieval. [Knowledge Extraction] No full or partial structural match. However, both involve iterating over key-value pairs and extracting data from containers, so API mappings can be extracted for the core operations like vector access and data retrieval."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5019_rank1.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5019_rank1.rs", "c_api": "OhCloudExtVectorGet(pValKeys.get(), j, &keyItem, reinterpret_cast<unsigned int *>(&keyItemLen))", "rust_api": "map.keys().cloned().collect()", "mapping_type": "function", "description": "Accessing elements from a vector by index", "reasoning": "[Task Analysis] C function `ConvertBucket` is a data conversion utility that iterates over a hash map and builds a `DBVBucket` from key-value pairs. Rust function `OhCloudExtHashMapIterGetKeyValuePair` is an FFI wrapper that retrieves key-value vectors from a hash map. [Similarity] Names do not refer to the same concept (`ConvertBucket` vs `OhCloudExtHashMapIterGetKeyValuePair`), and domains are different: C does data conversion while Rust does FFI retrieval. [Knowledge Extraction] No full or partial structural match. However, both involve iterating over key-value pairs and extracting data from containers, so API mappings can be extracted for the core operations like vector access and data retrieval."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ConvertBucket__idx5019_rank1.c", "source_rust_file": "API_Mapping__ConvertBucket__idx5019_rank1.rs", "c_api": "OhCloudExtValueFree(valueOut)", "rust_api": "drop(valueOut)", "mapping_type": "function", "description": "Memory deallocation of a value", "reasoning": "[Task Analysis] C function `ConvertBucket` is a data conversion utility that iterates over a hash map and builds a `DBVBucket` from key-value pairs. Rust function `OhCloudExtHashMapIterGetKeyValuePair` is an FFI wrapper that retrieves key-value vectors from a hash map. [Similarity] Names do not refer to the same concept (`ConvertBucket` vs `OhCloudExtHashMapIterGetKeyValuePair`), and domains are different: C does data conversion while Rust does FFI retrieval. [Knowledge Extraction] No full or partial structural match. However, both involve iterating over key-value pairs and extracting data from containers, so API mappings can be extracted for the core operations like vector access and data retrieval."}]
+Unixcoder Score: 0.07350635528564453
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeAlphanumeric(const char *text, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	size_t len = strlen(text);
+	result.mode = qrcodegen_Mode_ALPHANUMERIC;
+	int bitLen = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (bitLen > 0)
+		memset(buf, 0, ((size_t)bitLen + 7) / 8 * sizeof(buf[0]));
+	result.bitLength = 0;
+
+	unsigned int accumData = 0;
+	int accumCount = 0;
+	for (; *text != '\0'; text++) {
+		const char *temp = (char *)strchr(ALPHANUMERIC_CHARSET, *text);
+		accumData = accumData * 45 + (unsigned int)(temp - ALPHANUMERIC_CHARSET);
+		accumCount++;
+		if (accumCount == 2) {
+			appendBitsToBuffer(accumData, 11, buf, &result.bitLength);
+			accumData = 0;
+			accumCount = 0;
+		}
+	}
+	if (accumCount > 0)  // 1 character remaining
+		appendBitsToBuffer(accumData, 6, buf, &result.bitLength);
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_alphanumeric(text: &str) -> Self {
+		let mut bb = BitBuffer(Vec::with_capacity(text.len() * 5 + (text.len() + 1) / 2));
+		let mut accumdata: u32 = 0;
+		let mut accumcount: u32 = 0;
+		for c in text.chars() {
+			let i: usize = ALPHANUMERIC_CHARSET.find(c)
+				.expect("String contains unencodable characters in alphanumeric mode");
+			accumdata = accumdata * 45 + u32::try_from(i).unwrap();
+			accumcount += 1;
+			if accumcount == 2 {
+				bb.append_bits(accumdata, 11);
+				accumdata = 0;
+				accumcount = 0;
+			}
+		}
+		if accumcount > 0 {  // 1 character remaining
+			bb.append_bits(accumdata, 6);
+		}
+		QrSegment::new(QrSegmentMode::Alphanumeric, text.len(), bb.0)
+	}
+Unixcoder Score: 0.07321307063102722
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeNumeric(const char *digits, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	size_t len = strlen(digits);
+	result.mode = qrcodegen_Mode_NUMERIC;
+	int bitLen = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (bitLen > 0)
+		memset(buf, 0, ((size_t)bitLen + 7) / 8 * sizeof(buf[0]));
+	result.bitLength = 0;
+
+	unsigned int accumData = 0;
+	int accumCount = 0;
+	for (; *digits != '\0'; digits++) {
+		char c = *digits;
+		accumData = accumData * 10 + (unsigned int)(c - '0');
+		accumCount++;
+		if (accumCount == 3) {
+			appendBitsToBuffer(accumData, 10, buf, &result.bitLength);
+			accumData = 0;
+			accumCount = 0;
+		}
+	}
+	if (accumCount > 0)  // 1 or 2 digits remaining
+		appendBitsToBuffer(accumData, accumCount * 3 + 1, buf, &result.bitLength);
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_alphanumeric(text: &str) -> Self {
+		let mut bb = BitBuffer(Vec::with_capacity(text.len() * 5 + (text.len() + 1) / 2));
+		let mut accumdata: u32 = 0;
+		let mut accumcount: u32 = 0;
+		for c in text.chars() {
+			let i: usize = ALPHANUMERIC_CHARSET.find(c)
+				.expect("String contains unencodable characters in alphanumeric mode");
+			accumdata = accumdata * 45 + u32::try_from(i).unwrap();
+			accumcount += 1;
+			if accumcount == 2 {
+				bb.append_bits(accumdata, 11);
+				accumdata = 0;
+				accumcount = 0;
+			}
+		}
+		if accumcount > 0 {  // 1 character remaining
+			bb.append_bits(accumdata, 6);
+		}
+		QrSegment::new(QrSegmentMode::Alphanumeric, text.len(), bb.0)
+	}
+Unixcoder Score: 0.06188729777932167
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeNumeric(const char *digits, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	size_t len = strlen(digits);
+	result.mode = qrcodegen_Mode_NUMERIC;
+	int bitLen = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (bitLen > 0)
+		memset(buf, 0, ((size_t)bitLen + 7) / 8 * sizeof(buf[0]));
+	result.bitLength = 0;
+
+	unsigned int accumData = 0;
+	int accumCount = 0;
+	for (; *digits != '\0'; digits++) {
+		char c = *digits;
+		accumData = accumData * 10 + (unsigned int)(c - '0');
+		accumCount++;
+		if (accumCount == 3) {
+			appendBitsToBuffer(accumData, 10, buf, &result.bitLength);
+			accumData = 0;
+			accumCount = 0;
+		}
+	}
+	if (accumCount > 0)  // 1 or 2 digits remaining
+		appendBitsToBuffer(accumData, accumCount * 3 + 1, buf, &result.bitLength);
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_numeric(text: &str, buf: &'a mut [u8]) -> Self {
+		let mut bb = BitBuffer::new(buf);
+		let mut accumdata: u32 = 0;
+		let mut accumcount: u8 = 0;
+		for b in text.bytes() {
+			assert!((b'0' ..= b'9').contains(&b), "String contains non-numeric characters");
+			accumdata = accumdata * 10 + u32::from(b - b'0');
+			accumcount += 1;
+			if accumcount == 3 {
+				bb.append_bits(accumdata, 10);
+				accumdata = 0;
+				accumcount = 0;
+			}
+		}
+		if accumcount > 0 {  // 1 or 2 digits remaining
+			bb.append_bits(accumdata, accumcount * 3 + 1);
+		}
+		QrSegment::new(QrSegmentMode::Numeric, text.len(), bb.data, bb.length)
+	}
+Unixcoder Score: 0.057068657130002975
+--------------------------------------------------
+C_Code: 
+struct  FT_WinFNT_HeaderRec_
+  {
+    FT_UShort  version;
+    FT_ULong   file_size;
+    FT_Byte    copyright[60];
+    FT_UShort  file_type;
+    FT_UShort  nominal_point_size;
+    FT_UShort  vertical_resolution;
+    FT_UShort  horizontal_resolution;
+    FT_UShort  ascent;
+    FT_UShort  internal_leading;
+    FT_UShort  external_leading;
+    FT_Byte    italic;
+    FT_Byte    underline;
+    FT_Byte    strike_out;
+    FT_UShort  weight;
+    FT_Byte    charset;
+    FT_UShort  pixel_width;
+    FT_UShort  pixel_height;
+    FT_Byte    pitch_and_family;
+    FT_UShort  avg_width;
+    FT_UShort  max_width;
+    FT_Byte    first_char;
+    FT_Byte    last_char;
+    FT_Byte    default_char;
+    FT_Byte    break_char;
+    FT_UShort  bytes_per_row;
+    FT_ULong   device_offset;
+    FT_ULong   face_name_offset;
+    FT_ULong   bits_pointer;
+    FT_ULong   bits_offset;
+    FT_Byte    reserved;
+    FT_ULong   flags;
+    FT_UShort  A_space;
+    FT_UShort  B_space;
+    FT_UShort  C_space;
+    FT_UShort  color_table_offset;
+    FT_ULong   reserved1[4];
+
+  }
+Function: 
+pub struct BridgeFontStyle {
+        pub weight: i32,
+        pub slant: i32,
+        pub width: i32,
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.c", "source_rust_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.rs", "c_api": "appendBitsToBuffer", "rust_api": "bb.append_bits", "mapping_type": "function", "description": "Appending bits to a buffer for QR code generation", "reasoning": "[Task Analysis] C function builds a QR code segment from numeric digits using bit manipulation; Rust function does the same with a BitBuffer. [Similarity] Both perform digit accumulation, bit packing, and final segment creation. [Knowledge Extraction] Full structural match with same logic flow and purpose. API mappings identified for bit buffer operations and numeric validation."}, {"knowledge_type": "Partial", "source_c_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.c", "source_rust_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.rs", "c_fragment": "for (; *digits != '\\0'; digits++) {\n\t\tchar c = *digits;\n\t\taccumData = accumData * 10 + (unsigned int)(c - '0');\n\t\taccumCount++;\n\t\tif (accumCount == 3) {\n\t\t\tappendBitsToBuffer(accumData, 10, buf, &result.bitLength);\n\t\t\taccumData = 0;\n\t\t\taccumCount = 0;\n\t\t}\n\t}", "rust_fragment": "for b in text.bytes() {\n\t\tassert!((b'0' ..= b'9').contains(&b), \"String contains non-numeric characters\");\n\t\taccumdata = accumdata * 10 + u32::from(b - b'0');\n\t\taccumcount += 1;\n\t\tif accumcount == 3 {\n\t\t\tbb.append_bits(accumdata, 10);\n\t\t\taccumdata = 0;\n\t\t\taccumcount = 0;\n\t\t}\n\t}", "description": "Iterates through input digits, accumulates numeric value, and appends bits when 3 digits are processed.", "reasoning": "[Task Analysis] C function builds a QR code segment from numeric digits using bit manipulation; Rust function does the same with a BitBuffer. [Similarity] Both perform digit accumulation, bit packing, and final segment creation. [Knowledge Extraction] Full structural match with same logic flow and purpose. API mappings identified for bit buffer operations and numeric validation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.c", "source_rust_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.rs", "c_api": "strlen", "rust_api": "text.len", "mapping_type": "function", "description": "Getting length of input string", "reasoning": "[Task Analysis] C function builds a QR code segment from numeric digits using bit manipulation; Rust function does the same with a BitBuffer. [Similarity] Both perform digit accumulation, bit packing, and final segment creation. [Knowledge Extraction] Full structural match with same logic flow and purpose. API mappings identified for bit buffer operations and numeric validation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.c", "source_rust_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.rs", "c_api": "calcSegmentBitLength", "rust_api": "QrSegment::new", "mapping_type": "function", "description": "Creating QR segment with calculated bit length", "reasoning": "[Task Analysis] C function builds a QR code segment from numeric digits using bit manipulation; Rust function does the same with a BitBuffer. [Similarity] Both perform digit accumulation, bit packing, and final segment creation. [Knowledge Extraction] Full structural match with same logic flow and purpose. API mappings identified for bit buffer operations and numeric validation."}, {"knowledge_type": "Full", "source_c_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.c", "source_rust_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.rs", "reasoning": "[Task Analysis] C function builds a QR code segment from numeric digits using bit manipulation; Rust function does the same with a BitBuffer. [Similarity] Both perform digit accumulation, bit packing, and final segment creation. [Knowledge Extraction] Full structural match with same logic flow and purpose. API mappings identified for bit buffer operations and numeric validation.", "description": "Full structural translation"}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.c", "source_rust_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.rs", "c_api": "memset", "rust_api": "BitBuffer::new", "mapping_type": "function", "description": "Initializing buffer space for bit operations", "reasoning": "[Task Analysis] C function builds a QR code segment from numeric digits using bit manipulation; Rust function does the same with a BitBuffer. [Similarity] Both perform digit accumulation, bit packing, and final segment creation. [Knowledge Extraction] Full structural match with same logic flow and purpose. API mappings identified for bit buffer operations and numeric validation."}, {"knowledge_type": "Partial", "source_c_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.c", "source_rust_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.rs", "c_fragment": "if (accumCount > 0)  // 1 or 2 digits remaining\n\tappendBitsToBuffer(accumData, accumCount * 3 + 1, buf, &result.bitLength);", "rust_fragment": "if accumcount > 0 {  // 1 or 2 digits remaining\n\tbb.append_bits(accumdata, accumcount * 3 + 1);\n\t}", "description": "Handles remaining 1 or 2 digits by appending final bits with correct bit length.", "reasoning": "[Task Analysis] C function builds a QR code segment from numeric digits using bit manipulation; Rust function does the same with a BitBuffer. [Similarity] Both perform digit accumulation, bit packing, and final segment creation. [Knowledge Extraction] Full structural match with same logic flow and purpose. API mappings identified for bit buffer operations and numeric validation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.c", "source_rust_file": "Full__qrcodegen_makeNumeric__idx144453_rank2.rs", "c_api": "qrcodegen_Mode_NUMERIC", "rust_api": "QrSegmentMode::Numeric", "mapping_type": "type", "description": "QR code mode for numeric data", "reasoning": "[Task Analysis] C function builds a QR code segment from numeric digits using bit manipulation; Rust function does the same with a BitBuffer. [Similarity] Both perform digit accumulation, bit packing, and final segment creation. [Knowledge Extraction] Full structural match with same logic flow and purpose. API mappings identified for bit buffer operations and numeric validation."}]
+Unixcoder Score: 0.0550161637365818
+--------------------------------------------------
+C_Code: 
+short add_int16(short x) {
+  return x + 3;
+}
+Function: 
+fn main() {
+    unsafe {
+        // test function that adds 2 to a provided int
+        assert_eq!(add_one_int(1), 3);
+
+        // test function that takes the sum of its 12 arguments
+        assert_eq!(test_stack_spill(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), 78);
+
+        // test function that adds 3 to a 16 bit int
+        assert_eq!(add_int16(-1i16), 2i16);
+
+        // test function that adds an i16 to an i64
+        assert_eq!(add_short_to_long(-1i16, 123456789123i64), 123456789122i64);
+
+        // test function that returns -10 as an unsigned int
+        assert_eq!(get_unsigned_int(), (-10i32) as u32);
+
+        // test void function that prints from C
+        printer();
+    }
+}
+Unixcoder Score: 0.049460262060165405
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeNumeric(const char *digits, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	size_t len = strlen(digits);
+	result.mode = qrcodegen_Mode_NUMERIC;
+	int bitLen = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (bitLen > 0)
+		memset(buf, 0, ((size_t)bitLen + 7) / 8 * sizeof(buf[0]));
+	result.bitLength = 0;
+
+	unsigned int accumData = 0;
+	int accumCount = 0;
+	for (; *digits != '\0'; digits++) {
+		char c = *digits;
+		accumData = accumData * 10 + (unsigned int)(c - '0');
+		accumCount++;
+		if (accumCount == 3) {
+			appendBitsToBuffer(accumData, 10, buf, &result.bitLength);
+			accumData = 0;
+			accumCount = 0;
+		}
+	}
+	if (accumCount > 0)  // 1 or 2 digits remaining
+		appendBitsToBuffer(accumData, accumCount * 3 + 1, buf, &result.bitLength);
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_numeric(text: &str) -> Self {
+		let mut bb = BitBuffer(Vec::with_capacity(text.len() * 3 + (text.len() + 2) / 3));
+		let mut accumdata: u32 = 0;
+		let mut accumcount: u8 = 0;
+		for b in text.bytes() {
+			assert!((b'0' ..= b'9').contains(&b), "String contains non-numeric characters");
+			accumdata = accumdata * 10 + u32::from(b - b'0');
+			accumcount += 1;
+			if accumcount == 3 {
+				bb.append_bits(accumdata, 10);
+				accumdata = 0;
+				accumcount = 0;
+			}
+		}
+		if accumcount > 0 {  // 1 or 2 digits remaining
+			bb.append_bits(accumdata, accumcount * 3 + 1);
+		}
+		QrSegment::new(QrSegmentMode::Numeric, text.len(), bb.0)
+	}
+Unixcoder Score: 0.048649322241544724
+--------------------------------------------------
+C_Code: 
+struct  PCF_MetricRec_
+  {
+    FT_Short  leftSideBearing;
+    FT_Short  rightSideBearing;
+    FT_Short  characterWidth;
+    FT_Short  ascent;
+    FT_Short  descent;
+    FT_Short  attributes;
+
+    FT_ULong  bits;  /* offset into the PCF_BITMAPS table */
+
+  }
+Function: 
+struct BitmapMetrics {
+        // Outer glyph bearings that affect the computed bounds. We distinguish
+        // those here from `inner_bearing_*` to account for CoreText behavior in
+        // SBIX placement. Where the sbix originOffsetX/Y are applied only
+        // within the bounds. Specified in font units.
+        // 0 for CBDT, CBLC.
+        bearing_x: f32,
+        bearing_y: f32,
+        // Scale factors to scale image to 1em.
+        ppem_x: f32,
+        ppem_y: f32,
+        // Account for the fact that Sbix and CBDT/CBLC have a different origin
+        // definition.
+        placement_origin_bottom_left: bool,
+        // Specified as a pixel value, to be scaled by `ppem_*` as an
+        // offset applied to placing the image within the bounds rectangle.
+        inner_bearing_x: f32,
+        inner_bearing_y: f32,
+        // Some, but not all, bitmap glyphs have a special bitmap advance
+        advance: f32,
+    }
+Unixcoder Score: 0.04433336853981018
+--------------------------------------------------

@@ -1,0 +1,301 @@
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: 0.0089797955006361
+--------------------------------------------------
+C_Code: 
+int TestServiceProxy::TestPingService(const std::u16string &serviceName)
+{
+    int ret;
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    ZLOGI(LABEL, "PingService");
+    dataParcel.WriteString16(serviceName);
+    ret = Remote()->SendRequest(TRANS_ID_PING_SERVICE, dataParcel, replyParcel, option);
+    int result = (ret == ERR_NONE) ? replyParcel.ReadInt32() : -1;
+    ZLOGI(LABEL, "PingService result = %{public}d", result);
+    return result;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: 0.0002355944598093629
+--------------------------------------------------
+C_Code: 
+DBinderTestServiceProxy::DBinderTestServiceProxy(const sptr<IRemoteObject> &impl)
+    : IRemoteProxy<IDBinderTestService>(impl)
+{}
+Function: 
+pub unsafe fn from_ciremote(remote: *mut IRemoteObject) -> Option<Self> {
+        if remote.is_null() {
+            return None;
+        }
+
+        let inner = FromCIRemoteObject(remote);
+        if inner.is_null() {
+            return None;
+        }
+
+        Some(Self { inner })
+    }
+Unixcoder Score: -0.014502881094813347
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.014696902595460415
+--------------------------------------------------
+C_Code: 
+int TestServiceProxy::TestPingService(const std::u16string &serviceName)
+{
+    int ret;
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    ZLOGI(LABEL, "PingService");
+    dataParcel.WriteString16(serviceName);
+    ret = Remote()->SendRequest(TRANS_ID_PING_SERVICE, dataParcel, replyParcel, option);
+    int result = (ret == ERR_NONE) ? replyParcel.ReadInt32() : -1;
+    ZLOGI(LABEL, "PingService result = %{public}d", result);
+    return result;
+}
+Function: 
+fn parcel_write() -> MsgParcel {
+    init();
+
+    let test_service = SystemAbilityManager::get_system_ability(TEST_SYSTEM_ABILITY_ID).unwrap();
+    let mut msg = MsgParcel::new();
+
+    read_and_write(&mut msg);
+    read_and_write_vec(&mut msg);
+
+    let s = String::from("ipc hello");
+    let v = vec![s.clone(), s.clone(), s.clone()];
+    msg.write(&v).unwrap();
+
+    msg.write_string16(&s);
+    msg.write_string16_vec(&v);
+
+    test_service.send_request(0, &mut msg).unwrap()
+}
+Unixcoder Score: -0.016429908573627472
+--------------------------------------------------
+C_Code: 
+DownloadServiceProxy::DownloadServiceProxy(const sptr<IRemoteObject> &object)
+    : IRemoteProxy<DownloadServiceInterface>(object)
+{
+}
+Function: 
+fn on_remote_request(
+    stub: &dyn RequestServiceInterface,
+    code: u32,
+    data: &BorrowedMsgParcel,
+    reply: &mut BorrowedMsgParcel,
+) -> IpcResult<()> {
+    info!(LOG_LABEL, "on_remote_request code {}", @public(code));
+    let service_token: InterfaceToken =
+        InterfaceToken::new("OHOS.Download.RequestServiceInterface");
+    let token: InterfaceToken = match data.read::<InterfaceToken>() {
+        Ok(i) => i,
+        _ => InterfaceToken::new("token error"),
+    };
+    if service_token.get_token() != token.get_token() {
+        error!(LOG_LABEL, "token error");
+        return Err(IpcStatusCode::Failed);
+    }
+    match code.try_into()? {
+        RequestCode::Construct => stub.construct(data, reply),
+        RequestCode::Pause => stub.pause(data, reply),
+        RequestCode::Query => stub.show(data, reply),
+        RequestCode::QueryMimeType => stub.query_mime_type(data, reply),
+        RequestCode::Remove => stub.remove(data, reply),
+        RequestCode::Resume => stub.resume(data, reply),
+        RequestCode::On => stub.on(data, reply),
+        RequestCode::Off => stub.off(data, reply),
+        RequestCode::Start => stub.start(data, reply),
+        RequestCode::Stop => stub.stop(data, reply),
+        RequestCode::Show => stub.show(data, reply),
+        RequestCode::Touch => stub.touch(data, reply),
+        RequestCode::Search => stub.search(data, reply),
+        RequestCode::Clear => stub.clear(data, reply),
+    }
+}
+Unixcoder Score: -0.017091311514377594
+--------------------------------------------------
+C_Code: 
+DBinderTestServiceProxy::DBinderTestServiceProxy(const sptr<IRemoteObject> &impl)
+    : IRemoteProxy<IDBinderTestService>(impl)
+{}
+Function: 
+pub fn try_new(wrap: UniquePtr<IRemoteObjectWrapper>) -> Option<Self> {
+        if wrap.is_null() {
+            return None;
+        }
+        Some(Self { inner: wrap })
+    }
+Unixcoder Score: -0.020127642899751663
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.024591786786913872
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: -0.027515316382050514
+--------------------------------------------------
+C_Code: 
+int32_t AddSystemAbility(int32_t systemAbilityId, rust::Box<AbilityStub> ability, AddSystemAbilityConfig config)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return -1;
+    }
+    auto capability_u16 = Str8ToStr16(std::string(config.capability));
+    auto permission_u16 = Str8ToStr16(std::string(config.permission));
+
+    ISystemAbilityManager::SAExtraProp extra(config.is_distributed, config.dump_flags, capability_u16, permission_u16);
+    auto stub = sptr<RemoteServiceStub>::MakeSptr(ability.into_raw());
+
+    return sysm->AddSystemAbility(systemAbilityId, stub);
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: -0.027794962748885155
+--------------------------------------------------

@@ -1,0 +1,436 @@
+C_Code: 
+uint32_t VerifyCert(const CertBlob *cert, const CertBlob *caCert)
+{
+    uint32_t verifyResult = SSL_X509_V_ERR_UNSPECIFIED;
+    X509 *certX509 = nullptr;
+    X509 *caX509 = nullptr;
+    X509_STORE *store = nullptr;
+    X509_STORE_CTX *ctx = nullptr;
+    do {
+        certX509 = CertBlobToX509(cert);
+        if (certX509 == nullptr) {
+            NETSTACK_LOGE("x509 of cert is nullptr\n");
+        }
+        caX509 = CertBlobToX509(caCert);
+        if (caX509 == nullptr) {
+            NETSTACK_LOGE("x509 of ca is nullptr\n");
+        }
+        store = X509_STORE_new();
+        if (store == nullptr) {
+            continue;
+        }
+        if (X509_STORE_add_cert(store, caX509) != VERIFY_RESULT_SUCCESS) {
+            NETSTACK_LOGE("add ca to store failed\n");
+        }
+        ctx = X509_STORE_CTX_new();
+        if (ctx == nullptr) {
+            continue;
+        }
+        X509_STORE_CTX_init(ctx, store, certX509, nullptr);
+        verifyResult = static_cast<uint32_t>(X509_verify_cert(ctx));
+        if (verifyResult != VERIFY_RESULT_SUCCESS) {
+            verifyResult = static_cast<uint32_t>(X509_STORE_CTX_get_error(ctx) + SSL_ERROR_CODE_BASE);
+            NETSTACK_LOGE("failed to verify certificate: %{public}s (%{public}d)\n",
+                          X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)), verifyResult);
+            break;
+        } else {
+            verifyResult = X509_V_OK;
+            NETSTACK_LOGD("certificate validation succeeded.\n");
+        }
+    } while (false);
+
+    FreeResources(&certX509, &caX509, &store, &ctx);
+    return verifyResult;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGE(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Error logging during certificate handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGI(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Logging certificate verification status", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error_depth(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Certificate chain depth information", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_error(ctx)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Certificate validation result handling", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "NETSTACK_LOGD(...)", "rust_api": "Self(self.0.add_root_certificate(cert))", "mapping_type": "function", "description": "Debug logging for root CA verification", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "VerifyCertPubkey(cert, requestContext->GetPinnedPubkey())", "rust_api": "self.0.add_root_certificate(cert)", "mapping_type": "function", "description": "Public key verification for certificate", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyCallback__idx5357_rank1.c", "source_rust_file": "API_Mapping__VerifyCallback__idx5357_rank1.rs", "c_api": "X509_STORE_CTX_get_current_cert(ctx)", "rust_api": "cert.into_inner()", "mapping_type": "function", "description": "Extract certificate from SSL context", "reasoning": "[Task Analysis] C function handles X509 certificate verification in SSL context; Rust function adds root certificates to a builder. [Similarity] Names and domains differ (SSL cert verify vs certificate builder), no structural similarity. [Knowledge Extraction] No full/partial match. API mappings identified: C's certificate verification logic maps to Rust's certificate addition pattern."}]
+Unixcoder Score: 0.10056492686271667
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyField<int64_t>(verifier, VT_VALUE, 8) &&
+           VerifyOffset(verifier, VT_UNION_TYPE) &&
+           verifier.VerifyTable(union_type()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           verifier.EndTable();
+  }
+Function: 
+pub fn Message_as_player_input_change(&self) -> Option<PlayerInputChange<'a>> {
+    if self.Message_type() == GameMessage::PlayerInputChange {
+      self.Message().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { PlayerInputChange::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+Unixcoder Score: 0.009654022753238678
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyField<int64_t>(verifier, VT_VALUE, 8) &&
+           VerifyOffset(verifier, VT_UNION_TYPE) &&
+           verifier.VerifyTable(union_type()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           verifier.EndTable();
+  }
+Function: 
+pub fn foo_union_as_table_in_nested_ns(&self) -> Option<namespace_b::TableInNestedNS<'a>> {
+    if self.foo_union_type() == namespace_b::UnionInNestedNS::TableInNestedNS {
+      self.foo_union().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { namespace_b::TableInNestedNS::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+Unixcoder Score: -0.00866696797311306
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffsetRequired(verifier, VT_TYPE) &&
+           verifier.VerifyTable(type()) &&
+           VerifyField<uint16_t>(verifier, VT_ID, 2) &&
+           VerifyField<uint16_t>(verifier, VT_OFFSET, 2) &&
+           VerifyField<int64_t>(verifier, VT_DEFAULT_INTEGER, 8) &&
+           VerifyField<double>(verifier, VT_DEFAULT_REAL, 8) &&
+           VerifyField<uint8_t>(verifier, VT_DEPRECATED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_REQUIRED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_KEY, 1) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyField<uint8_t>(verifier, VT_OPTIONAL, 1) &&
+           VerifyField<uint16_t>(verifier, VT_PADDING, 2) &&
+           VerifyField<uint8_t>(verifier, VT_OFFSET64, 1) &&
+           verifier.EndTable();
+  }
+Function: 
+fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<namespace_b::TableInNestedNS>>("foo_table", Self::VT_FOO_TABLE, false)?
+     .visit_field::<namespace_b::EnumInNestedNS>("foo_enum", Self::VT_FOO_ENUM, false)?
+     .visit_union::<namespace_b::UnionInNestedNS, _>("foo_union_type", Self::VT_FOO_UNION_TYPE, "foo_union", Self::VT_FOO_UNION, false, |key, v, pos| {
+        match key {
+          namespace_b::UnionInNestedNS::TableInNestedNS => v.verify_union_variant::<flatbuffers::ForwardsUOffset<namespace_b::TableInNestedNS>>("namespace_b::UnionInNestedNS::TableInNestedNS", pos),
+          _ => Ok(()),
+        }
+     })?
+     .visit_field::<namespace_b::StructInNestedNS>("foo_struct", Self::VT_FOO_STRUCT, false)?
+     .finish();
+    Ok(())
+  }
+Unixcoder Score: -0.017443347722291946
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffsetRequired(verifier, VT_TYPE) &&
+           verifier.VerifyTable(type()) &&
+           VerifyField<uint16_t>(verifier, VT_ID, 2) &&
+           VerifyField<uint16_t>(verifier, VT_OFFSET, 2) &&
+           VerifyField<int64_t>(verifier, VT_DEFAULT_INTEGER, 8) &&
+           VerifyField<double>(verifier, VT_DEFAULT_REAL, 8) &&
+           VerifyField<uint8_t>(verifier, VT_DEPRECATED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_REQUIRED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_KEY, 1) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyField<uint8_t>(verifier, VT_OPTIONAL, 1) &&
+           VerifyField<uint16_t>(verifier, VT_PADDING, 2) &&
+           VerifyField<uint8_t>(verifier, VT_OFFSET64, 1) &&
+           verifier.EndTable();
+  }
+Function: 
+fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, false)?
+     .visit_field::<i16>("damage", Self::VT_DAMAGE, false)?
+     .finish();
+    Ok(())
+  }
+Unixcoder Score: -0.02015215903520584
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffsetRequired(verifier, VT_TYPE) &&
+           verifier.VerifyTable(type()) &&
+           VerifyField<uint16_t>(verifier, VT_ID, 2) &&
+           VerifyField<uint16_t>(verifier, VT_OFFSET, 2) &&
+           VerifyField<int64_t>(verifier, VT_DEFAULT_INTEGER, 8) &&
+           VerifyField<double>(verifier, VT_DEFAULT_REAL, 8) &&
+           VerifyField<uint8_t>(verifier, VT_DEPRECATED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_REQUIRED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_KEY, 1) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyField<uint8_t>(verifier, VT_OPTIONAL, 1) &&
+           VerifyField<uint16_t>(verifier, VT_PADDING, 2) &&
+           VerifyField<uint8_t>(verifier, VT_OFFSET64, 1) &&
+           verifier.EndTable();
+  }
+Function: 
+fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, false)?
+     .visit_field::<i16>("damage", Self::VT_DAMAGE, false)?
+     .finish();
+    Ok(())
+  }
+Unixcoder Score: -0.024169418960809708
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffsetRequired(verifier, VT_TYPE) &&
+           verifier.VerifyTable(type()) &&
+           VerifyField<uint16_t>(verifier, VT_ID, 2) &&
+           VerifyField<uint16_t>(verifier, VT_OFFSET, 2) &&
+           VerifyField<int64_t>(verifier, VT_DEFAULT_INTEGER, 8) &&
+           VerifyField<double>(verifier, VT_DEFAULT_REAL, 8) &&
+           VerifyField<uint8_t>(verifier, VT_DEPRECATED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_REQUIRED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_KEY, 1) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyField<uint8_t>(verifier, VT_OPTIONAL, 1) &&
+           VerifyField<uint16_t>(verifier, VT_PADDING, 2) &&
+           VerifyField<uint8_t>(verifier, VT_OFFSET64, 1) &&
+           verifier.EndTable();
+  }
+Function: 
+fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, i32>>>("ints", Self::VT_INTS, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, f32>>>("floats", Self::VT_FLOATS, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("empty_string", Self::VT_EMPTY_STRING, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("some_string", Self::VT_SOME_STRING, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, ABC>>>("abcs", Self::VT_ABCS, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, bool>>>("bools", Self::VT_BOOLS, false)?
+     .finish();
+    Ok(())
+  }
+Unixcoder Score: -0.025555798783898354
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffsetRequired(verifier, VT_TYPE) &&
+           verifier.VerifyTable(type()) &&
+           VerifyField<uint16_t>(verifier, VT_ID, 2) &&
+           VerifyField<uint16_t>(verifier, VT_OFFSET, 2) &&
+           VerifyField<int64_t>(verifier, VT_DEFAULT_INTEGER, 8) &&
+           VerifyField<double>(verifier, VT_DEFAULT_REAL, 8) &&
+           VerifyField<uint8_t>(verifier, VT_DEPRECATED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_REQUIRED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_KEY, 1) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyField<uint8_t>(verifier, VT_OPTIONAL, 1) &&
+           VerifyField<uint16_t>(verifier, VT_PADDING, 2) &&
+           VerifyField<uint8_t>(verifier, VT_OFFSET64, 1) &&
+           verifier.EndTable();
+  }
+Function: 
+fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<namespace_b::TableInNestedNS>>("foo_table", Self::VT_FOO_TABLE, false)?
+     .visit_field::<namespace_b::EnumInNestedNS>("foo_enum", Self::VT_FOO_ENUM, false)?
+     .visit_union::<namespace_b::UnionInNestedNS, _>("foo_union_type", Self::VT_FOO_UNION_TYPE, "foo_union", Self::VT_FOO_UNION, false, |key, v, pos| {
+        match key {
+          namespace_b::UnionInNestedNS::TableInNestedNS => v.verify_union_variant::<flatbuffers::ForwardsUOffset<namespace_b::TableInNestedNS>>("namespace_b::UnionInNestedNS::TableInNestedNS", pos),
+          _ => Ok(()),
+        }
+     })?
+     .visit_field::<namespace_b::StructInNestedNS>("foo_struct", Self::VT_FOO_STRUCT, false)?
+     .finish();
+    Ok(())
+  }
+Unixcoder Score: -0.025954371318221092
+--------------------------------------------------
+C_Code: 
+bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffsetRequired(verifier, VT_TYPE) &&
+           verifier.VerifyTable(type()) &&
+           VerifyField<uint16_t>(verifier, VT_ID, 2) &&
+           VerifyField<uint16_t>(verifier, VT_OFFSET, 2) &&
+           VerifyField<int64_t>(verifier, VT_DEFAULT_INTEGER, 8) &&
+           VerifyField<double>(verifier, VT_DEFAULT_REAL, 8) &&
+           VerifyField<uint8_t>(verifier, VT_DEPRECATED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_REQUIRED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_KEY, 1) &&
+           VerifyOffset(verifier, VT_ATTRIBUTES) &&
+           verifier.VerifyVector(attributes()) &&
+           verifier.VerifyVectorOfTables(attributes()) &&
+           VerifyOffset(verifier, VT_DOCUMENTATION) &&
+           verifier.VerifyVector(documentation()) &&
+           verifier.VerifyVectorOfStrings(documentation()) &&
+           VerifyField<uint8_t>(verifier, VT_OPTIONAL, 1) &&
+           VerifyField<uint16_t>(verifier, VT_PADDING, 2) &&
+           VerifyField<uint8_t>(verifier, VT_OFFSET64, 1) &&
+           verifier.EndTable();
+  }
+Function: 
+fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    i32::run_verifier(v, pos)
+  }
+Unixcoder Score: -0.03133568912744522
+--------------------------------------------------
+C_Code: 
+static int VerifyCallback(int preverifyOk, X509_STORE_CTX *ctx)
+{
+    X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+    int err = X509_STORE_CTX_get_error(ctx);
+    int depth = X509_STORE_CTX_get_error_depth(ctx);
+
+    NETSTACK_LOGI("X509_STORE_CTX error code %{public}d, depth %{public}d", err, depth);
+
+    SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+    SSL_CTX *sslctx = SSL_get_SSL_CTX(ssl);
+    RequestContext *requestContext = static_cast<RequestContext *>(SSL_CTX_get_ex_data(sslctx,
+        SSL_CTX_EX_DATA_REQUEST_CONTEXT_INDEX));
+    if (requestContext == nullptr) {
+        NETSTACK_LOGE("creat requestContext instance failed");
+        return 0;
+    }
+    if (requestContext->IsRootCaVerifiedOk()) {
+        // root CA hash verified, normal procedure.
+        return preverifyOk;
+    }
+
+    int verifyResult = VerifyCertPubkey(cert, requestContext->GetPinnedPubkey());
+    if (!requestContext->IsRootCaVerified()) {
+        // not verified yet, so this is the root CA verifying.
+        NETSTACK_LOGD("Verifying Root CA.");
+        requestContext->SetRootCaVerifiedOk(verifyResult == CURLE_OK);
+        requestContext->SetRootCaVerified();
+    }
+    if (verifyResult != CURLE_OK && depth == 0) {
+        // peer site certificate, since root ca verify not ok, and peer site is also not ok
+        // return failed.
+        return 0;
+    }
+    return preverifyOk;
+}
+Function: 
+pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
+        for cert in cert.into_inner() {
+            self = Self(self.0.add_root_certificate(cert));
+        }
+        self
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.h", "source_rust_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.rs", "c_api": "flatbuffers::Verifier", "rust_api": "Builder", "mapping_type": "type", "description": "Flexbuffer verification context in C vs builder context in Rust", "reasoning": "[Task Analysis] C function verifies a nested flexbuffer using flatbuffers::Verifier, while Rust function builds and pushes data into a flexbuffer builder. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but both involve flexbuffer operations. C uses `VerifyBuffer` and Rust uses `Builder` with `start_vector`, `push`, and `end_vector`. These are semantically different operations (verification vs construction), but both relate to flexbuffer handling. [API Mappings] Extract API mappings based on flexbuffer-related operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.h", "source_rust_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.rs", "c_api": "verifier.Check(...)", "rust_api": "end_vector", "mapping_type": "function", "description": "Verification check in C vs ending a vector in Rust", "reasoning": "[Task Analysis] C function verifies a nested flexbuffer using flatbuffers::Verifier, while Rust function builds and pushes data into a flexbuffer builder. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but both involve flexbuffer operations. C uses `VerifyBuffer` and Rust uses `Builder` with `start_vector`, `push`, and `end_vector`. These are semantically different operations (verification vs construction), but both relate to flexbuffer handling. [API Mappings] Extract API mappings based on flexbuffer-related operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.h", "source_rust_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.rs", "c_api": "nested->size()", "rust_api": "push", "mapping_type": "method", "description": "Accessing buffer size in C vs pushing elements in Rust", "reasoning": "[Task Analysis] C function verifies a nested flexbuffer using flatbuffers::Verifier, while Rust function builds and pushes data into a flexbuffer builder. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but both involve flexbuffer operations. C uses `VerifyBuffer` and Rust uses `Builder` with `start_vector`, `push`, and `end_vector`. These are semantically different operations (verification vs construction), but both relate to flexbuffer handling. [API Mappings] Extract API mappings based on flexbuffer-related operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.h", "source_rust_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.rs", "c_api": "flexbuffers::VerifyBuffer", "rust_api": "start_vector", "mapping_type": "function", "description": "Flexbuffer verification in C vs starting a vector in Rust", "reasoning": "[Task Analysis] C function verifies a nested flexbuffer using flatbuffers::Verifier, while Rust function builds and pushes data into a flexbuffer builder. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but both involve flexbuffer operations. C uses `VerifyBuffer` and Rust uses `Builder` with `start_vector`, `push`, and `end_vector`. These are semantically different operations (verification vs construction), but both relate to flexbuffer handling. [API Mappings] Extract API mappings based on flexbuffer-related operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.h", "source_rust_file": "API_Mapping__VerifyNestedFlexBuffer__idx2520_rank1.rs", "c_api": "nested->data()", "rust_api": "push", "mapping_type": "method", "description": "Accessing buffer data in C vs pushing elements in Rust", "reasoning": "[Task Analysis] C function verifies a nested flexbuffer using flatbuffers::Verifier, while Rust function builds and pushes data into a flexbuffer builder. [Similarity] No structural similarity in control flow or logic. [Knowledge Extraction] No full match, no partial match, but both involve flexbuffer operations. C uses `VerifyBuffer` and Rust uses `Builder` with `start_vector`, `push`, and `end_vector`. These are semantically different operations (verification vs construction), but both relate to flexbuffer handling. [API Mappings] Extract API mappings based on flexbuffer-related operations."}]
+Unixcoder Score: -0.06331604719161987
+--------------------------------------------------

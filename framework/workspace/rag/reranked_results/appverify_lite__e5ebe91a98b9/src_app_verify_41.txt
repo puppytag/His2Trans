@@ -1,0 +1,549 @@
+C_Code: 
+void fs__read(uv_fs_t* req, uv_file file, void *buf, size_t length,
+    off_t offset) {
+  HANDLE handle;
+  OVERLAPPED overlapped, *overlapped_ptr;
+  LARGE_INTEGER offset_;
+  DWORD bytes;
+
+  VERIFY_UV_FILE(file, req);
+
+  handle = (HANDLE) _get_osfhandle(file);
+  if (handle == INVALID_HANDLE_VALUE) {
+    SET_REQ_RESULT(req, -1);
+    return;
+  }
+
+  if (length > INT_MAX) {
+    SET_REQ_ERROR(req, ERROR_INSUFFICIENT_BUFFER);
+    return;
+  }
+
+  if (offset != -1) {
+    memset(&overlapped, 0, sizeof overlapped);
+
+    offset_.QuadPart = offset;
+    overlapped.Offset = offset_.LowPart;
+    overlapped.OffsetHigh = offset_.HighPart;
+
+    overlapped_ptr = &overlapped;
+  } else {
+    overlapped_ptr = NULL;
+  }
+
+  if (ReadFile(handle, buf, length, &bytes, overlapped_ptr)) {
+    SET_REQ_RESULT(req, bytes);
+  } else {
+    SET_REQ_ERROR(req, GetLastError());
+  }
+}
+Function: 
+pub fn read(self, loop_: &Loop, fd: c_int, buf: Buf, offset: i64, cb: FsCallback) {
+        let complete_cb_ptr = {
+            let mut me = self;
+            me.req_boilerplate(Some(cb))
+        };
+        let buf_ptr = buf.base as *c_void;
+        let len = buf.len as uint;
+        let ret = unsafe {
+            uvll::fs_read(loop_.native_handle(), self.native_handle(),
+                           fd, buf_ptr,
+                           len, offset, complete_cb_ptr)
+        };
+        assert_eq!(ret, 0);
+    }
+Unixcoder Score: 0.03664525970816612
+--------------------------------------------------
+C_Code: 
+void fs__write(uv_fs_t* req, uv_file file, void *buf, size_t length,
+    off_t offset) {
+  HANDLE handle;
+  OVERLAPPED overlapped, *overlapped_ptr;
+  LARGE_INTEGER offset_;
+  DWORD bytes;
+
+  VERIFY_UV_FILE(file, req);
+
+  handle = (HANDLE) _get_osfhandle(file);
+  if (handle == INVALID_HANDLE_VALUE) {
+    SET_REQ_RESULT(req, -1);
+    return;
+  }
+
+  if (length > INT_MAX) {
+    SET_REQ_ERROR(req, ERROR_INSUFFICIENT_BUFFER);
+    return;
+  }
+
+  if (offset != -1) {
+    memset(&overlapped, 0, sizeof overlapped);
+
+    offset_.QuadPart = offset;
+    overlapped.Offset = offset_.LowPart;
+    overlapped.OffsetHigh = offset_.HighPart;
+
+    overlapped_ptr = &overlapped;
+  } else {
+    overlapped_ptr = NULL;
+  }
+
+  if (WriteFile(handle, buf, length, &bytes, overlapped_ptr)) {
+    SET_REQ_RESULT(req, bytes);
+  } else {
+    SET_REQ_ERROR(req, GetLastError());
+  }
+}
+Function: 
+pub unsafe fn write<T>(req: *uv_write_t, stream: *T,
+         buf_in: *~[uv_buf_t], cb: *u8) -> libc::c_int {
+    let buf_ptr = vec::raw::to_ptr(*buf_in);
+    let buf_cnt = vec::len(*buf_in) as i32;
+    return rustrt::rust_uv_write(req as *libc::c_void,
+                              stream as *libc::c_void,
+                              buf_ptr, buf_cnt, cb);
+}
+Unixcoder Score: 0.03518950939178467
+--------------------------------------------------
+C_Code: 
+void fs__write(uv_fs_t* req, uv_file file, void *buf, size_t length,
+    off_t offset) {
+  HANDLE handle;
+  OVERLAPPED overlapped, *overlapped_ptr;
+  LARGE_INTEGER offset_;
+  DWORD bytes;
+
+  VERIFY_UV_FILE(file, req);
+
+  handle = (HANDLE) _get_osfhandle(file);
+  if (handle == INVALID_HANDLE_VALUE) {
+    SET_REQ_RESULT(req, -1);
+    return;
+  }
+
+  if (length > INT_MAX) {
+    SET_REQ_ERROR(req, ERROR_INSUFFICIENT_BUFFER);
+    return;
+  }
+
+  if (offset != -1) {
+    memset(&overlapped, 0, sizeof overlapped);
+
+    offset_.QuadPart = offset;
+    overlapped.Offset = offset_.LowPart;
+    overlapped.OffsetHigh = offset_.HighPart;
+
+    overlapped_ptr = &overlapped;
+  } else {
+    overlapped_ptr = NULL;
+  }
+
+  if (WriteFile(handle, buf, length, &bytes, overlapped_ptr)) {
+    SET_REQ_RESULT(req, bytes);
+  } else {
+    SET_REQ_ERROR(req, GetLastError());
+  }
+}
+Function: 
+pub fn write(self, loop_: &Loop, fd: c_int, buf: Buf, offset: i64, cb: FsCallback) {
+        let complete_cb_ptr = {
+            let mut me = self;
+            me.req_boilerplate(Some(cb))
+        };
+        let base_ptr = buf.base as *c_void;
+        let len = buf.len as uint;
+        let ret = unsafe {
+            uvll::fs_write(loop_.native_handle(), self.native_handle(),
+                           fd, base_ptr,
+                           len, offset, complete_cb_ptr)
+        };
+        assert_eq!(ret, 0);
+    }
+Unixcoder Score: 0.02245524525642395
+--------------------------------------------------
+C_Code: 
+void fs__write(uv_fs_t* req, uv_file file, void *buf, size_t length,
+    off_t offset) {
+  HANDLE handle;
+  OVERLAPPED overlapped, *overlapped_ptr;
+  LARGE_INTEGER offset_;
+  DWORD bytes;
+
+  VERIFY_UV_FILE(file, req);
+
+  handle = (HANDLE) _get_osfhandle(file);
+  if (handle == INVALID_HANDLE_VALUE) {
+    SET_REQ_RESULT(req, -1);
+    return;
+  }
+
+  if (length > INT_MAX) {
+    SET_REQ_ERROR(req, ERROR_INSUFFICIENT_BUFFER);
+    return;
+  }
+
+  if (offset != -1) {
+    memset(&overlapped, 0, sizeof overlapped);
+
+    offset_.QuadPart = offset;
+    overlapped.Offset = offset_.LowPart;
+    overlapped.OffsetHigh = offset_.HighPart;
+
+    overlapped_ptr = &overlapped;
+  } else {
+    overlapped_ptr = NULL;
+  }
+
+  if (WriteFile(handle, buf, length, &bytes, overlapped_ptr)) {
+    SET_REQ_RESULT(req, bytes);
+  } else {
+    SET_REQ_ERROR(req, GetLastError());
+  }
+}
+Function: 
+pub fn write(self, loop_: &Loop, fd: c_int, buf: Buf, offset: i64, cb: FsCallback) {
+        let complete_cb_ptr = {
+            let mut me = self;
+            me.req_boilerplate(Some(cb))
+        };
+        let base_ptr = buf.base as *c_void;
+        let len = buf.len as uint;
+        let ret = unsafe {
+            uvll::fs_write(loop_.native_handle(), self.native_handle(),
+                           fd, base_ptr,
+                           len, offset, complete_cb_ptr)
+        };
+        assert_eq!(ret, 0);
+    }
+Unixcoder Score: 0.01655598171055317
+--------------------------------------------------
+C_Code: 
+void fs__write(uv_fs_t* req, uv_file file, void *buf, size_t length,
+    off_t offset) {
+  HANDLE handle;
+  OVERLAPPED overlapped, *overlapped_ptr;
+  LARGE_INTEGER offset_;
+  DWORD bytes;
+
+  VERIFY_UV_FILE(file, req);
+
+  handle = (HANDLE) _get_osfhandle(file);
+  if (handle == INVALID_HANDLE_VALUE) {
+    SET_REQ_RESULT(req, -1);
+    return;
+  }
+
+  if (length > INT_MAX) {
+    SET_REQ_ERROR(req, ERROR_INSUFFICIENT_BUFFER);
+    return;
+  }
+
+  if (offset != -1) {
+    memset(&overlapped, 0, sizeof overlapped);
+
+    offset_.QuadPart = offset;
+    overlapped.Offset = offset_.LowPart;
+    overlapped.OffsetHigh = offset_.HighPart;
+
+    overlapped_ptr = &overlapped;
+  } else {
+    overlapped_ptr = NULL;
+  }
+
+  if (WriteFile(handle, buf, length, &bytes, overlapped_ptr)) {
+    SET_REQ_RESULT(req, bytes);
+  } else {
+    SET_REQ_ERROR(req, GetLastError());
+  }
+}
+Function: 
+pub fn write_sync(self, loop_: &Loop, fd: c_int, buf: Buf, offset: i64)
+          -> Result<c_int, UvError> {
+        let complete_cb_ptr = {
+            let mut me = self;
+            me.req_boilerplate(None)
+        };
+        let base_ptr = buf.base as *c_void;
+        let len = buf.len as uint;
+        let result = unsafe {
+            uvll::fs_write(loop_.native_handle(), self.native_handle(),
+                           fd, base_ptr,
+                           len, offset, complete_cb_ptr)
+        };
+        self.sync_cleanup(result)
+    }
+Unixcoder Score: 0.015755947679281235
+--------------------------------------------------
+C_Code: 
+void fs__write(uv_fs_t* req, uv_file file, void *buf, size_t length,
+    off_t offset) {
+  HANDLE handle;
+  OVERLAPPED overlapped, *overlapped_ptr;
+  LARGE_INTEGER offset_;
+  DWORD bytes;
+
+  VERIFY_UV_FILE(file, req);
+
+  handle = (HANDLE) _get_osfhandle(file);
+  if (handle == INVALID_HANDLE_VALUE) {
+    SET_REQ_RESULT(req, -1);
+    return;
+  }
+
+  if (length > INT_MAX) {
+    SET_REQ_ERROR(req, ERROR_INSUFFICIENT_BUFFER);
+    return;
+  }
+
+  if (offset != -1) {
+    memset(&overlapped, 0, sizeof overlapped);
+
+    offset_.QuadPart = offset;
+    overlapped.Offset = offset_.LowPart;
+    overlapped.OffsetHigh = offset_.HighPart;
+
+    overlapped_ptr = &overlapped;
+  } else {
+    overlapped_ptr = NULL;
+  }
+
+  if (WriteFile(handle, buf, length, &bytes, overlapped_ptr)) {
+    SET_REQ_RESULT(req, bytes);
+  } else {
+    SET_REQ_ERROR(req, GetLastError());
+  }
+}
+Function: 
+unsafe fn write(req: *libc::c_void, stream: *libc::c_void,
+         buf_in: *[uv_buf_t], cb: *u8) -> libc::c_int {
+    let buf_ptr = vec::unsafe::to_ptr(*buf_in);
+    let buf_cnt = vec::len(*buf_in) as i32;
+    ret rustrt::rust_uv_write(req, stream, buf_ptr, buf_cnt, cb);
+}
+Unixcoder Score: 0.015335576608777046
+--------------------------------------------------
+C_Code: 
+void fs__write(uv_fs_t* req, uv_file file, void *buf, size_t length,
+    off_t offset) {
+  HANDLE handle;
+  OVERLAPPED overlapped, *overlapped_ptr;
+  LARGE_INTEGER offset_;
+  DWORD bytes;
+
+  VERIFY_UV_FILE(file, req);
+
+  handle = (HANDLE) _get_osfhandle(file);
+  if (handle == INVALID_HANDLE_VALUE) {
+    SET_REQ_RESULT(req, -1);
+    return;
+  }
+
+  if (length > INT_MAX) {
+    SET_REQ_ERROR(req, ERROR_INSUFFICIENT_BUFFER);
+    return;
+  }
+
+  if (offset != -1) {
+    memset(&overlapped, 0, sizeof overlapped);
+
+    offset_.QuadPart = offset;
+    overlapped.Offset = offset_.LowPart;
+    overlapped.OffsetHigh = offset_.HighPart;
+
+    overlapped_ptr = &overlapped;
+  } else {
+    overlapped_ptr = NULL;
+  }
+
+  if (WriteFile(handle, buf, length, &bytes, overlapped_ptr)) {
+    SET_REQ_RESULT(req, bytes);
+  } else {
+    SET_REQ_ERROR(req, GetLastError());
+  }
+}
+Function: 
+pub fn write(self, loop_: &Loop, fd: c_int, buf: Buf, offset: i64, cb: FsCallback) {
+        let complete_cb_ptr = {
+            let mut me = self;
+            me.req_boilerplate(Some(cb))
+        };
+        let base_ptr = buf.base as *c_void;
+        let len = buf.len as uint;
+        let ret = unsafe {
+            uvll::fs_write(loop_.native_handle(), self.native_handle(),
+                           fd, base_ptr,
+                           len, offset, complete_cb_ptr)
+        };
+        assert_eq!(ret, 0);
+    }
+Unixcoder Score: 0.008773037232458591
+--------------------------------------------------
+C_Code: 
+static void check_utime(const char* path, double atime, double mtime) {
+  struct stat* s;
+  uv_fs_t req;
+  int r;
+
+  r = uv_fs_stat(loop, &req, path, NULL);
+  ASSERT(r == 0);
+
+  ASSERT(req.result == 0);
+  s = req.ptr;
+
+#if _WIN32
+  ASSERT(s->st_atime == atime);
+  ASSERT(s->st_mtime == mtime);
+#elif !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)
+  ASSERT(s->st_atimespec.tv_sec  == atime);
+  ASSERT(s->st_mtimespec.tv_sec  == mtime);
+#else
+  ASSERT(s->st_atim.tv_sec  == atime);
+  ASSERT(s->st_mtim.tv_sec  == mtime);
+#endif
+
+  uv_fs_req_cleanup(&req);
+}
+Function: 
+pub unsafe fn fs_stat(loop_ptr: *uv_loop_t, req: *uv_fs_t, path: *c_char, cb: *u8) -> c_int {
+    #[fixed_stack_segment]; #[inline(never)];
+
+    rust_uv_fs_stat(loop_ptr, req, path, cb)
+}
+Unixcoder Score: -0.006532084196805954
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::CheckUserFileSpec(const std::shared_ptr<OHOS::AbilityRuntime::Context> &context,
+    const Config &config, FileSpec &file, ExceptionError &error, bool isUpload)
+{
+    if (config.mode != Mode::FOREGROUND) {
+        error.code = E_PARAMETER_CHECK;
+        error.errInfo = "Parameter verification failed, user file can only for Mode::FOREGROUND";
+        return false;
+    }
+    if (isUpload) {
+        std::shared_ptr<Uri> uri = std::make_shared<Uri>(file.uri);
+        std::shared_ptr<AppExecFwk::DataAbilityHelper> dataAbilityHelper =
+            AppExecFwk::DataAbilityHelper::Creator(context, uri);
+        if (dataAbilityHelper == nullptr) {
+            REQUEST_HILOGE("dataAbilityHelper null");
+            error.code = E_PARAMETER_CHECK;
+            error.errInfo = "Parameter verification failed, dataAbilityHelper null";
+            SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_07, config.bundleName, "", error.errInfo);
+            return false;
+        }
+        file.fd = dataAbilityHelper->OpenFile(*uri, "r");
+    } else {
+        std::shared_ptr<AppFileService::ModuleFileUri::FileUri> fileUri =
+            std::make_shared<AppFileService::ModuleFileUri::FileUri>(file.uri);
+        std::string realPath = fileUri->GetRealPath();
+        if (config.firstInit) {
+            file.fd = open(realPath.c_str(), O_RDWR | O_TRUNC);
+        } else {
+            file.fd = open(realPath.c_str(), O_RDWR | O_APPEND);
+        }
+    }
+    if (file.fd < 0) {
+        REQUEST_HILOGE("Failed to open user file, fd: %{public}d", file.fd);
+        error.code = E_FILE_IO;
+        error.errInfo = "Failed to open user file";
+        SysEventLog::SendSysEventLog(FAULT_EVENT, ABMS_FAULT_09, config.bundleName, "", error.errInfo);
+        return false;
+    }
+    fdsan_exchange_owner_tag(file.fd, 0, REQUEST_FDSAN_TAG);
+    StandardizeFileSpec(file);
+    return true;
+}
+Function: 
+pub(crate) fn insert_task(&self, task: RequestTask) -> bool {
+        let task_id = task.task_id();
+        let uid = task.uid();
+
+        debug!("Insert task to database, uid: {}, tid: {}", uid, task_id);
+
+        if self.contains_task(task_id) {
+            return false;
+        }
+
+        let task_config = task.config();
+        let config_set = task_config.build_config_set();
+        let c_task_config = task_config.to_c_struct(task_id, uid, &config_set);
+
+        let task_info = &task.info();
+        let info_set = task_info.build_info_set();
+        let c_task_info = task_info.to_c_struct(&info_set);
+
+        if !unsafe { RecordRequestTask(&c_task_info, &c_task_config) } {
+            info!("task {} insert database fail", task_id);
+        }
+
+        // For some tasks contains user_file, we must save it to map first.
+        if task.conf.contains_user_file() {
+            self.user_file_tasks
+                .lock()
+                .unwrap()
+                .insert(task.task_id(), Arc::new(task));
+        };
+        true
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__read__idx143913_rank5.c", "source_rust_file": "API_Mapping__fs__read__idx143913_rank5.rs", "c_api": "SET_REQ_ERROR(req, GetLastError())", "rust_api": "assert_eq!(ret, 0)", "mapping_type": "function", "description": "Error handling for file read operation", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `uvll::fs_read` which is a wrapper around libuv's fs_read function. The C code also makes a direct Windows API call to `ReadFile`. Both are low-level system calls, but the Rust code is a higher-level wrapper. -> [Task Analysis] -> The C function `fs__read` is a low-level file reading implementation using Windows API, while the Rust function `read` is a wrapper that calls into a libuv FFI function. They are both performing the same high-level task (asynchronous file read) but with different underlying mechanisms. -> [Similarity] -> The C code has a direct Windows API call (`ReadFile`) and error handling logic, while the Rust code wraps a libuv FFI call (`uvll::fs_read`) with similar error handling. The control flow is conceptually similar, but the implementation details differ significantly due to platform abstraction and FFI boundaries. -> [Knowledge Extraction] -> Full classification is blocked due to FFI wrapper nature and domain mismatch (Windows API vs libuv FFI). However, there are API mappings between the file reading operations and error handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fs__read__idx143913_rank5.c", "source_rust_file": "API_Mapping__fs__read__idx143913_rank5.rs", "c_api": "ReadFile(handle, buf, length, &bytes, overlapped_ptr)", "rust_api": "uvll::fs_read(loop_.native_handle(), self.native_handle(), fd, buf_ptr, len, offset, complete_cb_ptr)", "mapping_type": "function", "description": "Asynchronous file read operation", "reasoning": "[FFI Check] -> The Rust code contains an FFI call to `uvll::fs_read` which is a wrapper around libuv's fs_read function. The C code also makes a direct Windows API call to `ReadFile`. Both are low-level system calls, but the Rust code is a higher-level wrapper. -> [Task Analysis] -> The C function `fs__read` is a low-level file reading implementation using Windows API, while the Rust function `read` is a wrapper that calls into a libuv FFI function. They are both performing the same high-level task (asynchronous file read) but with different underlying mechanisms. -> [Similarity] -> The C code has a direct Windows API call (`ReadFile`) and error handling logic, while the Rust code wraps a libuv FFI call (`uvll::fs_read`) with similar error handling. The control flow is conceptually similar, but the implementation details differ significantly due to platform abstraction and FFI boundaries. -> [Knowledge Extraction] -> Full classification is blocked due to FFI wrapper nature and domain mismatch (Windows API vs libuv FFI). However, there are API mappings between the file reading operations and error handling patterns."}]
+Unixcoder Score: -0.01739414408802986
+--------------------------------------------------
+C_Code: 
+bool JsInitialize::CheckUploadFiles(
+    const std::shared_ptr<OHOS::AbilityRuntime::Context> &context, Config &config, ExceptionError &error)
+{
+    int32_t sdkVersion = GetSdkApiVersion();
+    constexpr const int32_t uploadVersion = 15;
+    if (config.version == Version::API10 && sdkVersion >= uploadVersion
+        && config.files.size() > MAX_UPLOAD_ON15_FILES) {
+        error.code = E_PARAMETER_CHECK;
+        error.errInfo = "Parameter verification failed, upload by multipart file so many";
+        return false;
+    }
+    // need reconstruction.
+    for (auto &file : config.files) {
+        if (IsUserFile(file.uri)) {
+            file.isUserFile = true;
+            if (config.version == Version::API9) {
+                error.code = E_PARAMETER_CHECK;
+                error.errInfo = "Parameter verification failed, user file can only for request.agent.";
+                return false;
+            }
+            if (!CheckUserFileSpec(context, config, file, error, true)) {
+                return false;
+            }
+            StandardizeFileSpec(file);
+            continue;
+        }
+
+        if (!CheckUploadFileSpec(context, config, file, error)) {
+            return false;
+        }
+    }
+    return true;
+}
+Function: 
+fn check_file_specs(file_specs: &[FileSpec]) -> bool {
+    for (idx, spec) in file_specs.iter().enumerate() {
+        if spec.is_user_file {
+            continue;
+        }
+        let path = &spec.path;
+        if !check_standardized_path(path) {
+            error!("File path err - path: {}, idx: {}", path, idx);
+            return false;
+        }
+        if !belong_app_base(path) {
+            error!("File path invalid - path: {}, idx: {}", path, idx);
+            sys_event!(
+                ExecFault,
+                DfxCode::TASK_FAULT_09,
+                &format!("File path invalid - path: {}, idx: {}", path, idx)
+            );
+            return false;
+        }
+    }
+    true
+}
+Unixcoder Score: -0.028717024251818657
+--------------------------------------------------

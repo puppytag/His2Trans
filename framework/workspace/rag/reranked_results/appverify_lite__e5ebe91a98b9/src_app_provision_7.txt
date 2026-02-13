@@ -1,0 +1,385 @@
+C_Code: 
+int32_t SystemAbilityManagerStub::UnmarshalingSaExtraProp(MessageParcel& data, SAExtraProp& extraProp)
+{
+    bool isDistributed = false;
+    bool ret = data.ReadBool(isDistributed);
+    if (!ret) {
+        HILOGW("UnmarshalingSaExtraProp read isDistributed failed!");
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    int32_t dumpFlags = 0;
+    ret = data.ReadInt32(dumpFlags);
+    if (!ret || dumpFlags < 0) {
+        HILOGW("UnmarshalingSaExtraProp dumpFlags failed!");
+        return ERR_FLATTEN_OBJECT;
+    }
+    std::u16string capability = data.ReadString16();
+    std::u16string permission = data.ReadString16();
+    extraProp.isDistributed = isDistributed;
+    extraProp.dumpFlags = static_cast<uint32_t>(dumpFlags);
+    extraProp.capability = capability;
+    extraProp.permission = permission;
+    return ERR_OK;
+}
+Function: 
+pub fn add_systemability_with_extra<A: RemoteStub + 'static>(
+        said: i32,
+        ability: A,
+        is_distributed: bool,
+        dump_flags: DumpFlagPriority,
+        capability: &str,
+        permission: &str,
+    ) -> i32 {
+        info!("add system ability {}", said);
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: 0.08086171001195908
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::UnmarshalingSaExtraProp(MessageParcel& data, SAExtraProp& extraProp)
+{
+    bool isDistributed = false;
+    bool ret = data.ReadBool(isDistributed);
+    if (!ret) {
+        HILOGW("UnmarshalingSaExtraProp read isDistributed failed!");
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    int32_t dumpFlags = 0;
+    ret = data.ReadInt32(dumpFlags);
+    if (!ret || dumpFlags < 0) {
+        HILOGW("UnmarshalingSaExtraProp dumpFlags failed!");
+        return ERR_FLATTEN_OBJECT;
+    }
+    std::u16string capability = data.ReadString16();
+    std::u16string permission = data.ReadString16();
+    extraProp.isDistributed = isDistributed;
+    extraProp.dumpFlags = static_cast<uint32_t>(dumpFlags);
+    extraProp.capability = capability;
+    extraProp.permission = permission;
+    return ERR_OK;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: 0.06960097700357437
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::ListSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    if (!CanRequest()) {
+        HILOGE("ListSystemAbilityInner PERMISSION DENIED!");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    if (!CheckListSAPermission()) {
+        HILOGE("ListSystemAbilityInner selinux permission denied! callSid:%{public}s",
+            OHOS::IPCSkeleton::GetCallingSid().c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+
+    int32_t dumpFlag = 0;
+    bool ret = data.ReadInt32(dumpFlag);
+    if (!ret) {
+        HILOGW("ListSystemAbilityInner read dumpflag failed!");
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    std::vector<std::u16string> saNameVector = ListSystemAbilities(dumpFlag);
+    if (saNameVector.empty()) {
+        HILOGI("List System Abilities list errors");
+        ret = reply.WriteInt32(ERR_INVALID_VALUE);
+    } else {
+        HILOGI("ListSystemAbilityInner list success");
+        ret = reply.WriteInt32(ERR_NONE);
+        if (ret) {
+            ret = reply.WriteString16Vector(saNameVector);
+        }
+    }
+
+    if (!ret) {
+        HILOGW("ListSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    return ERR_NONE;
+}
+Function: 
+pub fn list_system_abilities() -> Vec<String> {
+        info!("list system ability");
+        ListSystemAbilities()
+    }
+Unixcoder Score: 0.0031078546307981014
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::ListSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    if (!CanRequest()) {
+        HILOGE("ListSystemAbilityInner PERMISSION DENIED!");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    if (!CheckListSAPermission()) {
+        HILOGE("ListSystemAbilityInner selinux permission denied! callSid:%{public}s",
+            OHOS::IPCSkeleton::GetCallingSid().c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+
+    int32_t dumpFlag = 0;
+    bool ret = data.ReadInt32(dumpFlag);
+    if (!ret) {
+        HILOGW("ListSystemAbilityInner read dumpflag failed!");
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    std::vector<std::u16string> saNameVector = ListSystemAbilities(dumpFlag);
+    if (saNameVector.empty()) {
+        HILOGI("List System Abilities list errors");
+        ret = reply.WriteInt32(ERR_INVALID_VALUE);
+    } else {
+        HILOGI("ListSystemAbilityInner list success");
+        ret = reply.WriteInt32(ERR_NONE);
+        if (ret) {
+            ret = reply.WriteString16Vector(saNameVector);
+        }
+    }
+
+    if (!ret) {
+        HILOGW("ListSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    return ERR_NONE;
+}
+Function: 
+pub fn list_system_abilities() -> Vec<String> {
+        info!("list system ability");
+        ListSystemAbilities()
+    }
+Unixcoder Score: -0.006225925870239735
+--------------------------------------------------
+C_Code: 
+int32_t SystemAbilityManagerStub::ListSystemAbilityInner(MessageParcel& data, MessageParcel& reply)
+{
+    if (!CanRequest()) {
+        HILOGE("ListSystemAbilityInner PERMISSION DENIED!");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    if (!CheckListSAPermission()) {
+        HILOGE("ListSystemAbilityInner selinux permission denied! callSid:%{public}s",
+            OHOS::IPCSkeleton::GetCallingSid().c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+
+    int32_t dumpFlag = 0;
+    bool ret = data.ReadInt32(dumpFlag);
+    if (!ret) {
+        HILOGW("ListSystemAbilityInner read dumpflag failed!");
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    std::vector<std::u16string> saNameVector = ListSystemAbilities(dumpFlag);
+    if (saNameVector.empty()) {
+        HILOGI("List System Abilities list errors");
+        ret = reply.WriteInt32(ERR_INVALID_VALUE);
+    } else {
+        HILOGI("ListSystemAbilityInner list success");
+        ret = reply.WriteInt32(ERR_NONE);
+        if (ret) {
+            ret = reply.WriteString16Vector(saNameVector);
+        }
+    }
+
+    if (!ret) {
+        HILOGW("ListSystemAbilityInner write reply failed.");
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    return ERR_NONE;
+}
+Function: 
+pub fn list_system_abilities_with_dump_flag(dump_flag: DumpFlagPriority) -> Vec<String> {
+        info!("list system ability");
+        ListSystemAbilitiesWithDumpFlag(dump_flag as u32)
+    }
+Unixcoder Score: -0.013749088160693645
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE bool
+prof_sample_accum_update(size_t size)
+{
+	prof_tdata_t *prof_tdata;
+
+	cassert(config_prof);
+	/* Sampling logic is unnecessary if the interval is 1. */
+	assert(opt_lg_prof_sample != 0);
+
+	prof_tdata = prof_tdata_get(false);
+	if ((uintptr_t)prof_tdata <= (uintptr_t)PROF_TDATA_STATE_MAX)
+		return (true);
+
+	/* Take care to avoid integer overflow. */
+	if (size >= prof_tdata->threshold - prof_tdata->accum) {
+		prof_tdata->accum -= (prof_tdata->threshold - size);
+		/* Compute new sample threshold. */
+		prof_sample_threshold_update(prof_tdata);
+		while (prof_tdata->accum >= prof_tdata->threshold) {
+			prof_tdata->accum -= prof_tdata->threshold;
+			prof_sample_threshold_update(prof_tdata);
+		}
+		return (false);
+	} else {
+		prof_tdata->accum += size;
+		return (true);
+	}
+}
+Function: 
+fn fold<B, F>(self, init: B, f: F) -> B
+    where
+        Self: Sized,
+        F: FnMut(B, Self::Item) -> B,
+    {
+        let separator = self.separator;
+        intersperse_fold(self.iter, init, f, move || separator.clone(), self.needs_sep)
+    }
+Unixcoder Score: -0.01607145369052887
+--------------------------------------------------
+C_Code: 
+int AccessTokenKit::VerifyAccessToken(AccessTokenID tokenID, const std::string& permissionName)
+{
+    return PERMISSION_GRANTED;
+}
+Function: 
+pub fn init_access_token() {
+    let perms_str =
+        CString::new("ohos.permission.DISTRIBUTED_DATASYNC").expect("permission is invalid");
+    let name = CString::new("listen_test").expect("process name is invalid");
+    let apl = CString::new("system_core").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: perms_str.as_ptr(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Unixcoder Score: -0.016445649787783623
+--------------------------------------------------
+C_Code: 
+uint64_t LLVMRustCoverageHashCString(const char *StrVal) {
+  StringRef StrRef(StrVal);
+  return IndexedInstrProf::ComputeHash(StrRef);
+}
+Function: 
+pub(crate) fn hash_str(strval: &str) -> u64 {
+    let strval = CString::new(strval).expect("null error converting hashable str to C string");
+    unsafe { llvm::LLVMRustCoverageHashCString(strval.as_ptr()) }
+}
+Unixcoder Score: -0.017254596576094627
+--------------------------------------------------
+C_Code: 
+IPCTestHelper::IPCTestHelper()
+{
+    AddPermission();
+}
+Function: 
+pub fn init_access_token()
+{
+    let name = CString::new("com.ipc.calc").expect("process name is invalid");
+    let apl = CString::new("normal").expect("apl string is invalid");
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 0,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: ptr::null(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id);
+    }
+}
+Unixcoder Score: -0.023642733693122864
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE bool
+prof_sample_accum_update(size_t size)
+{
+	prof_tdata_t *prof_tdata;
+
+	cassert(config_prof);
+	/* Sampling logic is unnecessary if the interval is 1. */
+	assert(opt_lg_prof_sample != 0);
+
+	prof_tdata = prof_tdata_get(false);
+	if ((uintptr_t)prof_tdata <= (uintptr_t)PROF_TDATA_STATE_MAX)
+		return (true);
+
+	/* Take care to avoid integer overflow. */
+	if (size >= prof_tdata->threshold - prof_tdata->accum) {
+		prof_tdata->accum -= (prof_tdata->threshold - size);
+		/* Compute new sample threshold. */
+		prof_sample_threshold_update(prof_tdata);
+		while (prof_tdata->accum >= prof_tdata->threshold) {
+			prof_tdata->accum -= prof_tdata->threshold;
+			prof_sample_threshold_update(prof_tdata);
+		}
+		return (false);
+	} else {
+		prof_tdata->accum += size;
+		return (true);
+	}
+}
+Function: 
+pub fn next_round(&mut self) -> bool {
+        if let Some(round) = self.rounds.last_mut() {
+            round.finish();
+        }
+        if self.rounds.iter().any(|it| it.linear) || self.rounds.len() == 4 {
+            return false;
+        }
+        self.rounds.push(Round::default());
+        true
+    }
+Unixcoder Score: -0.02742510288953781
+--------------------------------------------------

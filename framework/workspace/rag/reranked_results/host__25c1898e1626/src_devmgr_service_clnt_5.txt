@@ -1,0 +1,347 @@
+C_Code: 
+void DownloadServiceAbility::OnStop()
+{
+    DOWNLOAD_HILOGI("OnStop started.");
+    if (state_ != ServiceRunningState::STATE_RUNNING) {
+        return;
+    }
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return;
+    }
+    instance->Destroy();
+    serviceHandler_ = nullptr;
+    instance_ = nullptr;
+    state_ = ServiceRunningState::STATE_NOT_START;
+    DOWNLOAD_HILOGI("OnStop end.");
+}
+Function: 
+pub fn stop(&mut self) {
+        debug!(LOG_LABEL, "stop");
+        if ServerRunState::NoStart == self.server_state {
+            return;
+        }
+        self.server_state = ServerRunState::NoStart;
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildAtomicStore__idx7985_rank3.c", "source_rust_file": "API_Mapping__LLVMRustBuildAtomicStore__idx7985_rank3.rs", "c_api": "unwrap(B)->CreateStore", "rust_api": "intrinsics::atomic_xadd_*", "mapping_type": "function", "description": "Atomic store/fetch-and-add operation", "reasoning": "[Task Analysis] C function builds an atomic store instruction using LLVM IR builder; Rust function performs atomic addition with ordering. [Similarity] Names do not refer to the same concept (LLVMRustBuildAtomicStore vs atomic_add), and domains are different (LLVM IR construction vs low-level atomic operations). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve atomic operations and memory ordering, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildAtomicStore__idx7985_rank3.c", "source_rust_file": "API_Mapping__LLVMRustBuildAtomicStore__idx7985_rank3.rs", "c_api": "LLVMRustBuildAtomicStore", "rust_api": "atomic_add", "mapping_type": "function", "description": "Atomic store operation with memory ordering", "reasoning": "[Task Analysis] C function builds an atomic store instruction using LLVM IR builder; Rust function performs atomic addition with ordering. [Similarity] Names do not refer to the same concept (LLVMRustBuildAtomicStore vs atomic_add), and domains are different (LLVM IR construction vs low-level atomic operations). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve atomic operations and memory ordering, so API mappings can be extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildAtomicStore__idx7985_rank3.c", "source_rust_file": "API_Mapping__LLVMRustBuildAtomicStore__idx7985_rank3.rs", "c_api": "LLVMAtomicOrdering", "rust_api": "Ordering", "mapping_type": "type", "description": "Memory ordering enumeration", "reasoning": "[Task Analysis] C function builds an atomic store instruction using LLVM IR builder; Rust function performs atomic addition with ordering. [Similarity] Names do not refer to the same concept (LLVMRustBuildAtomicStore vs atomic_add), and domains are different (LLVM IR construction vs low-level atomic operations). [Knowledge Extraction] No full or partial match due to domain mismatch and different semantic roles. However, both involve atomic operations and memory ordering, so API mappings can be extracted."}]
+Unixcoder Score: 0.02667926624417305
+--------------------------------------------------
+C_Code: 
+static void AnonymousTest(void)
+{
+    IpcIo anonymous;
+    uint8_t anonymousData[IPC_MAX_SIZE];
+    IpcIoInit(&anonymous, anonymousData, IPC_MAX_SIZE, 1);
+    WriteRemoteObject(&anonymous, &g_clientSvc);
+
+    IpcIo anonymousreply;
+    uintptr_t anonymousptr = 0;
+    int ret = SendRequest(g_serverSid, SERVER_OP_ADD_SERVICE, &anonymous, &anonymousreply, g_option, &anonymousptr);
+    int res = -1;
+    ReadInt32(&anonymousreply, &res);
+    RPC_LOG_INFO("add self to server = %d", res);
+    FreeBuffer((void *)anonymousptr);
+    EXPECT_EQ(ret, ERR_NONE);
+    EXPECT_EQ(res, ERR_NONE);
+}
+Function: 
+pub fn add_service(service: &RemoteObj, said: i32)
+{
+    let samgr = get_samgr().expect("samgr is not null");
+    let mut data = MsgParcel::new().expect("MsgParcel is not null");
+    match data.write(&InterFaceToken::new("ohos.samgr.accessToken")) {
+        Ok(()) => { println!("write token success") }
+        Err(val) => { println!("write token fail: {}", val) }
+    }
+    match data.write(&said) {
+        Ok(()) => { println!("write said success") }
+        Err(val) => { println!("write said fail: {}", val) }
+    }
+    match data.write(service) {
+        Ok(()) => { println!("write service success") }
+        Err(val) => { println!("write service fail: {}", val) }
+    }
+    match data.write(&false) {
+        Ok(()) => { println!("write bool success") }
+        Err(val) => { println!("write bool fail: {}", val) }
+    }
+    match data.write(&0) {
+        Ok(()) => { println!("write 0 success") }
+        Err(val) => { println!("write 0 fail: {}", val) }
+    }
+    match data.write(&String16::new("")) {
+        Ok(()) => { println!("write string16 111 success") }
+        Err(val) => { println!("write string16 111 fail: {}", val) }
+    }
+    match data.write(&String16::new("")) {
+        Ok(()) => { println!("write string16 222 success") }
+        Err(val) => { println!("write string16 222 fail: {}", val) }
+    }
+    let reply = samgr.send_request(3, &data, false).expect("failed to register service");
+    let replyValue: i32 = reply.read().expect("register service reply should 0");
+    println!("register service result: {}", replyValue);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LLVMRustBuildAtomicStore__idx128321_rank1.c", "source_rust_file": "API_Mapping__LLVMRustBuildAtomicStore__idx128321_rank1.rs", "c_api": "LLVMRustBuildAtomicStore", "rust_api": "atomic_store", "mapping_type": "function", "description": "Atomic store operation with memory ordering", "reasoning": "[Task Analysis] C function is a LLVM IR builder operation for atomic store, Rust function is a wrapper for atomic store operation. [Similarity] Both perform atomic store operations but with different APIs and abstractions. [Knowledge Extraction] No full structural match due to different domains (LLVM IR building vs atomic operations), but there is a semantic mapping between atomic store operations."}]
+Unixcoder Score: 0.006098824553191662
+--------------------------------------------------
+C_Code: 
+void clear_dbg_line_insts() { dbg_line_insts_.clear(); }
+Function: 
+fn new(verbs: &'a mut Vec<u8>, points: &'a mut Vec<FfiPoint>) -> Self {
+        verbs.clear();
+        points.clear();
+        verbs.reserve(PATH_EXTRACTION_RESERVE);
+        points.reserve(PATH_EXTRACTION_RESERVE);
+        Self {
+            verbs,
+            points,
+            started: false,
+            current: FfiPoint::default(),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "parcel.read::<Databases>()", "mapping_type": "function", "description": "Data extraction from source (schema unmarshalling vs parcel reading)", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes a parcel into a Schema struct. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs parcel deserialization). [Knowledge Extraction] No full or partial match. However, both involve data extraction from a source (C: GetSchemaFromHap, Rust: deserialize). The Rust function reads from a parcel, which is conceptually similar to the C function reading from a schema collection. [API Mappings] Extract mapping between parcel reading and schema unmarshalling operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "parcel.read_string16()", "mapping_type": "function", "description": "Data extraction from source (schema unmarshalling vs parcel reading)", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes a parcel into a Schema struct. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs parcel deserialization). [Knowledge Extraction] No full or partial match. However, both involve data extraction from a source (C: GetSchemaFromHap, Rust: deserialize). The Rust function reads from a parcel, which is conceptually similar to the C function reading from a schema collection. [API Mappings] Extract mapping between parcel reading and schema unmarshalling operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.c", "source_rust_file": "API_Mapping__GetSchemaFromHap__idx5101_rank3.rs", "c_api": "schemaMeta.Unmarshall(schema)", "rust_api": "parcel.read::<i32>()", "mapping_type": "function", "description": "Data extraction from source (schema unmarshalling vs parcel reading)", "reasoning": "[Task Analysis] C function returns a pair of status and SchemaMeta, while Rust function deserializes a parcel into a Schema struct. [Similarity] No structural similarity at the function level due to different domains (schema retrieval vs parcel deserialization). [Knowledge Extraction] No full or partial match. However, both involve data extraction from a source (C: GetSchemaFromHap, Rust: deserialize). The Rust function reads from a parcel, which is conceptually similar to the C function reading from a schema collection. [API Mappings] Extract mapping between parcel reading and schema unmarshalling operations."}]
+Unixcoder Score: -0.019359394907951355
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+pub fn get_app_schema(&mut self, bundle_name: &str) -> SyncResult<SchemaMeta> {
+        let schema_ipc = self.connect.get_app_schema(self.user_id, bundle_name)?;
+        Ok(SchemaMeta::from(schema_ipc.deref()))
+    }
+Unixcoder Score: -0.025748945772647858
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+fn try_from(value: u8) -> Result<Self, Self::Error> {
+        let typ = match value {
+            0 => FieldType::Null,
+            1 => FieldType::Number,
+            2 => FieldType::Real,
+            3 => FieldType::Text,
+            4 => FieldType::Bool,
+            5 => FieldType::Blob,
+            6 => FieldType::Asset,
+            7 => FieldType::Assets,
+            _ => return Err(Error::InvalidFieldType),
+        };
+        Ok(typ)
+    }
+Unixcoder Score: -0.026917867362499237
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let length = parcel.read::<i32>()? as usize;
+        let mut vector = Vec::with_capacity(length);
+        for _ in 0..length {
+            let alias = parcel.read_string16()?;
+            let subscription_id = parcel.read_string16()?;
+            vector.push((alias, subscription_id));
+        }
+        Ok(SubscriptionResultValue(vector))
+    }
+Unixcoder Score: -0.028274375945329666
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let version = parcel.read::<i32>()?;
+        let bundle_name = parcel.read_string16()?;
+        let databases = parcel.read::<Databases>()?;
+
+        let result = Schema {
+            version,
+            bundle_name,
+            databases,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.029594307765364647
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let app_id = parcel.read_string16()?;
+        let bundle_name = parcel.read_string16()?;
+        let cloud_switch = parcel.read::<i32>()? != 0;
+        let instance_id = parcel.read::<i32>()?;
+
+        let result = Self {
+            app_id,
+            bundle_name,
+            cloud_switch,
+            instance_id,
+        };
+        Ok(result)
+    }
+Unixcoder Score: -0.03143690526485443
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+pub(crate) fn get_app_schema(
+        &mut self,
+        user_id: i32,
+        bundle_name: &str,
+    ) -> ConnectResult<RwLockReadGuard<Schema>> {
+        self.infos.entry(user_id).or_default();
+        let infos = self.infos.get_mut(&user_id).unwrap();
+
+        let mut lock = infos.app_schema.write().unwrap();
+
+        let mut msg_parcel = MsgParcel::new();
+
+        msg_parcel
+            .write_string16(bundle_name)
+            .map_err(|_| Error::WriteMsgParcelFailed)?;
+
+        let function_number = GetAppSchema as u32;
+        let remote_obj = self
+            .remote_obj
+            .clone()
+            .ok_or(Error::CreateMsgParcelFailed)?;
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
+            .map_err(|_| Error::SendRequestFailed)?;
+
+        lock.read(&mut receive)?;
+
+        drop(lock);
+
+        Ok(infos.app_schema.read().unwrap())
+    }
+Unixcoder Score: -0.03280942514538765
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshall(schema)) {
+            return { SUCCESS, schemaMeta };
+        }
+    }
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    return { ERROR, schemaMeta };
+}
+Function: 
+fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let index = parcel.read::<u32>()?;
+        match index {
+            0 => Ok(FieldRaw::Null),
+            1 => {
+                let number = parcel.read::<i64>()?;
+                Ok(FieldRaw::Number(number))
+            }
+            2 => {
+                let real = parcel.read::<f64>()?;
+                Ok(FieldRaw::Real(real))
+            }
+            3 => {
+                let text = parcel.read_string16()?;
+                Ok(FieldRaw::Text(text))
+            }
+            4 => {
+                let boolean = parcel.read::<bool>()?;
+                Ok(FieldRaw::Bool(boolean))
+            }
+            5 => {
+                let blob = parcel.read::<Vec<u8>>()?;
+                Ok(FieldRaw::Blob(blob))
+            }
+            6 => {
+                let asset = parcel.read::<CloudAsset>()?;
+                Ok(FieldRaw::Asset(asset))
+            }
+            7 => {
+                let assets = parcel.read::<CloudAssets>()?;
+                Ok(FieldRaw::Assets(assets))
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.033734846860170364
+--------------------------------------------------

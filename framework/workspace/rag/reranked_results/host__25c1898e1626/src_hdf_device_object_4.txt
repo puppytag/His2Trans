@@ -1,0 +1,257 @@
+C_Code: 
+void SystemAbilityManager::UnSubscribeSystemAbility(const sptr<IRemoteObject>& remoteObject)
+{
+    lock_guard<samgr::mutex> autoLock(listenerMapLock_);
+    HILOGD("UnSubscribeSA remote object dead! size:%{public}zu", listenerMap_.size());
+    for (auto& item : listenerMap_) {
+        auto& listeners = item.second;
+        UnSubscribeSystemAbilityLocked(listeners, remoteObject);
+    }
+    if (abilityStatusDeath_ != nullptr) {
+        remoteObject->RemoveDeathRecipient(abilityStatusDeath_);
+    }
+}
+Function: 
+pub fn unsubscribe(self) {
+        match self.inner {
+            Unsubscribe::Ability(mut p) => p.pin_mut().UnSubscribe(),
+            Unsubscribe::Process(mut p) => p.pin_mut().UnSubscribe(),
+        }
+    }
+Unixcoder Score: 0.07466421276330948
+--------------------------------------------------
+C_Code: 
+struct VkBufferCopy {
+    VkDeviceSize    srcOffset;
+    VkDeviceSize    dstOffset;
+    VkDeviceSize    size;
+}
+Function: 
+struct WorkgroupBufferInfo {
+        size_in_bytes: u32,
+        index: u32,
+    }
+Unixcoder Score: -0.003082159673795104
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.008720842190086842
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.014311452396214008
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.014687622897326946
+--------------------------------------------------
+C_Code: 
+void CesStateListener::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    HILOGI("DeviceSwitchCollect OnRemoveSystemAbility systemAbilityId:%{public}d", systemAbilityId);
+}
+Function: 
+pub fn remove_system_ability(said: i32) -> i32 {
+        info!("remove system ability {}", said);
+        RemoveSystemAbility(said)
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__GetSystemAbility__idx4854_rank5.c", "source_rust_file": "Partial__GetSystemAbility__idx4854_rank5.rs", "c_fragment": "return CheckSystemAbility(systemAbilityId, deviceId);", "rust_fragment": "RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))", "description": "Both functions perform system ability lookup with device ID parameter and return a remote object.", "reasoning": "[Task Analysis] C function calls another function, Rust function calls an FFI function and logs. [Similarity] Names don't match but both perform system ability checking logic. [Knowledge Extraction] Found API mapping for system ability checking, partial structural match in function call pattern."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__GetSystemAbility__idx4854_rank5.c", "source_rust_file": "Partial__GetSystemAbility__idx4854_rank5.rs", "c_api": "CheckSystemAbility", "rust_api": "CheckSystemAbilityWithDeviceId", "mapping_type": "function", "description": "System ability checking with device ID", "reasoning": "[Task Analysis] C function calls another function, Rust function calls an FFI function and logs. [Similarity] Names don't match but both perform system ability checking logic. [Knowledge Extraction] Found API mapping for system ability checking, partial structural match in function call pattern."}]
+Unixcoder Score: -0.015842443332076073
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.018900662660598755
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<UnSubscribeSystemAbilityHandler> SubscribeSystemAbility(int32_t systemAbilityId,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onAdd,
+    rust::Fn<void(int32_t systemAbilityId, const rust::str deviceId)> onRemove)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+
+    sptr<ISystemAbilityStatusChange> listener = new SystemAbilityStatusChangeWrapper(onAdd, onRemove);
+    sysm->SubscribeSystemAbility(systemAbilityId, listener);
+    return std::make_unique<UnSubscribeSystemAbilityHandler>(systemAbilityId, listener);
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        debug!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Unixcoder Score: -0.02162790670990944
+--------------------------------------------------
+C_Code: 
+void SystemAbilityManager::NotifySystemAbilityChanged(int32_t systemAbilityId, const std::string& deviceId,
+    int32_t code, const sptr<ISystemAbilityStatusChange>& listener)
+{
+    HILOGD("NotifySystemAbilityChanged, SA:%{public}d", systemAbilityId);
+    if (listener == nullptr) {
+        HILOGE("%{public}s listener null pointer!", __func__);
+        return;
+    }
+
+    switch (code) {
+        case static_cast<uint32_t>(SamgrInterfaceCode::ADD_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnAddSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        case static_cast<uint32_t>(SamgrInterfaceCode::REMOVE_SYSTEM_ABILITY_TRANSACTION): {
+            listener->OnRemoveSystemAbility(systemAbilityId, deviceId);
+            break;
+        }
+        default:
+            break;
+    }
+}
+Function: 
+pub fn subscribe_system_ability(
+        said: i32,
+        on_add: fn(i32, &str),
+        on_remove: fn(i32, &str),
+    ) -> UnsubscribeHandler {
+        info!("subscribe system ability {}", said);
+        UnsubscribeHandler::new(Unsubscribe::Ability(SubscribeSystemAbility(
+            said, on_add, on_remove,
+        )))
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.c", "source_rust_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.rs", "c_fragment": "if (ability == nullptr) {\n        return nullptr;\n    }", "rust_fragment": "let_cxx_string!(id = device_id);", "description": "Error handling for null ability and device ID conversion", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but conceptually they do the same thing: retrieve a system ability. [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling (nullptr checks), and a pattern for device ID handling."}, {"knowledge_type": "Partial", "source_c_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.c", "source_rust_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.rs", "c_fragment": "if (sysm == nullptr) {\n        return nullptr;\n    }", "rust_fragment": "info!(\"get system ability {} with device id\", said);", "description": "Error handling for null system ability manager", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but conceptually they do the same thing: retrieve a system ability. [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling (nullptr checks), and a pattern for device ID handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.c", "source_rust_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.rs", "c_api": "SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager()", "rust_api": "GetSystemAbilityWithDeviceId", "mapping_type": "function", "description": "System ability manager retrieval", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but conceptually they do the same thing: retrieve a system ability. [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling (nullptr checks), and a pattern for device ID handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.c", "source_rust_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.rs", "c_api": "std::make_unique<SptrIRemoteObject>(std::move(ability))", "rust_api": "RemoteObj::from_sptr", "mapping_type": "function", "description": "Wrapping system ability into remote object", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but conceptually they do the same thing: retrieve a system ability. [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling (nullptr checks), and a pattern for device ID handling."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.c", "source_rust_file": "Partial__CheckSystemAbilityWithDeviceId__idx4852_rank2.rs", "c_api": "sysm->CheckSystemAbility(systemAbilityId, deviceId)", "rust_api": "GetSystemAbilityWithDeviceId", "mapping_type": "function", "description": "Check system ability with device ID", "reasoning": "[Task Analysis] C function returns a unique_ptr, Rust function returns Option<RemoteObj>. Both perform system ability lookup with device ID. [Similarity] Names don't match but conceptually they do the same thing: retrieve a system ability. [Knowledge Extraction] Found API mapping for system ability lookup, partial structural match in error handling (nullptr checks), and a pattern for device ID handling."}]
+Unixcoder Score: -0.024687035009264946
+--------------------------------------------------
+C_Code: 
+void CommonEventListener::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    if (commonEventCollect_ == nullptr) {
+        HILOGE("commonEventCollect_ is nullptr!");
+        return;
+    }
+    if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
+        HILOGI("CommonEventCollect ces is ready");
+        commonEventCollect_->SendEvent(SUB_COMMON_EVENT);
+    }
+}
+Function: 
+fn common_event() {
+    init();
+    let obj_j = SystemAbilityManager::check_system_ability(1494);
+    if let Some(obj) = obj_j {
+        let mut id_list:Vec<i64> = vec![];
+        let ret = SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("all extra id is {}", id)
+        }
+
+        let mut id_list:Vec<i64> = vec![];
+        let ret = 
+            SystemAbilityManager::get_common_event_extra_data_id_list(1494, &mut id_list, "usual.event.SCREEN_ON");
+        assert_eq!(ret, 0);
+        for id in id_list {
+            println!("usual.event.SCREEN_ON event extra id is {}", id)
+        }
+    }
+}
+Unixcoder Score: -0.02849721908569336
+--------------------------------------------------

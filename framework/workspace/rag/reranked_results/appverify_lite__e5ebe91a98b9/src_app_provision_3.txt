@@ -1,0 +1,1130 @@
+C_Code: 
+void InnerWriter::AppendStringArrayParam(EventBase& eventBase, const HiSysEventParam& param)
+{
+    auto array = reinterpret_cast<char**>(param.v.array);
+    if (array == nullptr) {
+        eventBase.SetRetCode(ERR_VALUE_INVALID);
+        return;
+    }
+    for (size_t i = 0; i < param.arraySize; ++i) {
+        if (auto temp = array + i; *temp == nullptr) {
+            eventBase.SetRetCode(ERR_VALUE_INVALID);
+            return;
+        }
+    }
+    std::vector<std::string> value(array, array + param.arraySize);
+    if (CheckArrayParamsValidity(eventBase, param.name, value)) {
+        for (auto& item : value) {
+            IsWarnAndUpdate(CheckValue(item), eventBase);
+        }
+        eventBase.GetEventBuilder().AppendValue(std::make_shared<StringEncodedArrayParam>(param.name, value));
+    }
+}
+Function: 
+pub fn build_string_arrays<'a, const N: usize>(param_name: &'a str, param_value: [&'a str; N]) -> HiSysEventParam<'a> {
+    let init_wrapper = CString::new("").unwrap();
+    let mut dest = std::boxed::Box::<[*const c_char;N]>::new([
+        init_wrapper.as_ptr() as *const c_char; N
+    ]);
+    for i in 0..N {
+        let str_wrapper = CString::new(param_value[i]).unwrap();
+        dest[i] = str_wrapper.into_raw() as *const c_char;
+    }
+    HiSysEventParam {
+        param_name,
+        param_type: HiSysEventParamType::ParamTypeStringArray,
+        param_value: HiSysEventParamValue {
+            void_ptr_: std::boxed::Box::<[*const c_char;N]>::into_raw(dest) as *const c_int as *const (),
+        },
+        array_size: N,
+    }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx114934_rank3.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx114934_rank3.rs", "c_api": "ev_free (EV_A)", "rust_api": "ptr::drop_in_place(self.0)", "mapping_type": "function", "description": "Event loop cleanup", "reasoning": "[Task Analysis] C code is a loop cleanup function for an event loop library (libev), handling resource deallocation for various backends and data structures. Rust code is a drop implementation for a raw pointer wrapper. [Similarity] Names do not refer to the same concept (ev_loop_destroy vs drop), and domains are different (low-level event loop cleanup vs memory management via drop). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to resource deallocation and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx114934_rank3.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx114934_rank3.rs", "c_api": "close (evfd)", "rust_api": "ptr::drop_in_place(self.0)", "mapping_type": "function", "description": "Resource deallocation", "reasoning": "[Task Analysis] C code is a loop cleanup function for an event loop library (libev), handling resource deallocation for various backends and data structures. Rust code is a drop implementation for a raw pointer wrapper. [Similarity] Names do not refer to the same concept (ev_loop_destroy vs drop), and domains are different (low-level event loop cleanup vs memory management via drop). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to resource deallocation and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx114934_rank3.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx114934_rank3.rs", "c_api": "ev_free (anfds)", "rust_api": "ptr::drop_in_place(self.0)", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C code is a loop cleanup function for an event loop library (libev), handling resource deallocation for various backends and data structures. Rust code is a drop implementation for a raw pointer wrapper. [Similarity] Names do not refer to the same concept (ev_loop_destroy vs drop), and domains are different (low-level event loop cleanup vs memory management via drop). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to resource deallocation and memory management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__ev_loop_destroy__idx114934_rank3.c", "source_rust_file": "API_Mapping__ev_loop_destroy__idx114934_rank3.rs", "c_api": "array_free (pending, [i])", "rust_api": "ptr::drop_in_place(self.0)", "mapping_type": "function", "description": "Array element cleanup", "reasoning": "[Task Analysis] C code is a loop cleanup function for an event loop library (libev), handling resource deallocation for various backends and data structures. Rust code is a drop implementation for a raw pointer wrapper. [Similarity] Names do not refer to the same concept (ev_loop_destroy vs drop), and domains are different (low-level event loop cleanup vs memory management via drop). [Knowledge Extraction] No full structural match, no partial match, but there are API mappings related to resource deallocation and memory management patterns."}]
+Unixcoder Score: 0.08551039546728134
+--------------------------------------------------
+C_Code: 
+OHOS::CJStringArray FfiRpcMessageSequenceImplReadStringArray(int64_t id, int32_t* errCode)
+{
+    ZLOGD(LOG_LABEL, "[RPC] FfiRpcMessageSequenceImplReadStringArray start");
+    auto rpc = FFIData::GetData<MessageSequenceImpl>(id);
+    if (!rpc) {
+        ZLOGE(LOG_LABEL, "[RPC] instance not exist.");
+        *errCode = errorDesc::READ_DATA_FROM_MESSAGE_SEQUENCE_ERROR;
+        return OHOS::CJStringArray { 0 };
+    }
+    ZLOGD(LOG_LABEL, "[RPC] FfiRpcMessageSequenceImplReadStringArray end");
+    return rpc->CJ_ReadStringArray(errCode);
+}
+Function: 
+fn read_process_vec(parcel: Pin<&mut Parcel>) -> IpcResult<Vec<Self>> {
+        let mut v = vec![];
+        match ReadStringVector(parcel, &mut v) {
+            true => Ok(v),
+            false => Err(IpcStatusCode::Failed),
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ev_loop_destroy__idx10725_rank4.c", "source_rust_file": "Partial__ev_loop_destroy__idx10725_rank4.rs", "c_api": "ev_free", "rust_api": "None", "mapping_type": "function", "description": "Memory deallocation", "reasoning": "[Task Analysis] C function `ev_loop_destroy` is a cleanup function for an event loop, handling resource deallocation and backend-specific teardown. Rust function `drop` is a destructor implementing cleanup logic for a struct. [Similarity] Names don't match (`ev_loop_destroy` vs `drop`), but both perform cleanup operations. [Knowledge Extraction] No full structural similarity due to different domains (C event loop vs Rust drop trait), but there are partial matching fragments in cleanup logic and API mappings for resource deallocation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ev_loop_destroy__idx10725_rank4.c", "source_rust_file": "Partial__ev_loop_destroy__idx10725_rank4.rs", "c_fragment": "if (backend_fd >= 0)\n    close (backend_fd);", "rust_fragment": "None", "description": "Resource cleanup for backend file descriptor", "reasoning": "[Task Analysis] C function `ev_loop_destroy` is a cleanup function for an event loop, handling resource deallocation and backend-specific teardown. Rust function `drop` is a destructor implementing cleanup logic for a struct. [Similarity] Names don't match (`ev_loop_destroy` vs `drop`), but both perform cleanup operations. [Knowledge Extraction] No full structural similarity due to different domains (C event loop vs Rust drop trait), but there are partial matching fragments in cleanup logic and API mappings for resource deallocation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ev_loop_destroy__idx10725_rank4.c", "source_rust_file": "Partial__ev_loop_destroy__idx10725_rank4.rs", "c_api": "array_free", "rust_api": "None", "mapping_type": "function", "description": "Freeing array memory", "reasoning": "[Task Analysis] C function `ev_loop_destroy` is a cleanup function for an event loop, handling resource deallocation and backend-specific teardown. Rust function `drop` is a destructor implementing cleanup logic for a struct. [Similarity] Names don't match (`ev_loop_destroy` vs `drop`), but both perform cleanup operations. [Knowledge Extraction] No full structural similarity due to different domains (C event loop vs Rust drop trait), but there are partial matching fragments in cleanup logic and API mappings for resource deallocation patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ev_loop_destroy__idx10725_rank4.c", "source_rust_file": "Partial__ev_loop_destroy__idx10725_rank4.rs", "c_api": "close (evfd)", "rust_api": "None", "mapping_type": "function", "description": "Closing file descriptor", "reasoning": "[Task Analysis] C function `ev_loop_destroy` is a cleanup function for an event loop, handling resource deallocation and backend-specific teardown. Rust function `drop` is a destructor implementing cleanup logic for a struct. [Similarity] Names don't match (`ev_loop_destroy` vs `drop`), but both perform cleanup operations. [Knowledge Extraction] No full structural similarity due to different domains (C event loop vs Rust drop trait), but there are partial matching fragments in cleanup logic and API mappings for resource deallocation patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ev_loop_destroy__idx10725_rank4.c", "source_rust_file": "Partial__ev_loop_destroy__idx10725_rank4.rs", "c_fragment": "array_free (timer, EMPTY);", "rust_fragment": "None", "description": "Freeing timer-related memory", "reasoning": "[Task Analysis] C function `ev_loop_destroy` is a cleanup function for an event loop, handling resource deallocation and backend-specific teardown. Rust function `drop` is a destructor implementing cleanup logic for a struct. [Similarity] Names don't match (`ev_loop_destroy` vs `drop`), but both perform cleanup operations. [Knowledge Extraction] No full structural similarity due to different domains (C event loop vs Rust drop trait), but there are partial matching fragments in cleanup logic and API mappings for resource deallocation patterns."}]
+Unixcoder Score: 0.06824542582035065
+--------------------------------------------------
+C_Code: 
+void
+ev_loop_destroy (EV_P)
+{
+  int i;
+
+#if EV_MULTIPLICITY
+  /* mimic free (0) */
+  if (!EV_A)
+    return;
+#endif
+
+#if EV_CLEANUP_ENABLE
+  /* queue cleanup watchers (and execute them) */
+  if (expect_false (cleanupcnt))
+    {
+      queue_events (EV_A_ (W *)cleanups, cleanupcnt, EV_CLEANUP);
+      EV_INVOKE_PENDING;
+    }
+#endif
+
+#if EV_CHILD_ENABLE
+  if (ev_is_active (&childev))
+    {
+      ev_ref (EV_A); /* child watcher */
+      ev_signal_stop (EV_A_ &childev);
+    }
+#endif
+
+  if (ev_is_active (&pipe_w))
+    {
+      /*ev_ref (EV_A);*/
+      /*ev_io_stop (EV_A_ &pipe_w);*/
+
+#if EV_USE_EVENTFD
+      if (evfd >= 0)
+        close (evfd);
+#endif
+
+      if (evpipe [0] >= 0)
+        {
+          EV_WIN32_CLOSE_FD (evpipe [0]);
+          EV_WIN32_CLOSE_FD (evpipe [1]);
+        }
+    }
+
+#if EV_USE_SIGNALFD
+  if (ev_is_active (&sigfd_w))
+    close (sigfd);
+#endif
+
+#if EV_USE_INOTIFY
+  if (fs_fd >= 0)
+    close (fs_fd);
+#endif
+
+  if (backend_fd >= 0)
+    close (backend_fd);
+
+#if EV_USE_IOCP
+  if (backend == EVBACKEND_IOCP  ) iocp_destroy   (EV_A);
+#endif
+#if EV_USE_PORT
+  if (backend == EVBACKEND_PORT  ) port_destroy   (EV_A);
+#endif
+#if EV_USE_KQUEUE
+  if (backend == EVBACKEND_KQUEUE) kqueue_destroy (EV_A);
+#endif
+#if EV_USE_EPOLL
+  if (backend == EVBACKEND_EPOLL ) epoll_destroy  (EV_A);
+#endif
+#if EV_USE_POLL
+  if (backend == EVBACKEND_POLL  ) poll_destroy   (EV_A);
+#endif
+#if EV_USE_SELECT
+  if (backend == EVBACKEND_SELECT) select_destroy (EV_A);
+#endif
+
+  for (i = NUMPRI; i--; )
+    {
+      array_free (pending, [i]);
+#if EV_IDLE_ENABLE
+      array_free (idle, [i]);
+#endif
+    }
+
+  ev_free (anfds); anfds = 0; anfdmax = 0;
+
+  /* have to use the microsoft-never-gets-it-right macro */
+  array_free (rfeed, EMPTY);
+  array_free (fdchange, EMPTY);
+  array_free (timer, EMPTY);
+#if EV_PERIODIC_ENABLE
+  array_free (periodic, EMPTY);
+#endif
+#if EV_FORK_ENABLE
+  array_free (fork, EMPTY);
+#endif
+#if EV_CLEANUP_ENABLE
+  array_free (cleanup, EMPTY);
+#endif
+  array_free (prepare, EMPTY);
+  array_free (check, EMPTY);
+#if EV_ASYNC_ENABLE
+  array_free (async, EMPTY);
+#endif
+
+  backend = 0;
+
+#if EV_MULTIPLICITY
+  if (ev_is_default_loop (EV_A))
+#endif
+    ev_default_loop_ptr = 0;
+#if EV_MULTIPLICITY
+  else
+    ev_free (EV_A);
+#endif
+}
+Function: 
+fn drop(&mut self) {
+        // Swap out our state with however we finished.
+        let state_and_queue =
+            self.state_and_queue.swap(self.set_state_on_drop_to, Ordering::AcqRel);
+
+        // We should only ever see an old state which was RUNNING.
+        assert_eq!(state_and_queue.addr() & STATE_MASK, RUNNING);
+
+        // Walk the entire linked list of waiters and wake them up (in lifo
+        // order, last to register is first to wake up).
+        unsafe {
+            // Right after setting `node.signaled = true` the other thread may
+            // free `node` if there happens to be has a spurious wakeup.
+            // So we have to take out the `thread` field and copy the pointer to
+            // `next` first.
+            let mut queue =
+                state_and_queue.with_addr(state_and_queue.addr() & !STATE_MASK) as *const Waiter;
+            while !queue.is_null() {
+                let next = (*queue).next;
+                let thread = (*queue).thread.take().unwrap();
+                (*queue).signaled.store(true, Ordering::Release);
+                // ^- FIXME (maybe): This is another case of issue #55005
+                // `store()` has a potentially dangling ref to `signaled`.
+                queue = next;
+                thread.unpark();
+            }
+        }
+    }
+Unixcoder Score: 0.055200930684804916
+--------------------------------------------------
+C_Code: 
+void
+ev_loop_destroy (EV_P)
+{
+  int i;
+
+#if EV_MULTIPLICITY
+  /* mimic free (0) */
+  if (!EV_A)
+    return;
+#endif
+
+#if EV_CLEANUP_ENABLE
+  /* queue cleanup watchers (and execute them) */
+  if (expect_false (cleanupcnt))
+    {
+      queue_events (EV_A_ (W *)cleanups, cleanupcnt, EV_CLEANUP);
+      EV_INVOKE_PENDING;
+    }
+#endif
+
+#if EV_CHILD_ENABLE
+  if (ev_is_active (&childev))
+    {
+      ev_ref (EV_A); /* child watcher */
+      ev_signal_stop (EV_A_ &childev);
+    }
+#endif
+
+  if (ev_is_active (&pipe_w))
+    {
+      /*ev_ref (EV_A);*/
+      /*ev_io_stop (EV_A_ &pipe_w);*/
+
+#if EV_USE_EVENTFD
+      if (evfd >= 0)
+        close (evfd);
+#endif
+
+      if (evpipe [0] >= 0)
+        {
+          EV_WIN32_CLOSE_FD (evpipe [0]);
+          EV_WIN32_CLOSE_FD (evpipe [1]);
+        }
+    }
+
+#if EV_USE_SIGNALFD
+  if (ev_is_active (&sigfd_w))
+    close (sigfd);
+#endif
+
+#if EV_USE_INOTIFY
+  if (fs_fd >= 0)
+    close (fs_fd);
+#endif
+
+  if (backend_fd >= 0)
+    close (backend_fd);
+
+#if EV_USE_IOCP
+  if (backend == EVBACKEND_IOCP  ) iocp_destroy   (EV_A);
+#endif
+#if EV_USE_PORT
+  if (backend == EVBACKEND_PORT  ) port_destroy   (EV_A);
+#endif
+#if EV_USE_KQUEUE
+  if (backend == EVBACKEND_KQUEUE) kqueue_destroy (EV_A);
+#endif
+#if EV_USE_EPOLL
+  if (backend == EVBACKEND_EPOLL ) epoll_destroy  (EV_A);
+#endif
+#if EV_USE_POLL
+  if (backend == EVBACKEND_POLL  ) poll_destroy   (EV_A);
+#endif
+#if EV_USE_SELECT
+  if (backend == EVBACKEND_SELECT) select_destroy (EV_A);
+#endif
+
+  for (i = NUMPRI; i--; )
+    {
+      array_free (pending, [i]);
+#if EV_IDLE_ENABLE
+      array_free (idle, [i]);
+#endif
+    }
+
+  ev_free (anfds); anfds = 0; anfdmax = 0;
+
+  /* have to use the microsoft-never-gets-it-right macro */
+  array_free (rfeed, EMPTY);
+  array_free (fdchange, EMPTY);
+  array_free (timer, EMPTY);
+#if EV_PERIODIC_ENABLE
+  array_free (periodic, EMPTY);
+#endif
+#if EV_FORK_ENABLE
+  array_free (fork, EMPTY);
+#endif
+#if EV_CLEANUP_ENABLE
+  array_free (cleanup, EMPTY);
+#endif
+  array_free (prepare, EMPTY);
+  array_free (check, EMPTY);
+#if EV_ASYNC_ENABLE
+  array_free (async, EMPTY);
+#endif
+
+  backend = 0;
+
+#if EV_MULTIPLICITY
+  if (ev_is_default_loop (EV_A))
+#endif
+    ev_default_loop_ptr = 0;
+#if EV_MULTIPLICITY
+  else
+    ev_free (EV_A);
+#endif
+}
+Function: 
+fn drop(&mut self) {
+        match self.timer {
+            Some(ref timer) => unsafe {
+                let data = uvll::get_data_for_uv_handle(timer.handle);
+                let _data: ~TimerContext = cast::transmute(data);
+            },
+            None => {}
+        }
+    }
+Unixcoder Score: 0.05487493425607681
+--------------------------------------------------
+C_Code: 
+void
+ev_loop_destroy (EV_P)
+{
+  int i;
+
+#if EV_MULTIPLICITY
+  /* mimic free (0) */
+  if (!EV_A)
+    return;
+#endif
+
+#if EV_CLEANUP_ENABLE
+  /* queue cleanup watchers (and execute them) */
+  if (expect_false (cleanupcnt))
+    {
+      queue_events (EV_A_ (W *)cleanups, cleanupcnt, EV_CLEANUP);
+      EV_INVOKE_PENDING;
+    }
+#endif
+
+#if EV_CHILD_ENABLE
+  if (ev_is_active (&childev))
+    {
+      ev_ref (EV_A); /* child watcher */
+      ev_signal_stop (EV_A_ &childev);
+    }
+#endif
+
+  if (ev_is_active (&pipe_w))
+    {
+      /*ev_ref (EV_A);*/
+      /*ev_io_stop (EV_A_ &pipe_w);*/
+
+#if EV_USE_EVENTFD
+      if (evfd >= 0)
+        close (evfd);
+#endif
+
+      if (evpipe [0] >= 0)
+        {
+          EV_WIN32_CLOSE_FD (evpipe [0]);
+          EV_WIN32_CLOSE_FD (evpipe [1]);
+        }
+    }
+
+#if EV_USE_SIGNALFD
+  if (ev_is_active (&sigfd_w))
+    close (sigfd);
+#endif
+
+#if EV_USE_INOTIFY
+  if (fs_fd >= 0)
+    close (fs_fd);
+#endif
+
+  if (backend_fd >= 0)
+    close (backend_fd);
+
+#if EV_USE_IOCP
+  if (backend == EVBACKEND_IOCP  ) iocp_destroy   (EV_A);
+#endif
+#if EV_USE_PORT
+  if (backend == EVBACKEND_PORT  ) port_destroy   (EV_A);
+#endif
+#if EV_USE_KQUEUE
+  if (backend == EVBACKEND_KQUEUE) kqueue_destroy (EV_A);
+#endif
+#if EV_USE_EPOLL
+  if (backend == EVBACKEND_EPOLL ) epoll_destroy  (EV_A);
+#endif
+#if EV_USE_POLL
+  if (backend == EVBACKEND_POLL  ) poll_destroy   (EV_A);
+#endif
+#if EV_USE_SELECT
+  if (backend == EVBACKEND_SELECT) select_destroy (EV_A);
+#endif
+
+  for (i = NUMPRI; i--; )
+    {
+      array_free (pending, [i]);
+#if EV_IDLE_ENABLE
+      array_free (idle, [i]);
+#endif
+    }
+
+  ev_free (anfds); anfds = 0; anfdmax = 0;
+
+  /* have to use the microsoft-never-gets-it-right macro */
+  array_free (rfeed, EMPTY);
+  array_free (fdchange, EMPTY);
+  array_free (timer, EMPTY);
+#if EV_PERIODIC_ENABLE
+  array_free (periodic, EMPTY);
+#endif
+#if EV_FORK_ENABLE
+  array_free (fork, EMPTY);
+#endif
+#if EV_CLEANUP_ENABLE
+  array_free (cleanup, EMPTY);
+#endif
+  array_free (prepare, EMPTY);
+  array_free (check, EMPTY);
+#if EV_ASYNC_ENABLE
+  array_free (async, EMPTY);
+#endif
+
+  backend = 0;
+
+#if EV_MULTIPLICITY
+  if (ev_is_default_loop (EV_A))
+#endif
+    ev_default_loop_ptr = 0;
+#if EV_MULTIPLICITY
+  else
+    ev_free (EV_A);
+#endif
+}
+Function: 
+pub fn new(loop_: &mut Loop) -> TimerWatcher {
+        unsafe {
+            let handle = uvll::malloc_handle(uvll::UV_TIMER);
+            assert!(handle.is_not_null());
+            assert!(0 == uvll::timer_init(loop_.native_handle(), handle));
+            let mut watcher: TimerWatcher = NativeHandle::from_native_handle(handle);
+            watcher.install_watcher_data();
+            return watcher;
+        }
+    }
+Unixcoder Score: 0.05462252348661423
+--------------------------------------------------
+C_Code: 
+void
+ev_loop_destroy (EV_P)
+{
+  int i;
+
+#if EV_MULTIPLICITY
+  /* mimic free (0) */
+  if (!EV_A)
+    return;
+#endif
+
+#if EV_CLEANUP_ENABLE
+  /* queue cleanup watchers (and execute them) */
+  if (expect_false (cleanupcnt))
+    {
+      queue_events (EV_A_ (W *)cleanups, cleanupcnt, EV_CLEANUP);
+      EV_INVOKE_PENDING;
+    }
+#endif
+
+#if EV_CHILD_ENABLE
+  if (ev_is_active (&childev))
+    {
+      ev_ref (EV_A); /* child watcher */
+      ev_signal_stop (EV_A_ &childev);
+    }
+#endif
+
+  if (ev_is_active (&pipe_w))
+    {
+      /*ev_ref (EV_A);*/
+      /*ev_io_stop (EV_A_ &pipe_w);*/
+
+#if EV_USE_EVENTFD
+      if (evfd >= 0)
+        close (evfd);
+#endif
+
+      if (evpipe [0] >= 0)
+        {
+          EV_WIN32_CLOSE_FD (evpipe [0]);
+          EV_WIN32_CLOSE_FD (evpipe [1]);
+        }
+    }
+
+#if EV_USE_SIGNALFD
+  if (ev_is_active (&sigfd_w))
+    close (sigfd);
+#endif
+
+#if EV_USE_INOTIFY
+  if (fs_fd >= 0)
+    close (fs_fd);
+#endif
+
+  if (backend_fd >= 0)
+    close (backend_fd);
+
+#if EV_USE_IOCP
+  if (backend == EVBACKEND_IOCP  ) iocp_destroy   (EV_A);
+#endif
+#if EV_USE_PORT
+  if (backend == EVBACKEND_PORT  ) port_destroy   (EV_A);
+#endif
+#if EV_USE_KQUEUE
+  if (backend == EVBACKEND_KQUEUE) kqueue_destroy (EV_A);
+#endif
+#if EV_USE_EPOLL
+  if (backend == EVBACKEND_EPOLL ) epoll_destroy  (EV_A);
+#endif
+#if EV_USE_POLL
+  if (backend == EVBACKEND_POLL  ) poll_destroy   (EV_A);
+#endif
+#if EV_USE_SELECT
+  if (backend == EVBACKEND_SELECT) select_destroy (EV_A);
+#endif
+
+  for (i = NUMPRI; i--; )
+    {
+      array_free (pending, [i]);
+#if EV_IDLE_ENABLE
+      array_free (idle, [i]);
+#endif
+    }
+
+  ev_free (anfds); anfds = 0; anfdmax = 0;
+
+  /* have to use the microsoft-never-gets-it-right macro */
+  array_free (rfeed, EMPTY);
+  array_free (fdchange, EMPTY);
+  array_free (timer, EMPTY);
+#if EV_PERIODIC_ENABLE
+  array_free (periodic, EMPTY);
+#endif
+#if EV_FORK_ENABLE
+  array_free (fork, EMPTY);
+#endif
+#if EV_CLEANUP_ENABLE
+  array_free (cleanup, EMPTY);
+#endif
+  array_free (prepare, EMPTY);
+  array_free (check, EMPTY);
+#if EV_ASYNC_ENABLE
+  array_free (async, EMPTY);
+#endif
+
+  backend = 0;
+
+#if EV_MULTIPLICITY
+  if (ev_is_default_loop (EV_A))
+#endif
+    ev_default_loop_ptr = 0;
+#if EV_MULTIPLICITY
+  else
+    ev_free (EV_A);
+#endif
+}
+Function: 
+fn from(arr: [T; N]) -> Self {
+        let mut deq = VecDeque::with_capacity(N);
+        let arr = ManuallyDrop::new(arr);
+        if !<T>::IS_ZST {
+            // SAFETY: VecDeque::with_capacity ensures that there is enough capacity.
+            unsafe {
+                ptr::copy_nonoverlapping(arr.as_ptr(), deq.ptr(), N);
+            }
+        }
+        deq.head = 0;
+        deq.len = N;
+        deq
+    }
+Unixcoder Score: 0.05208719149231911
+--------------------------------------------------
+C_Code: 
+void
+ev_loop_destroy (EV_P)
+{
+  int i;
+
+#if EV_MULTIPLICITY
+  /* mimic free (0) */
+  if (!EV_A)
+    return;
+#endif
+
+#if EV_CLEANUP_ENABLE
+  /* queue cleanup watchers (and execute them) */
+  if (expect_false (cleanupcnt))
+    {
+      queue_events (EV_A_ (W *)cleanups, cleanupcnt, EV_CLEANUP);
+      EV_INVOKE_PENDING;
+    }
+#endif
+
+#if EV_CHILD_ENABLE
+  if (ev_is_active (&childev))
+    {
+      ev_ref (EV_A); /* child watcher */
+      ev_signal_stop (EV_A_ &childev);
+    }
+#endif
+
+  if (ev_is_active (&pipe_w))
+    {
+      /*ev_ref (EV_A);*/
+      /*ev_io_stop (EV_A_ &pipe_w);*/
+
+#if EV_USE_EVENTFD
+      if (evfd >= 0)
+        close (evfd);
+#endif
+
+      if (evpipe [0] >= 0)
+        {
+          EV_WIN32_CLOSE_FD (evpipe [0]);
+          EV_WIN32_CLOSE_FD (evpipe [1]);
+        }
+    }
+
+#if EV_USE_SIGNALFD
+  if (ev_is_active (&sigfd_w))
+    close (sigfd);
+#endif
+
+#if EV_USE_INOTIFY
+  if (fs_fd >= 0)
+    close (fs_fd);
+#endif
+
+  if (backend_fd >= 0)
+    close (backend_fd);
+
+#if EV_USE_IOCP
+  if (backend == EVBACKEND_IOCP  ) iocp_destroy   (EV_A);
+#endif
+#if EV_USE_PORT
+  if (backend == EVBACKEND_PORT  ) port_destroy   (EV_A);
+#endif
+#if EV_USE_KQUEUE
+  if (backend == EVBACKEND_KQUEUE) kqueue_destroy (EV_A);
+#endif
+#if EV_USE_EPOLL
+  if (backend == EVBACKEND_EPOLL ) epoll_destroy  (EV_A);
+#endif
+#if EV_USE_POLL
+  if (backend == EVBACKEND_POLL  ) poll_destroy   (EV_A);
+#endif
+#if EV_USE_SELECT
+  if (backend == EVBACKEND_SELECT) select_destroy (EV_A);
+#endif
+
+  for (i = NUMPRI; i--; )
+    {
+      array_free (pending, [i]);
+#if EV_IDLE_ENABLE
+      array_free (idle, [i]);
+#endif
+    }
+
+  ev_free (anfds); anfds = 0; anfdmax = 0;
+
+  /* have to use the microsoft-never-gets-it-right macro */
+  array_free (rfeed, EMPTY);
+  array_free (fdchange, EMPTY);
+  array_free (timer, EMPTY);
+#if EV_PERIODIC_ENABLE
+  array_free (periodic, EMPTY);
+#endif
+#if EV_FORK_ENABLE
+  array_free (fork, EMPTY);
+#endif
+#if EV_CLEANUP_ENABLE
+  array_free (cleanup, EMPTY);
+#endif
+  array_free (prepare, EMPTY);
+  array_free (check, EMPTY);
+#if EV_ASYNC_ENABLE
+  array_free (async, EMPTY);
+#endif
+
+  backend = 0;
+
+#if EV_MULTIPLICITY
+  if (ev_is_default_loop (EV_A))
+#endif
+    ev_default_loop_ptr = 0;
+#if EV_MULTIPLICITY
+  else
+    ev_free (EV_A);
+#endif
+}
+Function: 
+pub fn retain<F>(&mut self, f: F)
+    where
+        F: FnMut(&K, &mut V) -> bool,
+    {
+        self.base.retain(f)
+    }
+Unixcoder Score: 0.051829900592565536
+--------------------------------------------------
+C_Code: 
+void
+ev_loop_destroy (EV_P)
+{
+  int i;
+
+#if EV_MULTIPLICITY
+  /* mimic free (0) */
+  if (!EV_A)
+    return;
+#endif
+
+#if EV_CLEANUP_ENABLE
+  /* queue cleanup watchers (and execute them) */
+  if (expect_false (cleanupcnt))
+    {
+      queue_events (EV_A_ (W *)cleanups, cleanupcnt, EV_CLEANUP);
+      EV_INVOKE_PENDING;
+    }
+#endif
+
+#if EV_CHILD_ENABLE
+  if (ev_is_active (&childev))
+    {
+      ev_ref (EV_A); /* child watcher */
+      ev_signal_stop (EV_A_ &childev);
+    }
+#endif
+
+  if (ev_is_active (&pipe_w))
+    {
+      /*ev_ref (EV_A);*/
+      /*ev_io_stop (EV_A_ &pipe_w);*/
+
+#if EV_USE_EVENTFD
+      if (evfd >= 0)
+        close (evfd);
+#endif
+
+      if (evpipe [0] >= 0)
+        {
+          EV_WIN32_CLOSE_FD (evpipe [0]);
+          EV_WIN32_CLOSE_FD (evpipe [1]);
+        }
+    }
+
+#if EV_USE_SIGNALFD
+  if (ev_is_active (&sigfd_w))
+    close (sigfd);
+#endif
+
+#if EV_USE_INOTIFY
+  if (fs_fd >= 0)
+    close (fs_fd);
+#endif
+
+  if (backend_fd >= 0)
+    close (backend_fd);
+
+#if EV_USE_IOCP
+  if (backend == EVBACKEND_IOCP  ) iocp_destroy   (EV_A);
+#endif
+#if EV_USE_PORT
+  if (backend == EVBACKEND_PORT  ) port_destroy   (EV_A);
+#endif
+#if EV_USE_KQUEUE
+  if (backend == EVBACKEND_KQUEUE) kqueue_destroy (EV_A);
+#endif
+#if EV_USE_EPOLL
+  if (backend == EVBACKEND_EPOLL ) epoll_destroy  (EV_A);
+#endif
+#if EV_USE_POLL
+  if (backend == EVBACKEND_POLL  ) poll_destroy   (EV_A);
+#endif
+#if EV_USE_SELECT
+  if (backend == EVBACKEND_SELECT) select_destroy (EV_A);
+#endif
+
+  for (i = NUMPRI; i--; )
+    {
+      array_free (pending, [i]);
+#if EV_IDLE_ENABLE
+      array_free (idle, [i]);
+#endif
+    }
+
+  ev_free (anfds); anfds = 0; anfdmax = 0;
+
+  /* have to use the microsoft-never-gets-it-right macro */
+  array_free (rfeed, EMPTY);
+  array_free (fdchange, EMPTY);
+  array_free (timer, EMPTY);
+#if EV_PERIODIC_ENABLE
+  array_free (periodic, EMPTY);
+#endif
+#if EV_FORK_ENABLE
+  array_free (fork, EMPTY);
+#endif
+#if EV_CLEANUP_ENABLE
+  array_free (cleanup, EMPTY);
+#endif
+  array_free (prepare, EMPTY);
+  array_free (check, EMPTY);
+#if EV_ASYNC_ENABLE
+  array_free (async, EMPTY);
+#endif
+
+  backend = 0;
+
+#if EV_MULTIPLICITY
+  if (ev_is_default_loop (EV_A))
+#endif
+    ev_default_loop_ptr = 0;
+#if EV_MULTIPLICITY
+  else
+    ev_free (EV_A);
+#endif
+}
+Function: 
+pub fn resize_with(&mut self, new_len: usize, generator: impl FnMut() -> T) {
+        let len = self.len;
+
+        if new_len > len {
+            self.extend(repeat_with(generator).take(new_len - len))
+        } else {
+            self.truncate(new_len);
+        }
+    }
+Unixcoder Score: 0.05170731619000435
+--------------------------------------------------
+C_Code: 
+void
+ev_loop_destroy (EV_P)
+{
+  int i;
+
+#if EV_MULTIPLICITY
+  /* mimic free (0) */
+  if (!EV_A)
+    return;
+#endif
+
+#if EV_CLEANUP_ENABLE
+  /* queue cleanup watchers (and execute them) */
+  if (expect_false (cleanupcnt))
+    {
+      queue_events (EV_A_ (W *)cleanups, cleanupcnt, EV_CLEANUP);
+      EV_INVOKE_PENDING;
+    }
+#endif
+
+#if EV_CHILD_ENABLE
+  if (ev_is_active (&childev))
+    {
+      ev_ref (EV_A); /* child watcher */
+      ev_signal_stop (EV_A_ &childev);
+    }
+#endif
+
+  if (ev_is_active (&pipe_w))
+    {
+      /*ev_ref (EV_A);*/
+      /*ev_io_stop (EV_A_ &pipe_w);*/
+
+#if EV_USE_EVENTFD
+      if (evfd >= 0)
+        close (evfd);
+#endif
+
+      if (evpipe [0] >= 0)
+        {
+          EV_WIN32_CLOSE_FD (evpipe [0]);
+          EV_WIN32_CLOSE_FD (evpipe [1]);
+        }
+    }
+
+#if EV_USE_SIGNALFD
+  if (ev_is_active (&sigfd_w))
+    close (sigfd);
+#endif
+
+#if EV_USE_INOTIFY
+  if (fs_fd >= 0)
+    close (fs_fd);
+#endif
+
+  if (backend_fd >= 0)
+    close (backend_fd);
+
+#if EV_USE_IOCP
+  if (backend == EVBACKEND_IOCP  ) iocp_destroy   (EV_A);
+#endif
+#if EV_USE_PORT
+  if (backend == EVBACKEND_PORT  ) port_destroy   (EV_A);
+#endif
+#if EV_USE_KQUEUE
+  if (backend == EVBACKEND_KQUEUE) kqueue_destroy (EV_A);
+#endif
+#if EV_USE_EPOLL
+  if (backend == EVBACKEND_EPOLL ) epoll_destroy  (EV_A);
+#endif
+#if EV_USE_POLL
+  if (backend == EVBACKEND_POLL  ) poll_destroy   (EV_A);
+#endif
+#if EV_USE_SELECT
+  if (backend == EVBACKEND_SELECT) select_destroy (EV_A);
+#endif
+
+  for (i = NUMPRI; i--; )
+    {
+      array_free (pending, [i]);
+#if EV_IDLE_ENABLE
+      array_free (idle, [i]);
+#endif
+    }
+
+  ev_free (anfds); anfds = 0; anfdmax = 0;
+
+  /* have to use the microsoft-never-gets-it-right macro */
+  array_free (rfeed, EMPTY);
+  array_free (fdchange, EMPTY);
+  array_free (timer, EMPTY);
+#if EV_PERIODIC_ENABLE
+  array_free (periodic, EMPTY);
+#endif
+#if EV_FORK_ENABLE
+  array_free (fork, EMPTY);
+#endif
+#if EV_CLEANUP_ENABLE
+  array_free (cleanup, EMPTY);
+#endif
+  array_free (prepare, EMPTY);
+  array_free (check, EMPTY);
+#if EV_ASYNC_ENABLE
+  array_free (async, EMPTY);
+#endif
+
+  backend = 0;
+
+#if EV_MULTIPLICITY
+  if (ev_is_default_loop (EV_A))
+#endif
+    ev_default_loop_ptr = 0;
+#if EV_MULTIPLICITY
+  else
+    ev_free (EV_A);
+#endif
+}
+Function: 
+pub fn pop_front(&mut self) -> Option<T> {
+        if self.is_empty() {
+            None
+        } else {
+            let old_head = self.head;
+            self.head = self.to_physical_idx(1);
+            self.len -= 1;
+            Some(unsafe { self.buffer_read(old_head) })
+        }
+    }
+Unixcoder Score: 0.05124581977725029
+--------------------------------------------------
+C_Code: 
+void
+ev_loop_destroy (EV_P)
+{
+  int i;
+
+#if EV_MULTIPLICITY
+  /* mimic free (0) */
+  if (!EV_A)
+    return;
+#endif
+
+#if EV_CLEANUP_ENABLE
+  /* queue cleanup watchers (and execute them) */
+  if (expect_false (cleanupcnt))
+    {
+      queue_events (EV_A_ (W *)cleanups, cleanupcnt, EV_CLEANUP);
+      EV_INVOKE_PENDING;
+    }
+#endif
+
+#if EV_CHILD_ENABLE
+  if (ev_is_active (&childev))
+    {
+      ev_ref (EV_A); /* child watcher */
+      ev_signal_stop (EV_A_ &childev);
+    }
+#endif
+
+  if (ev_is_active (&pipe_w))
+    {
+      /*ev_ref (EV_A);*/
+      /*ev_io_stop (EV_A_ &pipe_w);*/
+
+#if EV_USE_EVENTFD
+      if (evfd >= 0)
+        close (evfd);
+#endif
+
+      if (evpipe [0] >= 0)
+        {
+          EV_WIN32_CLOSE_FD (evpipe [0]);
+          EV_WIN32_CLOSE_FD (evpipe [1]);
+        }
+    }
+
+#if EV_USE_SIGNALFD
+  if (ev_is_active (&sigfd_w))
+    close (sigfd);
+#endif
+
+#if EV_USE_INOTIFY
+  if (fs_fd >= 0)
+    close (fs_fd);
+#endif
+
+  if (backend_fd >= 0)
+    close (backend_fd);
+
+#if EV_USE_IOCP
+  if (backend == EVBACKEND_IOCP  ) iocp_destroy   (EV_A);
+#endif
+#if EV_USE_PORT
+  if (backend == EVBACKEND_PORT  ) port_destroy   (EV_A);
+#endif
+#if EV_USE_KQUEUE
+  if (backend == EVBACKEND_KQUEUE) kqueue_destroy (EV_A);
+#endif
+#if EV_USE_EPOLL
+  if (backend == EVBACKEND_EPOLL ) epoll_destroy  (EV_A);
+#endif
+#if EV_USE_POLL
+  if (backend == EVBACKEND_POLL  ) poll_destroy   (EV_A);
+#endif
+#if EV_USE_SELECT
+  if (backend == EVBACKEND_SELECT) select_destroy (EV_A);
+#endif
+
+  for (i = NUMPRI; i--; )
+    {
+      array_free (pending, [i]);
+#if EV_IDLE_ENABLE
+      array_free (idle, [i]);
+#endif
+    }
+
+  ev_free (anfds); anfds = 0; anfdmax = 0;
+
+  /* have to use the microsoft-never-gets-it-right macro */
+  array_free (rfeed, EMPTY);
+  array_free (fdchange, EMPTY);
+  array_free (timer, EMPTY);
+#if EV_PERIODIC_ENABLE
+  array_free (periodic, EMPTY);
+#endif
+#if EV_FORK_ENABLE
+  array_free (fork, EMPTY);
+#endif
+#if EV_CLEANUP_ENABLE
+  array_free (cleanup, EMPTY);
+#endif
+  array_free (prepare, EMPTY);
+  array_free (check, EMPTY);
+#if EV_ASYNC_ENABLE
+  array_free (async, EMPTY);
+#endif
+
+  backend = 0;
+
+#if EV_MULTIPLICITY
+  if (ev_is_default_loop (EV_A))
+#endif
+    ev_default_loop_ptr = 0;
+#if EV_MULTIPLICITY
+  else
+    ev_free (EV_A);
+#endif
+}
+Function: 
+fn height_1_removing_all() {
+        let pairs = (0..MIN_INSERTS_HEIGHT_1).map(|i| (i, i));
+        let mut map = BTreeMap::from_iter(pairs);
+        map.extract_if(|_, _| true).for_each(drop);
+        assert!(map.is_empty());
+        map.check();
+    }
+Unixcoder Score: 0.05099961534142494
+--------------------------------------------------

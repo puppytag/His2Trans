@@ -1,0 +1,434 @@
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+pub fn try_new_zeroed_in(alloc: A) -> Result<Box<mem::MaybeUninit<T>, A>, AllocError>
+    where
+        A: Allocator,
+    {
+        let layout = Layout::new::<mem::MaybeUninit<T>>();
+        let ptr = alloc.allocate_zeroed(layout)?.cast();
+        unsafe { Ok(Box::from_raw_in(ptr.as_ptr(), alloc)) }
+    }
+Unixcoder Score: -0.011237982660531998
+--------------------------------------------------
+C_Code: 
+struct Http_ClientCert {
+  /** A path to a client certificate. */
+  char *certPath;
+  /** Client certificate type, see {@link Http_CertType}. */
+  Http_CertType type;
+  /** File path of your client certificate private key. */
+  char *keyPath;
+  /** Password for your client certificate private key. */
+  char *keyPassword;
+}
+Function: 
+pub struct Certificate {
+    inner: Vec<reqwest::Certificate>,
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134532_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134532_rank3.rs", "c_api": "node->next->prev = node->prev", "rust_api": "self.unlink(nobe)", "mapping_type": "function", "description": "Updating previous pointer in C corresponds to unlinking in Rust.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops the tail node from a doubly-linked list, peeks first, then unlinks it. [Similarity] Both involve list manipulation (removing nodes), but the Rust version is more abstracted with optional handling and uses a different API style (peek, unlink, map). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are found for list node removal and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134532_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134532_rank3.rs", "c_api": "node->next = NULL", "rust_api": "self.unlink(nobe)", "mapping_type": "function", "description": "Clearing next pointer in C corresponds to unlinking in Rust.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops the tail node from a doubly-linked list, peeks first, then unlinks it. [Similarity] Both involve list manipulation (removing nodes), but the Rust version is more abstracted with optional handling and uses a different API style (peek, unlink, map). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are found for list node removal and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134532_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134532_rank3.rs", "c_api": "node->prev->next = node->next", "rust_api": "self.unlink(nobe)", "mapping_type": "function", "description": "Removal of node from doubly-linked list in C corresponds to unlinking in Rust.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops the tail node from a doubly-linked list, peeks first, then unlinks it. [Similarity] Both involve list manipulation (removing nodes), but the Rust version is more abstracted with optional handling and uses a different API style (peek, unlink, map). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are found for list node removal and optional handling patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134532_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134532_rank3.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "let tl = self.peek_tail_n();\n        tl.map(|nobe| self.unlink(nobe));\n        tl", "description": "Both perform list node removal logic, though Rust abstracts it with optional handling and separate peek/unlink operations.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops the tail node from a doubly-linked list, peeks first, then unlinks it. [Similarity] Both involve list manipulation (removing nodes), but the Rust version is more abstracted with optional handling and uses a different API style (peek, unlink, map). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are found for list node removal and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134532_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134532_rank3.rs", "c_api": "node->prev = NULL", "rust_api": "self.unlink(nobe)", "mapping_type": "function", "description": "Clearing previous pointer in C corresponds to unlinking in Rust.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops the tail node from a doubly-linked list, peeks first, then unlinks it. [Similarity] Both involve list manipulation (removing nodes), but the Rust version is more abstracted with optional handling and uses a different API style (peek, unlink, map). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are found for list node removal and optional handling patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134532_rank3.c", "source_rust_file": "Partial__ares__remove_from_list__idx134532_rank3.rs", "c_api": "node->next != NULL", "rust_api": "tl.map(|nobe| self.unlink(nobe))", "mapping_type": "pattern", "description": "Conditional check for non-null next pointer in C corresponds to optional mapping in Rust.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops the tail node from a doubly-linked list, peeks first, then unlinks it. [Similarity] Both involve list manipulation (removing nodes), but the Rust version is more abstracted with optional handling and uses a different API style (peek, unlink, map). [Knowledge Extraction] The structural similarity is partial due to different abstraction levels and control flow. API mappings are found for list node removal and optional handling patterns."}]
+Unixcoder Score: -0.01899542659521103
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertDataList(struct CRequestCerts *certs)
+{
+    for (uint32_t i = 0; i < certs->len; i++) {
+        FreeCertData(certs->certDataList[i]);
+    }
+    free(certs->certDataList);
+    free(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: -0.02407733164727688
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+pub fn free(&mut self, box: *OpaqueBox) {
+        unsafe {
+            return rust_boxed_region_free(self.boxed_region, box);
+        }
+    }
+Unixcoder Score: -0.031592145562171936
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+pub fn write(mut boxed: Self, value: T) -> Box<T, A> {
+        unsafe {
+            (*boxed).write(value);
+            boxed.assume_init()
+        }
+    }
+Unixcoder Score: -0.03456414118409157
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+fn drop(&mut self) {
+        // the T in the Box is dropped by the compiler before the destructor is run
+
+        let ptr = self.0;
+
+        unsafe {
+            let layout = Layout::for_value_raw(ptr.as_ptr());
+            self.1.deallocate(From::from(ptr.cast()), layout)
+        }
+    }
+Unixcoder Score: -0.042343564331531525
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertInfo(struct CertInfo *certInfo)
+{
+    free(certInfo->certInfo.data);
+    certInfo->certInfo.data = nullptr;
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx57262_rank1.c", "source_rust_file": "API_Mapping__free__idx57262_rank1.rs", "c_api": "box->td != NULL", "rust_api": "assert_eq!(*a[0], 10)", "mapping_type": "pattern", "description": "Null pointer check in C vs value assertion in Rust", "reasoning": "[Task Analysis] C code frees a boxed region with pointer manipulation; Rust code shows cloning and manipulation of Boxed values in a Vec. [Similarity] No structural similarity at function level; C manipulates linked list pointers, Rust manipulates owned Box values. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and ownership patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx57262_rank1.c", "source_rust_file": "API_Mapping__free__idx57262_rank1.rs", "c_api": "box->prev->next = box->next", "rust_api": "a[0] = 20", "mapping_type": "pattern", "description": "Pointer-based modification of data structure vs direct value assignment in owned data", "reasoning": "[Task Analysis] C code frees a boxed region with pointer manipulation; Rust code shows cloning and manipulation of Boxed values in a Vec. [Similarity] No structural similarity at function level; C manipulates linked list pointers, Rust manipulates owned Box values. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and ownership patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx57262_rank1.c", "source_rust_file": "API_Mapping__free__idx57262_rank1.rs", "c_api": "box->prev = NULL; box->next = NULL; box->td = NULL", "rust_api": "let mut a: Vec<Box<_>> = vec![Box::new(10)]", "mapping_type": "pattern", "description": "Resetting pointers in C vs initializing boxed values in Rust", "reasoning": "[Task Analysis] C code frees a boxed region with pointer manipulation; Rust code shows cloning and manipulation of Boxed values in a Vec. [Similarity] No structural similarity at function level; C manipulates linked list pointers, Rust manipulates owned Box values. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and ownership patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx57262_rank1.c", "source_rust_file": "API_Mapping__free__idx57262_rank1.rs", "c_api": "backing_region->free(box)", "rust_api": "Box::new(10)", "mapping_type": "function", "description": "Memory deallocation in C vs heap allocation in Rust", "reasoning": "[Task Analysis] C code frees a boxed region with pointer manipulation; Rust code shows cloning and manipulation of Boxed values in a Vec. [Similarity] No structural similarity at function level; C manipulates linked list pointers, Rust manipulates owned Box values. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory management and ownership patterns."}]
+Unixcoder Score: -0.04654299467802048
+--------------------------------------------------
+C_Code: 
+void RequestCertManager::FreeCertDataList(struct CRequestCerts *certs)
+{
+    for (uint32_t i = 0; i < certs->len; i++) {
+        FreeCertData(certs->certDataList[i]);
+    }
+    free(certs->certDataList);
+    free(certs);
+}
+Function: 
+fn update_system_cert(info: &Arc<RwLock<CertInfo>>) {
+    let mut info = info.write().unwrap();
+
+    let mut certificates = Vec::new();
+
+    let c_certs_ptr = unsafe { GetUserCertsData() };
+    if !c_certs_ptr.is_null() {
+        info!("GetUserCertsData valid");
+        let certs = unsafe { &*c_certs_ptr };
+        let c_cert_list_ptr =
+            unsafe { std::slice::from_raw_parts(certs.cert_data_list, certs.len as usize) };
+        for item in c_cert_list_ptr.iter() {
+            let cert = unsafe { &**item };
+            let cert_slice = unsafe { std::slice::from_raw_parts(cert.data, cert.size as usize) };
+            match Certificate::from_pem(cert_slice) {
+                Ok(cert) => {
+                    certificates.push(cert);
+                }
+                Err(e) => {
+                    error!("parse security cert path failed, error is {:?}", e);
+                    return;
+                }
+            };
+        }
+        unsafe { FreeCertDataList(c_certs_ptr) };
+    }
+
+    match Certificate::from_path("/system/etc/security/certificates/") {
+        Ok(cert) => {
+            certificates.push(cert);
+        }
+        Err(e) => {
+            error!("parse security cert path failed, error is {:?}", e);
+            return;
+        }
+    };
+
+    *info = CertInfo {
+        cert: Some(certificates),
+    };
+}
+Unixcoder Score: -0.04797806963324547
+--------------------------------------------------
+C_Code: 
+void ares__remove_from_list(struct list_node* node) {
+  if (node->next != NULL) {
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = NULL;
+    node->next = NULL;
+  }
+}
+Function: 
+fn pop_tail_n() -> option<dlist_node<T>> {
+        let tl = self.peek_tail_n();
+        tl.map(|nobe| self.unlink(nobe));
+        tl
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank4.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank4.rs", "c_fragment": "if (node->next != NULL) {\n    node->prev->next = node->next;\n    node->next->prev = node->prev;\n    node->prev = NULL;\n    node->next = NULL;\n  }", "rust_fragment": "let hd = self.peek_n();\n        hd.map(|nobe| self.unlink(nobe));\n        hd", "description": "Both perform list node removal operations, though C directly manipulates pointers while Rust uses a container abstraction with peek and unlink methods.", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to shared domain (list manipulation) but different control flow and abstraction levels. API mappings found for node removal and list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank4.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank4.rs", "c_api": "node->prev->next = node->next", "rust_api": "self.unlink(nobe)", "mapping_type": "method", "description": "Node removal in doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to shared domain (list manipulation) but different control flow and abstraction levels. API mappings found for node removal and list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank4.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank4.rs", "c_api": "node->next->prev = node->prev", "rust_api": "self.unlink(nobe)", "mapping_type": "method", "description": "Node removal in doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to shared domain (list manipulation) but different control flow and abstraction levels. API mappings found for node removal and list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank4.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank4.rs", "c_api": "node->prev = NULL", "rust_api": "self.unlink(nobe)", "mapping_type": "method", "description": "Node removal in doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to shared domain (list manipulation) but different control flow and abstraction levels. API mappings found for node removal and list operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ares__remove_from_list__idx134531_rank4.c", "source_rust_file": "Partial__ares__remove_from_list__idx134531_rank4.rs", "c_api": "node->next = NULL", "rust_api": "self.unlink(nobe)", "mapping_type": "method", "description": "Node removal in doubly-linked list", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list node by removing it from the list, updating prev/next pointers. Rust function pops a node from a doubly-linked list, peeks first, then unlinks the node. [Similarity] Both involve list manipulation (removing nodes), but C operates on a single node directly while Rust operates on a container with peek/unlink methods. [Knowledge Extraction] Structural similarity is partial due to shared domain (list manipulation) but different control flow and abstraction levels. API mappings found for node removal and list operations."}]
+Unixcoder Score: -0.048512253910303116
+--------------------------------------------------
+C_Code: 
+bool TLSCertificate::CertificateFromDer(const std::string &data, CertType certType)
+{
+    if (data.empty()) {
+        NETSTACK_LOGE("The certificate file to be converted is empty");
+        return false;
+    }
+    std::string realPath;
+    if (!CheckFilePath(data, realPath)) {
+        NETSTACK_LOGE("file name is error");
+        return false;
+    }
+
+    FILE *fp = fopen(realPath.c_str(), FILE_OPEN_FLAG);
+    if (!fp) {
+        NETSTACK_LOGE("Couldn't open file for reading, error string %{public}s", strerror(errno));
+        return false;
+    }
+    unsigned char cert[FILE_READ_CERT_LEN] = {};
+    size_t certLen = fread(cert, 1, FILE_READ_CERT_LEN, fp);
+    fclose(fp);
+    if (!certLen) {
+        NETSTACK_LOGE("Insufficient size bytes were read");
+        return false;
+    }
+    const auto *cert_data = reinterpret_cast<const unsigned char *>(cert);
+    X509 *x509 = d2i_X509(nullptr, &cert_data, static_cast<long>(certLen));
+    if (!x509) {
+        NETSTACK_LOGE("x509 is null");
+        return false;
+    }
+    x509_ = X509_dup(x509);
+    if (!AnalysisCertificate(certType, x509)) {
+        NETSTACK_LOGE("Analysis certificate is false");
+        X509_free(x509);
+        return false;
+    }
+    X509_free(x509);
+    return true;
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__ParseParams__idx5338_rank1.c", "source_rust_file": "Partial__ParseParams__idx5338_rank1.rs", "c_fragment": "options.SetMethod(std::string(ops->method));", "rust_fragment": "r.method = method;", "description": "Setting HTTP method in request options", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP method on a builder. [Similarity] Names don't match ('ParseParams' vs 'method'), but both involve setting HTTP method. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs builder pattern). However, there's a partial match in the method-setting logic and API mapping for setting HTTP method."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__ParseParams__idx5338_rank1.c", "source_rust_file": "Partial__ParseParams__idx5338_rank1.rs", "c_api": "options.SetMethod", "rust_api": "r.method = method", "mapping_type": "method", "description": "Setting HTTP method on request object", "reasoning": "[Task Analysis] C function parses HTTP request parameters and sets options; Rust function sets HTTP method on a builder. [Similarity] Names don't match ('ParseParams' vs 'method'), but both involve setting HTTP method. [Knowledge Extraction] No full structural match due to different domains (parameter parsing vs builder pattern). However, there's a partial match in the method-setting logic and API mapping for setting HTTP method."}]
+Unixcoder Score: -0.05123194679617882
+--------------------------------------------------

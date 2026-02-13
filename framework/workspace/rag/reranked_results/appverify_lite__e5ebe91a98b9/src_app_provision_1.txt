@@ -1,0 +1,408 @@
+C_Code: 
+static void
+zone_free_definite_size(malloc_zone_t *zone, void *ptr, size_t size)
+{
+
+	if (ivsalloc(ptr, config_prof) != 0) {
+		assert(ivsalloc(ptr, config_prof) == size);
+		je_free(ptr);
+		return;
+	}
+
+	free(ptr);
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        unsafe { libc::free(ptr as *mut libc::c_void) }
+    }
+Unixcoder Score: 0.10773487389087677
+--------------------------------------------------
+C_Code: 
+size_t
+je_malloc_usable_size(JEMALLOC_USABLE_SIZE_CONST void *ptr)
+{
+	size_t ret;
+
+	assert(malloc_initialized || IS_INITIALIZER);
+	malloc_thread_init();
+
+	if (config_ivsalloc)
+		ret = ivsalloc(ptr, config_prof);
+	else
+		ret = (ptr != NULL) ? isalloc(ptr, config_prof) : 0;
+
+	return (ret);
+}
+Function: 
+pub extern fn __rust_usable_size(size: usize, align: usize) -> usize {
+    let flags = align_to_flags(align);
+    unsafe { je_nallocx(size as size_t, flags) as usize }
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__prof_cnt_s__idx5062_rank1.h", "source_rust_file": "API_Mapping__prof_cnt_s__idx5062_rank1.rs", "c_api": "struct prof_cnt_s {", "rust_api": "struct A {", "mapping_type": "type", "description": "Struct definition", "reasoning": "[Task Analysis] The task is to compare a C struct definition with a Rust struct definition. [Similarity] Both are simple struct definitions with fields, but the field types and names differ significantly. [Knowledge Extraction] No full structural similarity, no partial fragments, but there is a basic API mapping between struct definitions."}]
+Unixcoder Score: 0.04911956563591957
+--------------------------------------------------
+C_Code: 
+void
+je_free(void *ptr)
+{
+
+	UTRACE(ptr, 0, 0);
+	if (ptr != NULL) {
+		size_t usize;
+		size_t rzsize JEMALLOC_CC_SILENCE_INIT(0);
+
+		assert(malloc_initialized || IS_INITIALIZER);
+
+		if (config_prof && opt_prof) {
+			usize = isalloc(ptr, config_prof);
+			prof_free(ptr, usize);
+		} else if (config_stats || config_valgrind)
+			usize = isalloc(ptr, config_prof);
+		if (config_stats)
+			thread_allocated_tsd_get()->deallocated += usize;
+		if (config_valgrind && opt_valgrind)
+			rzsize = p2rz(ptr);
+		iqalloc(ptr);
+		JEMALLOC_VALGRIND_FREE(ptr, rzsize);
+	}
+}
+Function: 
+pub extern fn __rust_deallocate(ptr: *mut u8, old_size: usize, align: usize) {
+    let flags = align_to_flags(align);
+    unsafe { je_sdallocx(ptr as *mut c_void, old_size as size_t, flags) }
+}
+Unixcoder Score: 0.04776483774185181
+--------------------------------------------------
+C_Code: 
+void
+je_free(void *ptr)
+{
+
+	UTRACE(ptr, 0, 0);
+	if (ptr != NULL) {
+		size_t usize;
+		size_t rzsize JEMALLOC_CC_SILENCE_INIT(0);
+
+		assert(malloc_initialized || IS_INITIALIZER);
+
+		if (config_prof && opt_prof) {
+			usize = isalloc(ptr, config_prof);
+			prof_free(ptr, usize);
+		} else if (config_stats || config_valgrind)
+			usize = isalloc(ptr, config_prof);
+		if (config_stats)
+			thread_allocated_tsd_get()->deallocated += usize;
+		if (config_valgrind && opt_valgrind)
+			rzsize = p2rz(ptr);
+		iqalloc(ptr);
+		JEMALLOC_VALGRIND_FREE(ptr, rzsize);
+	}
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+        unsafe { libc::free(ptr as *mut libc::c_void) }
+    }
+Unixcoder Score: 0.047623325139284134
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_free(const void *ptr, size_t size)
+{
+	prof_ctx_t *ctx = prof_ctx_get(ptr);
+
+	cassert(config_prof);
+
+	if ((uintptr_t)ctx > (uintptr_t)1) {
+		prof_thr_cnt_t *tcnt;
+		assert(size == isalloc(ptr, true));
+		tcnt = prof_lookup(ctx->bt);
+
+		if (tcnt != NULL) {
+			tcnt->epoch++;
+			/*********/
+			mb_write();
+			/*********/
+			tcnt->cnts.curobjs--;
+			tcnt->cnts.curbytes -= size;
+			/*********/
+			mb_write();
+			/*********/
+			tcnt->epoch++;
+			/*********/
+			mb_write();
+			/*********/
+		} else {
+			/*
+			 * OOM during free() cannot be propagated, so operate
+			 * directly on cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(ctx->lock);
+			ctx->cnt_merged.curobjs--;
+			ctx->cnt_merged.curbytes -= size;
+			malloc_mutex_unlock(ctx->lock);
+		}
+	}
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // SAFETY: DLMALLOC access is guaranteed to be safe because the lock gives us unique and non-reentrant access.
+        // Calling free() is safe because preconditions on this function match the trait method preconditions.
+        let _lock = lock::lock();
+        unsafe { DLMALLOC.free(ptr, layout.size(), layout.align()) }
+    }
+Unixcoder Score: 0.0399758480489254
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_ctx_set(const void *ptr, prof_ctx_t *ctx)
+{
+	arena_chunk_t *chunk;
+
+	cassert(config_prof);
+	assert(ptr != NULL);
+
+	chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(ptr);
+	if (chunk != ptr) {
+		/* Region. */
+		arena_prof_ctx_set(ptr, ctx);
+	} else
+		huge_prof_ctx_set(ptr, ctx);
+}
+Function: 
+pub(crate) fn generate_enum_is_method(acc: &mut Assists, ctx: &AssistContext<'_>) -> Option<()> {
+    let variant = ctx.find_node_at_offset::<ast::Variant>()?;
+    let variant_name = variant.name()?;
+    let parent_enum = ast::Adt::Enum(variant.parent_enum());
+    let pattern_suffix = match variant.kind() {
+        ast::StructKind::Record(_) => " { .. }",
+        ast::StructKind::Tuple(_) => "(..)",
+        ast::StructKind::Unit => "",
+    };
+
+    let enum_name = parent_enum.name()?;
+    let enum_lowercase_name = to_lower_snake_case(&enum_name.to_string()).replace('_', " ");
+    let fn_name = format!("is_{}", &to_lower_snake_case(&variant_name.text()));
+
+    // Return early if we've found an existing new fn
+    let impl_def = find_struct_impl(ctx, &parent_enum, &[fn_name.clone()])?;
+
+    let target = variant.syntax().text_range();
+    acc.add_group(
+        &GroupLabel("Generate an `is_`,`as_`, or `try_into_` for this enum variant".to_owned()),
+        AssistId("generate_enum_is_method", AssistKind::Generate),
+        "Generate an `is_` method for this enum variant",
+        target,
+        |builder| {
+            let vis = parent_enum.visibility().map_or(String::new(), |v| format!("{v} "));
+            let method = format!(
+                "    /// Returns `true` if the {enum_lowercase_name} is [`{variant_name}`].
+    ///
+    /// [`{variant_name}`]: {enum_name}::{variant_name}
+    #[must_use]
+    {vis}fn {fn_name}(&self) -> bool {{
+        matches!(self, Self::{variant_name}{pattern_suffix})
+    }}",
+            );
+
+            add_method_to_adt(builder, &parent_enum, impl_def, &method);
+        },
+    )
+}
+Unixcoder Score: 0.03248830512166023
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_free(const void *ptr, size_t size)
+{
+	prof_ctx_t *ctx = prof_ctx_get(ptr);
+
+	cassert(config_prof);
+
+	if ((uintptr_t)ctx > (uintptr_t)1) {
+		prof_thr_cnt_t *tcnt;
+		assert(size == isalloc(ptr, true));
+		tcnt = prof_lookup(ctx->bt);
+
+		if (tcnt != NULL) {
+			tcnt->epoch++;
+			/*********/
+			mb_write();
+			/*********/
+			tcnt->cnts.curobjs--;
+			tcnt->cnts.curbytes -= size;
+			/*********/
+			mb_write();
+			/*********/
+			tcnt->epoch++;
+			/*********/
+			mb_write();
+			/*********/
+		} else {
+			/*
+			 * OOM during free() cannot be propagated, so operate
+			 * directly on cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(ctx->lock);
+			ctx->cnt_merged.curobjs--;
+			ctx->cnt_merged.curbytes -= size;
+			malloc_mutex_unlock(ctx->lock);
+		}
+	}
+}
+Function: 
+unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // securely wipe the deallocated memory
+        // SAFETY: `ptr` is valid for writes of `layout.size()` bytes since it was
+        // previously successfully allocated (by the safety assumption on this function)
+        // and not yet deallocated
+        unsafe {
+            volatile_write_zeroize_mem(ptr, layout.size());
+        }
+        // SAFETY: uphold by caller
+        unsafe { System.dealloc(ptr, layout) }
+    }
+Unixcoder Score: 0.031250763684511185
+--------------------------------------------------
+C_Code: 
+struct prof_ctx_s {
+	/* Associated backtrace. */
+	prof_bt_t		*bt;
+
+	/* Protects nlimbo, cnt_merged, and cnts_ql. */
+	malloc_mutex_t		*lock;
+
+	/*
+	 * Number of threads that currently cause this ctx to be in a state of
+	 * limbo due to one of:
+	 *   - Initializing per thread counters associated with this ctx.
+	 *   - Preparing to destroy this ctx.
+	 * nlimbo must be 1 (single destroyer) in order to safely destroy the
+	 * ctx.
+	 */
+	unsigned		nlimbo;
+
+	/* Temporary storage for summation during dump. */
+	prof_cnt_t		cnt_summed;
+
+	/* When threads exit, they merge their stats into cnt_merged. */
+	prof_cnt_t		cnt_merged;
+
+	/*
+	 * List of profile counters, one for each thread that has allocated in
+	 * this context.
+	 */
+	ql_head(prof_thr_cnt_t)	cnts_ql;
+}
+Function: 
+pub struct Context;
+Extracted_Knowledge: 
+[{"knowledge_type": "Partial", "source_c_file": "Partial__LoadSystemAbility__idx4889_rank5.c", "source_rust_file": "Partial__LoadSystemAbility__idx4889_rank5.rs", "c_fragment": "auto callingPid = IPCSkeleton::GetCallingPid();\n    OnDemandEvent onDemandEvent = {INTERFACE_CALL, \"load\"};\n    LoadRequestInfo loadRequestInfo = {LOCAL_DEVICE, callback, systemAbilityId, callingPid, onDemandEvent};\n    return abilityStateScheduler_->HandleLoadAbilityEvent(loadRequestInfo);", "rust_fragment": "LoadSystemAbilityWithCallback(said, on_success, on_fail)", "description": "Both construct and pass system ability load request information to a handler.", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function handles system ability loading with input validation, profile lookup, and event handling; Rust function wraps the call with logging and delegates to a lower-level function. -> [Similarity] -> Names don't match exactly but refer to same concept (loading system ability with callback). However, the logic and control flow differ significantly in scope and structure. C has multiple checks, data construction, and error returns; Rust just logs and delegates. -> [Knowledge Extraction] -> Full match blocked due to domain mismatch (C: system ability management with validation, Rust: high-level wrapper). Partial match possible due to shared intent (loading system ability). API mappings found for the core loading operation."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__LoadSystemAbility__idx4889_rank5.c", "source_rust_file": "Partial__LoadSystemAbility__idx4889_rank5.rs", "c_api": "abilityStateScheduler_->HandleLoadAbilityEvent", "rust_api": "LoadSystemAbilityWithCallback", "mapping_type": "function", "description": "System ability loading with callback", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function handles system ability loading with input validation, profile lookup, and event handling; Rust function wraps the call with logging and delegates to a lower-level function. -> [Similarity] -> Names don't match exactly but refer to same concept (loading system ability with callback). However, the logic and control flow differ significantly in scope and structure. C has multiple checks, data construction, and error returns; Rust just logs and delegates. -> [Knowledge Extraction] -> Full match blocked due to domain mismatch (C: system ability management with validation, Rust: high-level wrapper). Partial match possible due to shared intent (loading system ability). API mappings found for the core loading operation."}]
+Unixcoder Score: 0.026346653699874878
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_malloc(const void *ptr, size_t size, prof_thr_cnt_t *cnt)
+{
+
+	cassert(config_prof);
+	assert(ptr != NULL);
+	assert(size == isalloc(ptr, true));
+
+	if (opt_lg_prof_sample != 0) {
+		if (prof_sample_accum_update(size)) {
+			/*
+			 * Don't sample.  For malloc()-like allocation, it is
+			 * always possible to tell in advance how large an
+			 * object's usable size will be, so there should never
+			 * be a difference between the size passed to
+			 * PROF_ALLOC_PREP() and prof_malloc().
+			 */
+			assert((uintptr_t)cnt == (uintptr_t)1U);
+		}
+	}
+
+	if ((uintptr_t)cnt > (uintptr_t)1U) {
+		prof_ctx_set(ptr, cnt->ctx);
+
+		cnt->epoch++;
+		/*********/
+		mb_write();
+		/*********/
+		cnt->cnts.curobjs++;
+		cnt->cnts.curbytes += size;
+		if (opt_prof_accum) {
+			cnt->cnts.accumobjs++;
+			cnt->cnts.accumbytes += size;
+		}
+		/*********/
+		mb_write();
+		/*********/
+		cnt->epoch++;
+		/*********/
+		mb_write();
+		/*********/
+	} else
+		prof_ctx_set(ptr, (prof_ctx_t *)(uintptr_t)1U);
+}
+Function: 
+fn mixed_drop_and_nondrop(a: &Allocator) {
+    // check that destructor panics handle drop
+    // and non-drop blocks in the same scope correctly.
+    //
+    // Surprisingly enough, this used to not work.
+    let (x, y, z);
+    x = a.alloc();
+    y = 5;
+    z = a.alloc();
+}
+Unixcoder Score: 0.025614053010940552
+--------------------------------------------------
+C_Code: 
+JEMALLOC_INLINE void
+prof_free(const void *ptr, size_t size)
+{
+	prof_ctx_t *ctx = prof_ctx_get(ptr);
+
+	cassert(config_prof);
+
+	if ((uintptr_t)ctx > (uintptr_t)1) {
+		prof_thr_cnt_t *tcnt;
+		assert(size == isalloc(ptr, true));
+		tcnt = prof_lookup(ctx->bt);
+
+		if (tcnt != NULL) {
+			tcnt->epoch++;
+			/*********/
+			mb_write();
+			/*********/
+			tcnt->cnts.curobjs--;
+			tcnt->cnts.curbytes -= size;
+			/*********/
+			mb_write();
+			/*********/
+			tcnt->epoch++;
+			/*********/
+			mb_write();
+			/*********/
+		} else {
+			/*
+			 * OOM during free() cannot be propagated, so operate
+			 * directly on cnt->ctx->cnt_merged.
+			 */
+			malloc_mutex_lock(ctx->lock);
+			ctx->cnt_merged.curobjs--;
+			ctx->cnt_merged.curbytes -= size;
+			malloc_mutex_unlock(ctx->lock);
+		}
+	}
+}
+Function: 
+fn drop(&mut self) {
+        unsafe {
+            let ptr = (*self.0.as_ptr()).0.get();
+            super::free(ptr as _, mem::size_of_val(&mut *ptr), T::align_of());
+        }
+    }
+Unixcoder Score: 0.02548985928297043
+--------------------------------------------------

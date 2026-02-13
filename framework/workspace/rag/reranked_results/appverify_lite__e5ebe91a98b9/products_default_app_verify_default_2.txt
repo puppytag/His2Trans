@@ -1,0 +1,158 @@
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.0526498518884182
+--------------------------------------------------
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.05203836411237717
+--------------------------------------------------
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.04599951580166817
+--------------------------------------------------
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.041341349482536316
+--------------------------------------------------
+C_Code: 
+void native_func() {}
+Function: 
+pub extern "C" fn wrapped_func() {
+    unsafe {
+        native_func();
+    }
+}
+Unixcoder Score: 0.03686251863837242
+--------------------------------------------------
+C_Code: 
+void FuncB()
+{
+    cout << "funcB" << endl;
+    usleep(USLEEP_HALF_SECOND);
+}
+Function: 
+fn func_b() {
+    println!("funcB!!!");
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__FuncC__idx7502_rank2.c", "source_rust_file": "API_Mapping__FuncC__idx7502_rank2.rs", "c_api": "CountTrace(label, \"count number\", ++num)", "rust_api": "CountTraceWrapper(label, name_raw_ptr.as_ptr() as *const c_char, count)", "mapping_type": "function", "description": "Trace logging with label, name, and count", "reasoning": "[Task Analysis] C function calls a C++ cout and a custom CountTrace function, while Rust function calls a C FFI wrapper. [Similarity] Names do not match but both perform tracing with label, name, and count. [Knowledge Extraction] Found API mapping for tracing functionality, but no full or partial structural match due to different control flow and function signatures."}]
+Unixcoder Score: 0.036178573966026306
+--------------------------------------------------
+C_Code: 
+void simplest_func_thunk (int revents, void *arg)
+    {
+      (*cb)
+        ();
+    }
+Function: 
+pub fn dur2reltims(dur: Duration) -> impl Iterator<Item = abi::RELTIM> {
+    // `RELTIM` is microseconds
+    let mut ticks = dur.as_micros();
+
+    crate::iter::from_fn(move || {
+        if ticks == 0 {
+            None
+        } else if ticks <= abi::TMAX_RELTIM as u128 {
+            Some(crate::mem::replace(&mut ticks, 0) as abi::RELTIM)
+        } else {
+            ticks -= abi::TMAX_RELTIM as u128;
+            Some(abi::TMAX_RELTIM)
+        }
+    })
+}
+Unixcoder Score: 0.0260484479367733
+--------------------------------------------------
+C_Code: 
+void simplest_func_thunk (int revents, void *arg)
+    {
+      (*cb)
+        ();
+    }
+Function: 
+pub fn start(&mut self, timeout: u64, repeat: u64, cb: TimerCallback) {
+        {
+            let data = self.get_watcher_data();
+            data.timer_cb = Some(cb);
+        }
+
+        unsafe {
+            uvll::timer_start(self.native_handle(), timer_cb, timeout, repeat);
+        }
+
+        extern fn timer_cb(handle: *uvll::uv_timer_t, status: c_int) {
+            let mut watcher: TimerWatcher = NativeHandle::from_native_handle(handle);
+            let data = watcher.get_watcher_data();
+            let cb = data.timer_cb.get_ref();
+            let status = status_to_maybe_uv_error(handle, status);
+            (*cb)(watcher, status);
+        }
+    }
+Unixcoder Score: 0.02521086111664772
+--------------------------------------------------
+C_Code: 
+void simplest_func_thunk (int revents, void *arg)
+    {
+      (*cb)
+        ();
+    }
+Function: 
+pub fn start(&mut self, timeout: u64, repeat: u64, cb: TimerCallback) {
+        {
+            let data = self.get_watcher_data();
+            data.timer_cb = Some(cb);
+        }
+
+        unsafe {
+            uvll::timer_start(self.native_handle(), timer_cb, timeout, repeat);
+        }
+
+        extern fn timer_cb(handle: *uvll::uv_timer_t, status: c_int) {
+            let mut watcher: TimerWatcher = NativeHandle::from_native_handle(handle);
+            let data = watcher.get_watcher_data();
+            let cb = data.timer_cb.get_ref();
+            let status = status_to_maybe_uv_error(handle, status);
+            (*cb)(watcher, status);
+        }
+    }
+Unixcoder Score: 0.025082848966121674
+--------------------------------------------------
+C_Code: 
+void simplest_func_thunk (int revents, void *arg)
+    {
+      (*cb)
+        ();
+    }
+Function: 
+extern fn timer_cb(handle: *uvll::uv_timer_t, status: c_int) {
+            let mut watcher: TimerWatcher = NativeHandle::from_native_handle(handle);
+            let data = watcher.get_watcher_data();
+            let cb = data.timer_cb.get_ref();
+            let status = status_to_maybe_uv_error(status);
+            (*cb)(watcher, status);
+        }
+Unixcoder Score: 0.02226025052368641
+--------------------------------------------------

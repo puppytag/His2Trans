@@ -1,0 +1,300 @@
+C_Code: 
+struct dwarf_buf
+{
+  /* Buffer name for error messages.  */
+  const char *name;
+  /* Start of the buffer.  */
+  const unsigned char *start;
+  /* Next byte to read.  */
+  const unsigned char *buf;
+  /* The number of bytes remaining.  */
+  size_t left;
+  /* Whether the data is big-endian.  */
+  int is_bigendian;
+  /* Error callback routine.  */
+  backtrace_error_callback error_callback;
+  /* Data for error_callback.  */
+  void *data;
+  /* Non-zero if we've reported an underflow error.  */
+  int reported_underflow;
+}
+Function: 
+pub struct DwarfReader {
+    pub ptr: *const u8,
+}
+Unixcoder Score: 0.05732543393969536
+--------------------------------------------------
+C_Code: 
+void
+bufslurp(struct buf *buf, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (len >= buf->size) {
+		buf->size = 0;
+		return;
+	}
+
+	buf->size -= len;
+	memmove(buf->data, buf->data + len, buf->size);
+}
+Function: 
+pub fn from_box(boxed: Box<Slice>) -> Buf {
+        let inner: Box<[u8]> = unsafe { mem::transmute(boxed) };
+        Buf { inner: inner.into_vec() }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__parse_inline__idx22494_rank1.c", "source_rust_file": "Partial__parse_inline__idx22494_rank1.rs", "c_api": "rndr->cb.normal_text", "rust_api": "parse_codeinline", "mapping_type": "function", "description": "Callback for normal text handling in C maps to parsing function in Rust", "reasoning": "[Task Analysis] C function parses inline markdown code, Rust function tests parsing logic. [Similarity] Names don't refer to same concept (parse_inline vs parse_codeinline), domains differ (parsing engine vs unit test). [Knowledge Extraction] No full match due to domain mismatch and different roles (implementation vs test). Partial fragments found in loop structure and control flow. API mappings identified in buffer handling and string parsing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__parse_inline__idx22494_rank1.c", "source_rust_file": "Partial__parse_inline__idx22494_rank1.rs", "c_api": "rndr->active_char[data[end]]", "rust_api": "parse_codeinline", "mapping_type": "pattern", "description": "Character classification lookup in C maps to parsing logic in Rust", "reasoning": "[Task Analysis] C function parses inline markdown code, Rust function tests parsing logic. [Similarity] Names don't refer to same concept (parse_inline vs parse_codeinline), domains differ (parsing engine vs unit test). [Knowledge Extraction] No full match due to domain mismatch and different roles (implementation vs test). Partial fragments found in loop structure and control flow. API mappings identified in buffer handling and string parsing patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__parse_inline__idx22494_rank1.c", "source_rust_file": "Partial__parse_inline__idx22494_rank1.rs", "c_fragment": "while (i < size) {\n\t\t/* copying inactive chars into the output */\n\t\twhile (end < size && (action = rndr->active_char[data[end]]) == 0) {\n\t\t\tend++;\n\t\t}\n\n\t\tif (rndr->cb.normal_text) {\n\t\t\twork.data = data + i;\n\t\t\twork.size = end - i;\n\t\t\trndr->cb.normal_text(ob, &work, rndr->opaque);\n\t\t}\n\t\telse\n\t\t\tbufput(ob, data + i, end - i);\n\n\t\tif (end >= size) break;\n\t\ti = end;\n\n\t\tend = markdown_char_ptrs[(int)action](ob, rndr, data + i, i, size - i);\n\t\tif (!end) /* no action from the callback */\n\t\t\tend = i + 1;\n\t\telse {\n\t\t\ti += end;\n\t\t\tend = i;\n\t\t}\n\t}", "rust_fragment": "let buf1 = \"`abcd` rest\";\n    let (t, r) = parse_codeinline(buf1.as_bytes()).unwrap();\n    assert_eq!(t, MdTree::CodeInline(\"abcd\"));\n    assert_eq!(r, b\" rest\");", "description": "Both implement character-by-character scanning logic for parsing inline markdown code blocks, with similar control flow for handling text segments and parsing actions.", "reasoning": "[Task Analysis] C function parses inline markdown code, Rust function tests parsing logic. [Similarity] Names don't refer to same concept (parse_inline vs parse_codeinline), domains differ (parsing engine vs unit test). [Knowledge Extraction] No full match due to domain mismatch and different roles (implementation vs test). Partial fragments found in loop structure and control flow. API mappings identified in buffer handling and string parsing patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__parse_inline__idx22494_rank1.c", "source_rust_file": "Partial__parse_inline__idx22494_rank1.rs", "c_api": "bufput(ob, data + i, end - i)", "rust_api": "parse_codeinline(buf1.as_bytes())", "mapping_type": "function", "description": "Buffer data copying operation in C maps to parsing function call in Rust", "reasoning": "[Task Analysis] C function parses inline markdown code, Rust function tests parsing logic. [Similarity] Names don't refer to same concept (parse_inline vs parse_codeinline), domains differ (parsing engine vs unit test). [Knowledge Extraction] No full match due to domain mismatch and different roles (implementation vs test). Partial fragments found in loop structure and control flow. API mappings identified in buffer handling and string parsing patterns."}]
+Unixcoder Score: 0.015278579667210579
+--------------------------------------------------
+C_Code: 
+void
+bufput(struct buf *buf, const void *data, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (buf->size + len > buf->asize && bufgrow(buf, buf->size + len) < 0)
+		return;
+
+	memcpy(buf->data + buf->size, data, len);
+	buf->size += len;
+}
+Function: 
+pub(crate) fn extend_from_slice(&mut self, other: &[u8]) {
+        self.inner.extend_from_slice(other);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LoadStringFromFd__idx5473_rank4.c", "source_rust_file": "API_Mapping__LoadStringFromFd__idx5473_rank4.rs", "c_api": "LoadStringFromFd", "rust_api": "RustLoadStringFromFd", "mapping_type": "function", "description": "File content reading from file descriptor", "reasoning": "[Task Analysis] C function `LoadStringFromFd` reads file content into a string using low-level POSIX calls (`lseek`, `read`). Rust function `test_load_string_from_fd_002` is a test that calls an FFI function `RustLoadStringFromFd` with similar parameters and asserts the result. [Similarity] The test function does not contain the actual implementation logic, only a call to the FFI function and assertions. The C function has complex file I/O logic, while the Rust test is a wrapper for calling it. [Knowledge Extraction] Since the Rust code is a test calling the C function (Filter 6: Definition vs Usage Asymmetry), and the C function is not being tested directly in Rust, this pair does not meet criteria for Full or Partial classification. However, there is a clear API mapping between the C function and the FFI call in Rust, even though they are not directly implementing the same logic. The test function does not contain logic to extract structural fragments or API mappings from the implementation side."}]
+Unixcoder Score: 0.007752572186291218
+--------------------------------------------------
+C_Code: 
+void
+bufslurp(struct buf *buf, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (len >= buf->size) {
+		buf->size = 0;
+		return;
+	}
+
+	buf->size -= len;
+	memmove(buf->data, buf->data + len, buf->size);
+}
+Function: 
+pub(crate) fn truncate(&mut self, len: usize) {
+        self.inner.truncate(len);
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fatal__idx133757_rank1.c", "source_rust_file": "API_Mapping__fatal__idx133757_rank1.rs", "c_api": "cx.span_fatal(sp, #fmt(\"extension expects %u arguments, got %u\", len(*param_names), len(args)));", "rust_api": "cx.span_fatal(sp, #fmt(\"extension expects %u arguments, got %u\", len(*param_names), len(args)));", "mapping_type": "function", "description": "Error reporting with formatted message and span context", "reasoning": "[Task Analysis] C function logs a fatal error and aborts; Rust function processes extension arguments and performs validation and transformation. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to argument validation and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fatal__idx133757_rank1.c", "source_rust_file": "API_Mapping__fatal__idx133757_rank1.rs", "c_api": "cx.span_fatal(sp, \"malformed extension description\");", "rust_api": "cx.span_fatal(sp, \"malformed extension description\");", "mapping_type": "function", "description": "Error reporting with span context", "reasoning": "[Task Analysis] C function logs a fatal error and aborts; Rust function processes extension arguments and performs validation and transformation. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to argument validation and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fatal__idx133757_rank1.c", "source_rust_file": "API_Mapping__fatal__idx133757_rank1.rs", "c_api": "log(msg);", "rust_api": "log(msg);", "mapping_type": "function", "description": "Logging a message", "reasoning": "[Task Analysis] C function logs a fatal error and aborts; Rust function processes extension arguments and performs validation and transformation. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to argument validation and error reporting."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__fatal__idx133757_rank1.c", "source_rust_file": "API_Mapping__fatal__idx133757_rank1.rs", "c_api": "abort();", "rust_api": "abort();", "mapping_type": "function", "description": "Terminating program execution", "reasoning": "[Task Analysis] C function logs a fatal error and aborts; Rust function processes extension arguments and performs validation and transformation. [Similarity] No structural similarity in control flow or data handling patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to argument validation and error reporting."}]
+Unixcoder Score: 0.006402051541954279
+--------------------------------------------------
+C_Code: 
+void
+bufput(struct buf *buf, const void *data, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (buf->size + len > buf->asize && bufgrow(buf, buf->size + len) < 0)
+		return;
+
+	memcpy(buf->data + buf->size, data, len);
+	buf->size += len;
+}
+Function: 
+fn basic() {
+    let mut buf = HtmlWithLimit::new(60);
+    buf.push("Hello ");
+    buf.open_tag("em");
+    buf.push("world");
+    buf.close_tag();
+    buf.push("!");
+    assert_eq!(buf.finish(), "Hello <em>world</em>!");
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LoadStringFromFd__idx5475_rank3.c", "source_rust_file": "API_Mapping__LoadStringFromFd__idx5475_rank3.rs", "c_api": "read(fd, content.data(), fileLength)", "rust_api": "RustLoadStringFromFd(fd, &mut result)", "mapping_type": "function", "description": "Reading file content into buffer using file descriptor", "reasoning": "[Task Analysis] C function `LoadStringFromFd` reads file content into a string using low-level POSIX calls (`lseek`, `read`) while Rust test function `test_load_string_from_fd_004` calls an FFI function `RustLoadStringFromFd` with similar intent. [Similarity] The test function is a usage wrapper, not an implementation, so it fails Filter 6 (Definition vs Usage Asymmetry). [Knowledge Extraction] No full or partial structural match due to test vs implementation mismatch. However, the FFI call `RustLoadStringFromFd` in Rust maps to the C function `LoadStringFromFd` in logic and purpose, even though names differ. [API Mapping] Extract API mapping between C's file reading logic and Rust's FFI wrapper."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__LoadStringFromFd__idx5475_rank3.c", "source_rust_file": "API_Mapping__LoadStringFromFd__idx5475_rank3.rs", "c_api": "lseek(fd, 0, SEEK_END)", "rust_api": "RustLoadStringFromFd(fd, &mut result)", "mapping_type": "function", "description": "File length determination and content reading via file descriptor", "reasoning": "[Task Analysis] C function `LoadStringFromFd` reads file content into a string using low-level POSIX calls (`lseek`, `read`) while Rust test function `test_load_string_from_fd_004` calls an FFI function `RustLoadStringFromFd` with similar intent. [Similarity] The test function is a usage wrapper, not an implementation, so it fails Filter 6 (Definition vs Usage Asymmetry). [Knowledge Extraction] No full or partial structural match due to test vs implementation mismatch. However, the FFI call `RustLoadStringFromFd` in Rust maps to the C function `LoadStringFromFd` in logic and purpose, even though names differ. [API Mapping] Extract API mapping between C's file reading logic and Rust's FFI wrapper."}]
+Unixcoder Score: 0.005540194921195507
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeBytes(const uint8_t data[], size_t len, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_BYTE;
+	result.bitLength = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (len > 0)
+		memcpy(buf, data, len * sizeof(buf[0]));
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_bytes(data: &'a [u8]) -> Self {
+		QrSegment::new(QrSegmentMode::Byte, data.len(), data, data.len().checked_mul(8).unwrap())
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bufslurp__idx114856_rank4.c", "source_rust_file": "API_Mapping__bufslurp__idx114856_rank4.rs", "c_api": "buf->size -= len", "rust_api": "tester.push_back(1)", "mapping_type": "pattern", "description": "Adjusting size/length of container", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function performs buffer manipulation (size adjustment, memmove), Rust function performs VecDeque operations (push_back, swap). -> [Similarity] -> No structural similarity at the function level; C operates on raw buffer data, Rust operates on a deque with swap logic. -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between buffer operations and VecDeque operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bufslurp__idx114856_rank4.c", "source_rust_file": "API_Mapping__bufslurp__idx114856_rank4.rs", "c_api": "memmove(buf->data, buf->data + len, buf->size)", "rust_api": "tester.swap(0, 1)", "mapping_type": "pattern", "description": "Data shifting operation in buffer/deque", "reasoning": "[FFI Check] -> No FFI calls detected. -> [Task Analysis] -> C function performs buffer manipulation (size adjustment, memmove), Rust function performs VecDeque operations (push_back, swap). -> [Similarity] -> No structural similarity at the function level; C operates on raw buffer data, Rust operates on a deque with swap logic. -> [Knowledge Extraction] -> No full match, no partial match, but there are API mappings between buffer operations and VecDeque operations."}]
+Unixcoder Score: 0.003432008670642972
+--------------------------------------------------
+C_Code: 
+void
+bufslurp(struct buf *buf, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (len >= buf->size) {
+		buf->size = 0;
+		return;
+	}
+
+	buf->size -= len;
+	memmove(buf->data, buf->data + len, buf->size);
+}
+Function: 
+fn test_swap() {
+    let mut tester = VecDeque::new();
+    tester.push_back(1);
+    tester.push_back(2);
+    tester.push_back(3);
+
+    assert_eq!(tester, [1, 2, 3]);
+
+    tester.swap(0, 0);
+    assert_eq!(tester, [1, 2, 3]);
+    tester.swap(0, 1);
+    assert_eq!(tester, [2, 1, 3]);
+    tester.swap(2, 1);
+    assert_eq!(tester, [2, 3, 1]);
+    tester.swap(1, 2);
+    assert_eq!(tester, [2, 1, 3]);
+    tester.swap(0, 2);
+    assert_eq!(tester, [3, 1, 2]);
+    tester.swap(2, 2);
+    assert_eq!(tester, [3, 1, 2]);
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_progress__idx9582_rank5.c", "source_rust_file": "API_Mapping__read_progress__idx9582_rank5.rs", "c_api": "rust_vec *v = reinterpret_cast<rust_vec*>(reinterpret_cast<char*>(buf.base) - sizeof (rust_vec))", "rust_api": "rustrt::rust_uv_buf_init(out_buf_ptr, input, len as size_t)", "mapping_type": "function", "description": "Buffer initialization with data pointer and length", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] [FFI Check] No FFI wrapper detected; both functions contain logic beyond simple FFI calls. [Task Analysis] C function handles socket read events and manages buffer allocation/usage, while Rust function initializes a uv_buf_t for libuv. [Similarity] Names do not refer to the same concept (read_progress vs buf_init), and domains differ (network I/O vs buffer initialization). [Knowledge Extraction] No full or partial structural match. However, both involve buffer handling and uv_buf_t operations, suggesting potential API mappings between C and Rust buffer management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_progress__idx9582_rank5.c", "source_rust_file": "API_Mapping__read_progress__idx9582_rank5.rs", "c_api": "v->alloc = buf.len", "rust_api": "rustrt::rust_uv_buf_init(out_buf_ptr, input, len as size_t)", "mapping_type": "function", "description": "Setting buffer allocation size from input length", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] [FFI Check] No FFI wrapper detected; both functions contain logic beyond simple FFI calls. [Task Analysis] C function handles socket read events and manages buffer allocation/usage, while Rust function initializes a uv_buf_t for libuv. [Similarity] Names do not refer to the same concept (read_progress vs buf_init), and domains differ (network I/O vs buffer initialization). [Knowledge Extraction] No full or partial structural match. However, both involve buffer handling and uv_buf_t operations, suggesting potential API mappings between C and Rust buffer management patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__read_progress__idx9582_rank5.c", "source_rust_file": "API_Mapping__read_progress__idx9582_rank5.rs", "c_api": "uv_buf_t { base: ptr::null(), len: 0 as libc::size_t }", "rust_api": "uv_buf_t { base: ptr::null(), len: 0 as libc::size_t }", "mapping_type": "type", "description": "Buffer type definition for libuv", "reasoning": "[FFI Check] -> [Task Analysis] -> [Similarity] -> [Knowledge Extraction] [FFI Check] No FFI wrapper detected; both functions contain logic beyond simple FFI calls. [Task Analysis] C function handles socket read events and manages buffer allocation/usage, while Rust function initializes a uv_buf_t for libuv. [Similarity] Names do not refer to the same concept (read_progress vs buf_init), and domains differ (network I/O vs buffer initialization). [Knowledge Extraction] No full or partial structural match. However, both involve buffer handling and uv_buf_t operations, suggesting potential API mappings between C and Rust buffer management patterns."}]
+Unixcoder Score: 0.0021565842907875776
+--------------------------------------------------
+C_Code: 
+static void LoadCaCertFromMemory(X509_STORE *store, const std::string &pemCerts)
+{
+    if (!store || pemCerts.empty() || pemCerts.size() > static_cast<size_t>(INT_MAX)) {
+        return;
+    }
+
+    auto cbio = BIO_new_mem_buf(pemCerts.data(), static_cast<int>(pemCerts.size()));
+    if (!cbio) {
+        return;
+    }
+
+    auto inf = PEM_X509_INFO_read_bio(cbio, nullptr, nullptr, nullptr);
+    if (!inf) {
+        BIO_free(cbio);
+        return;
+    }
+
+    /* add each entry from PEM file to x509_store */
+    for (int i = 0; i < static_cast<int>(sk_X509_INFO_num(inf)); ++i) {
+        auto itmp = sk_X509_INFO_value(inf, i);
+        if (!itmp) {
+            continue;
+        }
+        if (itmp->x509) {
+            X509_STORE_add_cert(store, itmp->x509);
+        }
+        if (itmp->crl) {
+            X509_STORE_add_crl(store, itmp->crl);
+        }
+    }
+
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    BIO_free(cbio);
+}
+Function: 
+pub fn from_pem(pem: &[u8]) -> Result<Certificate, HttpClientError> {
+        const CERT_BEGIN: &str = "-----BEGIN CERTIFICATE-----";
+        const CERT_END: &str = "-----END CERTIFICATE-----";
+
+        let mut inner = Vec::new();
+        let str = std::str::from_utf8(pem).map_err(|_| {
+            HttpClientError::new_with_cause(ErrorKind::Build, Some(InvalidCertificate))
+        })?;
+        let mut pos = 0;
+        while pos < str.len() {
+            let st = match str[pos..].find(CERT_BEGIN) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let ed = match str[pos + st..].find(CERT_END) {
+                Some(size) => size,
+                None => break,
+            };
+
+            let slice = str[pos + st..pos + st + ed + CERT_END.len()].as_bytes();
+            let cert = reqwest::Certificate::from_pem(slice)
+                .map_err(|e| HttpClientError::new_with_cause(ErrorKind::Build, Some(e)))?;
+            inner.push(cert);
+            pos += st + ed + CERT_END.len();
+        }
+
+        if inner.is_empty() {
+            return Err(HttpClientError::new_with_cause(
+                ErrorKind::Build,
+                Some(InvalidCertificate),
+            ));
+        }
+
+        Ok(Self { inner })
+    }
+Unixcoder Score: -0.0039344290271401405
+--------------------------------------------------
+C_Code: 
+struct qrcodegen_Segment qrcodegen_makeBytes(const uint8_t data[], size_t len, uint8_t buf[]) {
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_BYTE;
+	result.bitLength = calcSegmentBitLength(result.mode, len);
+	result.numChars = (int)len;
+	if (len > 0)
+		memcpy(buf, data, len * sizeof(buf[0]));
+	result.data = buf;
+	return result;
+}
+Function: 
+pub fn make_bytes(data: &[u8]) -> Self {
+		let mut bb = BitBuffer(Vec::with_capacity(data.len() * 8));
+		for &b in data {
+			bb.append_bits(u32::from(b), 8);
+		}
+		QrSegment::new(QrSegmentMode::Byte, data.len(), bb.0)
+	}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__bufslurp__idx140523_rank3.c", "source_rust_file": "API_Mapping__bufslurp__idx140523_rank3.rs", "c_api": "memmove(buf->data, buf->data + len, buf->size)", "rust_api": "unsafe { mem::transmute(boxed) }", "mapping_type": "pattern", "description": "Memory reorganization and data transmutation", "reasoning": "[Task Analysis] C function 'bufslurp' manipulates a buffer by adjusting its size and shifting data using memmove. Rust function 'from_box' converts a boxed slice into a buffer. [Similarity] No structural similarity at the block level; C operates on buffer data manipulation while Rust handles type conversion. [Knowledge Extraction] No full match, no partial match, but there is a potential API mapping related to memory movement: C's memmove vs Rust's mem::transmute and data conversion patterns."}]
+Unixcoder Score: -0.00491742929443717
+--------------------------------------------------
+C_Code: 
+void
+bufslurp(struct buf *buf, size_t len)
+{
+	assert(buf && buf->unit);
+
+	if (len >= buf->size) {
+		buf->size = 0;
+		return;
+	}
+
+	buf->size -= len;
+	memmove(buf->data, buf->data + len, buf->size);
+}
+Function: 
+pub fn resize(&mut self, new_len: usize, value: T) {
+        if new_len > self.len() {
+            let extra = new_len - self.len();
+            self.extend(repeat_n(value, extra))
+        } else {
+            self.truncate(new_len);
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dwarf_buf__idx20593_rank3.c", "source_rust_file": "API_Mapping__dwarf_buf__idx20593_rank3.rs", "c_api": "backtrace_error_callback error_callback", "rust_api": "pub ptr: *const u8", "mapping_type": "field_access", "description": "Error handling callback (inferred from context)", "reasoning": "[Entity Name Check] -> struct names differ ('dwarf_buf' vs 'DwarfReader') but refer to similar concepts (buffer readers); [Empty/Trivial Code] -> neither is empty; [FFI Wrapper] -> no FFI calls detected; [Semantic Domain Mismatch] -> both are buffer reading structures, domain consistent; [Empty Structs] -> both have fields; [Definition vs Usage Asymmetry] -> both are struct definitions, not function calls -> [Task Analysis] -> comparing struct field layouts and purposes; [Similarity] -> field-by-field semantic alignment in buffer reading logic; [Knowledge Extraction] -> no full match due to different field names/types, no partial fragments, but some API mappings possible based on field semantics"}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dwarf_buf__idx20593_rank3.c", "source_rust_file": "API_Mapping__dwarf_buf__idx20593_rank3.rs", "c_api": "size_t left", "rust_api": "pub ptr: *const u8", "mapping_type": "field_access", "description": "Remaining bytes in buffer (inferred from pointer arithmetic)", "reasoning": "[Entity Name Check] -> struct names differ ('dwarf_buf' vs 'DwarfReader') but refer to similar concepts (buffer readers); [Empty/Trivial Code] -> neither is empty; [FFI Wrapper] -> no FFI calls detected; [Semantic Domain Mismatch] -> both are buffer reading structures, domain consistent; [Empty Structs] -> both have fields; [Definition vs Usage Asymmetry] -> both are struct definitions, not function calls -> [Task Analysis] -> comparing struct field layouts and purposes; [Similarity] -> field-by-field semantic alignment in buffer reading logic; [Knowledge Extraction] -> no full match due to different field names/types, no partial fragments, but some API mappings possible based on field semantics"}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dwarf_buf__idx20593_rank3.c", "source_rust_file": "API_Mapping__dwarf_buf__idx20593_rank3.rs", "c_api": "void *data", "rust_api": "pub ptr: *const u8", "mapping_type": "field_access", "description": "User data for error callback (inferred from context)", "reasoning": "[Entity Name Check] -> struct names differ ('dwarf_buf' vs 'DwarfReader') but refer to similar concepts (buffer readers); [Empty/Trivial Code] -> neither is empty; [FFI Wrapper] -> no FFI calls detected; [Semantic Domain Mismatch] -> both are buffer reading structures, domain consistent; [Empty Structs] -> both have fields; [Definition vs Usage Asymmetry] -> both are struct definitions, not function calls -> [Task Analysis] -> comparing struct field layouts and purposes; [Similarity] -> field-by-field semantic alignment in buffer reading logic; [Knowledge Extraction] -> no full match due to different field names/types, no partial fragments, but some API mappings possible based on field semantics"}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dwarf_buf__idx20593_rank3.c", "source_rust_file": "API_Mapping__dwarf_buf__idx20593_rank3.rs", "c_api": "const unsigned char *buf", "rust_api": "pub ptr: *const u8", "mapping_type": "field_access", "description": "Current read position in buffer", "reasoning": "[Entity Name Check] -> struct names differ ('dwarf_buf' vs 'DwarfReader') but refer to similar concepts (buffer readers); [Empty/Trivial Code] -> neither is empty; [FFI Wrapper] -> no FFI calls detected; [Semantic Domain Mismatch] -> both are buffer reading structures, domain consistent; [Empty Structs] -> both have fields; [Definition vs Usage Asymmetry] -> both are struct definitions, not function calls -> [Task Analysis] -> comparing struct field layouts and purposes; [Similarity] -> field-by-field semantic alignment in buffer reading logic; [Knowledge Extraction] -> no full match due to different field names/types, no partial fragments, but some API mappings possible based on field semantics"}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dwarf_buf__idx20593_rank3.c", "source_rust_file": "API_Mapping__dwarf_buf__idx20593_rank3.rs", "c_api": "const unsigned char *start", "rust_api": "pub ptr: *const u8", "mapping_type": "field_access", "description": "Buffer start pointer access", "reasoning": "[Entity Name Check] -> struct names differ ('dwarf_buf' vs 'DwarfReader') but refer to similar concepts (buffer readers); [Empty/Trivial Code] -> neither is empty; [FFI Wrapper] -> no FFI calls detected; [Semantic Domain Mismatch] -> both are buffer reading structures, domain consistent; [Empty Structs] -> both have fields; [Definition vs Usage Asymmetry] -> both are struct definitions, not function calls -> [Task Analysis] -> comparing struct field layouts and purposes; [Similarity] -> field-by-field semantic alignment in buffer reading logic; [Knowledge Extraction] -> no full match due to different field names/types, no partial fragments, but some API mappings possible based on field semantics"}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__dwarf_buf__idx20593_rank3.c", "source_rust_file": "API_Mapping__dwarf_buf__idx20593_rank3.rs", "c_api": "int is_bigendian", "rust_api": "pub ptr: *const u8", "mapping_type": "field_access", "description": "Endianness flag (inferred from context of buffer reader)", "reasoning": "[Entity Name Check] -> struct names differ ('dwarf_buf' vs 'DwarfReader') but refer to similar concepts (buffer readers); [Empty/Trivial Code] -> neither is empty; [FFI Wrapper] -> no FFI calls detected; [Semantic Domain Mismatch] -> both are buffer reading structures, domain consistent; [Empty Structs] -> both have fields; [Definition vs Usage Asymmetry] -> both are struct definitions, not function calls -> [Task Analysis] -> comparing struct field layouts and purposes; [Similarity] -> field-by-field semantic alignment in buffer reading logic; [Knowledge Extraction] -> no full match due to different field names/types, no partial fragments, but some API mappings possible based on field semantics"}]
+Unixcoder Score: -0.005954161286354065
+--------------------------------------------------

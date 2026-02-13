@@ -1,0 +1,172 @@
+C_Code: 
+void DownloadServiceAbility::OnStop()
+{
+    DOWNLOAD_HILOGI("OnStop started.");
+    if (state_ != ServiceRunningState::STATE_RUNNING) {
+        return;
+    }
+    auto instance = DownloadServiceManager::GetInstance();
+    if (instance == nullptr) {
+        DOWNLOAD_HILOGE("DownloadServiceManager is null");
+        return;
+    }
+    instance->Destroy();
+    serviceHandler_ = nullptr;
+    instance_ = nullptr;
+    state_ = ServiceRunningState::STATE_NOT_START;
+    DOWNLOAD_HILOGI("OnStop end.");
+}
+Function: 
+pub fn stop(&mut self) {
+        debug!(LOG_LABEL, "stop");
+        if ServerRunState::NoStart == self.server_state {
+            return;
+        }
+        self.server_state = ServerRunState::NoStart;
+    }
+Unixcoder Score: 0.03568593040108681
+--------------------------------------------------
+C_Code: 
+OHIPCRemoteServiceStub::OHIPCRemoteServiceStub(std::u16string &desc, OH_OnRemoteRequestCallback requestCallback,
+    OH_OnRemoteDestroyCallback destroyCallback, void *userData)
+    : IPCObjectStub(desc), requestCallback_(requestCallback), destroyCallback_(destroyCallback), userData_(userData)
+{
+}
+Function: 
+pub fn new<A: RemoteStub + 'static>(remote: A) -> Self {
+        Self {
+            inner: Box::new(remote),
+        }
+    }
+Unixcoder Score: 0.01787763461470604
+--------------------------------------------------
+C_Code: 
+OHIPCRemoteServiceStub::OHIPCRemoteServiceStub(std::u16string &desc, OH_OnRemoteRequestCallback requestCallback,
+    OH_OnRemoteDestroyCallback destroyCallback, void *userData)
+    : IPCObjectStub(desc), requestCallback_(requestCallback), destroyCallback_(destroyCallback), userData_(userData)
+{
+}
+Function: 
+pub fn on_remote_request(
+        &mut self,
+        code: u32,
+        data: Pin<&mut MessageParcel>,
+        reply: Pin<&mut MessageParcel>,
+    ) -> i32 {
+        unsafe {
+            let mut data = MsgParcel::from_ptr(data.get_unchecked_mut() as *mut MessageParcel);
+            let mut reply = MsgParcel::from_ptr(reply.get_unchecked_mut() as *mut MessageParcel);
+            self.inner.on_remote_request(code, &mut data, &mut reply)
+        }
+    }
+Unixcoder Score: -0.0013763238675892353
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn new<A: RemoteStub + 'static>(remote: A) -> Self {
+        Self {
+            remote: RemoteStubWrapper::new(remote),
+        }
+    }
+Unixcoder Score: -0.011288647539913654
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub(crate) fn new(c_wrapper: UniquePtr<SystemAbilityWrapper>) -> Self {
+        Self { inner: c_wrapper }
+    }
+Unixcoder Score: -0.01361438911408186
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+fn new(inner: Unsubscribe) -> Self {
+        Self { inner }
+    }
+Unixcoder Score: -0.015138844959437847
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            is_distributed,
+            dump_flags as u32,
+            capability,
+            permission,
+        )
+    }
+Unixcoder Score: -0.021439241245388985
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn add_systemability<A: RemoteStub + 'static>(said: i32, ability: A) -> i32 {
+        info!("add system ability {}", said);
+        let is_distributed = false;
+        let dump_flags = DumpFlagPriority::Default;
+        let capability = "";
+        let permission = "";
+        let stub = AbilityStub::new(ability);
+        AddSystemAbility(
+            said,
+            Box::new(stub),
+            AddSystemAbilityConfig {
+                is_distributed,
+                dump_flags: dump_flags as u32,
+                capability: capability.to_string(),
+                permission: permission.to_string(),
+            },
+        )
+    }
+Unixcoder Score: -0.022238697856664658
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+pub fn publish<A: RemoteStub + 'static>(&self, ability: A) -> bool {
+        let ability = Box::new(AbilityStub::new(ability));
+        let system_ability = unsafe { Pin::new_unchecked(&mut *self.inner) };
+        system_ability.PublishWrapper(ability)
+    }
+Unixcoder Score: -0.023257974535226822
+--------------------------------------------------
+C_Code: 
+RemoteServiceStub::RemoteServiceStub(AbilityStub *ability)
+{
+    this->inner_ = ability;
+}
+Function: 
+fn new(inner: Unsubscribe) -> Self {
+        Self { inner }
+    }
+Unixcoder Score: -0.025433722883462906
+--------------------------------------------------

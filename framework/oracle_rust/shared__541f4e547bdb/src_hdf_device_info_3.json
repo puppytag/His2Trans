@@ -1,0 +1,27 @@
+{
+  "project": "shared__541f4e547bdb",
+  "func_key": "src_hdf_device_info_3",
+  "function_name": "HdfDeviceInfoFreeInstance",
+  "source_c_file": "src/hdf_device_info.c",
+  "c_code": "void HdfDeviceInfoFreeInstance(struct HdfDeviceInfo * deviceInfo)\n{\n    if (deviceInfo != NULL) {\n        OsalMemFree(deviceInfo);\n    }\n}",
+  "rust_signature": "pub extern \"C\" fn HdfDeviceInfoFreeInstance(deviceInfo: *mut crate::types::HdfDeviceInfo)",
+  "rust_code": "pub extern \\\"C\\\" fn HdfDeviceInfoFreeInstance(deviceInfo: *mut HdfDeviceInfo) {\n    if !deviceInfo.is_null() {\n        unsafe { OsalMemFree(deviceInfo as *mut core::ffi::c_void) };\n    }\n}\n",
+  "extracted_knowledge": [
+    {
+      "knowledge_type": "API_Mapping",
+      "c_api": "OsalMemFree",
+      "rust_api": "OsalMemFree",
+      "description": "Free memory via OSAL allocator",
+      "mapping_type": "",
+      "source": "oracle_manual"
+    },
+    {
+      "knowledge_type": "Partial",
+      "c_fragment": "if (ptr == NULL) { ... }",
+      "rust_fragment": "if ptr.is_null() { ... }",
+      "description": "Translate C NULL checks to Rust `is_null()` checks",
+      "match_type": "partial",
+      "source": "oracle_manual"
+    }
+  ]
+}

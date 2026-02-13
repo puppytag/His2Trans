@@ -1,0 +1,340 @@
+C_Code: 
+void
+rust_task::cleanup_after_turn() {
+    // Delete any spare stack segments that were left
+    // behind by calls to prev_stack
+    assert(stk);
+
+    while (stk->next) {
+        stk_seg *new_next = stk->next->next;
+        assert (!stk->next->is_big);
+        free_stack(stk->next);
+
+        stk->next = new_next;
+    }
+}
+Function: 
+fn cleanup_and_delete(self) {
+        unsafe {
+            let data = uvll::get_data_for_req(self.native_handle());
+            let _data = transmute::<*c_void, ~RequestData>(data);
+            uvll::set_data_for_req(self.native_handle(), null::<()>());
+            uvll::fs_req_cleanup(self.native_handle());
+            free_req(self.native_handle() as *c_void)
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx113369_rank5.c", "source_rust_file": "API_Mapping__free__idx113369_rank5.rs", "c_api": "backing_region->free(box)", "rust_api": "boxed.assume_init()", "mapping_type": "function", "description": "Memory deallocation in C vs finalizing a boxed value in Rust", "reasoning": "[Task Analysis] C function manages memory deallocation of a boxed region with linked list manipulation; Rust function writes a value into a boxed memory location. [Similarity] No structural similarity in control flow or data manipulation patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory handling and boxing operations."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx113369_rank5.c", "source_rust_file": "API_Mapping__free__idx113369_rank5.rs", "c_api": "box->prev->next = box->next", "rust_api": "(*boxed).write(value)", "mapping_type": "pattern", "description": "Pointer manipulation and memory write in linked list context vs unsafe memory write into boxed value", "reasoning": "[Task Analysis] C function manages memory deallocation of a boxed region with linked list manipulation; Rust function writes a value into a boxed memory location. [Similarity] No structural similarity in control flow or data manipulation patterns. [Knowledge Extraction] No full match, no partial match, but there are API mappings related to memory handling and boxing operations."}]
+Unixcoder Score: 0.00025833729887381196
+--------------------------------------------------
+C_Code: 
+void
+rust_task::cleanup_after_turn() {
+    // Delete any spare stack segments that were left
+    // behind by calls to prev_stack
+    assert(stk);
+
+    while (stk->next) {
+        stk_seg *new_next = stk->next->next;
+        assert (!stk->next->is_big);
+        free_stack(stk->next);
+
+        stk->next = new_next;
+    }
+}
+Function: 
+fn recycle(~self, stack_pool: &mut StackPool) {
+        match self {
+            ~Task {current_stack_segment, _} => {
+                stack_pool.give_segment(current_stack_segment);
+            }
+        }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx113358_rank4.c", "source_rust_file": "API_Mapping__free__idx113358_rank4.rs", "c_api": "backing_region->free(box)", "rust_api": "alloc.allocate_zeroed", "mapping_type": "function", "description": "Memory deallocation / zeroed allocation", "reasoning": "[Task Analysis] C function manages memory deallocation of a boxed region with linked list manipulation; Rust function allocates zeroed memory using a custom allocator. [Similarity] No structural similarity at the function level due to different domains (memory management vs allocation). [Knowledge Extraction] No full or partial match. API mappings identified: C `backing_region->free(box)` maps to Rust `alloc.allocate_zeroed` (both perform deallocation/zeroed allocation)."}]
+Unixcoder Score: -0.0042899660766124725
+--------------------------------------------------
+C_Code: 
+struct stk_seg {
+    stk_seg *prev;
+    stk_seg *next;
+    uintptr_t end;
+    unsigned int valgrind_id;
+    uint8_t is_big;
+
+    rust_task *task;
+    uintptr_t canary;
+
+    uint8_t data[];
+}
+Function: 
+pub struct StackSegment {
+    buf: ~[u8]
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__free__idx113420_rank5.c", "source_rust_file": "API_Mapping__free__idx113420_rank5.rs", "c_api": "backing_region->free(box)", "rust_api": "Box::new(array)", "mapping_type": "function", "description": "Heap allocation and memory management", "reasoning": "[Task Analysis] C function 'boxed_region::free' manages memory deallocation for a boxed region, handling linked list manipulation and optional memory poisoning. Rust function 'from' converts an array into a boxed slice. [Similarity] Names and domains differ significantly; C operates on a custom memory management system with linked lists, while Rust's 'from' is a simple type conversion. [Knowledge Extraction] No full structural match due to domain mismatch and different operations. However, both involve memory-related operations (allocation/deallocation), and the Rust 'Box::new' corresponds to C's 'backing_region->free' in terms of heap management, though not directly equivalent. No partial match due to structural differences. API mapping extracted based on semantic alignment in heap management context."}]
+Unixcoder Score: -0.005782022140920162
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+pub fn try_new_uninit() -> Result<Box<mem::MaybeUninit<T>>, AllocError> {
+        Box::try_new_uninit_in(Global)
+    }
+Unixcoder Score: -0.008619244210422039
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+pub fn try_new_zeroed_in(alloc: A) -> Result<Box<mem::MaybeUninit<T>, A>, AllocError>
+    where
+        A: Allocator,
+    {
+        let layout = Layout::new::<mem::MaybeUninit<T>>();
+        let ptr = alloc.allocate_zeroed(layout)?.cast();
+        unsafe { Ok(Box::from_raw_in(ptr.as_ptr(), alloc)) }
+    }
+Unixcoder Score: -0.024014895781874657
+--------------------------------------------------
+C_Code: 
+static void ecb_cold
+etp_worker_free (etp_worker *wrk)
+{
+  wrk->next->prev = wrk->prev;
+  wrk->prev->next = wrk->next;
+
+  free (wrk);
+}
+Function: 
+fn delete(self) {
+        unsafe { free(self.native_handle() as *c_void) }
+    }
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113540_rank2.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113540_rank2.rs", "c_api": "free(wrk);", "rust_api": "ptr::read(old)", "mapping_type": "pattern", "description": "Memory deallocation and value reading in unsafe context", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function implements an iterator's `next` method with pointer arithmetic and unsafe operations. [Similarity] No structural similarity at the code level due to different domains (memory management vs iterator logic). [Knowledge Extraction] No full match, no partial match, but both involve pointer manipulation and memory handling patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113540_rank2.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113540_rank2.rs", "c_api": "wrk->prev->next = wrk->next;", "rust_api": "self.ptr = unsafe { self.ptr.add(1) };", "mapping_type": "pattern", "description": "Pointer traversal in a linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function implements an iterator's `next` method with pointer arithmetic and unsafe operations. [Similarity] No structural similarity at the code level due to different domains (memory management vs iterator logic). [Knowledge Extraction] No full match, no partial match, but both involve pointer manipulation and memory handling patterns, so API mappings are extracted."}, {"knowledge_type": "API_Mapping", "source_c_file": "API_Mapping__etp_worker_free__idx113540_rank2.c", "source_rust_file": "API_Mapping__etp_worker_free__idx113540_rank2.rs", "c_api": "wrk->next->prev = wrk->prev;", "rust_api": "self.ptr = unsafe { self.ptr.add(1) };", "mapping_type": "pattern", "description": "Pointer traversal in a linked list structure", "reasoning": "[Task Analysis] C function manipulates a doubly-linked list by updating pointers and freeing memory; Rust function implements an iterator's `next` method with pointer arithmetic and unsafe operations. [Similarity] No structural similarity at the code level due to different domains (memory management vs iterator logic). [Knowledge Extraction] No full match, no partial match, but both involve pointer manipulation and memory handling patterns, so API mappings are extracted."}]
+Unixcoder Score: -0.02691594883799553
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+pub unsafe fn malloc(td: *TypeDesc, size: uint) -> *c_void {
+    unsafe {
+        assert td.is_not_null();
+
+        let total_size = get_box_size(size, (*td).align);
+        let p = c_malloc(total_size as size_t);
+        assert p.is_not_null();
+
+        // FIXME #4761: Would be very nice to not memset all allocations
+        let p: *mut u8 = transmute(p);
+        set_memory(p, 0, total_size);
+
+        // FIXME #3475: Converting between our two different tydesc types
+        let td: *TyDesc = transmute(td);
+
+        let box: &mut BoxRepr = transmute(p);
+        box.header.ref_count = -1; // Exchange values not ref counted
+        box.header.type_desc = td;
+        box.header.prev = null();
+        box.header.next = null();
+
+        let exchange_count = &mut *rust_get_exchange_count_ptr();
+        rusti::atomic_xadd(exchange_count, 1);
+
+        return transmute(box);
+    }
+}
+Unixcoder Score: -0.028991524130105972
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+pub fn write(mut boxed: Self, value: T) -> Box<T, A> {
+        unsafe {
+            (*boxed).write(value);
+            boxed.assume_init()
+        }
+    }
+Unixcoder Score: -0.02977214753627777
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+pub unsafe fn free(ptr: *c_void) {
+    let exchange_count = &mut *exchange_count_ptr();
+    atomic_xsub(exchange_count, 1);
+
+    assert!(ptr.is_not_null());
+    c_free(ptr);
+}
+Unixcoder Score: -0.030462777242064476
+--------------------------------------------------
+C_Code: 
+void boxed_region::free(rust_opaque_box *box) {
+    // This turns out to not be true in various situations,
+    // like when we are unwinding after a failure.
+    //
+    // assert(box->ref_count == 0);
+
+    // This however should always be true.  Helps to detect
+    // double frees (kind of).
+    assert(box->td != NULL);
+
+    /*LOG(rust_get_current_task(), box,
+        "@free(%p) with td %p, prev %p, next %p\n",
+        box, box->td, box->prev, box->next);*/
+
+    if (box->prev) box->prev->next = box->next;
+    if (box->next) box->next->prev = box->prev;
+    if (live_allocs == box) live_allocs = box->next;
+
+    if (poison_on_free) {
+        memset(box_body(box), 0xab, box->td->size);
+    }
+
+    box->prev = NULL;
+    box->next = NULL;
+    box->td = NULL;
+
+    backing_region->free(box);
+}
+Function: 
+fn from(array: [T; N]) -> Box<[T]> {
+        Box::new(array)
+    }
+Unixcoder Score: -0.030633727088570595
+--------------------------------------------------

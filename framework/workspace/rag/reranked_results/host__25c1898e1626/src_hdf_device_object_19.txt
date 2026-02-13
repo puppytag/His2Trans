@@ -1,0 +1,252 @@
+C_Code: 
+struct DeviceCreateInfo
+Function: 
+struct FfiPoint {
+        x: f32,
+        y: f32,
+    }
+Unixcoder Score: 0.04175109788775444
+--------------------------------------------------
+C_Code: 
+struct VkDescriptorBufferInfo {
+    VkBuffer        buffer;
+    VkDeviceSize    offset;
+    VkDeviceSize    range;
+}
+Function: 
+struct WorkgroupBufferInfo {
+        size_in_bytes: u32,
+        index: u32,
+    }
+Unixcoder Score: 0.0036220750771462917
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> CheckSystemAbilityWithDeviceId(int32_t systemAbilityId, const std::string &deviceId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    auto ability = sysm->CheckSystemAbility(systemAbilityId, deviceId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.022677091881632805
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> CheckSystemAbilityWithDeviceId(int32_t systemAbilityId, const std::string &deviceId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    auto ability = sysm->CheckSystemAbility(systemAbilityId, deviceId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.02333572879433632
+--------------------------------------------------
+C_Code: 
+struct TraversalInfo {
+    ConstructInfo cinfo;
+    uint32_t merge_node;
+    uint32_t continue_node;
+  }
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Unixcoder Score: -0.023641319945454597
+--------------------------------------------------
+C_Code: 
+int NAPIRemoteObject::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    ZLOGD(LOG_LABEL, "enter OnRemoteRequest");
+    if (code == DUMP_TRANSACTION) {
+        ZLOGE(LOG_LABEL, "DUMP_TRANSACTION data size:%{public}zu", data.GetReadableBytes());
+    }
+    std::shared_ptr<struct ThreadLockInfo> lockInfo = std::make_shared<struct ThreadLockInfo>();
+    CallbackParam *param = new (std::nothrow) CallbackParam {
+        .env = env_,
+        .thisVarRef = thisVarRef_,
+        .code = code,
+        .data = &data,
+        .reply = &reply,
+        .option = &option,
+        .lockInfo = lockInfo.get(),
+        .result = 0
+    };
+    if (param == nullptr) {
+        ZLOGE(LOG_LABEL, "new CallbackParam failed");
+        return ERR_ALLOC_MEMORY;
+    }
+
+    NAPI_RemoteObject_getCallingInfo(param->callingInfo);
+    ZLOGD(LOG_LABEL, "callingPid:%{public}u callingUid:%{public}u "
+        "callingDeviceID:%{public}s localDeviceId:%{public}s localCalling:%{public}d",
+        param->callingInfo.callingPid, param->callingInfo.callingUid,
+        IPCProcessSkeleton::ConvertToSecureString(param->callingInfo.callingDeviceID).c_str(),
+        IPCProcessSkeleton::ConvertToSecureString(param->callingInfo.localDeviceID).c_str(),
+        param->callingInfo.isLocalCalling);
+    int ret = OnJsRemoteRequest(param);
+    if (ret != 0) {
+        uint64_t curTime = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count());
+        ZLOGE(LOG_LABEL, "OnJsRemoteRequest failed, ret:%{public}d time:%{public}" PRIu64, ret, curTime);
+    }
+    delete param;
+    return ret;
+}
+Function: 
+pub fn send_request(&self, code: u32, data: &mut MsgParcel) -> IpcResult<MsgParcel> {
+        let mut reply = MsgParcel::new();
+        let mut option = MsgOption::new();
+        match mem::replace(&mut data.inner, ParcelMem::Null) {
+            ParcelMem::Unique(mut p) => {
+                let res = self.inner.SendRequest(
+                    code,
+                    p.pin_mut(),
+                    reply.pin_mut().unwrap(),
+                    option.inner.pin_mut(),
+                );
+                data.inner = ParcelMem::Unique(p);
+                match res {
+                    0 => Ok(reply),
+                    29189 => Err(IpcStatusCode::ServiceDied),
+                    _ => Err(IpcStatusCode::Failed),
+                }
+            }
+            _ => Err(IpcStatusCode::Failed),
+        }
+    }
+Unixcoder Score: -0.023834966123104095
+--------------------------------------------------
+C_Code: 
+struct DeviceQueueInfo2
+Function: 
+struct DispatchInfo {
+        use_large_path_scan: bool,
+
+        // Dispatch workgroup counts for each pipeline
+        path_reduce: WorkgroupSize,
+        path_reduce2: WorkgroupSize,
+        path_scan1: WorkgroupSize,
+        path_scan: WorkgroupSize,
+        bbox_clear: WorkgroupSize,
+        flatten: WorkgroupSize,
+        draw_reduce: WorkgroupSize,
+        draw_leaf: WorkgroupSize,
+        clip_reduce: WorkgroupSize,
+        clip_leaf: WorkgroupSize,
+        binning: WorkgroupSize,
+        tile_alloc: WorkgroupSize,
+        path_count_setup: WorkgroupSize,
+        // Note: `path_count` must use an indirect dispatch
+        backdrop: WorkgroupSize,
+        coarse: WorkgroupSize,
+        path_tiling_setup: WorkgroupSize,
+        // Note: `path_tiling` must use an indirect dispatch
+        fine: WorkgroupSize,
+    }
+Unixcoder Score: -0.02399970404803753
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> CheckSystemAbilityWithDeviceId(int32_t systemAbilityId, const std::string &deviceId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    auto ability = sysm->CheckSystemAbility(systemAbilityId, deviceId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.025589486584067345
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> CheckSystemAbilityWithDeviceId(int32_t systemAbilityId, const std::string &deviceId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    auto ability = sysm->CheckSystemAbility(systemAbilityId, deviceId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn check_system_ability_with_ability(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("check system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(CheckSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.028031328693032265
+--------------------------------------------------
+C_Code: 
+std::unique_ptr<SptrIRemoteObject> CheckSystemAbilityWithDeviceId(int32_t systemAbilityId, const std::string &deviceId)
+{
+    auto sysm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sysm == nullptr) {
+        return nullptr;
+    }
+    auto ability = sysm->CheckSystemAbility(systemAbilityId, deviceId);
+    if (ability == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<SptrIRemoteObject>(std::move(ability));
+}
+Function: 
+pub fn get_system_ability_with_device_id(said: i32, device_id: &str) -> Option<RemoteObj> {
+        info!("get system ability {} with device id", said);
+        let_cxx_string!(id = device_id);
+        RemoteObj::from_sptr(GetSystemAbilityWithDeviceId(said, &id))
+    }
+Unixcoder Score: -0.028642946854233742
+--------------------------------------------------

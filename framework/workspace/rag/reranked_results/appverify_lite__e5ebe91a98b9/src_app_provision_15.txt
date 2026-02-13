@@ -1,0 +1,278 @@
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServer::GetAppSchema(int32_t userId, const std::string &bundleName)
+{
+    return { 0, SchemaMeta() };
+}
+Function: 
+pub fn get_app_schema(&mut self, bundle_name: &str) -> SyncResult<SchemaMeta> {
+        let schema_ipc = self.connect.get_app_schema(self.user_id, bundle_name)?;
+        Ok(SchemaMeta::from(schema_ipc.deref()))
+    }
+Unixcoder Score: 0.06928345561027527
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServer::GetAppSchema(int32_t userId, const std::string &bundleName)
+{
+    return { 0, SchemaMeta() };
+}
+Function: 
+fn from(value: &ipc_conn::Schema) -> Self {
+        let mut dbs = vec![];
+        for db in &value.databases.0 {
+            dbs.push(Database::from(db));
+        }
+        SchemaMeta {
+            version: value.version,
+            bundle_name: value.bundle_name.clone(),
+            databases: dbs,
+        }
+    }
+Unixcoder Score: 0.06813759356737137
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServer::GetAppSchema(int32_t userId, const std::string &bundleName)
+{
+    return { 0, SchemaMeta() };
+}
+Function: 
+pub fn get_app_schema(&mut self, bundle_name: &str) -> SyncResult<SchemaMeta> {
+        let schema_ipc = self.connect.get_app_schema(self.user_id, bundle_name)?;
+        Ok(SchemaMeta::from(schema_ipc.deref()))
+    }
+Unixcoder Score: 0.061902157962322235
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServer::GetAppSchema(int32_t userId, const std::string &bundleName)
+{
+    return { 0, SchemaMeta() };
+}
+Function: 
+fn from(value: &ipc_conn::Schema) -> Self {
+        let mut dbs = vec![];
+        for db in &value.databases.0 {
+            dbs.push(Database::from(db));
+        }
+        SchemaMeta {
+            version: value.version,
+            bundle_name: value.bundle_name.clone(),
+            databases: dbs,
+        }
+    }
+Unixcoder Score: 0.05999123677611351
+--------------------------------------------------
+C_Code: 
+std::pair<int32_t, SchemaMeta> CloudServer::GetAppSchema(int32_t userId, const std::string &bundleName)
+{
+    return { 0, SchemaMeta() };
+}
+Function: 
+fn default() -> Self {
+        SchemaMeta {
+            version: 0,
+            bundle_name: "".to_string(),
+            databases: vec![],
+        }
+    }
+Unixcoder Score: 0.03684298321604729
+--------------------------------------------------
+C_Code: 
+int run_test_part(const char* test, const char* part) {
+  task_entry_t* task;
+
+  for (task = TASKS; task->main; task++) {
+    if (strcmp(test, task->task_name) == 0
+        && strcmp(part, task->process_name) == 0) {
+      return task->main();
+    }
+  }
+
+  LOGF("No test part with that name: %s:%s\n", test, part);
+  return 255;
+}
+Function: 
+fn main() {
+    let tests: &[(_, fn())] = &[
+        ("test", test),
+        ("test_always_abort", test_always_abort),
+        ("test_always_abort_thread", test_always_abort_thread),
+    ];
+
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        // This is inside the self-executed command.
+        for (a, f) in tests {
+            if &args[1] == a {
+                return f();
+            }
+        }
+        bomb_out_but_not_abort("bad test");
+    }
+
+    let execute_self_expecting_abort = |arg| {
+        let mut p = Command::new(&args[0])
+            .stdout(Stdio::piped())
+            .stdin(Stdio::piped())
+            .arg(arg)
+            .spawn()
+            .unwrap();
+        let status = p.wait().unwrap();
+        assert!(!status.success());
+        // Any reasonable platform can distinguish a process which
+        // called exit(1) from one which panicked.
+        assert_ne!(status.code(), Some(1));
+    };
+
+    for (a, _f) in tests {
+        execute_self_expecting_abort(a);
+    }
+}
+Unixcoder Score: 0.007550893351435661
+--------------------------------------------------
+C_Code: 
+int run_test_part(const char* test, const char* part) {
+  task_entry_t* task;
+
+  for (task = TASKS; task->main; task++) {
+    if (strcmp(test, task->task_name) == 0
+        && strcmp(part, task->process_name) == 0) {
+      return task->main();
+    }
+  }
+
+  LOGF("No test part with that name: %s:%s\n", test, part);
+  return 255;
+}
+Function: 
+fn sample_tests() -> Vec<TestDescAndFn> {
+    let names = vec![
+        "sha1::test".to_string(),
+        "isize::test_to_str".to_string(),
+        "isize::test_pow".to_string(),
+        "test::do_not_run_ignored_tests".to_string(),
+        "test::ignored_tests_result_in_ignored".to_string(),
+        "test::first_free_arg_should_be_a_filter".to_string(),
+        "test::parse_ignored_flag".to_string(),
+        "test::parse_include_ignored_flag".to_string(),
+        "test::filter_for_ignored_option".to_string(),
+        "test::run_include_ignored_option".to_string(),
+        "test::sort_tests".to_string(),
+    ];
+    fn testfn() -> Result<(), String> {
+        Ok(())
+    }
+    let mut tests = Vec::new();
+    for name in &names {
+        let test = TestDescAndFn {
+            desc: TestDesc {
+                name: DynTestName((*name).clone()),
+                ignore: false,
+                ignore_message: None,
+                source_file: "",
+                start_line: 0,
+                start_col: 0,
+                end_line: 0,
+                end_col: 0,
+                should_panic: ShouldPanic::No,
+                compile_fail: false,
+                no_run: false,
+                test_type: TestType::Unknown,
+            },
+            testfn: DynTestFn(Box::new(testfn)),
+        };
+        tests.push(test);
+    }
+    tests
+}
+Unixcoder Score: 0.003836335614323616
+--------------------------------------------------
+C_Code: 
+int run_test_part(const char* test, const char* part) {
+  task_entry_t* task;
+
+  for (task = TASKS; task->main; task++) {
+    if (strcmp(test, task->task_name) == 0
+        && strcmp(part, task->process_name) == 0) {
+      return task->main();
+    }
+  }
+
+  LOGF("No test part with that name: %s:%s\n", test, part);
+  return 255;
+}
+Function: 
+pub(crate) fn retry_spawn_and_wait(tries: u64, mut cmd: Command) {
+    for i in 1..tries + 1 {
+        if i != 1 {
+            println!("Command failed. Attempt {i}/{tries}:");
+        }
+        if cmd.spawn().unwrap().wait().unwrap().success() {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_secs(i * 5));
+    }
+    println!("The command has failed after {tries} attempts.");
+    process::exit(1);
+}
+Unixcoder Score: 0.0007148752920329571
+--------------------------------------------------
+C_Code: 
+int run_test_part(const char* test, const char* part) {
+  task_entry_t* task;
+
+  for (task = TASKS; task->main; task++) {
+    if (strcmp(test, task->task_name) == 0
+        && strcmp(part, task->process_name) == 0) {
+      return task->main();
+    }
+  }
+
+  LOGF("No test part with that name: %s:%s\n", test, part);
+  return 255;
+}
+Function: 
+pub(crate) fn run(&self, compiler: &Compiler, dirs: &Dirs) -> Command {
+        self.build_cmd("run", compiler, dirs)
+    }
+Unixcoder Score: -0.006407680455595255
+--------------------------------------------------
+C_Code: 
+bool CheckSystemApp(void)
+{
+    auto accessTokenId = IPCSkeleton::GetCallingFullTokenID();
+    bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenId);
+    if (isSystemApp) {
+        LOGI("[INFO]Check system app success!");
+        return true;
+    } else {
+        LOGE("[FATAL]Check system app failed");
+        return false;
+    }
+}
+Function: 
+pub(crate) fn check_system_permission(attrs: &AssetMap) -> Result<()> {
+    if attrs.get(&Tag::UserId).is_some() {
+        if unsafe { !CheckSystemHapPermission() } {
+            return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
+        }
+
+        let permission = CString::new("ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS").unwrap();
+        if unsafe { !CheckPermission(permission.as_ptr()) } {
+            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+        }
+
+        let uid = Skeleton::calling_uid();
+        let user_id = get_user_id(uid)?;
+        if user_id > ROOT_USER_UPPERBOUND {
+            return log_throw_error!(
+                ErrCode::AccessDenied,
+                "[FATAL]The caller user_id is: {}. Not in range[0, 99]",
+                user_id
+            );
+        }
+    }
+    Ok(())
+}
+Extracted_Knowledge: 
+[{"knowledge_type": "API_Mapping", "source_c_file": "Partial__drawFinderPattern__idx144367_rank3.c", "source_rust_file": "Partial__drawFinderPattern__idx144367_rank3.rs", "c_api": "drawFinderPattern", "rust_api": "draw_finder_pattern", "mapping_type": "function", "description": "Drawing a finder pattern at specified coordinates", "reasoning": "[Task Analysis] C function draws a finder pattern using nested loops and distance calculation; Rust function draws multiple finder patterns and other QR code elements. [Similarity] Names don't match exactly but both involve drawing finder patterns. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for drawing finder patterns."}, {"knowledge_type": "API_Mapping", "source_c_file": "Partial__drawFinderPattern__idx144367_rank3.c", "source_rust_file": "Partial__drawFinderPattern__idx144367_rank3.rs", "c_api": "setFunctionModule(xx, yy, dist != 2 && dist != 4)", "rust_api": "self.set_function_module(6, i, i % 2 == 0)", "mapping_type": "function", "description": "Setting a module in the QR code grid based on position and condition", "reasoning": "[Task Analysis] C function draws a finder pattern using nested loops and distance calculation; Rust function draws multiple finder patterns and other QR code elements. [Similarity] Names don't match exactly but both involve drawing finder patterns. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for drawing finder patterns."}, {"knowledge_type": "Partial", "source_c_file": "Partial__drawFinderPattern__idx144367_rank3.c", "source_rust_file": "Partial__drawFinderPattern__idx144367_rank3.rs", "c_fragment": "for (int dy = -4; dy <= 4; dy++) {\n\t\tfor (int dx = -4; dx <= 4; dx++) {\n\t\t\tint dist = std::max(std::abs(dx), std::abs(dy));  // Chebyshev/infinity norm\n\t\t\tint xx = x + dx, yy = y + dy;\n\t\t\tif (0 <= xx && xx < size && 0 <= yy && yy < size)\n\t\t\t\tsetFunctionModule(xx, yy, dist != 2 && dist != 4);\n\t\t}", "rust_fragment": "self.draw_finder_pattern(3, 3);\n\t\tself.draw_finder_pattern(size - 4, 3);\n\t\tself.draw_finder_pattern(3, size - 4);", "description": "Both involve drawing finder patterns at specific coordinates in a QR code grid.", "reasoning": "[Task Analysis] C function draws a finder pattern using nested loops and distance calculation; Rust function draws multiple finder patterns and other QR code elements. [Similarity] Names don't match exactly but both involve drawing finder patterns. [Knowledge Extraction] Found partial structural match in loop logic and API mapping for drawing finder patterns."}]
+Unixcoder Score: -0.022045467048883438
+--------------------------------------------------
