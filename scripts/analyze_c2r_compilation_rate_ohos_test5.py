@@ -255,6 +255,26 @@ def load_incremental_stats_from_summary(run_dir: Path) -> Dict[str, Any]:
     """
     out: Dict[str, Any] = {}
 
+    def _load_c2rust_fallback_count(project_name: str, stats_file: Optional[str] = None) -> int:
+        candidates: List[Path] = []
+        if stats_file:
+            p = Path(stats_file).expanduser()
+            if not p.is_absolute():
+                p = run_dir / p
+            candidates.append(p)
+        proj_dir = run_dir / "intermediate" / project_name
+        if proj_dir.is_dir():
+            candidates.extend(proj_dir.rglob("translation_stats.json"))
+        for cand in candidates:
+            if not cand.is_file():
+                continue
+            try:
+                obj = json.loads(cand.read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                continue
+            return int(obj.get("c2rust_fallback") or 0)
+        return 0
+
     summary = run_dir / "results" / "translation_summary_report.json"
     if summary.is_file():
         try:
@@ -266,14 +286,18 @@ def load_incremental_stats_from_summary(run_dir: Path) -> Dict[str, Any]:
                 for name, p in projects.items():
                     if name not in DISPLAY_PROJECT_ORDER:
                         continue
+                    total = int(p.get("total_functions") or 0)
+                    fallback = _load_c2rust_fallback_count(name)
+                    passed_total = max(int(p.get("compiled_total") or 0) - fallback, 0)
+                    passed_directly = max(int(p.get("compiled_direct") or 0) - fallback, 0)
                     out[name] = {
-                        "total_functions": int(p.get("total_functions") or 0),
-                        "passed_total": int(p.get("compiled_total") or 0),
-                        "passed_directly": int(p.get("compiled_direct") or 0),
+                        "total_functions": total,
+                        "passed_total": passed_total,
+                        "passed_directly": passed_directly,
                         "passed_after_repair": int(p.get("compiled_after_repair") or 0),
                         "failed_reverted": int(p.get("failed_reverted") or 0),
                         "injection_failed": int(p.get("injection_failed") or 0),
-                        "pass_rate": float(p.get("pass_rate") or 0.0),
+                        "pass_rate": (passed_total / total) if total else 0.0,
                         "source": "translation_summary_report.json:projects",
                     }
                 return out
@@ -287,15 +311,19 @@ def load_incremental_stats_from_summary(run_dir: Path) -> Dict[str, Any]:
                     name = str(p.get("project") or "")
                     if name not in DISPLAY_PROJECT_ORDER:
                         continue
+                    total = int(p.get("total_functions") or 0)
+                    fallback = _load_c2rust_fallback_count(name, p.get("stats_file"))
+                    passed_total = max(int(p.get("passed_total") or 0) - fallback, 0)
+                    passed_directly = max(int(p.get("passed_directly") or 0) - fallback, 0)
                     out[name] = {
-                        "total_functions": int(p.get("total_functions") or 0),
+                        "total_functions": total,
                         "translated": int(p.get("translated") or 0),
-                        "passed_total": int(p.get("passed_total") or 0),
-                        "passed_directly": int(p.get("passed_directly") or 0),
+                        "passed_total": passed_total,
+                        "passed_directly": passed_directly,
                         "passed_after_repair": int(p.get("passed_after_repair") or 0),
                         "failed_reverted": int(p.get("failed_reverted") or 0),
                         "injection_failed": int(p.get("injection_failed") or 0),
-                        "pass_rate": float(p.get("pass_rate_percent") or 0.0) / 100.0,
+                        "pass_rate": (passed_total / total) if total else 0.0,
                         "source": "translation_summary_report.json:projects_detail",
                         "stats_file": p.get("stats_file"),
                     }
@@ -323,15 +351,18 @@ def load_incremental_stats_from_summary(run_dir: Path) -> Dict[str, Any]:
             continue
         total = int(s.get("total") or 0)
         compiled = int(s.get("compiled") or 0)
+        fallback = int(s.get("c2rust_fallback") or 0)
+        passed_total = max(compiled - fallback, 0)
+        passed_directly = max(compiled - int(s.get("repaired") or 0) - fallback, 0)
         out[proj] = {
             "total_functions": total,
             "translated": int(s.get("translated") or 0),
-            "passed_total": compiled,
-            "passed_directly": int(s.get("compiled") or 0) - int(s.get("repaired") or 0),
+            "passed_total": passed_total,
+            "passed_directly": passed_directly,
             "passed_after_repair": int(s.get("repaired") or 0),
             "failed_reverted": int(s.get("failed") or 0),
             "injection_failed": int(s.get("injection_failed") or 0),
-            "pass_rate": (compiled / total) if total else 0.0,
+            "pass_rate": (passed_total / total) if total else 0.0,
             "source": "translation_stats.json",
             "stats_file": str(stats),
         }
@@ -437,6 +468,13 @@ except Exception:
 def main() -> int:
     parser = argparse.ArgumentParser(description="分析我们的框架 OHOS(test5) 运行结果（真实指标，不改翻译结果）。")
     parser.add_argument("--run-dir", type=Path, required=True, help="运行目录（例如 translation_outputs/deepseek-coder-ohos5）")
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        default=None,
+        help="输出 JSON 路径（默认不写文件，仅打印终端表格）。",
+    )
     parser.add_argument(
         "--paper-rq",
         choices=["rq1", "rq3", "rq4"],
@@ -885,6 +923,10 @@ def main() -> int:
         "projects": projects,
         "summary": summary,
     }
+
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _f2(x: Optional[float]) -> str:
         if x is None:

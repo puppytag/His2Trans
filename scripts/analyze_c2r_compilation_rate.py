@@ -1727,6 +1727,20 @@ import tempfile
 import shutil
 
 
+def _should_skip_incremental_rs_file(path: Path) -> bool:
+    """
+    Skip generated/helper Rust files that are not part of the translated-function set.
+    """
+    parts = set(path.parts)
+    if "target" in parts or ".git" in parts:
+        return True
+    if "__c2r_generated" in parts or "c2rust_fallback" in parts or "__c2rust_fallback" in parts:
+        return True
+    if ".c2r_c2rust_fallback" in parts:
+        return True
+    return any(part.startswith(".c2r_bindgen_") for part in path.parts)
+
+
 def verify_incremental_compilation(
     rust_project_dir: Path,
     project_name: str,
@@ -1793,7 +1807,10 @@ def verify_incremental_compilation(
         return result
 
     # 收集所有 .rs 文件及其函数
-    rs_files = list(src_dir.rglob("*.rs"))
+    rs_files = [
+        p for p in src_dir.rglob("*.rs")
+        if not _should_skip_incremental_rs_file(p)
+    ]
     if not rs_files:
         result["error"] = "No .rs files found"
         return result
@@ -2138,8 +2155,10 @@ def analyze_project(
 
     # 计算通过率
     if result.total_functions > 0:
-        result.pass_rate = result.compiled_total / result.total_functions
-        result.direct_pass_rate = result.compiled_direct / result.total_functions
+        llm_compiled_total = max(result.compiled_total - result.c2rust_fallback, 0)
+        llm_compiled_direct = max(result.compiled_direct - result.c2rust_fallback, 0)
+        result.pass_rate = llm_compiled_total / result.total_functions
+        result.direct_pass_rate = llm_compiled_direct / result.total_functions
 
     # 分析 repair_history 中的错误信息
     if analyze_errors:
@@ -2347,8 +2366,8 @@ def analyze_run(
 
         summary.total_projects += 1
         summary.total_functions += project_result.total_functions
-        summary.successful_functions += project_result.compiled_total
-        summary.direct_pass_functions += project_result.compiled_direct
+        summary.successful_functions += max(project_result.compiled_total - project_result.c2rust_fallback, 0)
+        summary.direct_pass_functions += max(project_result.compiled_direct - project_result.c2rust_fallback, 0)
         summary.repaired_functions += project_result.compiled_after_repair
         summary.failed_functions += project_result.failed_reverted
         summary.c2rust_fallback_functions += project_result.c2rust_fallback
@@ -3011,6 +3030,13 @@ def main() -> None:
         default=DEFAULT_C2R_TESTS_DIR,
         help=f"C2R 测试文件目录（默认：{DEFAULT_C2R_TESTS_DIR}）"
     )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        default=None,
+        help="输出 JSON 文件路径（默认不写文件，仅打印终端表格）",
+    )
 
     args = parser.parse_args()
 
@@ -3038,6 +3064,10 @@ def main() -> None:
         c2r_tests_dir=args.c2r_tests_dir,
         verify_incremental=verify_incremental
     )
+
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # 终端只输出论文用到的指标（tables_data.py）：CR / FC / Unsafe / Clippy
     if not args.quiet:
@@ -3113,7 +3143,6 @@ def main() -> None:
                     ]
                 )
             )
-
 
 if __name__ == "__main__":
     main()

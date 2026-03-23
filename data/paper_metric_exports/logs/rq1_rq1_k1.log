@@ -1,0 +1,34 @@
++ /data/home/wangshb/miniconda3/bin/python3 /data/home/wangshb/His2Trans/scripts/analyze_c2r_compilation_rate_ohos_test5.py --run-dir /data/home/wangshb/His2Trans/data/rq1/k1 --output /data/home/wangshb/His2Trans/data/paper_metric_exports/generated_structured_json/rq1_k1.json --all --verify-incremental --huawei-projects-tsv /data/home/wangshb/His2Trans/data/ohos/huawei_projects.tsv --ohos-root /data/home/wangshb/His2Trans/data/ohos/ohos_root_min
+Traceback (most recent call last):
+  File "/data/home/wangshb/His2Trans/scripts/analyze_c2r_compilation_rate_ohos_test5.py", line 1046, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/data/home/wangshb/His2Trans/scripts/analyze_c2r_compilation_rate_ohos_test5.py", line 799, in main
+    gt = ohos_harness.run_ohos_unit_tests(  # type: ignore[attr-defined]
+        project_name=project_name,
+    ...<5 lines>...
+        timeout=args.ohos_test_timeout,
+    )
+  File "/data/home/wangshb/His2Trans/scripts/analysis/analyze_c2r_compilation_rate_ohos10.py", line 2189, in run_ohos_unit_tests
+    ok, info, obj = _compile_one(src)
+                    ~~~~~~~~~~~~^^^^^
+  File "/data/home/wangshb/His2Trans/scripts/analysis/analyze_c2r_compilation_rate_ohos10.py", line 2174, in _compile_one
+    rc, o_out, o_err = _run_cmd_capture(cmd, cwd=build_dir, env=env, timeout=timeout)
+                       ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/wangshb/His2Trans/scripts/analysis/analyze_c2r_compilation_rate_ohos10.py", line 98, in _run_cmd_capture
+    p = subprocess.run(
+        cmd,
+    ...<4 lines>...
+        timeout=timeout,
+    )
+  File "/data/home/wangshb/miniconda3/lib/python3.13/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/wangshb/miniconda3/lib/python3.13/subprocess.py", line 1222, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/home/wangshb/miniconda3/lib/python3.13/subprocess.py", line 2128, in _communicate
+    ready = selector.select(timeout)
+  File "/data/home/wangshb/miniconda3/lib/python3.13/selectors.py", line 398, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt

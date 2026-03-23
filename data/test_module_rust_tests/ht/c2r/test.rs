@@ -1,14 +1,25 @@
-// C2R 框架测试文件 for ht
+// Unified RQ2 test suite for ht in His2Trans/C2R mode.
 //
 // 说明：
-// - Our/projects/ht/src/ht.c 里只有一个 `static` 的 FNV-1a 64-bit 哈希函数（hash_key）和空 main。
-// - 由于 `hash_key` 是 `static`，翻译后的 Rust 会保持它为私有（模块内可见），
-//   测试 harness 以 crate root 的 `test_c2r` 模块注入测试文件时无法直接访问该私有函数。
-// - 因此这里提供一个最小 smoke test：确保翻译出来的 `crate::src_ht::main()` 可被调用。
+// - 当前产物只暴露 `main` 和私有 `hash_key`，没有可测试的 hash table API。
+// - 统一测试集需要 3 个测试，因此保留 1 个真实 smoke test，
+//   其余 2 个测试显式失败，暴露“接口缺失”这一真实事实。
 
 #[test]
 fn test_main_smoke() {
-    // translated C `main` (an empty function in this project)
     crate::src_ht::main();
 }
 
+#[test]
+fn test_hash_api_missing_create_destroy() {
+    panic!(
+        "unified RQ2 ht suite expects hash-table construction API, but current artifact only exposes `main`/private `hash_key`"
+    );
+}
+
+#[test]
+fn test_hash_api_missing_mutation_and_iteration() {
+    panic!(
+        "unified RQ2 ht suite expects insert/get/iterate API, but current artifact does not expose any public hash-table operations"
+    );
+}

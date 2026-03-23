@@ -175,6 +175,23 @@ def _is_c2rust_fallback(func_code: str) -> bool:
     return ("__c2rust_fallback" in func_code) or ("C2Rust fallback" in func_code)
 
 
+def _should_skip_incremental_rs_file(path: Path) -> bool:
+    """
+    Skip generated/helper Rust files that are not part of the real translated crate.
+
+    These generated fallback/bindgen files can contain same-name functions and make the
+    verifier accidentally attribute a fallback body to the LLM implementation.
+    """
+    parts = set(path.parts)
+    if "target" in parts or ".git" in parts:
+        return True
+    if "__c2r_generated" in parts or "c2rust_fallback" in parts or "__c2rust_fallback" in parts:
+        return True
+    if ".c2r_c2rust_fallback" in parts:
+        return True
+    return any(part.startswith(".c2r_bindgen_") for part in path.parts)
+
+
 def _find_mod_block_spans(s: str, mod_name: str) -> List[Tuple[int, int]]:
     """
     Return spans of `mod <mod_name> { ... }` blocks as [(start_brace, end_brace_excl), ...].
@@ -693,7 +710,7 @@ def verify_incremental_compilation_standard(
         # Collect .rs files across common layouts (crate root, src/, nested modules).
         rs_files: List[Path] = []
         for p in tmp_crate.rglob("*.rs"):
-            if "target" in p.parts or ".git" in p.parts:
+            if _should_skip_incremental_rs_file(p):
                 continue
             rs_files.append(p)
         rs_files.sort()
