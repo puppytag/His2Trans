@@ -111,7 +111,7 @@ export NLTK_DATA="$(pwd)/framework/data/nltk_data"
 
 ## Paper Analysis (RQ1–RQ4)
 
-All scripts only print the paper metrics to the terminal.
+Run the analysis scripts to print the paper metrics to the terminal:
 
 ```bash
 cd scripts
@@ -125,6 +125,17 @@ bash run_rq2_analysis.sh
 bash run_rq3_analysis.sh
 bash run_rq4_analysis.sh
 ```
+
+Export the current paper-aligned summary tables in JSON + Markdown:
+
+```bash
+cd /data/home/wangshb/His2Trans
+python3 scripts/export_current_plot_metrics.py --skip-rerun
+```
+
+Outputs:
+- `data/paper_metric_exports/current_plot_metrics_alignment.json`
+- `data/paper_metric_exports/current_plot_metrics_alignment.md`
 
 ## Framework Run (External API)
 
