@@ -129,7 +129,7 @@ bash run_rq4_analysis.sh
 Export the current paper-aligned summary tables in JSON + Markdown:
 
 ```bash
-cd /data/home/wangshb/His2Trans
+cd .
 python3 scripts/export_current_plot_metrics.py --skip-rerun
 ```
 
