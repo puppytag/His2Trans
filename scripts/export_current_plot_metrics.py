@@ -205,6 +205,23 @@ def write_text(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def repo_relative_path(path: Path | str) -> str:
+    candidate = Path(path)
+    try:
+        resolved = candidate.resolve()
+    except Exception:
+        resolved = candidate
+    try:
+        rel = resolved.relative_to(REPO_ROOT)
+        return "." if not rel.parts else rel.as_posix()
+    except ValueError:
+        return str(candidate)
+
+
+def repo_relative_cmd(cmd: List[str]) -> List[str]:
+    return [repo_relative_path(part) if part.startswith("/") else part for part in cmd]
+
+
 def load_reference_metrics(reference_out_dir: Path) -> Dict[str, Dict[str, Dict[str, float | None]]]:
     methods_by_rq = {
         "rq1": RQ1_METHODS,
@@ -313,10 +330,10 @@ def run_spec(spec: RunSpec, structured_json_dir: Path, log_dir: Path) -> Dict[st
     return {
         "method": spec.method,
         "rq": spec.rq_key,
-        "run_dir": str(spec.run_dir),
-        "output": str(output_path),
-        "log": str(log_path),
-        "cmd": cmd,
+        "run_dir": repo_relative_path(spec.run_dir),
+        "output": repo_relative_path(output_path),
+        "log": repo_relative_path(log_path),
+        "cmd": repo_relative_cmd(cmd),
     }
 
 
@@ -338,9 +355,9 @@ def export_current_plot_metrics(
     diffs = paper_metrics.compare_metric_tables(actual, reference)
     return {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
-        "repo_root": str(REPO_ROOT),
-        "reference_out_dir": str(reference_out_dir),
-        "structured_json_dir": str(structured_json_dir),
+        "repo_root": ".",
+        "reference_out_dir": repo_relative_path(reference_out_dir),
+        "structured_json_dir": repo_relative_path(structured_json_dir),
         "all_match": not bool(diffs),
         "actual": actual,
         "reference": reference,

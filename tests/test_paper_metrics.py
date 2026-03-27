@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from scripts.analysis import paper_metrics
@@ -120,6 +121,17 @@ class PaperMetricTests(unittest.TestCase):
         )
         self.assertEqual(paper_metrics.compare_metric_tables(actual, reference), {})
 
+    def test_alignment_summary_uses_repo_relative_paths(self) -> None:
+        summary = export_current_plot_metrics.export_current_plot_metrics(
+            reference_out_dir=export_current_plot_metrics.DEFAULT_REFERENCE_OUT_DIR,
+            structured_json_dir=export_current_plot_metrics.DEFAULT_STRUCTURED_DIR,
+            log_dir=export_current_plot_metrics.DEFAULT_LOG_DIR,
+            rerun=False,
+        )
+        self.assertEqual(summary["repo_root"], ".")
+        self.assertEqual(summary["reference_out_dir"], "data/paper_metric_exports/reference_tables")
+        self.assertEqual(summary["structured_json_dir"], "data/paper_metric_exports/generated_structured_json")
+
     def test_rq2_build_scripts_use_repo_relative_include_paths(self) -> None:
         build_scripts = sorted(
             (export_current_plot_metrics.REPO_ROOT / "data" / "rq2").rglob("build.rs")
@@ -131,6 +143,16 @@ class PaperMetricTests(unittest.TestCase):
                 continue
             self.assertNotIn("/data/home/wangshb/His2Trans", text)
             self.assertIn('manifest_dir.join("native/include")', text)
+
+    def test_rq2_active_test_inputs_exclude_bzip2(self) -> None:
+        repo_root = export_current_plot_metrics.REPO_ROOT
+        manifest = json.loads(
+            (repo_root / "data" / "test_module_rust_tests" / "manifest.json").read_text(encoding="utf-8")
+        )
+        self.assertNotIn("bzip2", manifest.get("target_counts", {}))
+        self.assertNotIn("bzip2", manifest.get("projects", {}))
+        self.assertFalse((repo_root / "data" / "test_module_rust_tests" / "bzip2").exists())
+        self.assertFalse((repo_root / "data" / "source_rq2_tests" / "bzip2").exists())
 
 
 if __name__ == "__main__":

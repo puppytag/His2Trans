@@ -1747,6 +1747,314 @@ def _should_skip_incremental_rs_file(path: Path) -> bool:
 def verify_incremental_compilation(
     rust_project_dir: Path,
     project_name: str,
+    timeout: int = 30
+) -> Dict[str, Any]:
+    """
+    验证增量编译成功率：逐个将翻译后的函数集成到项目中，检查能否编译通过
+
+    C2R 的做法：
+    1. 复制整个 Rust 项目到临时目录
+    2. 将所有函数体替换为 unimplemented!()
+    3. 逐个恢复函数的原始代码，测试编译
+    4. 记录每个函数是否能成功编译
+
+    Args:
+        rust_project_dir: Rust 项目目录（包含 Cargo.toml）
+        project_name: 项目名称
+        timeout: 单个函数编译超时时间（秒）
+
+    Returns:
+        {
+            "total_functions": 10,
+            "compiled_functions": 8,
+            "compile_rate": 0.8,
+            "functions_detail": {
+                "func_name": {"compiled": True/False, "error": "..."}
+            }
+        }
+    """
+    result = {
+        "total_functions": 0,
+        # NOTE: `compiled_functions` / `compile_rate` are the paper metric:
+        #   ICompRate = (# LLM-produced functions that compile) / (all functions)
+        # We also keep `compiled_functions_all` / `compile_rate_all` for debugging.
+        "compiled_functions": 0,
+        "compile_rate": 0.0,
+        "compiled_functions_all": 0,
+        "compile_rate_all": 0.0,
+        # Breakdown of function sources in the final Rust project.
+        "llm_functions": 0,
+        "c2rust_fallback_functions": 0,
+        "unimplemented_functions": 0,
+        "llm_compiled_functions": 0,
+        "functions_detail": {},
+        "baseline_compilation_succeeded": None,
+        "baseline_error": None,
+        "skeleton_compilation_succeeded": None,
+        "skeleton_error": None,
+        "error": None
+    }
+
+    if not rust_project_dir.exists():
+        result["error"] = "Rust project directory not found"
+        return result
+
+    cargo_toml = rust_project_dir / "Cargo.toml"
+    if not cargo_toml.exists():
+        result["error"] = "Cargo.toml not found"
+        return result
+
+    src_dir = rust_project_dir / "src"
+    if not src_dir.exists():
+        result["error"] = "src directory not found"
+        return result
+
+    # 收集所有 .rs 文件及其函数
+    rs_files = [
+        p for p in src_dir.rglob("*.rs")
+        if not _should_skip_incremental_rs_file(p)
+    ]
+    if not rs_files:
+        result["error"] = "No .rs files found"
+        return result
+
+    # 从所有文件中提取函数信息
+    all_functions: List[Tuple[Path, str, str]] = []  # (file_path, func_name, func_code)
+    file_contents: Dict[str, str] = {}  # relative_path -> content
+
+    for rs_file in rs_files:
+        try:
+            content = rs_file.read_text(encoding='utf-8')
+            rel_path = str(rs_file.relative_to(src_dir))
+            file_contents[rel_path] = content
+
+            # 提取所有带函数体的函数（支持函数指针等“嵌套括号”签名）
+            for fn_name, fn_kw_pos, _body_start, body_end in _fnscan_iter_function_items(content):
+                if fn_name in ('main', 'test'):
+                    continue
+                line_start = content.rfind('\n', 0, fn_kw_pos)
+                item_start = 0 if line_start == -1 else line_start + 1
+                func_code = content[item_start:body_end]
+                all_functions.append((rs_file, fn_name, func_code))
+
+        except Exception:
+            continue
+
+    if not all_functions:
+        result["error"] = "No functions found in project"
+        return result
+
+    result["total_functions"] = len(all_functions)
+
+    def _is_placeholder_body(body_with_braces: str) -> bool:
+        """
+        Detect the *pure placeholder* bodies we treat as non-LLM fallbacks.
+        We only match the whole body being a single placeholder statement, to avoid
+        false positives where `unimplemented!()` appears on a rare branch.
+        """
+        body = body_with_braces.strip()
+        if body.startswith("{") and body.endswith("}"):
+            body = body[1:-1].strip()
+        if not body:
+            # Empty body could be a valid no-op implementation; don't treat it as a placeholder.
+            return False
+        if re.match(r"^\s*unimplemented!\s*\([^)]*\)\s*;?\s*$", body, re.DOTALL):
+            return True
+        if re.match(r"^\s*todo!\s*\([^)]*\)\s*;?\s*$", body, re.DOTALL):
+            return True
+        if re.match(r"^\s*unreachable!\s*\([^)]*\)\s*;?\s*$", body, re.DOTALL):
+            return True
+        if re.match(
+            r"^\s*panic!\s*\(\s*['\"].*not\s*implement.*['\"]\s*\)\s*;?\s*$",
+            body,
+            re.IGNORECASE | re.DOTALL,
+        ):
+            return True
+        return False
+
+    def _classify_function_source(func_code: str) -> str:
+        """
+        Classify function bodies in the *final* project:
+          - llm: LLM-produced code
+          - c2rust_fallback: our explicit C2Rust fallback wrapper
+          - unimplemented: placeholder fallback (unimplemented!/todo!/etc.)
+        """
+        if "__c2rust_fallback" in func_code or "C2Rust fallback" in func_code:
+            return "c2rust_fallback"
+        brace_pos = func_code.find("{")
+        body = func_code[brace_pos:] if brace_pos != -1 else ""
+        if _is_placeholder_body(body):
+            return "unimplemented"
+        return "llm"
+
+    # Pre-compute source breakdown (used even when baseline/skeleton fails).
+    sources: Dict[str, str] = {}
+    for rs_file, fn_name, func_code in all_functions:
+        rel_path = str(rs_file.relative_to(src_dir))
+        detail_key = f"{rel_path}::{fn_name}"
+        sources[detail_key] = _classify_function_source(func_code)
+    result["llm_functions"] = sum(1 for s in sources.values() if s == "llm")
+    result["c2rust_fallback_functions"] = sum(1 for s in sources.values() if s == "c2rust_fallback")
+    result["unimplemented_functions"] = sum(1 for s in sources.values() if s == "unimplemented")
+
+    # 创建临时目录进行测试
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+
+            # 复制整个项目到临时目录
+            temp_project = tmpdir / project_name
+            shutil.copytree(rust_project_dir, temp_project)
+
+            temp_src_dir = temp_project / "src"
+
+            # 先确认“原始项目”本身是否可编译，避免把项目自身失败误判为增量验证失败
+            baseline_timeout = max(timeout, 120)
+            try:
+                baseline_proc = subprocess.run(
+                    ["cargo", "check", "--offline"],
+                    cwd=temp_project,
+                    capture_output=True,
+                    text=True,
+                    timeout=baseline_timeout,
+                    env={**os.environ, "RUSTFLAGS": "-Awarnings"},
+                )
+                if baseline_proc.returncode != 0:
+                    result["baseline_compilation_succeeded"] = False
+                    result["baseline_error"] = (baseline_proc.stderr or baseline_proc.stdout or "")[:1500]
+                    result["error"] = "Baseline project does not compile"
+                    return result
+                result["baseline_compilation_succeeded"] = True
+            except subprocess.TimeoutExpired:
+                result["baseline_compilation_succeeded"] = False
+                result["baseline_error"] = f"Baseline cargo check timeout after {baseline_timeout}s"
+                result["error"] = "Baseline project does not compile"
+                return result
+
+            # 将所有函数体替换为 unimplemented!()
+            stubbed_contents: Dict[str, str] = {}
+            for rel_path, content in file_contents.items():
+                stubbed_content = stub_all_functions_in_content(content)
+                stubbed_contents[rel_path] = stubbed_content
+                (temp_src_dir / rel_path).write_text(stubbed_content, encoding='utf-8')
+
+            # 确认“全 stub 的骨架”可编译；若不通过，说明 stub 逻辑不适用于该项目（或项目本身有函数签名层面的错误）
+            skeleton_timeout = max(timeout, 120)
+            try:
+                skeleton_proc = subprocess.run(
+                    ["cargo", "check", "--offline"],
+                    cwd=temp_project,
+                    capture_output=True,
+                    text=True,
+                    timeout=skeleton_timeout,
+                    env={**os.environ, "RUSTFLAGS": "-Awarnings"},
+                )
+                if skeleton_proc.returncode != 0:
+                    result["skeleton_compilation_succeeded"] = False
+                    result["skeleton_error"] = (skeleton_proc.stderr or skeleton_proc.stdout or "")[:1500]
+                    result["error"] = "Stubbed skeleton does not compile"
+                    return result
+                result["skeleton_compilation_succeeded"] = True
+            except subprocess.TimeoutExpired:
+                result["skeleton_compilation_succeeded"] = False
+                result["skeleton_error"] = f"Skeleton cargo check timeout after {skeleton_timeout}s"
+                result["error"] = "Stubbed skeleton does not compile"
+                return result
+
+            # 逐个测试每个函数
+            compiled_count_all = 0
+            llm_compiled_count = 0
+            for rs_file, func_name, func_code in all_functions:
+                rel_path = str(rs_file.relative_to(src_dir))
+                temp_rs_file = temp_src_dir / rel_path
+                detail_key = f"{rel_path}::{func_name}"
+                source = sources.get(detail_key) or _classify_function_source(func_code)
+
+                # 读取当前（已 stub）的文件内容
+                try:
+                    current_content = temp_rs_file.read_text(encoding='utf-8')
+                except Exception:
+                    result["functions_detail"][detail_key] = {
+                        "compiled": False,
+                        "source": source,
+                        "counted_in_icomp": False,
+                        "error": "Could not read file"
+                    }
+                    continue
+
+                # 恢复这个函数的原始代码
+                restored_content = restore_function_in_content(
+                    current_content, func_name, func_code
+                )
+                temp_rs_file.write_text(restored_content, encoding='utf-8')
+
+                # 运行 cargo check
+                try:
+                    proc = subprocess.run(
+                        ["cargo", "check", "--offline"],
+                        cwd=temp_project,
+                        capture_output=True,
+                        text=True,
+                        timeout=timeout,
+                        env={**os.environ, "RUSTFLAGS": "-Awarnings"}
+                    )
+
+                    if proc.returncode == 0:
+                        counted = source == "llm"
+                        result["functions_detail"][detail_key] = {
+                            "compiled": True,
+                            "source": source,
+                            "counted_in_icomp": counted,
+                        }
+                        compiled_count_all += 1
+                        if counted:
+                            llm_compiled_count += 1
+                        # 保持这个函数的代码（成功的函数保留）
+                    else:
+                        # 编译失败，回滚这个函数为 stub
+                        temp_rs_file.write_text(current_content, encoding='utf-8')
+                        error_msg = proc.stderr[:500] if proc.stderr else "Unknown error"
+                        result["functions_detail"][detail_key] = {
+                            "compiled": False,
+                            "source": source,
+                            "counted_in_icomp": False,
+                            "error": error_msg
+                        }
+
+                except subprocess.TimeoutExpired:
+                    temp_rs_file.write_text(current_content, encoding='utf-8')
+                    result["functions_detail"][detail_key] = {
+                        "compiled": False,
+                        "source": source,
+                        "counted_in_icomp": False,
+                        "error": "Compilation timeout"
+                    }
+                except Exception as e:
+                    temp_rs_file.write_text(current_content, encoding='utf-8')
+                    result["functions_detail"][detail_key] = {
+                        "compiled": False,
+                        "source": source,
+                        "counted_in_icomp": False,
+                        "error": str(e)
+                    }
+
+            result["compiled_functions_all"] = compiled_count_all
+            result["compile_rate_all"] = compiled_count_all / len(all_functions) if all_functions else 0.0
+            result["llm_compiled_functions"] = llm_compiled_count
+            result["compiled_functions"] = llm_compiled_count
+            result["compile_rate"] = llm_compiled_count / len(all_functions) if all_functions else 0.0
+
+    except Exception as e:
+        result["error"] = str(e)
+        import traceback
+        result["traceback"] = traceback.format_exc()
+
+    return result
+
+
+def verify_incremental_compilation(
+    rust_project_dir: Path,
+    project_name: str,
     tests_base_dir: Optional[Path] = None,
     timeout: int = 30
 ) -> Dict[str, Any]:

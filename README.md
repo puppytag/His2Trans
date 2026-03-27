@@ -127,6 +127,7 @@ What this command does:
 
 Notes:
 - `data/test_module_rust_tests/` is the frozen RQ2 unified test bundle used by the current paper.
+- `data/source_rq2_tests/` keeps the paper-aligned reference Rust source layout used by the RQ2 incremental-compilation checker; it is required for reproducing the current `ICompRate` numbers.
 - The reference CSVs under `data/paper_metric_exports/reference_tables/` are shipped with the repository, so reproduction does not depend on external absolute paths.
 - Baseline rows are kept in the shipped reference tables; the one-click script reruns the His2Trans rows from the local run directories and checks them against the paper-aligned reference values.
 
