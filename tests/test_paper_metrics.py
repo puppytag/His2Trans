@@ -80,6 +80,58 @@ class PaperMetricTests(unittest.TestCase):
         self.assertIn("| Config ID | ICompRate | FC | AvgRepair |", text)
         self.assertIn("| Base KB only | 41.28 | 37.50 | 1.55 |", text)
 
+    def test_rq2_summary_metrics_ignores_projects_outside_current_rq2_set(self) -> None:
+        report = {
+            "projects": {
+                "ht": {
+                    "incremental_compilation": {"compiled_functions": 2, "total_functions": 2, "compile_rate": 1.0},
+                    "c2r_test_result": {"tests_passed": 3, "total_tests": 3, "pass_rate": 1.0, "executed": True},
+                    "unsafe_analysis": {"unsafe_total_ratio": 0.1, "code_lines": 10, "unsafe_total_lines": 1},
+                    "cargo_clippy_result": {"executed": True, "warning_count_total": 5, "compilation_succeeded": True},
+                    "cargo_check_passed": True,
+                },
+                "legacy_project": {
+                    "incremental_compilation": {"compiled_functions": 0, "total_functions": 100, "compile_rate": 0.0},
+                    "c2r_test_result": {"tests_passed": 0, "total_tests": 1, "pass_rate": 0.0, "executed": True},
+                    "unsafe_analysis": {"unsafe_total_ratio": 0.9, "code_lines": 10, "unsafe_total_lines": 9},
+                    "cargo_clippy_result": {"executed": True, "warning_count_total": 500, "compilation_succeeded": True},
+                    "cargo_check_passed": True,
+                },
+            }
+        }
+        row = paper_metrics.rq2_summary_metrics(report)
+        self.assertEqual(row["ICompRate"], 100.0)
+        self.assertEqual(row["FC"], 100.0)
+        self.assertEqual(row["Unsafe"], 10.0)
+        self.assertEqual(row["Clippy"], 5.0)
+
+    def test_reference_tables_default_to_repo_local_snapshot(self) -> None:
+        self.assertEqual(
+            export_current_plot_metrics.DEFAULT_REFERENCE_OUT_DIR,
+            export_current_plot_metrics.REPO_ROOT / "data" / "paper_metric_exports" / "reference_tables",
+        )
+
+    def test_current_generated_json_matches_local_reference_tables(self) -> None:
+        actual = export_current_plot_metrics.compute_actual_metrics(
+            export_current_plot_metrics.DEFAULT_STRUCTURED_DIR
+        )
+        reference = export_current_plot_metrics.load_reference_metrics(
+            export_current_plot_metrics.DEFAULT_REFERENCE_OUT_DIR
+        )
+        self.assertEqual(paper_metrics.compare_metric_tables(actual, reference), {})
+
+    def test_rq2_build_scripts_use_repo_relative_include_paths(self) -> None:
+        build_scripts = sorted(
+            (export_current_plot_metrics.REPO_ROOT / "data" / "rq2").rglob("build.rs")
+        )
+        self.assertTrue(build_scripts)
+        for path in build_scripts:
+            text = path.read_text(encoding="utf-8")
+            if 'native/c2r_accessors.c' not in text:
+                continue
+            self.assertNotIn("/data/home/wangshb/His2Trans", text)
+            self.assertIn('manifest_dir.join("native/include")', text)
+
 
 if __name__ == "__main__":
     unittest.main()

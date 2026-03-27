@@ -6,6 +6,17 @@ from typing import Any, Dict, Mapping, Optional
 MetricRow = Dict[str, Optional[float]]
 MethodMetricTable = Dict[str, MetricRow]
 RQMetricTable = Dict[str, MethodMetricTable]
+RQ2_INCLUDED_PROJECTS = {
+    "ht",
+    "qsort",
+    "quadtree",
+    "buffer",
+    "rgba",
+    "urlparser",
+    "genann",
+    "avl",
+    "zopfli",
+}
 
 
 def pct(value: Optional[float]) -> Optional[float]:
@@ -218,7 +229,11 @@ def rq1_summary_metrics(report: Mapping[str, Any]) -> MetricRow:
 
 
 def rq2_summary_metrics(report: Mapping[str, Any]) -> MetricRow:
-    projects = report["projects"]
+    projects = {
+        name: project
+        for name, project in report["projects"].items()
+        if name in RQ2_INCLUDED_PROJECTS
+    }
     unsafe_values: list[Optional[float]] = []
     clippy_values: list[Optional[float]] = []
     for project in projects.values():

@@ -109,33 +109,26 @@ PY
 export NLTK_DATA="$(pwd)/framework/data/nltk_data"
 ```
 
-## Paper Analysis (RQ1–RQ4)
+## Paper Reproduction
 
-Run the analysis scripts to print the paper metrics to the terminal:
-
-```bash
-cd scripts
-
-# Run everything (RQ1–RQ4)
-bash run_all_analysis.sh
-
-# Or run per RQ
-bash run_rq1_analysis.sh
-bash run_rq2_analysis.sh
-bash run_rq3_analysis.sh
-bash run_rq4_analysis.sh
-```
-
-Export the current paper-aligned summary tables in JSON + Markdown:
+This repository keeps a single paper-reproduction entry:
 
 ```bash
-cd .
-python3 scripts/export_current_plot_metrics.py --skip-rerun
+python3 scripts/export_current_plot_metrics.py
 ```
 
-Outputs:
-- `data/paper_metric_exports/current_plot_metrics_alignment.json`
-- `data/paper_metric_exports/current_plot_metrics_alignment.md`
+What this command does:
+- reruns the shipped RQ1--RQ4 analysis scripts on the local run directories under `data/rq{1,2,3,4}/`;
+- regenerates `data/paper_metric_exports/generated_structured_json/*.json`;
+- compares the reproduced His2Trans rows against the repository-local paper reference tables under `data/paper_metric_exports/reference_tables/`;
+- writes:
+  - `data/paper_metric_exports/current_plot_metrics_alignment.json`
+  - `data/paper_metric_exports/current_plot_metrics_alignment.md`
+
+Notes:
+- `data/test_module_rust_tests/` is the frozen RQ2 unified test bundle used by the current paper.
+- The reference CSVs under `data/paper_metric_exports/reference_tables/` are shipped with the repository, so reproduction does not depend on external absolute paths.
+- Baseline rows are kept in the shipped reference tables; the one-click script reruns the His2Trans rows from the local run directories and checks them against the paper-aligned reference values.
 
 ## Framework Run (External API)
 
@@ -204,10 +197,9 @@ bash batch_test_staged.sh \
 
 ## What to run (cheat sheet)
 
-Paper tables (RQ1-RQ4):
+Paper reproduction:
 ```bash
-cd scripts
-bash run_all_analysis.sh
+python3 scripts/export_current_plot_metrics.py
 ```
 
 Framework (single project smoke run, external API):

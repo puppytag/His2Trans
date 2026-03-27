@@ -1,30 +1,30 @@
 ## RQ1: OHOS test5
 
-| Method | ICompRate | FC | Unsafe | Clippy |
+| Method | ICompRate | FC | Unsafe | Warnings |
 | --- | --- | --- | --- | --- |
 | C2Rust | 10.28 | 22.50 | 47.75 | 45.00 |
 | C2SaferRust | 52.17 | 10.00 | 36.33 | 27.50 |
 | EvoC2Rust | 0.00 | 0.00 | -- | -- |
 | Tymcrat | 51.53 | 0.00 | -- | -- |
-| Ours(DeepSeek-V3.2 K = 1) | 87.85 | 75.00 | 32.15 | 464.00 |
-| Ours(DeepSeek-V3.2 K = 3) | 88.47 | 75.00 | 33.02 | 448.80 |
-| Ours(DeepSeek-V3.2 K = 5) | 90.34 | 75.00 | 35.43 | 463.00 |
-| Ours(DeepSeek-V3.2 K = 10) | 87.23 | 75.00 | 34.06 | 446.40 |
-| Ours(Claude-opus-4-5 K = 5) | 97.51 | 75.00 | 37.09 | 315.40 |
+| Ours(DS-V3.2 K = 1) | 87.85 | 75.00 | 32.15 | 464.00 |
+| Ours(DS-V3.2 K = 3) | 88.47 | 75.00 | 33.02 | 448.80 |
+| Ours(DS-V3.2 K = 5) | 90.34 | 75.00 | 35.43 | 463.00 |
+| Ours(DS-V3.2 K = 10) | 87.23 | 75.00 | 34.06 | 446.40 |
+| Ours(Claude-4.5 K = 5) | 97.51 | 75.00 | 37.09 | 315.40 |
 
 ## RQ2: test_module
 
-| Method | ICompRate | FC | Unsafe | Clippy |
+| Method | ICompRate | FC | Unsafe | Warnings |
 | --- | --- | --- | --- | --- |
-| C2Rust | 39.51 | 94.64 | 69.48 | 134.70 |
+| C2Rust | 54.94 | 94.55 | 67.93 | 124.11 |
 | SmartC2Rust | 99.38 | 100.00 | -- | -- |
 | RUSTINE | 100.00 | 100.00 | -- | -- |
 | PTRMAPPER | 100.00 | 82.44 | -- | -- |
-| C2SaferRust | 48.90 | 78.57 | 47.56 | 163.70 |
-| EvoC2Rust | 93.56 | 87.50 | 5.90 | 430.25 |
-| Tymcrat | 78.53 | 10.71 | 0.00 | 2.50 |
-| Ours(DeepSeek-V3.2) | 62.96 | 46.43 | 37.28 | 136.44 |
-| Ours(Claude-opus-4-5) | 71.30 | 57.14 | 44.25 | 101.00 |
+| C2SaferRust | 34.08 | 80.00 | 45.20 | 117.78 |
+| EvoC2Rust | 91.91 | 89.09 | 6.50 | 431.00 |
+| Tymcrat | 77.22 | 10.91 | 0.00 | 2.50 |
+| Ours(DS-V3.2) | 87.55 | 47.27 | 37.28 | 136.44 |
+| Ours(Claude-4.5) | 99.14 | 58.18 | 44.25 | 101.00 |
 
 ## RQ3: Ablation Study
 

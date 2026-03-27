@@ -15,3 +15,5 @@ pub mod types;
 fn main() {
     println!("Skeleton project - implement function bodies");
 }
+#[cfg(test)]
+mod test_c2r;

@@ -21,10 +21,8 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.analysis import paper_metrics
 
 
-DEFAULT_REFERENCE_OUT_DIR = Path(
-    "/data/home/wangshb/c2-rust_framework/paper_tables_postprocess/latest/out"
-)
 DEFAULT_EXPORT_DIR = REPO_ROOT / "data" / "paper_metric_exports"
+DEFAULT_REFERENCE_OUT_DIR = DEFAULT_EXPORT_DIR / "reference_tables"
 DEFAULT_STRUCTURED_DIR = DEFAULT_EXPORT_DIR / "generated_structured_json"
 DEFAULT_LOG_DIR = DEFAULT_EXPORT_DIR / "logs"
 DEFAULT_SUMMARY_JSON = DEFAULT_EXPORT_DIR / "current_plot_metrics_alignment.json"
@@ -43,6 +41,10 @@ CSV_NAME_BY_RQ = {
     "rq4": "rq4_method_metric_avg.csv",
 }
 
+REFERENCE_METRIC_RENAMES = {
+    "Warnings": "Clippy",
+}
+
 RQ_SECTION_TITLES = {
     "rq1": "RQ1: OHOS test5",
     "rq2": "RQ2: test_module",
@@ -51,15 +53,15 @@ RQ_SECTION_TITLES = {
 }
 
 RQ1_METHODS = {
-    "Ours(DeepSeek-V3.2 K = 1)": "rq1_k1.json",
-    "Ours(DeepSeek-V3.2 K = 3)": "rq1_k3.json",
-    "Ours(DeepSeek-V3.2 K = 5)": "rq1_k5.json",
-    "Ours(DeepSeek-V3.2 K = 10)": "rq1_k10.json",
-    "Ours(Claude-opus-4-5 K = 5)": "rq1_claude.json",
+    "Ours(DS-V3.2 K = 1)": "rq1_k1.json",
+    "Ours(DS-V3.2 K = 3)": "rq1_k3.json",
+    "Ours(DS-V3.2 K = 5)": "rq1_k5.json",
+    "Ours(DS-V3.2 K = 10)": "rq1_k10.json",
+    "Ours(Claude-4.5 K = 5)": "rq1_claude.json",
 }
 RQ2_METHODS = {
-    "Ours(DeepSeek-V3.2)": "rq2_deepseek.json",
-    "Ours(Claude-opus-4-5)": "rq2_claude.json",
+    "Ours(DS-V3.2)": "rq2_deepseek.json",
+    "Ours(Claude-4.5)": "rq2_claude.json",
 }
 RQ3_METHODS = {
     "Base-1Shot": "rq3_c0.json",
@@ -89,11 +91,11 @@ class RunSpec:
 def build_run_specs() -> List[RunSpec]:
     specs: List[RunSpec] = []
     rq1_dirs = {
-        "Ours(DeepSeek-V3.2 K = 1)": REPO_ROOT / "data" / "rq1" / "k1",
-        "Ours(DeepSeek-V3.2 K = 3)": REPO_ROOT / "data" / "rq1" / "k3",
-        "Ours(DeepSeek-V3.2 K = 5)": REPO_ROOT / "data" / "rq1" / "k5",
-        "Ours(DeepSeek-V3.2 K = 10)": REPO_ROOT / "data" / "rq1" / "k10",
-        "Ours(Claude-opus-4-5 K = 5)": REPO_ROOT / "data" / "rq1" / "claude",
+        "Ours(DS-V3.2 K = 1)": REPO_ROOT / "data" / "rq1" / "k1",
+        "Ours(DS-V3.2 K = 3)": REPO_ROOT / "data" / "rq1" / "k3",
+        "Ours(DS-V3.2 K = 5)": REPO_ROOT / "data" / "rq1" / "k5",
+        "Ours(DS-V3.2 K = 10)": REPO_ROOT / "data" / "rq1" / "k10",
+        "Ours(Claude-4.5 K = 5)": REPO_ROOT / "data" / "rq1" / "claude",
     }
     for method, run_dir in rq1_dirs.items():
         specs.append(
@@ -115,8 +117,8 @@ def build_run_specs() -> List[RunSpec]:
         )
 
     rq2_dirs = {
-        "Ours(DeepSeek-V3.2)": REPO_ROOT / "data" / "rq2" / "deepseek",
-        "Ours(Claude-opus-4-5)": REPO_ROOT / "data" / "rq2" / "claude",
+        "Ours(DS-V3.2)": REPO_ROOT / "data" / "rq2" / "deepseek",
+        "Ours(Claude-4.5)": REPO_ROOT / "data" / "rq2" / "claude",
     }
     for method, run_dir in rq2_dirs.items():
         specs.append(
@@ -224,7 +226,7 @@ def load_reference_metrics(reference_out_dir: Path) -> Dict[str, Dict[str, Dict[
                 if method not in methods_by_rq[rq_key]:
                     continue
                 rows[method] = {
-                    key: paper_metrics.normalize_metric_value(value)
+                    REFERENCE_METRIC_RENAMES.get(key, key): paper_metrics.normalize_metric_value(value)
                     for key, value in row.items()
                     if key != first_col
                 }
@@ -348,12 +350,12 @@ def export_current_plot_metrics(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="导出并校验 His2Trans 当前绘图口径数值。")
+    parser = argparse.ArgumentParser(description="一键重建并校验当前论文口径下的 His2Trans 结果。")
     parser.add_argument(
         "--reference-out-dir",
         type=Path,
         default=DEFAULT_REFERENCE_OUT_DIR,
-        help=f"当前绘图参考 CSV 目录（默认：{DEFAULT_REFERENCE_OUT_DIR}）",
+        help=f"仓库内置的论文参考 CSV 目录（默认：{DEFAULT_REFERENCE_OUT_DIR}）",
     )
     parser.add_argument(
         "--structured-json-dir",

@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-03-23T20:48:00",
+  "generated_at": "2026-03-25T15:05:50",
   "repo_root": "/data/home/wangshb/His2Trans",
   "reference_out_dir": "/data/home/wangshb/c2-rust_framework/paper_tables_postprocess/latest/out",
   "structured_json_dir": "/data/home/wangshb/His2Trans/data/paper_metric_exports/generated_structured_json",
-  "all_match": true,
+  "all_match": false,
   "actual": {
     "rq1": {
       "Ours(DeepSeek-V3.2 K = 1)": {
@@ -39,14 +39,14 @@
     },
     "rq2": {
       "Ours(DeepSeek-V3.2)": {
-        "ICompRate": 62.96,
-        "FC": 46.43,
+        "ICompRate": 87.55,
+        "FC": 47.27,
         "Unsafe": 37.28,
         "Clippy": 136.44
       },
       "Ours(Claude-opus-4-5)": {
-        "ICompRate": 71.3,
-        "FC": 57.14,
+        "ICompRate": 99.14,
+        "FC": 58.18,
         "Unsafe": 44.25,
         "Clippy": 101.0
       }
@@ -102,52 +102,8 @@
     }
   },
   "reference": {
-    "rq1": {
-      "Ours(DeepSeek-V3.2 K = 1)": {
-        "ICompRate": 87.85,
-        "FC": 75.0,
-        "Unsafe": 32.15,
-        "Clippy": 464.0
-      },
-      "Ours(DeepSeek-V3.2 K = 3)": {
-        "ICompRate": 88.47,
-        "FC": 75.0,
-        "Unsafe": 33.02,
-        "Clippy": 448.8
-      },
-      "Ours(DeepSeek-V3.2 K = 5)": {
-        "ICompRate": 90.34,
-        "FC": 75.0,
-        "Unsafe": 35.43,
-        "Clippy": 463.0
-      },
-      "Ours(DeepSeek-V3.2 K = 10)": {
-        "ICompRate": 87.23,
-        "FC": 75.0,
-        "Unsafe": 34.06,
-        "Clippy": 446.4
-      },
-      "Ours(Claude-opus-4-5 K = 5)": {
-        "ICompRate": 97.51,
-        "FC": 75.0,
-        "Unsafe": 37.09,
-        "Clippy": 315.4
-      }
-    },
-    "rq2": {
-      "Ours(DeepSeek-V3.2)": {
-        "ICompRate": 62.96,
-        "FC": 46.43,
-        "Unsafe": 37.28,
-        "Clippy": 136.44
-      },
-      "Ours(Claude-opus-4-5)": {
-        "ICompRate": 71.3,
-        "FC": 57.14,
-        "Unsafe": 44.25,
-        "Clippy": 101.0
-      }
-    },
+    "rq1": {},
+    "rq2": {},
     "rq3": {
       "Base-1Shot": {
         "ICompRate": 42.5,
@@ -198,6 +154,165 @@
       }
     }
   },
-  "diffs": {},
+  "diffs": {
+    "rq1": {
+      "Ours(Claude-opus-4-5 K = 5)": {
+        "Clippy": {
+          "actual": 315.4,
+          "reference": null,
+          "delta": null
+        },
+        "FC": {
+          "actual": 75.0,
+          "reference": null,
+          "delta": null
+        },
+        "ICompRate": {
+          "actual": 97.51,
+          "reference": null,
+          "delta": null
+        },
+        "Unsafe": {
+          "actual": 37.09,
+          "reference": null,
+          "delta": null
+        }
+      },
+      "Ours(DeepSeek-V3.2 K = 1)": {
+        "Clippy": {
+          "actual": 464.0,
+          "reference": null,
+          "delta": null
+        },
+        "FC": {
+          "actual": 75.0,
+          "reference": null,
+          "delta": null
+        },
+        "ICompRate": {
+          "actual": 87.85,
+          "reference": null,
+          "delta": null
+        },
+        "Unsafe": {
+          "actual": 32.15,
+          "reference": null,
+          "delta": null
+        }
+      },
+      "Ours(DeepSeek-V3.2 K = 10)": {
+        "Clippy": {
+          "actual": 446.4,
+          "reference": null,
+          "delta": null
+        },
+        "FC": {
+          "actual": 75.0,
+          "reference": null,
+          "delta": null
+        },
+        "ICompRate": {
+          "actual": 87.23,
+          "reference": null,
+          "delta": null
+        },
+        "Unsafe": {
+          "actual": 34.06,
+          "reference": null,
+          "delta": null
+        }
+      },
+      "Ours(DeepSeek-V3.2 K = 3)": {
+        "Clippy": {
+          "actual": 448.8,
+          "reference": null,
+          "delta": null
+        },
+        "FC": {
+          "actual": 75.0,
+          "reference": null,
+          "delta": null
+        },
+        "ICompRate": {
+          "actual": 88.47,
+          "reference": null,
+          "delta": null
+        },
+        "Unsafe": {
+          "actual": 33.02,
+          "reference": null,
+          "delta": null
+        }
+      },
+      "Ours(DeepSeek-V3.2 K = 5)": {
+        "Clippy": {
+          "actual": 463.0,
+          "reference": null,
+          "delta": null
+        },
+        "FC": {
+          "actual": 75.0,
+          "reference": null,
+          "delta": null
+        },
+        "ICompRate": {
+          "actual": 90.34,
+          "reference": null,
+          "delta": null
+        },
+        "Unsafe": {
+          "actual": 35.43,
+          "reference": null,
+          "delta": null
+        }
+      }
+    },
+    "rq2": {
+      "Ours(Claude-opus-4-5)": {
+        "Clippy": {
+          "actual": 101.0,
+          "reference": null,
+          "delta": null
+        },
+        "FC": {
+          "actual": 58.18,
+          "reference": null,
+          "delta": null
+        },
+        "ICompRate": {
+          "actual": 99.14,
+          "reference": null,
+          "delta": null
+        },
+        "Unsafe": {
+          "actual": 44.25,
+          "reference": null,
+          "delta": null
+        }
+      },
+      "Ours(DeepSeek-V3.2)": {
+        "Clippy": {
+          "actual": 136.44,
+          "reference": null,
+          "delta": null
+        },
+        "FC": {
+          "actual": 47.27,
+          "reference": null,
+          "delta": null
+        },
+        "ICompRate": {
+          "actual": 87.55,
+          "reference": null,
+          "delta": null
+        },
+        "Unsafe": {
+          "actual": 37.28,
+          "reference": null,
+          "delta": null
+        }
+      }
+    }
+  },
   "commands": []
 }
