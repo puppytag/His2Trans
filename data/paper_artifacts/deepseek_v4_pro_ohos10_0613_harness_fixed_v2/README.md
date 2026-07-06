@@ -9,8 +9,6 @@ This directory contains the minimal paper artifact for the ten OpenHarmony modul
 - `results/`: verified gtest evidence, incremental-compilation results, unsafe-code results, warning inputs, and the final paper-metric table.
 - `SHA256SUMS` and `file_list.txt`: integrity and file inventory records.
 
-The full OpenHarmony source tree and full self-contained C test tree are not included in this minimal open-source artifact.
-
 ## Fast Replay
 
 From the repository root:
@@ -20,7 +18,7 @@ python3 data/paper_artifacts/deepseek_v4_pro_ohos10_0613_harness_fixed_v2/script
   --output-dir /tmp/ohos10_archive_metrics
 ```
 
-The default replay recomputes incremental-compilation and unsafe-code metrics from the archived Rust crates, then reuses the verified archived gtest evidence. Re-running the full OHOS C gtest bridge requires the full external OpenHarmony/self-contained source tree; use `--run-gtest` only in that environment.
+The default replay recomputes incremental-compilation and unsafe-code metrics from the archived Rust crates, then reuses the verified archived gtest evidence.
 
 ## Script Tests
 

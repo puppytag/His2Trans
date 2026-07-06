@@ -228,6 +228,6 @@
       "reason": "Feedback claimed borrow checker conflicts require RefCell; re-analysis shows safe Rust solutions exist via enum-based child dispatch and Option<Box<T>> internal storage. Unsafe has grown from 9 to 52 lines, making reduction more impactful. Specific sub-items now target individual scopes."
     }
   ],
-  "report_path": "/data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-oss10-full-0613-1/raw/framework_output/intermediate/quadtree/workspace/post_repair/quadtree/translate_by_qwen3_coder/unsafe_refactor_audit_logs/repair_round_08_unsafe_refactor_audit/unsafe_refactor_report.md",
+  "report_path": "archived_runs/deepseek-v4-pro-oss10-full-0613-1/raw/framework_output/intermediate/quadtree/workspace/post_repair/quadtree/translate_by_qwen3_coder/unsafe_refactor_audit_logs/repair_round_08_unsafe_refactor_audit/unsafe_refactor_report.md",
   "summary": "Re-evaluated round_06 semantic_risk feedback: downgraded to partially_reducible. Identified 8 reducible items (U0002, U0005/6, U0012, U0016, U0017, U0024, U0029-44, aggregate raw_pointer_elimination) and 7 hard_required items (Box::from_raw x4, FFI callback x3). Most unsafe stems from raw pointer internal representation; safe Rust Box-based redesign would eliminate ~30+ unsafe lines."
 }

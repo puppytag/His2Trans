@@ -155,7 +155,3 @@ python3 -m py_compile \
   framework/scripts/*.py \
   framework/scripts/agentic_repair/*.py
 ```
-
-## Notes on Large External Data
-
-The repository intentionally does not ship the full OpenHarmony source tree, full `compile_commands.json`, model weights, or generated `target/` directories. The final translated crates and verified paper metric evidence needed for the current tables are included under `data/paper_artifacts/`.
