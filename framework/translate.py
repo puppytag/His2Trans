@@ -1903,7 +1903,10 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
     # compile_commands.json / OpenHarmony build profile 选择（out_dir 主键）
     # ---------------------------------------------------------------------
     print("\n[查询编译文件] 开始查找 compile_commands.json / build profile...")
-    DEFAULT_OHOS_ROOT = Path("/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony")
+    repo_root = Path(__file__).resolve().parents[1]
+    DEFAULT_OHOS_ROOT = Path(
+        os.environ.get("C2R_DEFAULT_OHOS_ROOT", str(repo_root / "data" / "ohos" / "ohos_root_min"))
+    ).expanduser()
     DEFAULT_COMPILE_COMMANDS = DEFAULT_OHOS_ROOT / "out" / "rk3568" / "compile_commands.json"
 
     # 查找 compile_commands.json（如果可用）
@@ -2018,15 +2021,15 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
     
     # 优先级1-4: 传统查找逻辑（仅在前面没有选中时启用）
     if not compile_commands_path and not is_oss_suite():
-        # 优先级1: 使用硬编码的默认路径
-        print(f"  [优先级1] 检查硬编码路径: {DEFAULT_COMPILE_COMMANDS}")
+        # 优先级1: 使用仓库内默认路径
+        print(f"  [优先级1] 检查仓库默认路径: {DEFAULT_COMPILE_COMMANDS}")
         if DEFAULT_COMPILE_COMMANDS.exists():
             compile_commands_path = DEFAULT_COMPILE_COMMANDS.resolve()
             ohos_root = DEFAULT_OHOS_ROOT
-            print(f"  ✓ 使用硬编码路径找到 compile_commands.json: {compile_commands_path}")
+            print(f"  ✓ 使用仓库默认路径找到 compile_commands.json: {compile_commands_path}")
             print(f"    OpenHarmony 根目录: {ohos_root}")
         else:
-            print(f"  ✗ 硬编码路径不存在，继续查找...")
+            print(f"  ✗ 仓库默认路径不存在，继续查找...")
 
             # 优先级2: 尝试从环境变量获取 OpenHarmony 根目录
             ohos_root_env = os.environ.get("OHOS_ROOT")

@@ -1,6 +1,6 @@
 """OpenAI-compatible JSON action runner for local Rust repair agents.
 
-This module is adapted from `/data/home/wangshb/C++2Rust/framework/agentic_codegen/openai_repair.py`.
+This module is adapted from the project-local C++2Rust agentic codegen runner.
 It keeps the same small action interface while using this repository's `generate.generation`
 client so the runner follows the current framework LLM configuration.
 """

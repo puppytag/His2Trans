@@ -204,7 +204,7 @@ def get_compile_commands_path(ohos_root: Path = None) -> Optional[Path]:
     
     优先级：
     1. 环境变量 OHOS_COMPILE_COMMANDS（最高优先级；支持 out_dir profile 自动选择的解压产物）
-    2. 硬编码的默认路径（仅作为最后兜底，避免固定到 rk3568）
+    2. 仓库内默认 OpenHarmony 最小根目录
     3. 如果提供了 ohos_root，检查常见默认位置
     4. 递归搜索
     
@@ -214,8 +214,11 @@ def get_compile_commands_path(ohos_root: Path = None) -> Optional[Path]:
     Returns:
         compile_commands.json 的路径，如果不存在返回 None
     """
-    # 硬编码的默认路径（仅兜底）
-    DEFAULT_OHOS_ROOT = Path("/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony")
+    repo_root = Path(__file__).resolve().parents[1]
+    # 仓库内默认路径（仅兜底）
+    DEFAULT_OHOS_ROOT = Path(
+        os.environ.get("C2R_DEFAULT_OHOS_ROOT", str(repo_root / "data" / "ohos" / "ohos_root_min"))
+    ).expanduser()
     DEFAULT_COMPILE_COMMANDS = DEFAULT_OHOS_ROOT / "out" / "rk3568" / "compile_commands.json"
     
     # 1. 检查环境变量（允许 pipeline/profile 选择器显式指定）
@@ -225,7 +228,7 @@ def get_compile_commands_path(ohos_root: Path = None) -> Optional[Path]:
         if path.exists():
             return path.resolve()
 
-    # 2. 检查硬编码默认路径（兜底）
+    # 2. 检查仓库默认路径（兜底）
     if DEFAULT_COMPILE_COMMANDS.exists():
         return DEFAULT_COMPILE_COMMANDS.resolve()
     
@@ -242,7 +245,7 @@ def get_compile_commands_path(ohos_root: Path = None) -> Optional[Path]:
             if path.exists():
                 return path.resolve()
     
-    # 4. 如果 ohos_root 未提供，尝试使用硬编码的默认根目录
+    # 4. 如果 ohos_root 未提供，尝试使用仓库默认根目录
     if DEFAULT_OHOS_ROOT.exists():
         default_paths = [
             DEFAULT_OHOS_ROOT / "out" / "rk3568" / "compile_commands.json",

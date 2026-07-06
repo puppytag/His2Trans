@@ -179,8 +179,6 @@ start_vllm() {
   if [ -z "$DEPLOY_VLLM_SCRIPT" ]; then
     if [ -f "$SCRIPT_DIR/qwen3_coder/deploy_4bit_AWQ.sh" ]; then
       DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/qwen3_coder/deploy_4bit_AWQ.sh"
-    elif [ -f "/data/home/wangshb/qwen3_coder/deploy_4bit_AWQ.sh" ]; then
-      DEPLOY_VLLM_SCRIPT="/data/home/wangshb/qwen3_coder/deploy_4bit_AWQ.sh"
     else
       print_error "未找到 deploy_4bit_AWQ.sh，请设置 DEPLOY_VLLM_SCRIPT"
       return 1

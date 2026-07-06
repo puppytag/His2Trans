@@ -71,6 +71,9 @@ set -o pipefail
 
 # 获取脚本所在目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HIS2TRANS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+OHOS_SOURCE_PROJECTS_DIR="${OHOS_SOURCE_PROJECTS_DIR:-$HIS2TRANS_ROOT/data/ohos/source_projects}"
+DEFAULT_OHOS_ROOT="${OHOS_ROOT:-$HIS2TRANS_ROOT/data/ohos/ohos_root_min}"
 cd "$SCRIPT_DIR"
 
 # 输出目录布局（用于消融实验/多次运行隔离）：
@@ -172,7 +175,7 @@ POST_REPAIR_ALLOW_EXTERNAL_BLOCKERS="${C2R_POST_REPAIR_ALLOW_EXTERNAL_BLOCKERS:-
 # 论文 held-out/derived 测试默认不在框架阶段运行，避免测试泄漏到 repair。
 RUN_PAPER_EVAL_TESTS="${C2R_RUN_PAPER_EVAL_TESTS:-false}"
 # OHOS cheap gate 配置。后置 repair runner 会通过 Cargo 调用该 rustc 和 target。
-OHOS_RUSTC="${OHOS_RUSTC:-$SCRIPT_DIR/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/prebuilts/rustc/linux-x86_64/current/bin/rustc}"
+OHOS_RUSTC="${OHOS_RUSTC:-$DEFAULT_OHOS_ROOT/prebuilts/rustc/linux-x86_64/current/bin/rustc}"
 OHOS_RUST_TARGET="${OHOS_RUST_TARGET:-x86_64-unknown-linux-ohos}"
 # bindgen/types 诊断输出（可选）
 BINDGEN_DEBUG="${C2R_BINDGEN_DEBUG:-0}"
@@ -182,176 +185,13 @@ C2R_REQUIRE_TU_CLOSURE="${C2R_REQUIRE_TU_CLOSURE:-1}"
 # 额外 RAG KB（默认不启用；用命令行 --extra-rag-kb-dir 指定）
 EXTRA_RAG_KB_DIRS=""
 
-# 推荐的项目列表（按推荐顺序：简单到复杂）
+# 推荐的项目列表（仓库内轻量 OHOS 示例）
 declare -A RECOMMENDED_PROJECTS=(
-    # # 100 分纯 C 项目（2025-12-04 自动筛选结果）
-    # ["approach_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/approach_ble"
-    # ["coap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/coap"
-    # ["crypto_common"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/crypto_common"
-    # ["dispatcher"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dispatcher"
-    # ["event_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/event_manager"
-    # ["installer"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/installer"
-    # ["ipc_auth"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ipc_auth"
-    # ["mem"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mem"
-    # ["mini"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mini"
-    # ["pack"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pack"
-    # ["pathselect"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pathselect"
-    # ["perf"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/perf"
-    # ["pms_base"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pms_base"
-    # ["qos"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/qos"
-    # ["share_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/share_ble"
-    # ["sysinfo"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/sysinfo"
-    # ["timer_task"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/timer_task"
-    # ["touch_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/touch_ble"
-    # ["trace"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/trace"
-    # ["transmission"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/transmission"
-    # ["virtual_link_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/virtual_link_ble"
-
-    # # ["json"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/json"
-    # ["innerkits"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/innerkits"
-    # ["file_permission_native"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/file_permission_native"
-    # ["parameter_mock"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/parameter_mock"
-    # ["utils_mock"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/utils_mock"
-    # # ["passthrough"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/passthrough"
-    # # ["syscap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/syscap"
-    # ["extend"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/extend"
-    # ["random"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/random"
-    # # ["utils"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/utils"
-    # # ["constant"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/constant"
-    # # ["timer"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/timer"
-    # # ["cJson"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/cJson"
-
-    # ["account"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/account"
-    # ["ohos_init_web_adapter"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ohos_init_web_adapter"
-    # ["work"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/work"
-    # ["event"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/event"
-    # ["subscribe_kv_store_sa"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/subscribe_kv_store_sa"
-    # ["access_token_adapter"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/access_token_adapter"
-
-
-
-
-
-
-
-    # # 自动筛选的纯 C 项目（按代码量升序）
-    # ["qos"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/qos"
-    # ["mini"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mini"
-    # ["coap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/coap"
-    # ["transmission"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/transmission"
-    # ["event_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/event_manager"
-    # ["meta_node"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/meta_node"
-    # ["decision_center"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/decision_center"
-    # ["timer_task"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/timer_task"
-
-    
-    
-    
-    # # ["user"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/user"
-    # # ["event"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/event"
-    # ["mem"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mem"
-    # ["pms_base"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pms_base"
-    # ["initsync"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/initsync"
-    # ["sysinfo"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/sysinfo"
-    # ["crypto_common"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/crypto_common"
-    # ["monitor"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/monitor"
-    # ["share_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/share_ble"
-    # ["auth"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/auth"
-    # ["approach_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/approach_ble"
-    # ["touch_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/touch_ble"
-    # ["virtual_link_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/virtual_link_ble"
-    # ["dsoftbus"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dsoftbus"
-    # ["quickstart"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/quickstart"
-    # ["perf"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/perf"
-    # ["trace"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/trace"
-    # # ["pac"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pac"
-    # # ["srcu-cbmc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/srcu-cbmc"
-    # ["random"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/random"
-    # ["device_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/device_manager"
-    # # ["lib"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/lib"
-    # # ["pack"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pack"
-    # ["statistics"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/statistics"
-    # # ["stream"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/stream"
-    # ["scheduler"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/scheduler"
-    # ["dispatcher"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dispatcher"
-    # # ["memory_security"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/memory_security"
-    # ["ipc_auth"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ipc_auth"
-    # # ["tfa9879"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/tfa9879"
-    # ["manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/manager"
-    # ["config"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/config"
-    # ["huks"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/huks"
-    # # ["dsp"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dsp"
-    # ["disc_mgr"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/disc_mgr"
-    # ["parser"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/parser"
-    # ["multi_partition"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/multi_partition"
-    # # ["hdmi"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hdmi"
-    # ["ethernet"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ethernet"
-    # # ["hi3516"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hi3516"
-    # ["service"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/service"
-    # # ["uart"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/uart"
-    # ["time_sync"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/time_sync"
-    # # ["proc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/proc"
-    # # ["osal"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/osal"
-    # ["mkp"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mkp"
-    # # ["rv"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/rv"
-    # ["installer"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/installer"
-    # ["pathselect"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pathselect"
-    # ["small"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/small"
-    # ["telnet"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/telnet"
-    # # ["mpp"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mpp"
-    # ["hdi_passthrough"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hdi_passthrough"
-    # # ["hievent"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hievent"
-    # ["vnode"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/vnode"
-    # ["driver"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/driver"
-    # ["tcp"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/tcp"
-    # ["decision_db"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/decision_db"
-    # ["libscrew"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/libscrew"
-    # # ["rk809_codec"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/rk809_codec"
-    # # ["es8323"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/es8323"
-    # # ["jffs2"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/jffs2"
-    # ["virpart"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/virpart"
-    # # ["kernel"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/kernel"
-    # ["network"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/network"
-    # # ["dai"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dai"
-    # ["wifiiot_app"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/wifiiot_app"
-    # ["dynload"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dynload"
-    # ["buffer_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/buffer_manager"
-    # ["syscall"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/syscall"
-    # # ["rkc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/rkc"
-    # # ["camera"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/camera"
-    # ["file"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/file"
-    # # ["hieth-sf"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hieth-sf"
-    # ["nstackx_coap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/nstackx_coap"
-    # # ["soc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/soc"
-    # ["tcp_direct"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/tcp_direct"
-    # ["rpc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/rpc"
-    # ["platform"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/platform"
-    # ["ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ble"
-    # # ["mpp_help"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mpp_help"
-    # # ["csky_driver"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/csky_driver"
-    # # ["ipc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ipc"
-    # ["tlogcat"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/tlogcat"
-    # ["disk"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/disk"
-    # ["device_cert_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/device_cert_manager"
-    # # ["headset_monitor"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/headset_monitor"
-    # # ["shell"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/shell"
-    # # ["porting"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/porting"
-    # ["device_impl"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/device_impl"
-    # ["net_buscenter"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/net_buscenter"
-    # ["dispatch"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dispatch"
-
-
-    ["host__25c1898e1626"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/host__25c1898e1626"
-    ["appverify_lite__e5ebe91a98b9"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/appverify_lite__e5ebe91a98b9"
-    ["manager__c248934e0221"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/manager__c248934e0221"
-    ["shared__541f4e547bdb"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/shared__541f4e547bdb"
-    ["posix__1b7f59c68bbc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/src_test_no_include/others/with_test/posix__1b7f59c68bbc"
-    ["common__89d5ecaafdff"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/common__89d5ecaafdff"
-    ["core__ef5242b7ab08"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/core__ef5242b7ab08"
-    ["resmgr_lite__cfe76e7194ce"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/resmgr_lite__cfe76e7194ce"
-    ["shared__12e38ea922f7"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/shared__12e38ea922f7"
-    ["osal__0bc4f21396ad"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/src_test_no_include/others/with_test/osal__0bc4f21396ad"
-    ["sapm__193cdeb43a97"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/sapm__193cdeb43a97"
+    ["appverify_lite__e5ebe91a98b9"]="$OHOS_SOURCE_PROJECTS_DIR/appverify_lite__e5ebe91a98b9"
+    ["host__25c1898e1626"]="$OHOS_SOURCE_PROJECTS_DIR/host__25c1898e1626"
+    ["osal__0bc4f21396ad"]="$OHOS_SOURCE_PROJECTS_DIR/osal__0bc4f21396ad"
+    ["shared__12e38ea922f7"]="$OHOS_SOURCE_PROJECTS_DIR/shared__12e38ea922f7"
+    ["shared__541f4e547bdb"]="$OHOS_SOURCE_PROJECTS_DIR/shared__541f4e547bdb"
 
 
 )
@@ -1221,12 +1061,7 @@ activate_conda_env() {
         # Don't call `conda env list` here: it's slow and can crash when plugins misbehave.
         conda activate "$target_env" >/dev/null 2>&1 || true
         if [ "$CONDA_DEFAULT_ENV" = "$target_env" ]; then
-            # 确保 ripgrep 所在路径可用，供 Python 子进程调用
-            RG_BIN_DIR="/data/home/wangshb/.vscode-server/extensions/openai.chatgpt-0.4.47/bin/linux-x86_64"
-            case ":$PATH:" in
-                *":$RG_BIN_DIR:"*) ;;
-                *) export PATH="$PATH:$RG_BIN_DIR" ;;
-            esac
+            # 保持 PATH 由用户环境管理；rg 等工具通过系统 PATH 发现。
             return 0
         fi
     fi
@@ -1271,8 +1106,6 @@ PY
 	    if [ -z "$DEPLOY_VLLM_SCRIPT" ]; then
 	        if [ -f "$SCRIPT_DIR/qwen3_coder/deploy_no_quantization.sh" ]; then
 	            DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/qwen3_coder/deploy_no_quantization.sh"
-	        elif [ -f "/data/home/wangshb/qwen3_coder/deploy_no_quantization.sh" ]; then
-	            DEPLOY_VLLM_SCRIPT="/data/home/wangshb/qwen3_coder/deploy_no_quantization.sh"
 	        else
 	            print_error "未找到 deploy_no_quantization.sh，请设置 DEPLOY_VLLM_SCRIPT"
 	            return 1
@@ -1992,13 +1825,21 @@ setup_project_env() {
         unset C2R_OHOS_CC_EXTRACT_ROOT
         unset C2R_PROFILE_CACHE_DIR
     else
-        # OpenHarmony 根目录与 registry（可被外部环境覆盖）
-        export OHOS_ROOT="${OHOS_ROOT:-$SCRIPT_DIR/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony}"
-        export OHOS_CC_REGISTRY="${OHOS_CC_REGISTRY:-$OHOS_ROOT/compile_commands_all/summary.tsv}"
-        # shared（不属于某一次 run 的产物）：以 translation_outputs/shared 为默认放置点
+        # OpenHarmony 根目录与 registry（可被外部环境覆盖）。
+        # 开源包内的轻量 OHOS 示例优先使用项目自带 compile_commands.json。
+        export OHOS_ROOT="${OHOS_ROOT:-$DEFAULT_OHOS_ROOT}"
+        if [[ -f "$PROJECT_ROOT/compile_commands.json" ]]; then
+            export COMPILE_COMMANDS_PATH="$PROJECT_ROOT/compile_commands.json"
+            export OHOS_COMPILE_COMMANDS="$PROJECT_ROOT/compile_commands.json"
+            unset OHOS_CC_REGISTRY
+            unset OHOS_COMPILE_COMMANDS_REGISTRY
+        else
+            export OHOS_CC_REGISTRY="${OHOS_CC_REGISTRY:-$OHOS_ROOT/compile_commands_all/summary.tsv}"
+            unset COMPILE_COMMANDS_PATH
+        fi
+        # shared（不属于某一次 run 的产物）：以 run-local shared 目录为默认放置点
         export C2R_OHOS_CC_EXTRACT_ROOT="${C2R_OHOS_CC_EXTRACT_ROOT:-$RUN_SHARED_DIR/ohos_profiles/compile_commands}"
         export C2R_PROFILE_CACHE_DIR="${C2R_PROFILE_CACHE_DIR:-$RUN_SHARED_DIR/ohos_profiles/projects}"
-        unset COMPILE_COMMANDS_PATH
     fi
 
     # ---------------------------------------------------------------------

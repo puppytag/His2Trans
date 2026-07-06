@@ -61,8 +61,8 @@ pub struct timespec {
 
 // === C2R_EXTERN_DECLS_BEGIN ===
 // Auto-generated extern decls (C2R step 2.55; bindgen allowlist).
-// Source: /data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output/intermediate/posix__1b7f59c68bbc/workspace/.preprocessed/*.i (preprocessed translation units)
-// Details: /data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output/intermediate/posix__1b7f59c68bbc/workspace/repair_history/posix__1b7f59c68bbc/translate_by_qwen3_coder/_manual_fix/extern_decls_from_bindgen_allowlist.json
+// Source: archived_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output/intermediate/posix__1b7f59c68bbc/workspace/.preprocessed/*.i (preprocessed translation units)
+// Details: archived_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output/intermediate/posix__1b7f59c68bbc/workspace/repair_history/posix__1b7f59c68bbc/translate_by_qwen3_coder/_manual_fix/extern_decls_from_bindgen_allowlist.json
 #[allow(improper_ctypes)]
 #[allow(non_snake_case)]
 extern "C" {

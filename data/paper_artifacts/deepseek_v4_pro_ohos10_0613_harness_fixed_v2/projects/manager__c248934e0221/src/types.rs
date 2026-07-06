@@ -1686,7 +1686,7 @@ pub const AUDIO_FORMAT_TYPE_PCM_32_BIT: i32 = 3;
 // === C2R_AUTO_MISSING_TYPES_BEGIN ===
 /// C2R_AUTO_TYPE: placeholder for external type `KServStatListenerHolder`
 // C2R_STRUCT_RECOVERY: `KServStatListenerHolder`
-// C2R_FROM_C: /data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/manager__c248934e0221/src/servstat_listener_holder.c:15
+// C2R_FROM_C: archived_source/manager__c248934e0221/src/servstat_listener_holder.c:15
 #[repr(C)]
 pub struct KServStatListenerHolder {
     pub node: DListHead,

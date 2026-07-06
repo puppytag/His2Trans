@@ -13,9 +13,9 @@ Goals (paper-friendly, no cheating):
 - Reuse the *original OHOS gtest unit tests* to evaluate correctness (best-effort).
 
 Typical usage:
-  cd /data/home/wangshb/c2-rust_framework/scripts/analysis
+  cd scripts/analysis
   python3 analyze_c2r_compilation_rate_ohos10.py \\
-    --run-dir /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos10 \\
+    --run-dir ../../framework/translation_outputs/deepseek-coder-ohos10 \\
     --all
 """
 
@@ -60,11 +60,15 @@ def iter_projects_in_display_order(projects: Dict[str, Any]) -> List[Tuple[str, 
 # Paths
 # =============================================================================
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_HUAWEI_PROJECTS_TSV = Path(
-    "/data/home/wangshb/c2-rust_framework/ComparisonMethod/unified/huawei_projects.tsv"
+    os.environ.get(
+        "HUAWEI_PROJECTS_TSV",
+        str(REPO_ROOT / "framework" / "ComparisonMethod" / "unified" / "huawei_projects.tsv"),
+    )
 )
 DEFAULT_OHOS_ROOT = Path(
-    "/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+    os.environ.get("OHOS_ROOT", str(REPO_ROOT / "data" / "ohos" / "ohos_root_min"))
 )
 
 

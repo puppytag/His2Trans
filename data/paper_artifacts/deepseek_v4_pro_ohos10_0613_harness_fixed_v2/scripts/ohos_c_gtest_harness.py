@@ -16,21 +16,25 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-OHOS_ROOT = REPO_ROOT / "SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony"
+ARCHIVE_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[4]
+OHOS_ROOT = Path(os.environ.get("OHOS_ROOT", str(REPO_ROOT / "data" / "ohos" / "ohos_root_min"))).expanduser()
+OHOS_PROJECT_SOURCE_ROOT = Path(
+    os.environ.get("OHOS_PROJECT_SOURCE_ROOT", str(REPO_ROOT / "data" / "ohos" / "source_projects"))
+).expanduser()
 DEFAULT_RUN_DIR = "deepseek-v4-pro-ohos11-full-0605"
 
 C_PROJECT_SOURCES: Dict[str, Path] = {
-    "host__25c1898e1626": REPO_ROOT / "SelfContained/self_contained_modules_v2/with_third_party/others/with_test/host__25c1898e1626",
-    "appverify_lite__e5ebe91a98b9": REPO_ROOT / "SelfContained/self_contained_modules_v2/with_third_party/others/with_test/appverify_lite__e5ebe91a98b9",
-    "manager__c248934e0221": REPO_ROOT / "SelfContained/self_contained_modules_v2/with_third_party/others/with_test/manager__c248934e0221",
-    "shared__541f4e547bdb": REPO_ROOT / "SelfContained/self_contained_modules_v2/with_third_party/others/with_test/shared__541f4e547bdb",
-    "posix__1b7f59c68bbc": REPO_ROOT / "SelfContained/self_contained_modules_v2/src_test_no_include/others/with_test/posix__1b7f59c68bbc",
-    "common__89d5ecaafdff": REPO_ROOT / "SelfContained/self_contained_modules_v2/with_third_party/others/with_test/common__89d5ecaafdff",
-    "core__ef5242b7ab08": REPO_ROOT / "SelfContained/self_contained_modules_v2/with_third_party/others/with_test/core__ef5242b7ab08",
-    "shared__12e38ea922f7": REPO_ROOT / "SelfContained/self_contained_modules_v2/with_third_party/others/with_test/shared__12e38ea922f7",
-    "osal__0bc4f21396ad": REPO_ROOT / "SelfContained/self_contained_modules_v2/src_test_no_include/others/with_test/osal__0bc4f21396ad",
-    "sapm__193cdeb43a97": REPO_ROOT / "SelfContained/self_contained_modules_v2/with_third_party/others/with_test/sapm__193cdeb43a97",
+    "host__25c1898e1626": OHOS_PROJECT_SOURCE_ROOT / "host__25c1898e1626",
+    "appverify_lite__e5ebe91a98b9": OHOS_PROJECT_SOURCE_ROOT / "appverify_lite__e5ebe91a98b9",
+    "manager__c248934e0221": OHOS_PROJECT_SOURCE_ROOT / "manager__c248934e0221",
+    "shared__541f4e547bdb": OHOS_PROJECT_SOURCE_ROOT / "shared__541f4e547bdb",
+    "posix__1b7f59c68bbc": OHOS_PROJECT_SOURCE_ROOT / "posix__1b7f59c68bbc",
+    "common__89d5ecaafdff": OHOS_PROJECT_SOURCE_ROOT / "common__89d5ecaafdff",
+    "core__ef5242b7ab08": OHOS_PROJECT_SOURCE_ROOT / "core__ef5242b7ab08",
+    "shared__12e38ea922f7": OHOS_PROJECT_SOURCE_ROOT / "shared__12e38ea922f7",
+    "osal__0bc4f21396ad": OHOS_PROJECT_SOURCE_ROOT / "osal__0bc4f21396ad",
+    "sapm__193cdeb43a97": OHOS_PROJECT_SOURCE_ROOT / "sapm__193cdeb43a97",
 }
 
 

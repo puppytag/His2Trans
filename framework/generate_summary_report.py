@@ -258,7 +258,7 @@ def main():
     parser.add_argument(
         "--outputs-dir",
         type=str,
-        default="/data/home/wangshb/c2-rust_framework/translation_outputs",
+        default=str(Path(__file__).resolve().parent / "translation_outputs"),
         help="翻译输出目录"
     )
     parser.add_argument(

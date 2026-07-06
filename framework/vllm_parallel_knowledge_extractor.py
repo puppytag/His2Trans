@@ -9,8 +9,8 @@ to extract:
 - Structural fragments ("Partial"/"Full")
 - API mappings ("API_Mapping")
 
-The JSON schema and calling pattern intentionally mirrors:
-  /data/home/wangshb/qwen3_coder/8_run_parallel_vllm_client.py
+The JSON schema and calling pattern intentionally mirrors the local
+OpenAI-compatible vLLM batch client used by the experiments.
 
 So that the output can be merged into the existing RAG knowledge_base.json format and
 used without changing downstream consumers.

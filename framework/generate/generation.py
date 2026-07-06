@@ -105,7 +105,6 @@ def _load_local_env_file_once():
         candidates.append(Path(configured).expanduser())
     repo_root = Path(__file__).resolve().parents[1]
     candidates.append(repo_root / "output" / "mini-swe-agent-config" / ".env")
-    candidates.append(Path("/data/home/wangshb/C++2Rust/output/mini-swe-agent-config/.env"))
     for env_path in candidates:
         if not env_path.is_file():
             continue

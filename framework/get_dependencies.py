@@ -49,8 +49,8 @@ def _find_compile_commands_json():
     查找优先级：
     1. 环境变量 COMPILE_COMMANDS_PATH（兼容旧变量）
     2. 环境变量 OHOS_COMPILE_COMMANDS（与 workspace_config 保持一致）
-    3. workspace_config.get_compile_commands_path()（包含硬编码默认路径：OpenHarmony-v5.0.1-Release/out/rk3568）
-    4. 常见的 OpenHarmony 路径（相对于用户主目录/常见安装路径）
+    3. workspace_config.get_compile_commands_path()（包含仓库内默认 OHOS 最小根目录）
+    4. 常见的 OpenHarmony 路径（相对于用户主目录）
     5. 返回空字符串（禁用预处理）
     """
     if is_oss_suite():
@@ -92,9 +92,6 @@ def _find_compile_commands_json():
         # 相对于当前脚本目录的可能路径
         Path(__file__).parent.parent / "out" / "rk3568" / "compile_commands.json",
         Path(__file__).parent.parent / "openharmony" / "out" / "rk3568" / "compile_commands.json",
-        # 绝对路径猜测（常见安装位置）
-        Path("/data/home/wangshb/openharmony/out/rk3568/compile_commands.json"),
-        Path("/home/wangshb/openharmony/out/rk3568/compile_commands.json"),
     ]
 
     for path in possible_paths:

@@ -57,12 +57,8 @@ else
         # 2. 相对路径
         "$SCRIPT_DIR/../$PROJECT_NAME"
         "$SCRIPT_DIR/../../$PROJECT_NAME"
-        # 3. 绝对路径
-        "/data/home/wangshb/$PROJECT_NAME"
-        "/data/home/wangshb/ohos/$PROJECT_NAME"
+        # 3. 用户主目录
         "$HOME/$PROJECT_NAME"
-        # 4. 其他可能位置
-        "/data/home/wangshb/c2-rust_framework/workspace/projects/$PROJECT_NAME"
     )
     
     PROJECT_ROOT=""
@@ -181,4 +177,3 @@ fi
 
 # 运行主脚本
 bash get_function.sh
-

@@ -5,7 +5,7 @@
 
 // === C2R_INCLUDE_BEGIN ===
 // (auto-appended includes will be inserted here)
-#include "/data/home/wangshb/c2-rust_framework/ComparisonMethod/Our/projects/urlparser/src/url.h"
+#include "url.h"
 // === C2R_INCLUDE_END ===
 
 // === C2R_FIELD_PTR_DEFS_BEGIN ===

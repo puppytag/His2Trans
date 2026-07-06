@@ -143,8 +143,45 @@ class PaperMetricTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             if 'native/c2r_accessors.c' not in text:
                 continue
-            self.assertNotIn("/data/home/wangshb/His2Trans", text)
+            forbidden_repo_path = "/" + "data/" + "home/wangshb/His2Trans"
+            self.assertNotIn(forbidden_repo_path, text)
             self.assertIn('manifest_dir.join("native/include")', text)
+
+    def test_paper_artifact_runtime_inputs_use_repo_relative_paths(self) -> None:
+        repo_root = export_current_plot_metrics.REPO_ROOT
+        artifact_roots = [
+            repo_root / "data" / "paper_artifacts" / "deepseek_v4_pro_oss8_0613_rq2_100pct_minimal",
+            repo_root / "data" / "paper_artifacts" / "deepseek_v4_pro_ohos10_0613_harness_fixed_v2",
+        ]
+        forbidden_paths = ["/" + "data/" + "home/wangshb", "/" + "home/" + "wangshb"]
+        checked_paths = []
+        for artifact_root in artifact_roots:
+            for project_dir in sorted((artifact_root / "projects").iterdir()):
+                if not project_dir.is_dir():
+                    continue
+                for pattern in (
+                    "Cargo.toml",
+                    "build.rs",
+                    "c2r_manifest.json",
+                    "src/**/*.rs",
+                    "native/**/*.c",
+                    "native/**/*.h",
+                ):
+                    checked_paths.extend(project_dir.glob(pattern))
+            checked_paths.extend((artifact_root / "scripts").rglob("*.py"))
+            reproduce_script = artifact_root / "reproduce.sh"
+            if reproduce_script.exists():
+                checked_paths.append(reproduce_script)
+
+        self.assertTrue(checked_paths)
+        offenders = []
+        for path in sorted(set(checked_paths)):
+            text = path.read_text(encoding="utf-8")
+            for forbidden_path in forbidden_paths:
+                if forbidden_path in text:
+                    offenders.append(str(path.relative_to(repo_root)))
+                    break
+        self.assertEqual(offenders, [])
 
     def test_rq2_active_test_inputs_exclude_bzip2(self) -> None:
         repo_root = export_current_plot_metrics.REPO_ROOT

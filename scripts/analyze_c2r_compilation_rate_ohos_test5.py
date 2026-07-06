@@ -17,9 +17,9 @@ Goals (paper-friendly, no cheating):
   (includes signature matching / adaptation, executed on a temp copy).
 
 Typical usage:
-  cd /data/home/wangshb/c2-rust_framework/scripts/analysis
+  cd scripts/analysis
   python3 analyze_c2r_compilation_rate_ohos_test5.py \\
-    --run-dir /data/home/wangshb/c2-rust_framework/translation_outputs/deepseek-coder-ohos5 \\
+    --run-dir ../../framework/translation_outputs/deepseek-coder-ohos5 \\
     --all --run-derived-tests
 """
 

@@ -10,7 +10,7 @@ import re
 
 def check_output_status():
     """检查输出状态"""
-    base_dir = Path("/data/home/wangshb/c2-rust_framework")
+    base_dir = Path(__file__).resolve().parent
     outputs_dir = base_dir / "translation_outputs"
     logs_dir = base_dir / "logs"
     
@@ -160,7 +160,6 @@ def check_output_status():
 
 if __name__ == "__main__":
     check_output_status()
-
 
 
 

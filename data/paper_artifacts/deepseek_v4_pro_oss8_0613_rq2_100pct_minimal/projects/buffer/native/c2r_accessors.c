@@ -5,7 +5,7 @@
 
 // === C2R_INCLUDE_BEGIN ===
 // (auto-appended includes will be inserted here)
-#include "/data/home/wangshb/c2-rust_framework/ComparisonMethod/Our/projects/buffer/src/buffer.h"
+#include "buffer.h"
 // === C2R_INCLUDE_END ===
 
 // === C2R_FIELD_PTR_DEFS_BEGIN ===
