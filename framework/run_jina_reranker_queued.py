@@ -26,6 +26,7 @@ import os
 import sys
 import time
 import argparse
+import json
 import subprocess
 import re
 import threading
@@ -207,6 +208,44 @@ class JinaRerankerRunner:
         """添加项目到队列"""
         task = ProjectTask(project_name=project_name, workspace_root=workspace_root)
         self.task_queue.put(task)
+
+    def _status_path_for_task(self, task: ProjectTask) -> Optional[Path]:
+        """读取项目级 Jina 状态文件路径。"""
+        workspace_root = task.workspace_root or os.environ.get("C2R_WORKSPACE_ROOT")
+        if not workspace_root:
+            return None
+        return (
+            Path(workspace_root)
+            / "rag"
+            / "reranked_results"
+            / task.project_name
+            / "_jina_reranker_status.json"
+        )
+
+    def _failure_summary_from_status(self, task: ProjectTask) -> Optional[str]:
+        """把 reranker 写出的结构化失败原因传播到队列摘要。"""
+        status_path = self._status_path_for_task(task)
+        if not status_path or not status_path.is_file():
+            return None
+        try:
+            payload = json.loads(status_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return f"jina_status_unreadable: {exc}; status_path={status_path}"
+        status = str(payload.get("status") or "").strip()
+        reason = str(payload.get("reason") or "").strip()
+        bm25_input = str(payload.get("bm25_input_dir") or "").strip()
+        reranked_output = str(payload.get("reranked_output_dir") or "").strip()
+        parts = []
+        if status:
+            parts.append(f"status={status}")
+        if reason:
+            parts.append(f"reason={reason}")
+        if bm25_input:
+            parts.append(f"bm25_input_dir={bm25_input}")
+        if reranked_output:
+            parts.append(f"reranked_output_dir={reranked_output}")
+        parts.append(f"status_path={status_path}")
+        return "; ".join(parts)
     
     def _run_single_project(self, task: ProjectTask, gpu_id: int) -> bool:
         """运行单个项目的 Jina Reranker"""
@@ -219,10 +258,14 @@ class JinaRerankerRunner:
         try:
             # 构建环境变量
             env = os.environ.copy()
-            env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+            if gpu_id >= 0:
+                env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+            else:
+                env["CUDA_VISIBLE_DEVICES"] = ""
             env["PROJECT_NAME"] = task.project_name
             # GPU 已由队列调度器分配；下游 reranker 不应再做“全局 GPU 槽位/调度”（否则会把不同物理 GPU 错当成同一张卡）
-            env["C2R_JINA_EXTERNAL_SCHEDULER"] = "1"
+            if gpu_id >= 0:
+                env["C2R_JINA_EXTERNAL_SCHEDULER"] = "1"
 
             # 传递工作空间路径
             if task.workspace_root:
@@ -257,7 +300,7 @@ class JinaRerankerRunner:
                 return True
             else:
                 task.status = "failed"
-                task.error = result.stderr[-500:] if result.stderr else "Unknown error"
+                task.error = self._failure_summary_from_status(task) or (result.stderr[-500:] if result.stderr else f"reranker_returncode={result.returncode}")
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] 失败: {task.project_name}")
                 if task.error:
                     print(f"  错误: {task.error[:200]}...")
@@ -364,6 +407,17 @@ class JinaRerankerRunner:
             # 等待 GPU 内存释放
             time.sleep(5.0)
 
+    def run_without_gpu(self):
+        """无 GPU 时仍逐项目运行；下游 reranker 会复用缓存或使用 CPU。"""
+        print("未检测到可用 GPU，进入缓存/CPU rerank 模式...")
+        total = self.task_queue.qsize()
+        completed = 0
+        while not self.task_queue.empty():
+            task = self.task_queue.get()
+            self._run_single_project(task, -1)
+            completed += 1
+            print(f"进度: {completed}/{total}")
+
     def run_parallel(self, num_workers: int = None):
         """并行模式运行"""
         if num_workers is None:
@@ -406,8 +460,9 @@ class JinaRerankerRunner:
     def run(self, num_workers: int = None):
         """运行所有任务"""
         if self.gpu_monitor.num_gpus <= 0:
-            print("错误: 未检测到可用 GPU（CUDA_VISIBLE_DEVICES / nvidia-smi / torch.cuda 都不可用）。")
+            print("未检测到可用 GPU（CUDA_VISIBLE_DEVICES / nvidia-smi / torch.cuda 都不可用）；将逐项目复用缓存或使用 CPU rerank。")
             self.gpu_monitor.print_status()
+            self.run_without_gpu()
             return
         if self.serial_mode or self.gpu_monitor.num_gpus <= 1 or (num_workers is not None and int(num_workers) <= 1):
             self.run_serial()

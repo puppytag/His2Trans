@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -20,7 +21,22 @@ logger = logging.getLogger(__name__)
 
 CODE_GLOBS = ["*.c", "*.cc", "*.cpp", "*.cxx", "*.h", "*.hh", "*.hpp"]
 CODE_EXTS = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp"}
-MAX_SNIPPET_LEN = 500
+
+
+def _positive_int_env(name: str) -> Optional[int]:
+    """读取正整数环境变量；空值/0 表示不限制。"""
+    raw = os.environ.get(name, "").strip().lower()
+    if raw in ("", "0", "none", "off", "false", "no", "unbounded"):
+        return None
+    try:
+        value = int(raw)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+MAX_SNIPPET_LEN = _positive_int_env("C2R_USAGE_SNIPPET_MAX_CHARS")
+DEFAULT_SNIPPET_RADIUS = _positive_int_env("C2R_USAGE_SNIPPET_RADIUS") or 3
 
 
 def _load_cache(cache_file: Path) -> Dict[str, List[Dict]]:
@@ -45,15 +61,18 @@ def _read_file_lines(path: Path) -> List[str]:
         return []
 
 
-def _build_snippet(lines: List[str], line_no: int, radius: int = 1) -> str:
+def _build_snippet(lines: List[str], line_no: int, radius: Optional[int] = None) -> str:
+    """构建调用点附近代码片段；默认不做字符裁剪。"""
     if not lines:
         return ""
+    if radius is None:
+        radius = DEFAULT_SNIPPET_RADIUS
     idx = max(0, line_no - 1)
     start = max(0, idx - radius)
     end = min(len(lines), idx + radius + 1)
     snippet = "\n".join(lines[start:end]).strip()
     snippet = snippet.replace("\t", "    ")
-    if len(snippet) > MAX_SNIPPET_LEN:
+    if MAX_SNIPPET_LEN is not None and len(snippet) > MAX_SNIPPET_LEN:
         snippet = snippet[:MAX_SNIPPET_LEN] + "\n/* ...truncated... */"
     return snippet
 
@@ -72,7 +91,8 @@ def _estimate_arg_count(snippet: str, symbol: str) -> Optional[int]:
     return len(items)
 
 
-def _collect_examples(project_root: Path, symbol: str, limit: int = 3) -> List[Dict[str, str]]:
+def _collect_examples(project_root: Path, symbol: str, limit: Optional[int] = None) -> List[Dict[str, str]]:
+    """从工程中收集符号用法示例。"""
     pattern = rf"{re.escape(symbol)}\s*\("
     project_root = project_root.resolve()
     if not project_root.exists():
@@ -84,9 +104,9 @@ def _collect_examples(project_root: Path, symbol: str, limit: int = 3) -> List[D
         "--no-heading",
         "--color",
         "never",
-        "-m",
-        str(limit * 4),
     ]
+    if limit is not None:
+        cmd.extend(["-m", str(limit * 4)])
     for glob in CODE_GLOBS:
         cmd.extend(["--glob", glob])
     cmd.extend([pattern, str(project_root)])
@@ -135,7 +155,7 @@ def _collect_examples(project_root: Path, symbol: str, limit: int = 3) -> List[D
             "snippet": snippet,
             "arg_count": arg_count
         })
-        if len(examples) >= limit:
+        if limit is not None and len(examples) >= limit:
             break
     return examples
 
@@ -144,8 +164,9 @@ def ensure_usage_examples(
     project_root: Path,
     cache_file: Path,
     symbols: Sequence[str],
-    max_examples_per_symbol: int = 2
+    max_examples_per_symbol: Optional[int] = None
 ) -> Dict[str, List[Dict[str, str]]]:
+    """确保指定符号的用法示例已缓存。"""
     project_root = Path(project_root)
     cache_file = Path(cache_file)
     cache = _load_cache(cache_file)
@@ -161,7 +182,9 @@ def ensure_usage_examples(
     targets: List[str] = []
     for normalized in ordered_symbols:
         current = cache.get(normalized, [])
-        if len(current) >= max_examples_per_symbol:
+        if max_examples_per_symbol is not None and len(current) >= max_examples_per_symbol:
+            continue
+        if max_examples_per_symbol is None and current:
             continue
         targets.append(normalized)
     for symbol in targets:
@@ -177,7 +200,7 @@ def ensure_usage_examples(
                     continue
                 seen_keys.add(key)
                 deduped.append(item)
-                if len(deduped) >= max_examples_per_symbol:
+                if max_examples_per_symbol is not None and len(deduped) >= max_examples_per_symbol:
                     break
             cache[symbol] = deduped
             updated = True
@@ -191,7 +214,7 @@ def main():
     parser.add_argument("project_root", help="C/C++ 工程根目录")
     parser.add_argument("cache_file", help="缓存文件路径 (JSON)")
     parser.add_argument("symbol", nargs="+", help="要索引的符号名称")
-    parser.add_argument("--max-examples", type=int, default=2, help="每个符号保留的示例数量")
+    parser.add_argument("--max-examples", type=int, default=None, help="每个符号保留的示例数量")
     args = parser.parse_args()
 
     project_root = Path(args.project_root)

@@ -32,22 +32,70 @@ def _node_text(code: bytes, node) -> str:
     return code[node.start_byte:node.end_byte].decode("utf-8", errors="ignore")
 
 
+def _iter_children(node):
+    """兼容不同 tree-sitter 绑定的子节点遍历。"""
+    try:
+        children = getattr(node, "children", None)
+        if children is not None:
+            return list(children)
+    except Exception:
+        pass
+    result = []
+    try:
+        count = int(getattr(node, "child_count", 0) or 0)
+    except Exception:
+        count = 0
+    for idx in range(count):
+        try:
+            result.append(node.child(idx))
+        except Exception:
+            continue
+    return result
+
+
 def _iter_nodes(node):
+    """深度优先遍历语法树节点。"""
     stack = [node]
     while stack:
         current = stack.pop()
         yield current
-        stack.extend(reversed(current.children))
+        stack.extend(reversed(_iter_children(current)))
+
+
+def _find_declarator_identifier(node, code: bytes) -> Optional[str]:
+    """从嵌套 declarator 中提取函数名。"""
+    current = node
+    visited = set()
+    while current is not None:
+        key = (
+            getattr(current, "type", ""),
+            getattr(current, "start_byte", -1),
+            getattr(current, "end_byte", -1),
+        )
+        if key in visited:
+            return None
+        visited.add(key)
+        if current.type in ("identifier", "field_identifier"):
+            return _node_text(code, current)
+        try:
+            nxt = current.child_by_field_name("declarator")
+        except Exception:
+            nxt = None
+        if nxt is None:
+            break
+        current = nxt
+    for child in _iter_nodes(node):
+        if child.type in ("identifier", "field_identifier"):
+            return _node_text(code, child)
+    return None
 
 
 def _extract_function_name(node, code: bytes) -> Optional[str]:
+    """提取 function_definition 的函数名。"""
     declarator = node.child_by_field_name("declarator")
     if declarator is None:
         return None
-    identifier = declarator.child_by_field_name("declarator")
-    if identifier is None:
-        return None
-    return _node_text(code, identifier)
+    return _find_declarator_identifier(declarator, code)
 
 
 def _find_function_node(root, code: bytes, func_name: str):
@@ -61,6 +109,7 @@ def _find_function_node(root, code: bytes, func_name: str):
 
 
 def _collect_function_definitions(root, code: bytes) -> Dict[str, str]:
+    """收集同文件函数定义文本。"""
     defs = {}
     for node in _iter_nodes(root):
         if node.type != "function_definition":
@@ -71,6 +120,18 @@ def _collect_function_definitions(root, code: bytes) -> Dict[str, str]:
         snippet = _node_text(code, node).strip()
         defs[name] = snippet
     return defs
+
+
+def _collect_function_nodes(root, code: bytes) -> Dict[str, object]:
+    """收集同文件函数定义节点，供递归语义闭包使用。"""
+    nodes: Dict[str, object] = {}
+    for node in _iter_nodes(root):
+        if node.type != "function_definition":
+            continue
+        name = _extract_function_name(node, code)
+        if name:
+            nodes[name] = node
+    return nodes
 
 
 def _sanitize_symbol(text: str) -> str:
@@ -127,6 +188,7 @@ def extract_semantic_slice(source_path: Path, function_name: str) -> Dict:
     root = tree.root_node
 
     function_defs = _collect_function_definitions(root, code_bytes)
+    function_nodes = _collect_function_nodes(root, code_bytes)
     target_node = _find_function_node(root, code_bytes, function_name)
 
     if target_node is None:
@@ -137,29 +199,40 @@ def extract_semantic_slice(source_path: Path, function_name: str) -> Dict:
             "unresolved_symbols": []
         }
 
-    referenced = _collect_referenced_symbols(target_node, code_bytes)
-    referenced.discard(function_name)
-
     infile_defs: List[Dict[str, str]] = []
-    unresolved: List[str] = []
+    unresolved: Set[str] = set()
+    queued = sorted(_collect_referenced_symbols(target_node, code_bytes) - {function_name})
+    queued_seen: Set[str] = set(queued)
+    included_defs: Set[str] = set()
 
-    for symbol in sorted(referenced):
+    while queued:
+        symbol = queued.pop(0)
+        if symbol in included_defs:
+            continue
         if symbol in function_defs:
             snippet = function_defs[symbol]
-            if len(snippet) > 2000:
-                snippet = snippet[:2000] + "\n/* ...truncated... */"
             infile_defs.append({
                 "name": symbol,
                 "code": snippet
             })
+            included_defs.add(symbol)
+            helper_node = function_nodes.get(symbol)
+            if helper_node is not None:
+                for child_symbol in sorted(_collect_referenced_symbols(helper_node, code_bytes)):
+                    if child_symbol in {function_name, symbol}:
+                        continue
+                    if child_symbol in included_defs or child_symbol in queued_seen:
+                        continue
+                    queued.append(child_symbol)
+                    queued_seen.add(child_symbol)
         else:
-            unresolved.append(symbol)
+            unresolved.add(symbol)
 
     return {
         "func_name": function_name,
         "source_path": str(source_path),
         "infile_definitions": infile_defs,
-        "unresolved_symbols": unresolved
+        "unresolved_symbols": sorted(unresolved)
     }
 
 

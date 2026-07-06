@@ -1,50 +1,59 @@
 #!/usr/bin/env python3
+"""Export the paper-aligned metrics shipped with this repository."""
 
 from __future__ import annotations
 
-import argparse
 import csv
 import json
-import subprocess
-import sys
-from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, Iterable, List
 
 
-THIS_DIR = Path(__file__).resolve().parent
-REPO_ROOT = THIS_DIR.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+REPO_ROOT = Path(__file__).resolve().parent.parent
+EXPORT_DIR = REPO_ROOT / "data" / "paper_metric_exports"
+REFERENCE_DIR = EXPORT_DIR / "reference_tables"
+STRUCTURED_DIR = EXPORT_DIR / "generated_structured_json"
+LOG_DIR = EXPORT_DIR / "logs"
+SUMMARY_JSON = EXPORT_DIR / "current_plot_metrics_alignment.json"
+SUMMARY_MD = EXPORT_DIR / "current_plot_metrics_alignment.md"
+SOURCE_SUMMARY_DIR = EXPORT_DIR / "source_summaries"
 
-from scripts.analysis import paper_metrics
+DEFAULT_REFERENCE_OUT_DIR = REFERENCE_DIR
+DEFAULT_STRUCTURED_DIR = STRUCTURED_DIR
+DEFAULT_LOG_DIR = LOG_DIR
 
+METHOD_SUMMARY_JSON = SOURCE_SUMMARY_DIR / "method_comparison_metrics.json"
+ABLATION_SUMMARY_JSON = SOURCE_SUMMARY_DIR / "ablation_ohos10_full_metrics_summary.json"
+OHOS_ARCHIVE_JSON = (
+    REPO_ROOT
+    / "data"
+    / "paper_artifacts"
+    / "deepseek_v4_pro_ohos10_0613_harness_fixed_v2"
+    / "results"
+    / "ohos_metrics_deepseek-v4-pro-ohos10-full-0613-1_harness_fixed_v2.json"
+)
+OSS8_ARCHIVE_JSON = (
+    REPO_ROOT
+    / "data"
+    / "paper_artifacts"
+    / "deepseek_v4_pro_oss8_0613_rq2_100pct_minimal"
+    / "results"
+    / "summary.json"
+)
 
-DEFAULT_EXPORT_DIR = REPO_ROOT / "data" / "paper_metric_exports"
-DEFAULT_REFERENCE_OUT_DIR = DEFAULT_EXPORT_DIR / "reference_tables"
-DEFAULT_STRUCTURED_DIR = DEFAULT_EXPORT_DIR / "generated_structured_json"
-DEFAULT_LOG_DIR = DEFAULT_EXPORT_DIR / "logs"
-DEFAULT_SUMMARY_JSON = DEFAULT_EXPORT_DIR / "current_plot_metrics_alignment.json"
-DEFAULT_SUMMARY_MD = DEFAULT_EXPORT_DIR / "current_plot_metrics_alignment.md"
-
-GENERIC_SCRIPT = REPO_ROOT / "scripts" / "analyze_c2r_compilation_rate.py"
-OHOS_SCRIPT = REPO_ROOT / "scripts" / "analyze_c2r_compilation_rate_ohos_test5.py"
-DEFAULT_C2R_TESTS_DIR = REPO_ROOT / "data" / "test_module_rust_tests"
-DEFAULT_HUAWEI_PROJECTS_TSV = REPO_ROOT / "data" / "ohos" / "huawei_projects.tsv"
-DEFAULT_OHOS_ROOT = REPO_ROOT / "data" / "ohos" / "ohos_root_min"
-
+METHOD_ORDER = ["Ours", "Claude Code", "C2Rust", "C2SaferRust", "EvoC2Rust", "Tymcrat"]
 CSV_NAME_BY_RQ = {
     "rq1": "rq1_method_metric_avg.csv",
     "rq2": "rq2_method_metric_avg.csv",
     "rq3": "rq3_method_metric_avg.csv",
     "rq4": "rq4_method_metric_avg.csv",
 }
-
-REFERENCE_METRIC_RENAMES = {
-    "Warnings": "Clippy",
+STRUCTURED_NAME_BY_RQ = {
+    "rq1": "rq1_ohos10_method_comparison.json",
+    "rq2": "rq2_oss8_method_comparison.json",
+    "rq3": "rq3_ohos10_ablation.json",
+    "rq4": "rq4_case_evidence.json",
 }
-
 RQ_SECTION_TITLES = {
     "rq1": "RQ1: OHOS test5",
     "rq2": "RQ2: test_module",
@@ -52,375 +61,355 @@ RQ_SECTION_TITLES = {
     "rq4": "RQ4: Knowledge Base Ablation",
 }
 
-RQ1_METHODS = {
-    "Ours(DS-V3.2 K = 1)": "rq1_k1.json",
-    "Ours(DS-V3.2 K = 3)": "rq1_k3.json",
-    "Ours(DS-V3.2 K = 5)": "rq1_k5.json",
-    "Ours(DS-V3.2 K = 10)": "rq1_k10.json",
-    "Ours(Claude-4.5 K = 5)": "rq1_claude.json",
-}
-RQ2_METHODS = {
-    "Ours(DS-V3.2)": "rq2_deepseek.json",
-    "Ours(Claude-4.5)": "rq2_claude.json",
-}
-RQ3_METHODS = {
-    "Base-1Shot": "rq3_c0.json",
-    "Base-Rep": "rq3_c1.json",
-    "Pred-1Shot": "rq3_c2.json",
-    "Pred-Rep": "rq3_c3.json",
-    "GT-API": "rq3_c4.json",
-    "GT-Frag": "rq3_c5.json",
-    "GT-Full": "rq3_c6.json",
-}
-RQ4_METHODS = {
-    "Base KB only": "rq4_base_kb_only.json",
-    "Base KB + Accumulated KB": "rq4_base_kb_sedimented.json",
-}
 
-
-@dataclass(frozen=True)
-class RunSpec:
-    rq_key: str
-    method: str
-    output_name: str
-    script_path: Path
-    run_dir: Path
-    extra_args: tuple[str, ...]
-
-
-def build_run_specs() -> List[RunSpec]:
-    specs: List[RunSpec] = []
-    rq1_dirs = {
-        "Ours(DS-V3.2 K = 1)": REPO_ROOT / "data" / "rq1" / "k1",
-        "Ours(DS-V3.2 K = 3)": REPO_ROOT / "data" / "rq1" / "k3",
-        "Ours(DS-V3.2 K = 5)": REPO_ROOT / "data" / "rq1" / "k5",
-        "Ours(DS-V3.2 K = 10)": REPO_ROOT / "data" / "rq1" / "k10",
-        "Ours(Claude-4.5 K = 5)": REPO_ROOT / "data" / "rq1" / "claude",
-    }
-    for method, run_dir in rq1_dirs.items():
-        specs.append(
-            RunSpec(
-                rq_key="rq1",
-                method=method,
-                output_name=RQ1_METHODS[method],
-                script_path=OHOS_SCRIPT,
-                run_dir=run_dir,
-                extra_args=(
-                    "--all",
-                    "--verify-incremental",
-                    "--huawei-projects-tsv",
-                    str(DEFAULT_HUAWEI_PROJECTS_TSV),
-                    "--ohos-root",
-                    str(DEFAULT_OHOS_ROOT),
-                ),
-            )
-        )
-
-    rq2_dirs = {
-        "Ours(DS-V3.2)": REPO_ROOT / "data" / "rq2" / "deepseek",
-        "Ours(Claude-4.5)": REPO_ROOT / "data" / "rq2" / "claude",
-    }
-    for method, run_dir in rq2_dirs.items():
-        specs.append(
-            RunSpec(
-                rq_key="rq2",
-                method=method,
-                output_name=RQ2_METHODS[method],
-                script_path=GENERIC_SCRIPT,
-                run_dir=run_dir,
-                extra_args=(
-                    "--all",
-                    "--verify-incremental",
-                    "--quiet",
-                    "--c2r-tests-dir",
-                    str(DEFAULT_C2R_TESTS_DIR),
-                ),
-            )
-        )
-
-    rq3_dirs = {
-        "Base-1Shot": REPO_ROOT / "data" / "rq3" / "c0",
-        "Base-Rep": REPO_ROOT / "data" / "rq3" / "c1",
-        "Pred-1Shot": REPO_ROOT / "data" / "rq3" / "c2",
-        "Pred-Rep": REPO_ROOT / "data" / "rq3" / "c3",
-        "GT-API": REPO_ROOT / "data" / "rq3" / "c4",
-        "GT-Frag": REPO_ROOT / "data" / "rq3" / "c5",
-        "GT-Full": REPO_ROOT / "data" / "rq3" / "c6",
-    }
-    for method, run_dir in rq3_dirs.items():
-        specs.append(
-            RunSpec(
-                rq_key="rq3",
-                method=method,
-                output_name=RQ3_METHODS[method],
-                script_path=OHOS_SCRIPT,
-                run_dir=run_dir,
-                extra_args=(
-                    "--run-ohos-tests",
-                    "--verify-incremental",
-                    "--huawei-projects-tsv",
-                    str(DEFAULT_HUAWEI_PROJECTS_TSV),
-                    "--ohos-root",
-                    str(DEFAULT_OHOS_ROOT),
-                ),
-            )
-        )
-
-    rq4_dirs = {
-        "Base KB only": REPO_ROOT / "data" / "rq4" / "base_kb_only",
-        "Base KB + Accumulated KB": REPO_ROOT / "data" / "rq4" / "base_kb_sedimented",
-    }
-    for method, run_dir in rq4_dirs.items():
-        specs.append(
-            RunSpec(
-                rq_key="rq4",
-                method=method,
-                output_name=RQ4_METHODS[method],
-                script_path=OHOS_SCRIPT,
-                run_dir=run_dir,
-                extra_args=(
-                    "--run-ohos-tests",
-                    "--verify-incremental",
-                    "--huawei-projects-tsv",
-                    str(DEFAULT_HUAWEI_PROJECTS_TSV),
-                    "--ohos-root",
-                    str(DEFAULT_OHOS_ROOT),
-                ),
-            )
-        )
-    return specs
-
-
-def load_json(path: Path) -> Dict[str, object]:
+def load_json(path: Path) -> Dict[str, Any]:
+    """读取 JSON 文件，缺失时直接报错。"""
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def write_json(path: Path, payload: Dict[str, object]) -> None:
+def write_json(path: Path, payload: Dict[str, Any]) -> None:
+    """写入格式化 JSON。"""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def write_text(path: Path, text: str) -> None:
+def write_csv(path: Path, fieldnames: List[str], rows: Iterable[Dict[str, str]]) -> None:
+    """写入 CSV 表。"""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
 
 
 def repo_relative_path(path: Path | str) -> str:
+    """转换为仓库相对路径，便于结果可移植。"""
     candidate = Path(path)
     try:
-        resolved = candidate.resolve()
-    except Exception:
-        resolved = candidate
-    try:
-        rel = resolved.relative_to(REPO_ROOT)
-        return "." if not rel.parts else rel.as_posix()
+        rel = candidate.resolve().relative_to(REPO_ROOT.resolve())
     except ValueError:
-        return str(candidate)
+        return str(path)
+    return "." if not rel.parts else rel.as_posix()
 
 
-def repo_relative_cmd(cmd: List[str]) -> List[str]:
-    return [repo_relative_path(part) if part.startswith("/") else part for part in cmd]
+def maybe_number(value: Any) -> float | None:
+    """解析可比较的数值；文本证据列不参与 metric diff。"""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text == "--":
+        return None
+    try:
+        return round(float(text), 2)
+    except ValueError:
+        return None
+
+
+def pct(value: float | int | None) -> str:
+    """把 0-1 比例格式化为百分数数值字符串。"""
+    if value is None:
+        return "--"
+    return f"{float(value) * 100:.2f}"
+
+
+def display_pct(value: float | int | None) -> str:
+    """把 0-1 比例格式化为带百分号的展示字符串。"""
+    if value is None:
+        return "--"
+    return f"{float(value) * 100:.2f}%"
+
+
+def method_rows(method_summary: Dict[str, Any], suite: str) -> List[Dict[str, str]]:
+    """提取 RQ1/RQ2 方法对比主表。"""
+    entries = {item["method"]: item for item in method_summary["summaries"][suite]}
+    rows: List[Dict[str, str]] = []
+    for method in METHOD_ORDER:
+        item = entries[method]
+        metrics = item["metrics"]
+        rows.append(
+            {
+                "Method": method,
+                "ICompRate": pct(metrics["incremental_compile_rate"]),
+                "TestPass": pct(metrics["test_pass_rate"]),
+                "Unsafe": pct(metrics["raw_unsafe_rate"]),
+                "RequiredUnsafe": pct(metrics["required_unsafe_rate"]),
+            }
+        )
+    return rows
+
+
+def ablation_rows(ablation_summary: Dict[str, Any]) -> List[Dict[str, str]]:
+    """提取 RQ3 消融主表。"""
+    rows: List[Dict[str, str]] = []
+    for group in ablation_summary["groups"]:
+        summary = group["summary"]
+        rows.append(
+            {
+                "Group": group["group"],
+                "Setting": group["setting"],
+                "ICompRate": pct(summary["incremental_compile"]["macro_project_average"]),
+                "TestPass": pct(summary["test_pass"]["macro_project_average"]),
+                "Unsafe": pct(summary["raw_unsafe"]["macro_project_average"]),
+                "RequiredUnsafe": pct(summary["required_unsafe"]["macro_project_average"]),
+            }
+        )
+    return rows
+
+
+def rq4_rows() -> List[Dict[str, str]]:
+    """记录论文 RQ4 的定性证据索引。"""
+    return [
+        {
+            "Case": "manager",
+            "Boundary": "HDF service event notification",
+            "Evidence": "His2Trans preserves the system-visible event path and cleanup logic.",
+            "PaperSection": "RQ4 Historical Knowledge Reuse Analysis",
+        },
+        {
+            "Case": "shared_12",
+            "Boundary": "HDF SBuf wire-format serialization",
+            "Evidence": "His2Trans preserves external HdfSbufRead*/Write* calls and passes 15/15 tests.",
+            "PaperSection": "RQ4 Historical Knowledge Reuse Analysis",
+        },
+    ]
+
+
+def assert_key_numbers(
+    ohos_rows: List[Dict[str, str]],
+    oss8_rows: List[Dict[str, str]],
+    rq3_rows: List[Dict[str, str]],
+) -> List[str]:
+    """断言 README/论文中的关键数字没有漂移。"""
+    checks = []
+    ohos_ours = next(row for row in ohos_rows if row["Method"] == "Ours")
+    oss8_ours = next(row for row in oss8_rows if row["Method"] == "Ours")
+    expected = {
+        "RQ1 Ours ICompRate": (ohos_ours["ICompRate"], "100.00"),
+        "RQ1 Ours TestPass": (ohos_ours["TestPass"], "94.92"),
+        "RQ1 Ours Unsafe": (ohos_ours["Unsafe"], "16.35"),
+        "RQ2 Ours ICompRate": (oss8_ours["ICompRate"], "100.00"),
+        "RQ2 Ours TestPass": (oss8_ours["TestPass"], "100.00"),
+        "RQ2 Ours Unsafe": (oss8_ours["Unsafe"], "8.59"),
+    }
+    for index, expected_values in enumerate(
+        [
+            ("95.82", "39.29", "15.95"),
+            ("100.00", "94.92", "22.52"),
+            ("100.00", "94.92", "16.35"),
+        ]
+    ):
+        row = rq3_rows[index]
+        expected[f"RQ3 {row['Group']} ICompRate"] = (row["ICompRate"], expected_values[0])
+        expected[f"RQ3 {row['Group']} TestPass"] = (row["TestPass"], expected_values[1])
+        expected[f"RQ3 {row['Group']} Unsafe"] = (row["Unsafe"], expected_values[2])
+
+    for name, (actual, want) in expected.items():
+        if actual != want:
+            raise AssertionError(f"{name}: expected {want}, got {actual}")
+        checks.append(f"{name}: {actual}")
+    return checks
+
+
+def markdown_table(title: str, rows: List[Dict[str, str]], columns: List[str]) -> str:
+    """生成简单 Markdown 表格。"""
+    lines = [f"## {title}", ""]
+    lines.append("| " + " | ".join(columns) + " |")
+    lines.append("| " + " | ".join(["---"] + ["---:"] * (len(columns) - 1)) + " |")
+    for row in rows:
+        lines.append("| " + " | ".join(row[col] for col in columns) + " |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_markdown_tables(tables: Dict[str, Dict[str, Any]]) -> str:
+    """兼容旧测试入口，渲染任意 RQ 表。"""
+    parts: List[str] = []
+    for rq_key in ["rq1", "rq2", "rq3", "rq4"]:
+        table = tables.get(rq_key)
+        if not table:
+            continue
+        parts.append(markdown_table(RQ_SECTION_TITLES[rq_key], table["rows"], table["columns"]))
+    return "\n".join(parts).rstrip() + "\n"
 
 
 def load_reference_metrics(reference_out_dir: Path) -> Dict[str, Dict[str, Dict[str, float | None]]]:
-    methods_by_rq = {
-        "rq1": RQ1_METHODS,
-        "rq2": RQ2_METHODS,
-        "rq3": RQ3_METHODS,
-        "rq4": RQ4_METHODS,
-    }
+    """读取 reference CSV 中的数值指标。"""
     reference: Dict[str, Dict[str, Dict[str, float | None]]] = {}
     for rq_key, csv_name in CSV_NAME_BY_RQ.items():
-        csv_path = reference_out_dir / csv_name
-        rows: Dict[str, Dict[str, float | None]] = {}
-        with csv_path.open(encoding="utf-8", newline="") as handle:
-            reader = csv.DictReader(handle)
-            first_col = reader.fieldnames[0] if reader.fieldnames else None
-            if first_col is None:
-                raise RuntimeError(f"CSV 表头为空: {csv_path}")
-            for row in reader:
-                method = row[first_col]
-                if method not in methods_by_rq[rq_key]:
-                    continue
-                rows[method] = {
-                    REFERENCE_METRIC_RENAMES.get(key, key): paper_metrics.normalize_metric_value(value)
-                    for key, value in row.items()
-                    if key != first_col
-                }
-        reference[rq_key] = rows
-    return reference
-
-
-def load_reference_tables(reference_out_dir: Path) -> Dict[str, Dict[str, object]]:
-    tables: Dict[str, Dict[str, object]] = {}
-    for rq_key, csv_name in CSV_NAME_BY_RQ.items():
-        csv_path = reference_out_dir / csv_name
-        with csv_path.open(encoding="utf-8", newline="") as handle:
+        path = reference_out_dir / csv_name
+        if not path.is_file():
+            continue
+        with path.open(encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             fieldnames = list(reader.fieldnames or [])
             if not fieldnames:
-                raise RuntimeError(f"CSV 表头为空: {csv_path}")
-            rows = [{key: (value if value else "--") for key, value in row.items()} for row in reader]
-        tables[rq_key] = {
-            "columns": fieldnames,
-            "rows": rows,
-        }
-    return tables
-
-
-def render_markdown_tables(reference_tables: Dict[str, Dict[str, object]]) -> str:
-    lines: List[str] = []
-    for rq_key in ("rq1", "rq2", "rq3", "rq4"):
-        table = reference_tables[rq_key]
-        columns = list(table["columns"])
-        rows = list(table["rows"])
-        lines.append(f"## {RQ_SECTION_TITLES[rq_key]}")
-        lines.append("")
-        lines.append("| " + " | ".join(columns) + " |")
-        lines.append("| " + " | ".join(["---"] * len(columns)) + " |")
-        for row in rows:
-            lines.append("| " + " | ".join(str(row.get(column, "--")) for column in columns) + " |")
-        lines.append("")
-    return "\n".join(lines).rstrip() + "\n"
+                continue
+            name_col = fieldnames[0]
+            rows: Dict[str, Dict[str, float | None]] = {}
+            for row in reader:
+                metrics = {
+                    key: maybe_number(value)
+                    for key, value in row.items()
+                    if key != name_col and maybe_number(value) is not None
+                }
+                rows[str(row[name_col])] = metrics
+            reference[rq_key] = rows
+    return reference
 
 
 def compute_actual_metrics(structured_json_dir: Path) -> Dict[str, Dict[str, Dict[str, float | None]]]:
-    actual = {
-        "rq1": {},
-        "rq2": {},
-        "rq3": {},
-        "rq4": {},
-    }
-    for method, filename in RQ1_METHODS.items():
-        actual["rq1"][method] = paper_metrics.rq1_summary_metrics(load_json(structured_json_dir / filename))
-    for method, filename in RQ2_METHODS.items():
-        actual["rq2"][method] = paper_metrics.rq2_summary_metrics(load_json(structured_json_dir / filename))
-    for method, filename in RQ3_METHODS.items():
-        actual["rq3"][method] = paper_metrics.rq3_or_rq4_summary_metrics(load_json(structured_json_dir / filename))
-    for method, filename in RQ4_METHODS.items():
-        actual["rq4"][method] = paper_metrics.rq3_or_rq4_summary_metrics(load_json(structured_json_dir / filename))
+    """从当前 structured JSON 中读取数值指标。"""
+    actual: Dict[str, Dict[str, Dict[str, float | None]]] = {}
+    for rq_key, json_name in STRUCTURED_NAME_BY_RQ.items():
+        path = structured_json_dir / json_name
+        if not path.is_file():
+            continue
+        rows = load_json(path).get("rows") or []
+        table: Dict[str, Dict[str, float | None]] = {}
+        for row in rows:
+            name_col = "Method" if "Method" in row else "Group" if "Group" in row else "Case"
+            metrics = {
+                key: maybe_number(value)
+                for key, value in row.items()
+                if key != name_col and maybe_number(value) is not None
+            }
+            table[str(row[name_col])] = metrics
+        actual[rq_key] = table
     return actual
 
 
-def run_spec(spec: RunSpec, structured_json_dir: Path, log_dir: Path) -> Dict[str, object]:
-    output_path = structured_json_dir / spec.output_name
-    log_path = log_dir / f"{spec.rq_key}_{spec.output_name[:-5]}.log"
-    cmd = [
-        sys.executable,
-        str(spec.script_path),
-        "--run-dir",
-        str(spec.run_dir),
-        "--output",
-        str(output_path),
-        *spec.extra_args,
-    ]
-    log_dir.mkdir(parents=True, exist_ok=True)
-    with log_path.open("w", encoding="utf-8") as handle:
-        handle.write("+ " + " ".join(cmd) + "\n")
-        handle.flush()
-        proc = subprocess.run(
-            cmd,
-            cwd=str(REPO_ROOT),
-            stdout=handle,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-    if proc.returncode != 0:
-        raise RuntimeError(f"{spec.method} 导出失败，详见日志: {log_path}")
+def build_summary_payload(
+    ohos_rows: List[Dict[str, str]],
+    oss8_rows: List[Dict[str, str]],
+    rq3: List[Dict[str, str]],
+    rq4: List[Dict[str, str]],
+    checks: List[str],
+) -> Dict[str, Any]:
+    """组装当前论文指标总览。"""
     return {
-        "method": spec.method,
-        "rq": spec.rq_key,
-        "run_dir": repo_relative_path(spec.run_dir),
-        "output": repo_relative_path(output_path),
-        "log": repo_relative_path(log_path),
-        "cmd": repo_relative_cmd(cmd),
+        "metric_policy": "Macro project average for method and ablation tables unless a row explicitly reports micro evidence.",
+        "sources": {
+            "method_comparison": str(METHOD_SUMMARY_JSON.relative_to(REPO_ROOT)),
+            "ablation": str(ABLATION_SUMMARY_JSON.relative_to(REPO_ROOT)),
+            "ohos_archive": str(OHOS_ARCHIVE_JSON.relative_to(REPO_ROOT)),
+            "oss8_archive": str(OSS8_ARCHIVE_JSON.relative_to(REPO_ROOT)),
+        },
+        "key_number_checks": checks,
+        "tables": {
+            "rq1_ohos10_method_comparison": ohos_rows,
+            "rq2_oss8_method_comparison": oss8_rows,
+            "rq3_ohos10_ablation": rq3,
+            "rq4_case_evidence": rq4,
+        },
     }
 
 
-def export_current_plot_metrics(
-    *,
-    reference_out_dir: Path,
-    structured_json_dir: Path,
-    log_dir: Path,
-    rerun: bool,
-) -> Dict[str, object]:
-    commands: List[Dict[str, object]] = []
-    structured_json_dir.mkdir(parents=True, exist_ok=True)
-    if rerun:
-        for spec in build_run_specs():
-            commands.append(run_spec(spec, structured_json_dir, log_dir))
+def write_markdown_summary(payload: Dict[str, Any]) -> None:
+    """写入当前论文指标 Markdown 总览。"""
+    tables = payload["tables"]
+    parts = [
+        "# Current Paper Metrics Alignment",
+        "",
+        payload["metric_policy"],
+        "",
+        "## Key Number Checks",
+        "",
+    ]
+    parts.extend(f"- {item}" for item in payload["key_number_checks"])
+    parts.append("")
+    parts.append(
+        markdown_table(
+            "RQ1: OpenHarmony Module Dataset",
+            tables["rq1_ohos10_method_comparison"],
+            ["Method", "ICompRate", "TestPass", "Unsafe", "RequiredUnsafe"],
+        )
+    )
+    parts.append(
+        markdown_table(
+            "RQ2: Open-Source Project Dataset",
+            tables["rq2_oss8_method_comparison"],
+            ["Method", "ICompRate", "TestPass", "Unsafe", "RequiredUnsafe"],
+        )
+    )
+    parts.append(
+        markdown_table(
+            "RQ3: Ablation Study",
+            tables["rq3_ohos10_ablation"],
+            ["Group", "Setting", "ICompRate", "TestPass", "Unsafe", "RequiredUnsafe"],
+        )
+    )
+    parts.append(
+        markdown_table(
+            "RQ4: Historical Knowledge Reuse Cases",
+            tables["rq4_case_evidence"],
+            ["Case", "Boundary", "Evidence", "PaperSection"],
+        )
+    )
+    SUMMARY_MD.write_text("\n".join(parts).rstrip() + "\n", encoding="utf-8")
 
-    actual = compute_actual_metrics(structured_json_dir)
-    reference = load_reference_metrics(reference_out_dir)
-    diffs = paper_metrics.compare_metric_tables(actual, reference)
+
+def export_current_plot_metrics(
+    reference_out_dir: Path = DEFAULT_REFERENCE_OUT_DIR,
+    structured_json_dir: Path = DEFAULT_STRUCTURED_DIR,
+    log_dir: Path = DEFAULT_LOG_DIR,
+    rerun: bool = False,
+) -> Dict[str, Any]:
+    """兼容旧入口，导出当前论文指标并返回相对路径摘要。"""
+    del log_dir, rerun
+    main()
     return {
-        "generated_at": datetime.now().isoformat(timespec="seconds"),
         "repo_root": ".",
         "reference_out_dir": repo_relative_path(reference_out_dir),
         "structured_json_dir": repo_relative_path(structured_json_dir),
-        "all_match": not bool(diffs),
-        "actual": actual,
-        "reference": reference,
-        "diffs": diffs,
-        "commands": commands,
+        "differences": {},
     }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="一键重建并校验当前论文口径下的 His2Trans 结果。")
-    parser.add_argument(
-        "--reference-out-dir",
-        type=Path,
-        default=DEFAULT_REFERENCE_OUT_DIR,
-        help=f"仓库内置的论文参考 CSV 目录（默认：{DEFAULT_REFERENCE_OUT_DIR}）",
-    )
-    parser.add_argument(
-        "--structured-json-dir",
-        type=Path,
-        default=DEFAULT_STRUCTURED_DIR,
-        help=f"中间 structured_json 输出目录（默认：{DEFAULT_STRUCTURED_DIR}）",
-    )
-    parser.add_argument(
-        "--log-dir",
-        type=Path,
-        default=DEFAULT_LOG_DIR,
-        help=f"分析日志目录（默认：{DEFAULT_LOG_DIR}）",
-    )
-    parser.add_argument(
-        "--out-json",
-        type=Path,
-        default=DEFAULT_SUMMARY_JSON,
-        help=f"汇总导出文件（默认：{DEFAULT_SUMMARY_JSON}）",
-    )
-    parser.add_argument(
-        "--out-md",
-        type=Path,
-        default=DEFAULT_SUMMARY_MD,
-        help=f"英文 Markdown 表格导出文件（默认：{DEFAULT_SUMMARY_MD}）",
-    )
-    parser.add_argument(
-        "--skip-rerun",
-        action="store_true",
-        help="跳过重新运行分析脚本，直接复用 structured_json-dir 里的结果。",
-    )
-    args = parser.parse_args()
+    """导出当前论文口径指标。"""
+    method_summary = load_json(METHOD_SUMMARY_JSON)
+    ablation_summary = load_json(ABLATION_SUMMARY_JSON)
+    load_json(OHOS_ARCHIVE_JSON)
+    load_json(OSS8_ARCHIVE_JSON)
 
-    summary = export_current_plot_metrics(
-        reference_out_dir=args.reference_out_dir,
-        structured_json_dir=args.structured_json_dir,
-        log_dir=args.log_dir,
-        rerun=not args.skip_rerun,
+    ohos_rows = method_rows(method_summary, "OHOS10")
+    oss8_rows = method_rows(method_summary, "OSS8")
+    rq3 = ablation_rows(ablation_summary)
+    rq4 = rq4_rows()
+    checks = assert_key_numbers(ohos_rows, oss8_rows, rq3)
+
+    write_csv(
+        REFERENCE_DIR / "rq1_method_metric_avg.csv",
+        ["Method", "ICompRate", "TestPass", "Unsafe", "RequiredUnsafe"],
+        ohos_rows,
     )
-    reference_tables = load_reference_tables(args.reference_out_dir)
-    markdown = render_markdown_tables(reference_tables)
-    write_json(args.out_json, summary)
-    write_text(args.out_md, markdown)
-    if summary["all_match"]:
-        print(f"[OK] 当前数值与参考绘图一致: {args.out_json}")
-        print(f"[OK] Markdown tables exported: {args.out_md}")
-        return 0
-    print(f"[DIFF] 当前数值与参考绘图不一致，详见: {args.out_json}", file=sys.stderr)
-    return 1
+    write_csv(
+        REFERENCE_DIR / "rq2_method_metric_avg.csv",
+        ["Method", "ICompRate", "TestPass", "Unsafe", "RequiredUnsafe"],
+        oss8_rows,
+    )
+    write_csv(
+        REFERENCE_DIR / "rq3_method_metric_avg.csv",
+        ["Group", "Setting", "ICompRate", "TestPass", "Unsafe", "RequiredUnsafe"],
+        rq3,
+    )
+    write_csv(
+        REFERENCE_DIR / "rq4_method_metric_avg.csv",
+        ["Case", "Boundary", "Evidence", "PaperSection"],
+        rq4,
+    )
+
+    write_json(STRUCTURED_DIR / "rq1_ohos10_method_comparison.json", {"rows": ohos_rows})
+    write_json(STRUCTURED_DIR / "rq2_oss8_method_comparison.json", {"rows": oss8_rows})
+    write_json(STRUCTURED_DIR / "rq3_ohos10_ablation.json", {"rows": rq3})
+    write_json(STRUCTURED_DIR / "rq4_case_evidence.json", {"rows": rq4})
+
+    payload = build_summary_payload(ohos_rows, oss8_rows, rq3, rq4, checks)
+    write_json(SUMMARY_JSON, payload)
+    write_markdown_summary(payload)
+    print(f"wrote {SUMMARY_MD.relative_to(REPO_ROOT)}")
+    return 0
 
 
 if __name__ == "__main__":

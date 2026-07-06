@@ -32,13 +32,21 @@ ONLY_PROJECTS=""
 PARALLEL=true  # 默认并行执行
 MAX_PARALLEL=4  # 最大并行数
 
-# 推荐的项目列表（开源版默认使用随仓库提供的 OHOS(test5) 最小项目集）
+# 推荐的项目列表（按推荐顺序：简单到复杂）
 declare -A RECOMMENDED_PROJECTS=(
-    ["shared__541f4e547bdb"]="$SCRIPT_DIR/../data/ohos/source_projects/shared__541f4e547bdb"
-    ["shared__12e38ea922f7"]="$SCRIPT_DIR/../data/ohos/source_projects/shared__12e38ea922f7"
-    ["host__25c1898e1626"]="$SCRIPT_DIR/../data/ohos/source_projects/host__25c1898e1626"
-    ["osal__0bc4f21396ad"]="$SCRIPT_DIR/../data/ohos/source_projects/osal__0bc4f21396ad"
-    ["appverify_lite__e5ebe91a98b9"]="$SCRIPT_DIR/../data/ohos/source_projects/appverify_lite__e5ebe91a98b9"
+    ["json"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/json"
+    ["innerkits"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/innerkits"
+    ["file_permission_native"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/file_permission_native"
+    ["parameter_mock"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/parameter_mock"
+    ["utils_mock"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/utils_mock"
+    ["passthrough"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/passthrough"
+    ["syscap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/syscap"
+    ["extend"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/extend"
+    ["random"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/random"
+    ["utils"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/utils"
+    ["constant"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/constant"
+    ["timer"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/timer"
+    ["cJson"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/cJson"
 )
 
 # 解析命令行参数
@@ -193,8 +201,8 @@ start_vllm() {
     if [ -z "$DEPLOY_VLLM_SCRIPT" ]; then
         if [ -f "$SCRIPT_DIR/qwen3_coder/deploy_no_quantization.sh" ]; then
             DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/qwen3_coder/deploy_no_quantization.sh"
-        elif [ -f "$SCRIPT_DIR/../rag_builder/qwen3_coder/deploy_no_quantization.sh" ]; then
-            DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/../rag_builder/qwen3_coder/deploy_no_quantization.sh"
+        elif [ -f "/data/home/wangshb/qwen3_coder/deploy_no_quantization.sh" ]; then
+            DEPLOY_VLLM_SCRIPT="/data/home/wangshb/qwen3_coder/deploy_no_quantization.sh"
         else
             echo "错误: 未找到 deploy_no_quantization.sh，请设置 DEPLOY_VLLM_SCRIPT"
             return 1

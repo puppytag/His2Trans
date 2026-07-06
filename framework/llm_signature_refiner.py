@@ -24,6 +24,7 @@ from typing import Optional, Set, Tuple
 
 from context_slicer import TypesRsRegistry, extract_identifiers, extract_types_from_rust_signature
 from generate.generation import generation
+from type_mapper import TypeMapper
 
 
 _BOOL_TRUE = {"1", "true", "yes", "on"}
@@ -38,6 +39,11 @@ def _env_bool(name: str, default: bool = False) -> bool:
 
 def _collapse_ws(s: str) -> str:
     return " ".join((s or "").replace("\r", " ").replace("\n", " ").split()).strip()
+
+
+def _strip_signature_terminator(signature: str) -> str:
+    """去掉 LLM 偶尔附带的声明分号，保留可直接生成函数体的签名。"""
+    return (signature or "").strip().rstrip(";").rstrip()
 
 
 def _extract_fn_rest(signature_text: str, func_name: str) -> Optional[str]:
@@ -87,7 +93,7 @@ def _extract_fn_rest(signature_text: str, func_name: str) -> Optional[str]:
     m2 = re.search(rf"\bfn\s+{re.escape(func_name)}\b", raw)
     if not m2:
         return None
-    return raw[m2.start() :].strip()
+    return _strip_signature_terminator(raw[m2.start() :])
 
 
 @dataclass
@@ -156,6 +162,7 @@ class LLMSignatureRefiner:
         c_signature: str,
         candidate_rust_signature: str,
         is_static: bool,
+        is_callback: bool = False,
     ) -> SignatureRefineResult:
         if not self.enabled:
             return SignatureRefineResult(
@@ -173,32 +180,46 @@ class LLMSignatureRefiner:
         )
         types_slice_chars = len(types_slice or "")
 
-        # NOTE:
-        # - `_extract_fn_rest()` always returns a string starting with `fn <name>(...)`.
-        # - For non-static functions, we want `pub extern "C" fn ...` (prefix + fn_rest).
-        # - For static functions, we want just `fn ...` (do NOT prefix again), otherwise we'd get `fn fn ...`.
-        expected_prefix_for_prompt = "fn" if is_static else 'pub extern "C" fn'
-        expected_prefix_for_output = "" if is_static else 'pub extern "C"'
-
-        system_prompt = (
-            "You are a C→Rust FFI signature expert. "
-            "Your job is to review a candidate Rust signature and output a corrected Rust signature if needed."
+        modifier = TypeMapper.function_modifier(is_static=is_static, is_callback=is_callback, func_name=func_name)
+        expected_prefix_for_prompt = modifier
+        expected_prefix_for_output = modifier[:-3].rstrip()
+        suite = TypeMapper.project_suite()
+        target_context = (
+            "当前目标是独立 Rust-native OSS 项目；普通项目函数使用 Rust ABI，只有真实 callback 保留 C ABI。"
+            if suite == "oss"
+            else "当前目标是 OHOS 集成项目；非 static 项目函数保留 C ABI。"
         )
 
-        user_prompt = f"""你将看到一个 C 函数签名，以及一个“基于规则生成的 Rust FFI 签名候选”。
+        if suite == "oss":
+            system_prompt = (
+                "You are a C→Rust signature expert for a standalone Rust-native project. "
+                "Review the initial Rust signature and output a corrected crate-compatible signature if needed."
+            )
+            candidate_label = "基于规则生成的 Rust-native 初始签名候选"
+            type_constraint = "不要增删参数；参数和返回类型必须使用当前 crate 可用的低级类型或 `crate::types::*`"
+        else:
+            system_prompt = (
+                "You are a C→Rust FFI signature expert. "
+                "Your job is to review a candidate Rust signature and output a corrected Rust signature if needed."
+            )
+            candidate_label = "基于规则生成的 Rust FFI 签名候选"
+            type_constraint = "不要引入 Rust 专有类型（String/Vec/...），只能用 FFI 安全类型和 `crate::types::*`"
+
+        user_prompt = f"""你将看到一个 C 函数签名，以及一个“{candidate_label}”。
 
 你的任务：判断候选签名是否可能有类型/ABI 错误，并给出最终的 Rust 签名。
 
 ## 约束（必须遵守）
 1) 函数名必须是 `{func_name}`
 2) 参数个数必须与候选签名一致（不要增删参数）
-3) 不要引入 Rust 专有类型（String/Vec/...），只能用 FFI 安全类型和 `crate::types::*`
+3) {type_constraint}
 4) 输出必须包含两部分：
    - “简要理由：”后面用 3-6 条要点说明关键依据（不要输出冗长推理过程）
    - “最终答案：”后面只给出 *一行* Rust 签名（不要函数体）
    5) `{expected_prefix_for_prompt}` 前缀规则：
   	   - 如果是 static 函数：用 `fn`
-  	   - 如果是非 static：用 `pub extern \"C\" fn`
+     - 其他情况严格使用 `{expected_prefix_for_prompt}`
+6) {target_context}
 
 ## C 签名
 ```c

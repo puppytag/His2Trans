@@ -3,6 +3,7 @@ import sys
 import json
 import argparse
 import logging
+import re
 from collections import defaultdict
 from typing import Dict, Any
 
@@ -15,6 +16,8 @@ from workspace_config import (
 )
 from pathlib import Path
 from call_graph import generate_function_uid
+from cpp_call_extractor import is_cpp_call_identifier, normalize_cpp_call_expression
+from project_profile import is_oss_suite
 
 # 导入日志配置
 from log_config import ensure_logging_setup, LogPrinter
@@ -47,9 +50,21 @@ def _find_compile_commands_json():
     1. 环境变量 COMPILE_COMMANDS_PATH（兼容旧变量）
     2. 环境变量 OHOS_COMPILE_COMMANDS（与 workspace_config 保持一致）
     3. workspace_config.get_compile_commands_path()（包含硬编码默认路径：OpenHarmony-v5.0.1-Release/out/rk3568）
-    4. 仓库内/相对脚本目录的常见路径
-    5. 返回空字符串（禁用预处理；开源最小输入默认不依赖全量 OpenHarmony compile DB）
+    4. 常见的 OpenHarmony 路径（相对于用户主目录/常见安装路径）
+    5. 返回空字符串（禁用预处理）
     """
+    if is_oss_suite():
+        env_path = os.environ.get("COMPILE_COMMANDS_PATH", "").strip()
+        if env_path and Path(env_path).exists():
+            return env_path
+        env_path = os.environ.get("OHOS_COMPILE_COMMANDS", "").strip()
+        if env_path and Path(env_path).exists():
+            return env_path
+        project_cc = Path(PROJECT_ROOT).expanduser().resolve() / "compile_commands.json"
+        if project_cc.is_file():
+            return str(project_cc)
+        return ""
+
     # 优先使用环境变量
     env_path = os.environ.get("COMPILE_COMMANDS_PATH", "").strip()
     if env_path and Path(env_path).exists():
@@ -68,11 +83,18 @@ def _find_compile_commands_json():
     except Exception:
         pass
 
-    # 自动查找常见路径（仅限仓库/相对路径；避免隐式依赖宿主机外部目录）
+    # 自动查找常见路径
     possible_paths = [
+        # OpenHarmony 标准路径（相对于用户主目录）
+        Path.home() / "openharmony" / "out" / "rk3568" / "compile_commands.json",
+        Path.home() / "ohos" / "out" / "rk3568" / "compile_commands.json",
+        Path.home() / "OpenHarmony" / "out" / "rk3568" / "compile_commands.json",
         # 相对于当前脚本目录的可能路径
         Path(__file__).parent.parent / "out" / "rk3568" / "compile_commands.json",
         Path(__file__).parent.parent / "openharmony" / "out" / "rk3568" / "compile_commands.json",
+        # 绝对路径猜测（常见安装位置）
+        Path("/data/home/wangshb/openharmony/out/rk3568/compile_commands.json"),
+        Path("/home/wangshb/openharmony/out/rk3568/compile_commands.json"),
     ]
 
     for path in possible_paths:
@@ -288,6 +310,28 @@ def get_call_function(source_code):
     # 只返回文本部分（忽略节点）
     return [text for text, _ in target_statements]
 
+
+def get_call_function_names(source_code):
+    """提取 C/C++ 调用表达式对应的被调符号名。"""
+    names = []
+    seen = set()
+    for call_expression in get_call_function(source_code):
+        name = normalize_cpp_call_expression(call_expression)
+        if name and name not in seen:
+            names.append(name)
+            seen.add(name)
+
+    # C++ RAII/local object construction，例如 `AutoMutex mutex(this->lock_);`。
+    for match in re.finditer(
+        r"(?m)^\s*(?:const\s+)?([A-Za-z_][A-Za-z0-9_:]*)\s+[A-Za-z_][A-Za-z0-9_]*\s*\(",
+        source_code or "",
+    ):
+        name = match.group(1).split("::")[-1]
+        if is_cpp_call_identifier(name) and name not in seen:
+            names.append(name)
+            seen.add(name)
+    return names
+
 def get_total_function():
     """
     递归查找项目中的所有函数，不依赖特定的目录结构
@@ -310,7 +354,11 @@ def get_total_function():
     source_set_from_cc = os.environ.get("C2R_SOURCE_SET_FROM_COMPILE_COMMANDS", "1").strip().lower() not in ("0", "false", "no")
     if USE_PREPROCESSING and source_set_from_cc:
         try:
-            from ohos_build_profile import select_profile_for_project, create_ohos_path_mapper
+            if is_oss_suite():
+                select_profile_for_project = None
+                create_ohos_path_mapper = None
+            else:
+                from ohos_build_profile import select_profile_for_project, create_ohos_path_mapper
 
             # Prefer an explicitly pinned compile_commands.json (e.g. OSS suite: project-root/compile_commands.json).
             # If not explicitly set, fall back to OHOS profile auto-selection (compile_commands_all registry).
@@ -320,7 +368,9 @@ def get_total_function():
             env_cc = (os.environ.get("COMPILE_COMMANDS_PATH") or "").strip() or (os.environ.get("OHOS_COMPILE_COMMANDS") or "").strip()
             if env_cc and Path(env_cc).exists():
                 compile_db_path = Path(env_cc)
-            else:
+            elif is_oss_suite() and (Path(project_root) / "compile_commands.json").is_file():
+                compile_db_path = Path(project_root) / "compile_commands.json"
+            elif not is_oss_suite():
                 selected = select_profile_for_project(
                     project_name=str(PROJECT_NAME),
                     project_root=Path(project_root),
@@ -410,13 +460,14 @@ def get_total_function():
     print(f"总共提取了 {len(functions_undertranslated)} 个函数")
     return functions_undertranslated
 
-def get_call_function_total(project_total_functions):
+def get_call_function_total(project_total_functions, tu_context_only: bool = False):
     """
     处理所有源文件，提取函数和依赖关系，不依赖特定的目录结构
 
     支持预处理上下文选择（Preprocess-First Approach）：
     - 如果启用预处理且提供了 compile_commands.json，将使用 clang -E 预处理源文件
     - 预处理后的 .i 文件包含宏展开后的完整代码，确保函数签名和调用图的一致性
+    - tu_context_only=True 时只生成 TU 闭包映射，函数/调用图交给 libclang 后续阶段生成
     """
     project_path = PROJECT_NAME
     project_root = PROJECT_ROOT
@@ -454,7 +505,11 @@ def get_call_function_total(project_total_functions):
     compile_db_path = None
     if USE_PREPROCESSING:
         try:
-            from ohos_build_profile import select_profile_for_project, create_ohos_path_mapper
+            if is_oss_suite():
+                select_profile_for_project = None
+                create_ohos_path_mapper = None
+            else:
+                from ohos_build_profile import select_profile_for_project, create_ohos_path_mapper
 
             # 0) Prefer an explicitly pinned compile_commands.json if provided.
             # This is required for OSS suite runs (each project has its own compile_commands.json),
@@ -470,7 +525,16 @@ def get_call_function_total(project_total_functions):
                     "ohos_root": None,
                     "selection_reason": "env",
                 }
-            else:
+            elif is_oss_suite() and (Path(project_root) / "compile_commands.json").is_file():
+                compile_db_path = Path(project_root) / "compile_commands.json"
+                tu_context_map["selected_profile"] = {
+                    "label": None,
+                    "out_dir": None,
+                    "compile_commands_json": str(compile_db_path),
+                    "ohos_root": None,
+                    "selection_reason": "oss_project",
+                }
+            elif not is_oss_suite():
                 selected = select_profile_for_project(
                     project_name=str(project_path),
                     project_root=Path(project_root),
@@ -734,6 +798,9 @@ def get_call_function_total(project_total_functions):
             excluded_by_cc_files.append(current_file_name)
             continue
 
+        if tu_context_only:
+            continue
+
         src_content = read_file(actual_source_file)
         
         # 读取头文件内容（如果存在）
@@ -885,7 +952,7 @@ def get_call_function_total(project_total_functions):
             function_code_to_file_name[function_code] = func_file_name
 
             # 分析函数调用
-            call_functions = get_call_function(function_code)
+            call_functions = get_call_function_names(function_code)
             call_functions_in_current_project = []
             call_functions_not_in_current_project = set()
             call_functions_not_in_current_file = set()
@@ -908,7 +975,7 @@ def get_call_function_total(project_total_functions):
                     print(f"      [调用匹配] {call_idx}/{len(call_functions)} (已用时: {elapsed:.1f}秒, 已匹配: {len(call_functions_in_current_project)}, 外部: {len(call_functions_not_in_current_project)})")
                 key = False
                 # 提取调用函数名（用于匹配）
-                call_func_name = call_function.split("(")[0].split("->")[-1].split(":")[-1].strip()
+                call_func_name = call_function
 
                 # ========== 优化：使用哈希索引 O(1) 查找替代 O(n) 遍历 ==========
                 # 直接从索引中查找匹配的函数
@@ -1377,10 +1444,18 @@ def get_dependencies_libclang():
     print("=" * 60)
 
 
-def get_dependencies():
+def get_dependencies(tu_context_only: bool = False):
     """
     使用 tree-sitter 模式进行依赖分析（传统模式）
     """
+    if tu_context_only:
+        print("=" * 60)
+        print("步骤 1: 生成 TU 上下文闭包")
+        print("=" * 60)
+        get_call_function_total({}, tu_context_only=True)
+        print("\n[完成] TU 上下文闭包生成完成！")
+        return
+
     print("=" * 60)
     print("步骤 1: 提取所有函数")
     print("=" * 60)

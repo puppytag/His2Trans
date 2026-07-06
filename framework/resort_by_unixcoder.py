@@ -18,6 +18,7 @@ from transformers import AutoModel
 from tqdm import tqdm
 from multiprocessing import Process, Queue, Manager, set_start_method, get_start_method
 from pathlib import Path
+from typing import Any
 
 # --- 配置 ---
 from workspace_config import (
@@ -25,6 +26,13 @@ from workspace_config import (
     get_elastic_search_path, get_reranked_path
 )
 from project_config import PROJECT_NAME
+from rag_jina_cache import (
+    build_jina_cache_manifest,
+    restore_jina_cache,
+    restore_jina_partial_cache,
+    store_jina_cache,
+    validate_rerank_outputs,
+)
 
 # 使用新的工作空间路径
 RAG_PATH = get_elastic_search_path(PROJECT_NAME)  # BM25 结果的输入目录
@@ -41,6 +49,26 @@ def _get_env_int(name: str, default: int) -> int:
 
 # 最终保留的范例数量（默认 10；可通过 C2R_RAG_TOPK 覆盖，用于 RQ3.2 top-k 敏感性实验）
 TOP_K = _get_env_int("C2R_RAG_TOPK", 10)
+
+JINA_CACHE_ENABLED = os.environ.get("C2R_JINA_CACHE", "1").lower() not in ("0", "false", "no")
+JINA_CACHE_ROOT = Path(
+    os.environ.get("C2R_JINA_CACHE_ROOT") or (Path(__file__).parent.resolve() / "translation_outputs" / "rag_jina_cache")
+).expanduser()
+def _env_flag_enabled(name: str, default: bool) -> bool:
+    """读取布尔环境变量，支持显式关闭默认开启项。"""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _should_fail_on_cpu_cache_miss(cuda_available: bool, num_gpus: int, allow_cpu: bool) -> bool:
+    """判断 Jina cache miss 且无 GPU 时是否应硬失败。"""
+    return (not cuda_available or num_gpus <= 0) and not allow_cpu
+
+
+JINA_ALLOW_CPU = _env_flag_enabled("C2R_JINA_ALLOW_CPU", True)
+JINA_STATUS_FILE = "_jina_reranker_status.json"
 
 # Jina-reranker 加载设置
 DEFAULT_MODEL_ID = "jinaai/jina-reranker-v3"
@@ -809,31 +837,42 @@ def parse_bm25_file(file_content: str):
         header, rest = file_content.split("-" * 50 + "\n", 1)
         query_function = header.replace("target function is :", "").strip()
         
-        # 使用正则表达式提取 C 和 Rust 代码块
+        # 按候选块绑定 C/Rust/Knowledge，避免可选 Knowledge 缺失时发生下标错位。
         c_pattern = re.compile(r"\[C_CODE\]\n(.*?)\n\[/C_CODE\]", re.DOTALL)
         r_pattern = re.compile(r"\[RUST_CODE\]\n(.*?)\n\[/RUST_CODE\]", re.DOTALL)
         k_pattern = re.compile(r"\[EXTRACTED_KNOWLEDGE\]\n(.*?)\n\[/EXTRACTED_KNOWLEDGE\]", re.DOTALL)
-        
-        c_docs = c_pattern.findall(rest)
-        r_docs = r_pattern.findall(rest)
-        k_docs = k_pattern.findall(rest)
-        
-        if len(c_docs) != len(r_docs):
-            print(f"警告: C/Rust 代码块数量不匹配。 C: {len(c_docs)}, Rust: {len(r_docs)}")
-            return query_function, [], [], []
-        
-        # 解析知识 JSON（如果存在）
+
+        c_matches = list(c_pattern.finditer(rest))
+        c_docs = []
+        r_docs = []
         knowledge_list = []
-        for k_str in k_docs:
+
+        for idx, c_match in enumerate(c_matches):
+            next_c_start = c_matches[idx + 1].start() if idx + 1 < len(c_matches) else len(rest)
+            candidate_block = rest[c_match.start():next_c_start]
+            r_match = r_pattern.search(candidate_block)
+            if not r_match:
+                print(f"警告: 第 {idx + 1} 个候选缺少 Rust 代码块。")
+                return query_function, [], [], []
+
+            c_docs.append(c_match.group(1))
+            r_docs.append(r_match.group(1))
+
+            k_match = k_pattern.search(candidate_block)
+            if not k_match:
+                knowledge_list.append([])
+                continue
+
             try:
-                knowledge_list.append(json.loads(k_str))
+                knowledge_list.append(json.loads(k_match.group(1)))
             except json.JSONDecodeError:
                 knowledge_list.append([])
-        
-        # 如果知识列表长度不匹配，用空列表补齐
-        while len(knowledge_list) < len(c_docs):
-            knowledge_list.append([])
-            
+
+        total_r_docs = len(r_pattern.findall(rest))
+        if len(c_docs) != total_r_docs:
+            print(f"警告: C/Rust 代码块数量不匹配。 C: {len(c_docs)}, Rust: {total_r_docs}")
+            return query_function, [], [], []
+
         return query_function, c_docs, r_docs, knowledge_list
         
     except Exception as e:
@@ -847,12 +886,6 @@ def load_file_data(query_file, project_out_path):
     Returns:
         (query_file, query_func, c_docs_list, r_docs_list, k_docs_list) 或 None（如果文件已存在或失败）
     """
-    output_file_path = project_out_path / query_file.name
-    
-    # 跳过已存在的文件
-    if output_file_path.exists():
-        return None
-    
     try:
         with open(query_file, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
@@ -865,6 +898,19 @@ def load_file_data(query_file, project_out_path):
         return None
     
     return (query_file, query_func, c_docs_list, r_docs_list, k_docs_list)
+
+
+def write_rerank_record(handle, *, candidate_index: int, score: float, c_code: str, rust_code: str, knowledge: Any) -> None:
+    """写入单条 rerank 结果，保留 BM25 原始候选序号便于精确回溯。"""
+    handle.write(f"Candidate_Index: {candidate_index}\n")
+    handle.write(f"C_Code: \n{c_code}\n")
+    handle.write(f"Function: \n{rust_code}\n")
+
+    if knowledge:
+        handle.write(f"Extracted_Knowledge: \n{json.dumps(knowledge, ensure_ascii=False)}\n")
+
+    handle.write(f"Unixcoder Score: {score}\n")
+    handle.write("-" * 50 + "\n")
 
 
 def save_rerank_result(query_file, reranked_results, c_docs_list, r_docs_list, k_docs_list, project_out_path):
@@ -881,15 +927,14 @@ def save_rerank_result(query_file, reranked_results, c_docs_list, r_docs_list, k
                 c_code = c_docs_list[idx]
                 rust_code = r_docs_list[idx]
                 knowledge = k_docs_list[idx] if idx < len(k_docs_list) else []
-                
-                f.write(f"C_Code: \n{c_code}\n")
-                f.write(f"Function: \n{rust_code}\n")
-                
-                if knowledge:
-                    f.write(f"Extracted_Knowledge: \n{json.dumps(knowledge, ensure_ascii=False)}\n")
-                
-                f.write(f"Unixcoder Score: {score}\n")
-                f.write("-" * 50 + "\n")
+                write_rerank_record(
+                    f,
+                    candidate_index=idx,
+                    score=score,
+                    c_code=c_code,
+                    rust_code=rust_code,
+                    knowledge=knowledge,
+                )
         return True
     except Exception as e:
         print(f"保存结果失败 {query_file}: {e}")
@@ -958,7 +1003,7 @@ def efficient_batch_process(model, query_files, project_in_path, project_out_pat
                 rerank_results = batch_reorder_with_jina(model, batch_data)
             except Exception as e:
                 print(f"批量推理失败: {e}")
-                torch.cuda.empty_cache()
+                clear_cuda_cache()
                 gc.collect()
                 failed += len(batch_data)
                 processed += len(batch_files)
@@ -988,7 +1033,7 @@ def efficient_batch_process(model, query_files, project_in_path, project_out_pat
             
             # 定期清理 GPU 内存
             if processed % (batch_size * 10) == 0:
-                torch.cuda.empty_cache()
+                clear_cuda_cache()
                 gc.collect()
     
     return processed, failed
@@ -1057,11 +1102,6 @@ def process_worker(device_id, file_queue, result_queue, project_in_path, project
             query_file = item
             output_file_path = project_out_path / query_file.name
 
-            # 跳过已存在的文件
-            if output_file_path.exists():
-                result_queue.put(1)  # 已存在
-                continue
-
             # 1. 读取 BM25 结果文件
             try:
                 with open(query_file, 'r', encoding='utf-8', errors='ignore') as f:
@@ -1083,7 +1123,7 @@ def process_worker(device_id, file_queue, result_queue, project_in_path, project
                 reranked_results = reorder_with_jina(model, query_func, c_docs_list)
             except Exception as e:
                 print(f"[GPU {device_id}] Jina Rerank 失败 (文件: {query_file}): {e}")
-                torch.cuda.empty_cache()
+                clear_cuda_cache()
                 result_queue.put(0)  # 失败
                 continue
 
@@ -1096,17 +1136,14 @@ def process_worker(device_id, file_queue, result_queue, project_in_path, project
                         c_code = c_docs_list[idx]
                         rust_code = r_docs_list[idx]
                         knowledge = k_docs_list[idx] if idx < len(k_docs_list) else []
-                        
-                        # 为兼容下游，保留原有"Function"字段指向 Rust；同时额外输出 C_Code 方便排查
-                        f.write(f"C_Code: \n{c_code}\n")
-                        f.write(f"Function: \n{rust_code}\n")
-                        
-                        # [V10 新增] 写入提取的知识
-                        if knowledge:
-                            f.write(f"Extracted_Knowledge: \n{json.dumps(knowledge, ensure_ascii=False)}\n")
-                        
-                        f.write(f"Unixcoder Score: {score}\n")
-                        f.write("-" * 50 + "\n")
+                        write_rerank_record(
+                            f,
+                            candidate_index=idx,
+                            score=score,
+                            c_code=c_code,
+                            rust_code=rust_code,
+                            knowledge=knowledge,
+                        )
                 
                 processed += 1
                 result_queue.put(1)  # 成功
@@ -1115,7 +1152,7 @@ def process_worker(device_id, file_queue, result_queue, project_in_path, project
                 result_queue.put(0)  # 失败
         
         print(f"[GPU {device_id}] 处理完成，共处理 {processed} 个文件")
-        torch.cuda.empty_cache()
+        clear_cuda_cache()
         
     except Exception as e:
         print(f"[GPU {device_id}] 工作进程错误: {e}")
@@ -1221,6 +1258,36 @@ def release_gpu_slot(lock_file):
             pass
 
 
+def _write_jina_status(status: str, reason: str, **extra: Any) -> None:
+    """写入 Jina reranker 阶段状态，供批量流程和后续排查读取。"""
+    try:
+        OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "schema_version": "c2r_jina_reranker_status_v1",
+            "project": PROJECT_NAME,
+            "status": status,
+            "reason": reason,
+            "bm25_input_dir": str(RAG_PATH.resolve()),
+            "reranked_output_dir": str(OUTPUT_PATH.resolve()),
+            "model_name": MODEL_NAME,
+            "top_k": TOP_K,
+            "cache_enabled": JINA_CACHE_ENABLED,
+            "cache_root": str(JINA_CACHE_ROOT.resolve()),
+            **extra,
+        }
+        (OUTPUT_PATH / JINA_STATUS_FILE).write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    except Exception as exc:
+        print(f"警告: 写入 Jina 状态失败: {exc}")
+
+
+def _cache_hit_status_reason(cache_restore: dict[str, Any]) -> str:
+    """返回 Jina 缓存命中时应落盘的精确原因。"""
+    return str(cache_restore.get("reason") or "cache_hit")
+
+
 def main():
     """
     主函数：支持多项目并行运行
@@ -1275,7 +1342,7 @@ def main():
                     print(f"警告: 无法设置启动方法: {e}")
         
         # 运行 Jina Reranker（GPU 或 CPU 模式）
-        _run_jina_rerank()
+        return _run_jina_rerank()
         
     finally:
         # 释放 GPU 槽位
@@ -1297,22 +1364,100 @@ def _run_jina_rerank():
 
     if not RAG_PATH.exists():
         print(f"错误: BM25 结果目录不存在: {RAG_PATH}")
-        return
+        _write_jina_status("failed", "bm25_input_dir_missing")
+        return 1
     
     project = PROJECT_NAME
     project_in_path = RAG_PATH
     project_out_path = OUTPUT_PATH
     project_out_path.mkdir(parents=True, exist_ok=True)
     
-    query_files = list(project_in_path.glob("*.txt"))
-    # 过滤掉已处理的文件
-    query_files = [f for f in query_files if not (project_out_path / f.name).exists()]
+    all_query_files = sorted(project_in_path.glob("*.txt"), key=lambda p: p.name)
+    if not all_query_files:
+        print(f"错误: BM25 结果目录为空: {project_in_path}")
+        _write_jina_status("failed", "bm25_input_empty")
+        return 1
+
+    cache_manifest = build_jina_cache_manifest(
+        project_name=project,
+        bm25_dir=project_in_path,
+        query_files=all_query_files,
+        model_name=MODEL_NAME,
+        top_k=TOP_K,
+        extra_params={
+            "local_only": LOCAL_ONLY,
+            "model_is_local": MODEL_IS_LOCAL,
+        },
+    )
+    cache_restore = {"hit": False, "reason": "cache_disabled"}
+    if JINA_CACHE_ENABLED:
+        cache_restore = restore_jina_cache(JINA_CACHE_ROOT, cache_manifest, project_out_path)
+        if cache_restore.get("hit"):
+            validation = validate_rerank_outputs(all_query_files, project_out_path)
+            _write_jina_status(
+                "ok",
+                _cache_hit_status_reason(cache_restore),
+                cache_key=cache_manifest.get("cache_key"),
+                cache_restore=cache_restore,
+                validation=validation,
+            )
+            print(f"Jina 缓存命中，已恢复 {validation.get('present_count', 0)} 个 rerank 输出")
+            print("--- (RAG 步骤 2) Jina 重排完成（cache hit）---")
+            return 0
+        partial_restore = restore_jina_partial_cache(JINA_CACHE_ROOT, cache_manifest, project_out_path)
+        if partial_restore.get("hit"):
+            cache_restore = partial_restore
+            print(
+                "Jina 部分缓存命中，已恢复 "
+                f"{partial_restore.get('restored_count', 0)} 个 rerank 输出，"
+                "剩余缺口将继续真实重排。"
+            )
+
+    validation_before = validate_rerank_outputs(all_query_files, project_out_path)
+    if validation_before.get("ok"):
+        cache_store = {"stored": False, "reason": "cache_disabled"}
+        if JINA_CACHE_ENABLED:
+            cache_store = store_jina_cache(JINA_CACHE_ROOT, cache_manifest, project_out_path)
+        _write_jina_status(
+            "ok",
+            "existing_outputs",
+            cache_key=cache_manifest.get("cache_key"),
+            cache_restore=cache_restore,
+            cache_store=cache_store,
+            validation=validation_before,
+        )
+        print("所有 Jina rerank 输出已存在，跳过模型运行。")
+        print("--- (RAG 步骤 2) Jina 重排完成（existing outputs）---")
+        return 0
+
+    if _should_fail_on_cpu_cache_miss(torch.cuda.is_available(), NUM_GPUS, JINA_ALLOW_CPU):
+        reason = "gpu_unavailable_and_cache_miss"
+        print("错误: Jina 缓存未命中且未检测到可用 GPU；RAG 开启时不能继续。")
+        _write_jina_status(
+            "failed",
+            reason,
+            cache_key=cache_manifest.get("cache_key"),
+            cache_restore=cache_restore,
+            validation=validation_before,
+        )
+        return 1
+    if not torch.cuda.is_available() or NUM_GPUS <= 0:
+        print("Jina 缓存未命中且未检测到可用 GPU；使用 CPU 真实重排，可能较慢。")
+
+    pending_names = set(validation_before.get("missing_outputs") or [])
+    pending_names.update(validation_before.get("invalid_outputs") or [])
+    query_files = [f for f in all_query_files if f.name in pending_names]
     
     print(f"\n正在处理项目: {project} ({len(query_files)} 个查询函数)")
 
     if not query_files:
-        print("所有文件已处理完成，跳过。")
-        return
+        validation = validate_rerank_outputs(all_query_files, project_out_path)
+        if validation.get("ok"):
+            _write_jina_status("ok", "existing_outputs", cache_key=cache_manifest.get("cache_key"), validation=validation)
+            print("所有文件已处理完成，跳过。")
+            return 0
+        _write_jina_status("failed", "rerank_outputs_missing", cache_key=cache_manifest.get("cache_key"), validation=validation)
+        return 1
 
     # 使用高效批量处理模式：单模型实例 + 多线程 I/O + 批量推理
     # 这种方式比多进程加载多个模型更高效，因为：
@@ -1407,7 +1552,7 @@ def _run_jina_rerank():
                     error_str = str(e).lower()
                     if "out of memory" in error_str or "cuda" in error_str:
                         print(f"\n[OOM] 批量推理失败，清理内存并重试单条处理...")
-                        torch.cuda.empty_cache()
+                        clear_cuda_cache()
                         gc.collect()
                         time.sleep(5)  # 等待内存释放
                         
@@ -1417,19 +1562,19 @@ def _run_jina_rerank():
                             try:
                                 result = reorder_with_jina(model, query_func, c_docs_list)
                                 rerank_results.append(result)
-                                torch.cuda.empty_cache()
+                                clear_cuda_cache()
                             except Exception as inner_e:
                                 print(f"  单条处理也失败: {inner_e}")
                                 rerank_results.append([])
                     else:
                         print(f"\n批量推理失败: {e}")
-                        torch.cuda.empty_cache()
+                        clear_cuda_cache()
                         gc.collect()
                         pbar.update(len(batch_files))
                         continue
                 except Exception as e:
                     print(f"\n批量推理失败: {e}")
-                    torch.cuda.empty_cache()
+                    clear_cuda_cache()
                     gc.collect()
                     pbar.update(len(batch_files))
                     continue
@@ -1457,7 +1602,7 @@ def _run_jina_rerank():
                 
                 # 定期清理 GPU 内存
                 if (batch_start + batch_size) % (batch_size * 5) == 0:
-                    torch.cuda.empty_cache()
+                    clear_cuda_cache()
                     gc.collect()
         
         print(f"高效批量处理完成")
@@ -1515,9 +1660,6 @@ def _run_jina_rerank():
         for query_file in tqdm(query_files, desc=f"Jina Rerank ({project})"):
             output_file_path = project_out_path / query_file.name
 
-            if output_file_path.exists():
-                continue
-
             # 1. 读取 BM25 结果文件
             try:
                 with open(query_file, 'r', encoding='utf-8', errors='ignore') as f:
@@ -1537,7 +1679,7 @@ def _run_jina_rerank():
                 reranked_results = reorder_with_jina(model, query_func, c_docs_list)
             except Exception as e:
                 print(f"Jina Rerank 失败 (文件: {query_file}): {e}")
-                torch.cuda.empty_cache()
+                clear_cuda_cache()
                 continue
 
             # 4. 写入重排后的结果（C→C 重排，保存时补齐对应 Rust 和知识）
@@ -1548,19 +1690,44 @@ def _run_jina_rerank():
                     c_code = c_docs_list[idx]
                     rust_code = r_docs_list[idx]
                     knowledge = k_docs_list[idx] if idx < len(k_docs_list) else []
+                    write_rerank_record(
+                        f,
+                        candidate_index=idx,
+                        score=score,
+                        c_code=c_code,
+                        rust_code=rust_code,
+                        knowledge=knowledge,
+                    )
                     
-                    # 为兼容下游，保留原有"Function"字段指向 Rust；同时额外输出 C_Code 方便排查
-                    f.write(f"C_Code: \n{c_code}\n")
-                    f.write(f"Function: \n{rust_code}\n")
-                    
-                    # [V10 新增] 写入提取的知识
-                    if knowledge:
-                        f.write(f"Extracted_Knowledge: \n{json.dumps(knowledge, ensure_ascii=False)}\n")
-                    
-                    f.write(f"Unixcoder Score: {score}\n")
-                    f.write("-" * 50 + "\n")
-                    
+    final_validation = validate_rerank_outputs(all_query_files, project_out_path)
+    if not final_validation.get("ok"):
+        print(
+            "错误: Jina rerank 输出不完整或结构无效，"
+            f"缺失: {final_validation.get('missing_outputs')}, "
+            f"无效: {final_validation.get('invalid_outputs')}"
+        )
+        _write_jina_status(
+            "failed",
+            "rerank_outputs_missing",
+            cache_key=cache_manifest.get("cache_key"),
+            cache_restore=cache_restore,
+            validation=final_validation,
+        )
+        return 1
+
+    cache_store = {"stored": False, "reason": "cache_disabled"}
+    if JINA_CACHE_ENABLED:
+        cache_store = store_jina_cache(JINA_CACHE_ROOT, cache_manifest, project_out_path)
+    _write_jina_status(
+        "ok",
+        "rerank_completed",
+        cache_key=cache_manifest.get("cache_key"),
+        cache_restore=cache_restore,
+        cache_store=cache_store,
+        validation=final_validation,
+    )
     print("--- (RAG 步骤 2) Jina 重排完成 ---")
+    return 0
 
 if __name__ == "__main__":
     # 必须在主模块中设置启动方法为 'spawn'
@@ -1572,4 +1739,4 @@ if __name__ == "__main__":
     except RuntimeError:
         # 如果已经设置过，忽略错误
         pass
-    main()
+    raise SystemExit(main())

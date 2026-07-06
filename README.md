@@ -1,180 +1,128 @@
-# his2trans
+# His2Trans
 
-## Included
+His2Trans is a knowledge-guided agentic framework for project-level C-to-Rust migration. It builds a Rust scaffold for the target C project, translates function bodies with retrieved historical migration knowledge, and then refines the assembled crate with compilation, semantic, and unsafe-code feedback.
 
-- `framework/`: end-to-end C-to-Rust translation pipeline (`batch_test_staged.sh`).
-- `data/ohos/source_projects/`: 5 minimal OHOS projects for the `ohos` (test5) suite, each with a relocatable `compile_commands.json`.
-- `data/ohos/ohos_root_min/`: a minimal OpenHarmony header tree used for include resolution / bindgen.
-- `framework/workspace/rag/`: the base RAG knowledge base (`knowledge_base.json` + `bm25_index.pkl`) and precomputed reranked results.
-- `scripts/` + `data/rq{1,2,3,4}/`: paper analysis scripts and minimal inputs (RQ1-RQ4).
+This repository contains the framework implementation and the minimal paper-aligned artifacts needed to reproduce the current reported metrics.
 
+## Repository Layout
 
-## Tested environment (reference)
+- `framework/`: the C-to-Rust migration pipeline. The main entry is `framework/batch_test_staged.sh`.
+- `data/ohos/`: compact OpenHarmony headers and five small source-project bundles used by the lightweight framework examples.
+- `data/test_module_rust_tests/`: Rust test harnesses for the open-source RQ2 project set.
+- `data/paper_artifacts/`: minimal final translated Rust crates, metric scripts, and verified result files for the current paper.
+- `data/paper_metric_exports/`: paper-aligned reference tables and generated metric summaries.
+- `scripts/export_current_plot_metrics.py`: regenerates the paper metric CSV/JSON/Markdown summaries from the shipped artifacts.
+- `tests/`: lightweight tests for the paper metric helper code.
 
-The commands below are tested on:
+## Paper-Aligned Results
 
-- OS: Ubuntu Linux
-- Python (framework): 3.11.x (via conda env `c2r_frame`)
-- Rust: **nightly** toolchain
-- Clang + libclang: 14.x (`clang`, `libclang-dev`)
+The current paper uses ten OpenHarmony modules and eight open-source C projects.
 
-## Prerequisites
+| Dataset | Incremental compilation | Test pass rate | Unsafe ratio | Required unsafe ratio |
+|---|---:|---:|---:|---:|
+| OpenHarmony 10 modules | 100.00% | 94.92% | 16.35% | 8.48% |
+| OSS8 projects | 100.00% | 100.00% | 8.59% | 2.94% |
 
-### What you need to download/install (external dependencies)
+The OpenHarmony ablation table is:
 
-System tools (required):
-- Python 3.8+ (paper analysis). Python 3.10+ recommended for the framework.
-- Rust toolchain: `rustc`, `cargo`, `clippy` (recommend installing via `rustup`). **Rust nightly is recommended/required**.
-- C/C++ toolchain: `clang` (or `gcc`) for preprocessing and bindgen-related steps.
-- `libclang` runtime (required when using `--use-libclang`).
-- Conda (`conda` command in PATH) to use the provided one-click environment setup.
+| Setting | Incremental compilation | Test pass rate | Unsafe ratio |
+|---|---:|---:|---:|
+| Knowledge-guided function translation | 95.82% | 39.29% | 15.95% |
+| With compiler-driven per-function repair | 100.00% | 94.92% | 22.52% |
+| With project-level agentic refinement | 100.00% | 94.92% | 16.35% |
 
-Network downloads (only needed for some modes):
-- Conda packages + pip wheels (when creating the framework env).
-- NLTK corpora: `stopwords`, `wordnet`, `omw-1.4` (downloaded into `framework/data/nltk_data`).
-- External LLM API access (when `USE_VLLM=false`).
-- HuggingFace model weights (when `--run-rag true` and you enable the Jina reranker).
-
-### Example installation commands (Ubuntu/Debian)
-
-Install system packages:
-```bash
-sudo apt-get update
-sudo apt-get install -y \
-  build-essential \
-  clang \
-  libclang-dev \
-  pkg-config \
-  cmake \
-  python3-venv
-```
-
-Install Rust via `rustup` (downloads the toolchain). Use **nightly**:
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source "$HOME/.cargo/env"
-rustup toolchain install nightly
-rustup default nightly
-rustup component add clippy
-```
-
-Install Miniconda/Anaconda so `conda` is available, then follow the conda setup below.
-
-### Python deps
-
-- Paper analysis (RQ1–RQ4): standard library only.
-- Framework: use the provided conda environment (recommended).
-
-#### Option A (recommended): one-click conda env (full features)
-
-```bash
-# Create/update conda env from framework/environment.yml (downloads packages).
-bash framework/setup_conda_env.sh
-
-# Activate the env.
-#
-# If your conda crashes with PermissionError / CUDA probing issues, this workaround helps:
-# (it disables conda's CUDA virtual-package probing which may spawn processes and fail in restricted envs)
-export CONDA_OVERRIDE_CUDA=
-export CONDA_NO_PLUGINS=true
-conda activate c2r_frame
-
-# Ensure NLTK corpora are found (the setup script downloads them into this folder).
-export NLTK_DATA="$(pwd)/framework/data/nltk_data"
-```
-
-If you run with `--run-rag true`, the reranker step uses `torch` + `transformers` and may download model weights.
-
-#### Option B: Python venv + pip (external API, no RAG)
-
-If you only want to run the framework in external API mode (recommended smoke run uses `--run-rag false` and `--skip-learned-kb`),
-you can avoid conda and install a minimal set of Python deps:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -U pip
-python -m pip install -r requirements.txt
-
-# Download NLTK corpora into the repo-local folder
-python - <<'PY'
-import nltk, os
-dst = os.path.abspath("framework/data/nltk_data")
-os.makedirs(dst, exist_ok=True)
-for p in ["stopwords", "wordnet", "omw-1.4"]:
-    nltk.download(p, download_dir=dst, quiet=True)
-print("NLTK_DATA =", dst)
-PY
-
-export NLTK_DATA="$(pwd)/framework/data/nltk_data"
-```
-
-## Paper Reproduction
-
-This repository keeps a single paper-reproduction entry:
+Regenerate the repository-local metric exports with:
 
 ```bash
 python3 scripts/export_current_plot_metrics.py
 ```
 
-What this command does:
-- reruns the shipped RQ1--RQ4 analysis scripts on the local run directories under `data/rq{1,2,3,4}/`;
-- regenerates `data/paper_metric_exports/generated_structured_json/*.json`;
-- compares the reproduced His2Trans rows against the repository-local paper reference tables under `data/paper_metric_exports/reference_tables/`;
-- writes:
-  - `data/paper_metric_exports/current_plot_metrics_alignment.json`
-  - `data/paper_metric_exports/current_plot_metrics_alignment.md`
+This rewrites:
 
-Notes:
-- `data/test_module_rust_tests/` is the frozen RQ2 unified test bundle used by the current paper.
-- `data/source_rq2_tests/` keeps the paper-aligned reference Rust source layout used by the RQ2 incremental-compilation checker; it is required for reproducing the current `ICompRate` numbers.
-- The reference CSVs under `data/paper_metric_exports/reference_tables/` are shipped with the repository, so reproduction does not depend on external absolute paths.
-- Baseline rows are kept in the shipped reference tables; the one-click script reruns the His2Trans rows from the local run directories and checks them against the paper-aligned reference values.
+- `data/paper_metric_exports/current_plot_metrics_alignment.json`
+- `data/paper_metric_exports/current_plot_metrics_alignment.md`
+- `data/paper_metric_exports/reference_tables/*.csv`
+- `data/paper_metric_exports/generated_structured_json/rq1_ohos10_method_comparison.json`
+- `data/paper_metric_exports/generated_structured_json/rq2_oss8_method_comparison.json`
+- `data/paper_metric_exports/generated_structured_json/rq3_ohos10_ablation.json`
+- `data/paper_metric_exports/generated_structured_json/rq4_case_evidence.json`
 
-## Framework Run (External API)
+The export script checks the key numbers above and fails if they drift.
 
-This is the end-to-end pipeline. It will generate output under `framework/translation_outputs/<run-dir>/`.
+## Reproducing Archived Metrics
 
-### 1) Set environment variables
+### OpenHarmony 10-module archive
+
+The OHOS10 archive is:
+
+```text
+data/paper_artifacts/deepseek_v4_pro_ohos10_0613_harness_fixed_v2/
+```
+
+Fast metric replay:
 
 ```bash
-# Recommended: force Rust nightly without changing global toolchain.
-export RUSTUP_TOOLCHAIN=nightly
+python3 data/paper_artifacts/deepseek_v4_pro_ohos10_0613_harness_fixed_v2/scripts/run_archived_ohos_metrics.py \
+  --output-dir /tmp/his2trans_ohos10_metrics
+```
 
-# Use external LLM API instead of local vLLM.
+This recomputes incremental-compilation and unsafe metrics from the archived Rust crates, and reuses the verified gtest result files shipped in the archive. Re-running the full OHOS C gtest bridge requires the original full OpenHarmony/self-contained source tree, which is too large for this minimal open-source artifact.
+
+### OSS8 archive
+
+The OSS8 archive is:
+
+```text
+data/paper_artifacts/deepseek_v4_pro_oss8_0613_rq2_100pct_minimal/
+```
+
+Full metric replay:
+
+```bash
+bash data/paper_artifacts/deepseek_v4_pro_oss8_0613_rq2_100pct_minimal/reproduce.sh \
+  /tmp/his2trans_oss8_metrics
+```
+
+This reruns the archived OSS8 Rust tests, incremental compilation, unsafe analysis, and warning counting from the shipped final crates.
+
+## Environment
+
+The paper experiments were run on Ubuntu Linux with Clang 14, Rust nightly, and Python 3.13. The framework environment used Python 3.11 through the `c2r_frame` conda environment.
+
+Required system tools:
+
+- Python 3.10+ for framework scripts; Python 3.13 was used for the final paper metric scripts.
+- Rust nightly with `cargo` and `clippy`.
+- Clang and libclang.
+- Conda, if you want to use the provided framework environment setup.
+
+Set up the framework conda environment:
+
+```bash
+bash framework/setup_conda_env.sh
+export CONDA_OVERRIDE_CUDA=
+export CONDA_NO_PLUGINS=true
+conda activate c2r_frame
+export NLTK_DATA="$(pwd)/framework/data/nltk_data"
+```
+
+For external-API translation runs:
+
+```bash
+export RUSTUP_TOOLCHAIN=nightly
 export USE_VLLM=false
 export EXTERNAL_API_BASE_URL="https://api.deepseek.com/beta"
 export EXTERNAL_API_MODEL="deepseek-coder"
 export EXTERNAL_API_KEY="YOUR_KEY"
-
-# Optional: avoid accidentally using any host-local OpenHarmony compile DB.
 export USE_PREPROCESSING=false
-
-# Optional (recommended): keep HuggingFace cache inside this folder (used by reranker).
 export HF_HOME="$(pwd)/framework/data/my-huggingface"
 export TRANSFORMERS_CACHE="$HF_HOME"
 export HF_HUB_CACHE="$HF_HOME/hub"
 ```
 
-### 2) Run (full command)
+## Framework Smoke Run
 
-```bash
-cd framework
-bash batch_test_staged.sh \
-  --layered --incremental --max-repair 5 \
-  --max-parallel 20 \
-  --run-rag true --jina-parallel --use-libclang \
-  --bindgen-debug-keep-files \
-  --vllm-global-limit 120 \
-  --suite ohos \
-  --run-dir deepseek-coder-ohos10
-```
-
-Outputs are written under: `framework/translation_outputs/<run-dir>/`.
-
-### 3) Quick smoke run (recommended first)
-
-If you just want to validate the pipeline end-to-end on a single shipped project:
+Run a single shipped OpenHarmony example without RAG or learned-KB retrieval:
 
 ```bash
 cd framework
@@ -187,45 +135,27 @@ bash batch_test_staged.sh \
   --run-dir smoke_api
 ```
 
-## Optional Large External Resources (Not Shipped)
+Outputs are written to `framework/translation_outputs/<run-dir>/`.
 
-- **Full OpenHarmony source tree + full `compile_commands.json`** (only needed if you want preprocessing/type recovery to use the full build context):
-  - Set `USE_PREPROCESSING=true`
-  - Provide `OHOS_ROOT=/path/to/OpenHarmony` and `OHOS_COMPILE_COMMANDS=/path/to/compile_commands.json`
-- **Jina reranker weights** (only needed when `--run-rag true`):
-  - Model id: `jinaai/jina-reranker-v3`
-  - The framework caches downloads under `framework/data/my-huggingface/` (via `HF_HOME`).
+## Development Checks
 
-## What to run (cheat sheet)
+Run the lightweight metric tests:
 
-Paper reproduction:
 ```bash
-python3 scripts/export_current_plot_metrics.py
+python3 -m pytest -q tests
 ```
 
-Framework (single project smoke run, external API):
+Compile-check the Python sources:
+
 ```bash
-# 1) setup env (one-time)
-bash framework/setup_conda_env.sh
-export CONDA_OVERRIDE_CUDA=
-export CONDA_NO_PLUGINS=true
-conda activate c2r_frame
-export NLTK_DATA="$(pwd)/framework/data/nltk_data"
-
-# 2) set API env vars
-export RUSTUP_TOOLCHAIN=nightly
-export USE_VLLM=false
-export EXTERNAL_API_BASE_URL="https://api.deepseek.com/beta"
-export EXTERNAL_API_MODEL="deepseek-coder"
-export EXTERNAL_API_KEY="YOUR_KEY"
-
-# 3) run
-cd framework
-bash batch_test_staged.sh \
-  --layered --incremental --max-repair 1 \
-  --max-parallel 1 --max-parallel-workers 1 \
-  --run-rag false --skip-learned-kb --use-libclang \
-  --suite ohos \
-  --only osal__0bc4f21396ad \
-  --run-dir smoke_api
+python3 -m py_compile \
+  scripts/export_current_plot_metrics.py \
+  framework/*.py \
+  framework/generate/*.py \
+  framework/scripts/*.py \
+  framework/scripts/agentic_repair/*.py
 ```
+
+## Notes on Large External Data
+
+The repository intentionally does not ship the full OpenHarmony source tree, full `compile_commands.json`, model weights, or generated `target/` directories. The final translated crates and verified paper metric evidence needed for the current tables are included under `data/paper_artifacts/`.

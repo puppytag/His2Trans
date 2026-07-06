@@ -596,6 +596,90 @@ def get_frist_function_position_start(source_code):
     return translated_code_function_signature[0]
 
 
+def _is_top_level_use_line(line: str) -> bool:
+    """判断一行是否是顶层 use 声明起始行。"""
+    if line != line.lstrip():
+        return False
+    stripped = line.strip()
+    return stripped.startswith("use ") or stripped.startswith("pub use ")
+
+
+def _normalize_use_block(block: str) -> str:
+    """归一化 use 声明，便于多行 grouped import 去重。"""
+    return re.sub(r"\s+", "", block.strip())
+
+
+def _collect_top_level_use_blocks(lines: list) -> list:
+    """收集顶层 use 声明块，支持多行 grouped import。"""
+    blocks = []
+    i = 0
+    while i < len(lines):
+        if not _is_top_level_use_line(lines[i]):
+            i += 1
+            continue
+        start = i
+        block_lines = [lines[i]]
+        while ";" not in lines[i] and i + 1 < len(lines):
+            i += 1
+            block_lines.append(lines[i])
+        blocks.append((start, i, "".join(block_lines)))
+        i += 1
+    return blocks
+
+
+def _is_types_glob_norm(norm: str) -> bool:
+    """判断归一化 use 是否为 crate::types glob import。"""
+    return norm in {"usecrate::types::*;", "pubusecrate::types::*;"}
+
+
+def _is_covered_by_types_glob(import_text: str, has_types_glob: bool) -> bool:
+    """判断 import 是否已被 use crate::types::* 覆盖。"""
+    if not has_types_glob:
+        return False
+    stripped = import_text.strip()
+    norm = _normalize_use_block(stripped)
+    if _is_types_glob_norm(norm):
+        return False
+    if " as " in stripped:
+        return False
+    return norm.startswith("usecrate::types::{") or norm.startswith("usecrate::types::")
+
+
+def _dedupe_top_level_import_lines(lines: list) -> list:
+    """删除重复顶层 import，避免 rustc E0252 污染后续函数。"""
+    blocks = _collect_top_level_use_blocks(lines)
+    if not blocks:
+        return lines
+
+    norms = [_normalize_use_block(block) for _, _, block in blocks]
+    has_types_glob = any(_is_types_glob_norm(norm) for norm in norms)
+    seen = set()
+    remove_ranges = []
+    for (start, end, block), norm in zip(blocks, norms):
+        if norm in seen or _is_covered_by_types_glob(block, has_types_glob):
+            remove_ranges.append((start, end))
+            continue
+        seen.add(norm)
+
+    if not remove_ranges:
+        return lines
+
+    remove_lines = set()
+    for start, end in remove_ranges:
+        remove_lines.update(range(start, end + 1))
+    return [line for idx, line in enumerate(lines) if idx not in remove_lines]
+
+
+def dedupe_top_level_imports(content):
+    """对 Rust 模块文本进行顶层 import 去重。"""
+    input_was_string = isinstance(content, str)
+    lines = content.splitlines(keepends=True) if input_was_string else list(content)
+    if lines and not lines[-1].endswith("\n"):
+        lines[-1] += "\n"
+    lines = _dedupe_top_level_import_lines(lines)
+    return "".join(lines) if input_was_string else lines
+
+
 def add_import_to_translated_result(content, imports: list):
     """
     将导入语句添加到翻译结果中
@@ -615,29 +699,39 @@ def add_import_to_translated_result(content, imports: list):
         if content and not content[-1].endswith('\n'):
             content[-1] += '\n'
     
+    content = _dedupe_top_level_import_lines(content)
+
     # 查找现有 use 语句的位置
-    index = next((i for i, line in enumerate(content) if line.strip().startswith("use ")), None)
+    index = next((i for i, line in enumerate(content) if _is_top_level_use_line(line)), None)
     
     # 如果没有找到 use 语句，在文件开头添加
     if index is None:
         index = 0
     
-    # 过滤掉已存在的导入
-    existing_imports = set()
-    for line in content:
-        stripped = line.strip()
-        if stripped.startswith("use "):
-            existing_imports.add(stripped)
+    # 过滤掉已存在的导入（支持多行 grouped import）
+    existing_imports = {
+        _normalize_use_block(block)
+        for _, _, block in _collect_top_level_use_blocks(content)
+    }
+    has_types_glob = any(_is_types_glob_norm(norm) for norm in existing_imports)
     
     new_imports = []
     for imp in imports:
         imp_stripped = imp.strip()
-        if imp_stripped and imp_stripped not in existing_imports:
+        imp_norm = _normalize_use_block(imp_stripped)
+        if (
+            imp_stripped
+            and imp_norm not in existing_imports
+            and not _is_covered_by_types_glob(imp_stripped, has_types_glob)
+        ):
             new_imports.append(imp_stripped)
+            existing_imports.add(imp_norm)
     
     # 插入新导入
     for imp in reversed(new_imports):
         content.insert(index, imp + "\n")
+
+    content = _dedupe_top_level_import_lines(content)
     
     # 返回与输入相同的类型
     if input_was_string:
@@ -674,7 +768,8 @@ def read_translated_function(code: str) -> tuple:
         import_captures = query_import.captures(tree.root_node)
         imports = []
         for node, _ in import_captures:
-            imports.append(code[node.start_byte:node.end_byte])
+            if node.parent == tree.root_node:
+                imports.append(code[node.start_byte:node.end_byte])
 
         return signatures, functions, imports
 
@@ -685,7 +780,7 @@ def read_translated_function(code: str) -> tuple:
 
     for line in code.splitlines():
         s = line.strip()
-        if (s.startswith("use ") or s.startswith("pub use ")) and s.endswith(";"):
+        if _is_top_level_use_line(line) and s.endswith(";"):
             imports.append(s)
 
     fn_pat = re.compile(

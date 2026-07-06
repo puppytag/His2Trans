@@ -417,6 +417,48 @@ SIGNATURE_TRANSLATION_USER_PROMPT = """根据以下信息，输出 C 函数签�
 ```
 """
 
+
+def get_signature_translation_prompts(project_suite: str = "ohos") -> tuple[str, str]:
+    """按项目 suite 返回不冲突的函数签名提示词。"""
+    suite = str(project_suite or "ohos").strip().lower()
+    if suite != "oss":
+        return SIGNATURE_TRANSLATION_SYSTEM_PROMPT, SIGNATURE_TRANSLATION_USER_PROMPT
+    system_prompt = SIGNATURE_TRANSLATION_SYSTEM_PROMPT.replace(
+        "将 C 函数签名精确翻译为 Rust 的 FFI 兼容签名。",
+        "将 C 函数签名精确翻译为独立 Rust-native OSS 项目的初始 Rust 签名；保持当前 crate 可编译，后续 repair 可继续做安全重构。",
+    ).replace(
+        "- 所有参数必须是 FFI 安全类型",
+        "- 初始参数类型必须与当前 crate/types.rs 和项目调用点兼容",
+    ).replace(
+        'pub extern "C" fn ',
+        "pub fn ",
+    ).replace(
+        'pub unsafe fn printf(fmt: *const c_char, ...) -> i32',
+        'pub unsafe extern "C" fn printf(fmt: *const c_char, ...) -> i32',
+    ).replace(
+        """### 1. 函数修饰符
+- `static` 函数 → `fn` (私有函数)
+- 非 `static` 函数 → `pub extern "C" fn` (导出函数)
+- `inline` 函数 → `#[inline] pub fn` 或 `pub extern "C" fn`""",
+        """### 1. 函数修饰符
+- 当前目标是独立 Rust-native OSS 项目
+- `static` 函数 → `fn` (私有函数)
+- 普通非 `static` 项目函数 → `pub fn`
+- 只有真实 callback/function pointer ABI → `pub extern "C" fn`
+- 外部未定义 C 函数由单独的 FFI declaration 路径处理""",
+    ).replace(
+        '"function_modifier": "fn 或 pub extern "C" fn"',
+        '"function_modifier": "fn、pub fn 或真实 ABI 边界的 pub extern \\"C\\" fn"',
+    )
+    user_prompt = SIGNATURE_TRANSLATION_USER_PROMPT.replace(
+        "输出 C 函数签名对应的 Rust FFI 签名",
+        "输出独立 Rust-native OSS 项目中的 Rust 函数签名",
+    ).replace(
+        '{"rust_signature": "pub extern "C" fn xxx(...) -> yyy"}',
+        '{"rust_signature": "pub fn xxx(...) -> yyy"}',
+    )
+    return system_prompt, user_prompt
+
 # ============================================================
 # 系统提示词：全局变量声明翻译
 # ============================================================
@@ -605,6 +647,3 @@ def format_batch_type_mappings(mappings: list) -> str:
     """
     import json
     return json.dumps(mappings, ensure_ascii=False, indent=2)
-
-
-

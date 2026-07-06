@@ -31,8 +31,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 import time
 import logging
+from project_profile import is_oss_suite
 import json
-from typing import Any, Dict, List
+import hashlib
+from typing import Any, Dict, List, Optional, Set
 
 # 导入日志配置并初始化
 from log_config import setup_logging, LogPrinter, ensure_logging_setup
@@ -229,6 +231,260 @@ def get_function(source_code):
         function_name_to_statements[func_name] = function_statements
     
     return function_name_to_statements
+
+
+_STAGE_TARGET_SOURCE_EXTENSIONS = {".c", ".cc", ".cpp", ".cxx"}
+_STAGE_TARGET_HEADER_EXTENSIONS = {".h", ".hh", ".hpp", ".hxx"}
+def _stage_target_signature_is_inline(c_signature: str) -> bool:
+    """判断签名是否为 inline helper。"""
+    sig = " ".join(str(c_signature or "").replace("\n", " ").split())
+    return bool(re.search(r"\binline\b", sig))
+
+
+def _stage_target_is_source_function(info: Dict[str, Any]) -> bool:
+    """判断 Stage C 发现的函数是否应该补入 Stage3 源文件一对一目标集。"""
+    name = str(info.get("name") or "").strip()
+    if not name:
+        return False
+    if info.get("from_header"):
+        return False
+    c_signature = str(info.get("c_signature") or "")
+    if _stage_target_signature_is_inline(c_signature):
+        return False
+    try:
+        src_path = Path(str(info.get("source_abs") or info.get("original_source_file") or ""))
+    except Exception:
+        src_path = Path("")
+    suffix = src_path.suffix.lower()
+    if suffix in _STAGE_TARGET_HEADER_EXTENSIONS:
+        return False
+    if suffix and suffix not in _STAGE_TARGET_SOURCE_EXTENSIONS:
+        return False
+    return True
+
+
+def _extract_function_bodies_by_name(source_code: str, expected_names: Set[str]) -> Dict[str, List[Dict[str, Any]]]:
+    """从源码中按函数名提取完整函数定义文本和行号。"""
+    if not source_code or not expected_names:
+        return {}
+
+    source_bytes = source_code.encode("utf-8", errors="ignore")
+    tree = parser.parse(source_bytes)
+    bodies: Dict[str, List[Dict[str, Any]]] = {name: [] for name in expected_names}
+
+    def _name_matches(text: str, name: str) -> bool:
+        simple = name.split("::")[-1].split("_")[-1] if "::" in name else name
+        candidates = {name, simple}
+        for cand in candidates:
+            if cand and re.search(rf"(?<![A-Za-z0-9_]){re.escape(cand)}\s*\(", text):
+                return True
+        return False
+
+    stack = [tree.root_node]
+    while stack:
+        node = stack.pop()
+        if node.type == "function_definition":
+            text = source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="ignore").strip()
+            sig_text = text.split("{", 1)[0]
+            for name in expected_names:
+                if _name_matches(sig_text, name):
+                    start_line = source_bytes[:node.start_byte].count(b"\n") + 1
+                    end_line = source_bytes[:node.end_byte].count(b"\n") + 1
+                    bodies.setdefault(name, []).append(
+                        {"body": text, "start_line": start_line, "end_line": end_line}
+                    )
+                    break
+            continue
+        for child in reversed(node.children):
+            stack.append(child)
+
+    return {k: v for k, v in bodies.items() if v}
+
+
+def _next_stage_func_index(existing_func_files: Set[str], safe_name: str) -> int:
+    """返回某个 safe module 下一个可用 func_file 下标。"""
+    max_idx = 0
+    prefix = f"{safe_name}_"
+    for func_file in existing_func_files:
+        if not str(func_file).startswith(prefix):
+            continue
+        tail = str(func_file)[len(prefix):]
+        if tail.isdigit():
+            max_idx = max(max_idx, int(tail))
+    return max_idx + 1
+
+
+def preserve_non_manifest_signatures(
+    preferred_signatures: List[Any],
+    extracted_signatures: List[Any],
+    manifest_names: Set[str],
+) -> List[Any]:
+    """保留 manifest 真值签名之外当前提取器发现的额外函数。"""
+    merged = list(preferred_signatures or [])
+    seen = {
+        str(getattr(sig, "name", "") or "").strip()
+        for sig in merged
+        if str(getattr(sig, "name", "") or "").strip()
+    }
+    manifest_names = {str(name or "").strip() for name in (manifest_names or set()) if str(name or "").strip()}
+    for sig in extracted_signatures or []:
+        name = str(getattr(sig, "name", "") or "").strip()
+        if not name or name in manifest_names or name in seen:
+            continue
+        merged.append(sig)
+        seen.add(name)
+    return merged
+
+
+def sync_stage_c_source_targets(
+    *,
+    project_path: str,
+    project_root: Path,
+    function_info_list: List[Dict[str, Any]],
+    source_skeleton_dir: Path,
+    functions_dir: Path,
+    dependencies_dir: Path,
+    dependencies_not_in_file_dir: Path,
+    manifest_path: Path,
+    verbose: bool = False,
+) -> int:
+    """把 Stage C fallback 发现的源文件真实函数同步到 extracted manifest。"""
+    manifest: Dict[str, Any]
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8", errors="ignore") or "{}")
+        except Exception:
+            manifest = {}
+    else:
+        manifest = {}
+
+    manifest_funcs = manifest.get("functions")
+    if not isinstance(manifest_funcs, list):
+        manifest_funcs = []
+
+    existing_func_files = {
+        str(meta.get("func_file") or "").strip()
+        for meta in manifest_funcs
+        if isinstance(meta, dict) and str(meta.get("func_file") or "").strip()
+    }
+    existing_keys = set()
+    for meta in manifest_funcs:
+        if not isinstance(meta, dict):
+            continue
+        name = str(meta.get("name") or "").strip()
+        source_file = str(meta.get("source_file") or "").strip()
+        if name and source_file:
+            existing_keys.add((name, source_file))
+
+    source_infos = [info for info in function_info_list if isinstance(info, dict) and _stage_target_is_source_function(info)]
+    missing_infos = [
+        info for info in source_infos
+        if (str(info.get("name") or "").strip(), str(info.get("source_file") or "").strip()) not in existing_keys
+    ]
+    if not missing_infos:
+        return 0
+
+    functions_dir.mkdir(parents=True, exist_ok=True)
+    dependencies_dir.mkdir(parents=True, exist_ok=True)
+    dependencies_not_in_file_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+
+    bodies_by_source: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
+    added = 0
+    next_idx_by_safe: Dict[str, int] = {}
+
+    try:
+        from call_graph import generate_function_uid
+    except Exception:
+        generate_function_uid = None  # type: ignore
+
+    for info in missing_infos:
+        name = str(info.get("name") or "").strip()
+        safe_name = str(info.get("source_file") or "").strip()
+        source_abs = str(info.get("source_abs") or info.get("original_source_file") or "").strip()
+        if not name or not safe_name or not source_abs:
+            continue
+
+        if safe_name not in next_idx_by_safe:
+            next_idx_by_safe[safe_name] = _next_stage_func_index(existing_func_files, safe_name)
+        idx = next_idx_by_safe[safe_name]
+        next_idx_by_safe[safe_name] += 1
+        func_file = f"{safe_name}_{idx}"
+        while func_file in existing_func_files:
+            idx = next_idx_by_safe[safe_name]
+            next_idx_by_safe[safe_name] += 1
+            func_file = f"{safe_name}_{idx}"
+
+        body = ""
+        body_start_line = 0
+        body_end_line = 0
+        try:
+            if source_abs not in bodies_by_source:
+                src_text = Path(source_abs).read_text(encoding="utf-8", errors="ignore")
+                names_for_source = {
+                    str(it.get("name") or "").strip()
+                    for it in missing_infos
+                    if str(it.get("source_abs") or it.get("original_source_file") or "").strip() == source_abs
+                }
+                bodies_by_source[source_abs] = _extract_function_bodies_by_name(src_text, names_for_source)
+            candidates = bodies_by_source.get(source_abs, {}).get(name) or []
+            if candidates:
+                body_info = candidates.pop(0)
+                body = str(body_info.get("body") or "")
+                body_start_line = int(body_info.get("start_line") or 0)
+                body_end_line = int(body_info.get("end_line") or 0)
+        except Exception:
+            body = ""
+
+        if not body:
+            if verbose:
+                print(f"  ⚠ Stage C 源函数目标同步跳过 {safe_name}::{name}: 原始源文件未找到函数定义")
+            continue
+        if not body.endswith("\n"):
+            body += "\n"
+
+        (functions_dir / f"{func_file}.txt").write_text(body, encoding="utf-8", errors="ignore")
+        (dependencies_dir / f"{func_file}.txt").write_text("", encoding="utf-8")
+        (dependencies_not_in_file_dir / f"{func_file}.txt").write_text("", encoding="utf-8")
+
+        start_line = int(info.get("start_line") or body_start_line or 0)
+        end_line = int(info.get("end_line") or body_end_line or 0)
+        uid = ""
+        if generate_function_uid:
+            try:
+                uid = generate_function_uid(safe_name, start_line or idx, name)
+            except Exception:
+                uid = ""
+
+        manifest_funcs.append(
+            {
+                "func_file": func_file,
+                "name": name,
+                "source_file": safe_name,
+                "start_line": start_line or idx,
+                "end_line": end_line,
+                "uid": uid,
+                "sha1": hashlib.sha1(body.encode("utf-8", errors="ignore")).hexdigest(),
+                "origin": "stage_c_source_fallback",
+                "original_source_file": source_abs,
+            }
+        )
+        existing_func_files.add(func_file)
+        existing_keys.add((name, safe_name))
+        added += 1
+
+    if added:
+        manifest["version"] = str(manifest.get("version") or "1.0")
+        manifest["project"] = manifest.get("project") or project_path
+        manifest["total_functions"] = len(manifest_funcs)
+        manifest["functions"] = manifest_funcs
+        manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8", errors="ignore")
+        if verbose:
+            print(f"  ✓ Stage C 源函数目标同步: 补入 {added} 个函数 ({manifest_path})")
+        else:
+            print(f"  ✓ Stage C 源函数目标同步: 补入 {added} 个函数")
+
+    return added
 
 def get_variable(source_code):
     """提取变量声明（包括静态变量、全局变量）"""
@@ -448,6 +704,23 @@ def add_before_class(functions_signature, source_code):
     insert_position = source_code.find(target_statements[0])
     new_source_code = source_code[:insert_position] + signatures_str + "\n\n" + source_code[insert_position:]
     return new_source_code
+
+# test
+# ------
+# path = "/home/k/ogs_PHD/LLM4SE/2Rust_projects/auto_get_functionPair/huawei_C2Rust/security_dlp_permission_service/interfaces/inner_api/dlp_fuse/include/fuse_daemon.h"
+# path = "/home/k/ogs_PHD/LLM4SE/2Rust_projects/auto_get_functionPair/huawei_C2Rust/translate_cpp2rust_demo/dlp_fuse/include/dlp_file.h"
+# # rs_parser = Parser(CPP_LANGUAGE)
+# # RS_LANGUAGE = Language(tsrust.language(), "rust")
+# # rs_parser.set_language(RS_LANGUAGE)
+
+# source_code = get_source_code(path)
+
+# tree = parser.parse(source_code)
+# # tree = rs_parser.parse(source_code)
+
+# traverse(tree.root_node, source_code)
+# sys.exit()
+# ------
 
 def extract_code(content, file_type="rust"):
     """
@@ -1570,6 +1843,10 @@ Output ONLY valid Rust code in a single code block:
 # 新增：分层骨架构建方法（基于论文方案）
 # =========================================================================
 
+def _llm_fallback_missing_external_key(use_vllm: bool, api_key: str) -> bool:
+    """判断外部 API 模式下是否缺少真实可调用的 LLM 密钥。"""
+    return (not use_vllm) and (not str(api_key or "").strip())
+
 def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, use_type_mapper=True, use_llm_type_mapper=False, use_llm_fallback=True, use_libclang=False, verbose=False):
     """
     分层骨架翻译 - 从"单次生成"转向"分层构建"
@@ -1626,8 +1903,7 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
     # compile_commands.json / OpenHarmony build profile 选择（out_dir 主键）
     # ---------------------------------------------------------------------
     print("\n[查询编译文件] 开始查找 compile_commands.json / build profile...")
-    # 默认路径（仅兜底；开源版优先使用 his2trans/data/ohos/ohos_root_min）
-    DEFAULT_OHOS_ROOT = (Path(__file__).resolve().parent.parent / "data" / "ohos" / "ohos_root_min")
+    DEFAULT_OHOS_ROOT = Path("/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony")
     DEFAULT_COMPILE_COMMANDS = DEFAULT_OHOS_ROOT / "out" / "rk3568" / "compile_commands.json"
 
     # 查找 compile_commands.json（如果可用）
@@ -1640,18 +1916,26 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
         p = Path(env_cc).expanduser()
         if p.exists():
             compile_commands_path = p.resolve()
-            ohos_root_env = os.environ.get("OHOS_ROOT", "").strip()
-            if ohos_root_env and Path(ohos_root_env).exists():
-                ohos_root = Path(ohos_root_env).expanduser().resolve()
-            else:
-                # 尝试从 out/<board>/compile_commands.json 推断
-                try:
-                    ohos_root = compile_commands_path.parent.parent.parent.resolve()
-                except Exception:
-                    ohos_root = None
+            if not is_oss_suite():
+                ohos_root_env = os.environ.get("OHOS_ROOT", "").strip()
+                if ohos_root_env and Path(ohos_root_env).exists():
+                    ohos_root = Path(ohos_root_env).expanduser().resolve()
+                else:
+                    # 尝试从 out/<board>/compile_commands.json 推断
+                    try:
+                        ohos_root = compile_commands_path.parent.parent.parent.resolve()
+                    except Exception:
+                        ohos_root = None
             print(f"  ✓ 使用环境变量指定的 compile_commands.json: {compile_commands_path}")
             if ohos_root:
                 print(f"    OHOS 根目录: {ohos_root}")
+
+    if is_oss_suite() and not compile_commands_path:
+        project_compile_commands = project_root / "compile_commands.json"
+        if project_compile_commands.is_file():
+            compile_commands_path = project_compile_commands.resolve()
+            os.environ.setdefault("COMPILE_COMMANDS_PATH", str(compile_commands_path))
+            print(f"  ✓ OSS/generic 项目使用项目内 compile_commands.json: {compile_commands_path}")
 
     # 优先级0.25: 复用阶段1(get_dependencies.py) 已选择的 profile（避免重复推断，确保 bindgen/types 与 .i 预处理一致）
     if not compile_commands_path:
@@ -1689,9 +1973,13 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
                 oh = (sel.get("ohos_root") or "").strip()
                 if oh and Path(oh).exists():
                     ohos_root = Path(oh).expanduser().resolve()
-                os.environ.setdefault("OHOS_COMPILE_COMMANDS", str(compile_commands_path))
-                if ohos_root:
-                    os.environ.setdefault("OHOS_ROOT", str(ohos_root))
+                if is_oss_suite():
+                    os.environ.setdefault("COMPILE_COMMANDS_PATH", str(compile_commands_path))
+                    ohos_root = None
+                else:
+                    os.environ.setdefault("OHOS_COMPILE_COMMANDS", str(compile_commands_path))
+                    if ohos_root:
+                        os.environ.setdefault("OHOS_ROOT", str(ohos_root))
                 out_dir = (sel.get("out_dir") or "").strip()
                 label = (sel.get("label") or "").strip()
                 print(f"  ✓ 复用 TU profile(out_dir): {out_dir or '(unknown)'}")
@@ -1703,7 +1991,7 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
             print(f"  ⚠ 复用 tu_context_map 的 profile 失败（将继续自动选择）: {e}")
 
     # 优先级0.5: OpenHarmony registry 自动选择 profile（AUTO/缓存/Pin）
-    if not compile_commands_path:
+    if not compile_commands_path and not is_oss_suite():
         try:
             # 只在 SelfContained 模块（有 original_path.txt）或显式配置 registry 时启用，避免对普通项目引入额外开销
             has_original_path = (project_root / "original_path.txt").exists()
@@ -1729,7 +2017,7 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
             print(f"  ⚠ build profile 自动选择失败，回退到传统查找逻辑: {e}")
     
     # 优先级1-4: 传统查找逻辑（仅在前面没有选中时启用）
-    if not compile_commands_path:
+    if not compile_commands_path and not is_oss_suite():
         # 优先级1: 使用硬编码的默认路径
         print(f"  [优先级1] 检查硬编码路径: {DEFAULT_COMPILE_COMMANDS}")
         if DEFAULT_COMPILE_COMMANDS.exists():
@@ -1787,12 +2075,13 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
                         ohos_root = compile_commands_path.parent.parent.parent.resolve()
                         print(f"    推断 OpenHarmony 根目录: {ohos_root}")
         
-        if compile_commands_path:
-            print(f"\n[完成] 找到 compile_commands.json: {compile_commands_path}")
-            if ohos_root:
-                print(f"  OpenHarmony 根目录: {ohos_root}")
-        else:
-            print(f"\n[警告] 未找到 compile_commands.json，将使用项目内头文件搜索路径")
+    if compile_commands_path:
+        print(f"\n[完成] 找到 compile_commands.json: {compile_commands_path}")
+        if ohos_root:
+            print(f"  OpenHarmony 根目录: {ohos_root}")
+    else:
+        print(f"\n[警告] 未找到 compile_commands.json，将使用项目内头文件搜索路径")
+        if not is_oss_suite():
             print(f"  提示: 硬编码路径不存在: {DEFAULT_COMPILE_COMMANDS}")
             print("  提示: 设置环境变量 OHOS_COMPILE_COMMANDS 或 OHOS_ROOT 以启用优化")
     
@@ -2050,12 +2339,20 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
             extra_include_dirs = [str(d) for d in builder.include_dirs] if hasattr(builder, 'include_dirs') else []
             if extra_include_dirs:
                 print(f"  📂 合并 {len(extra_include_dirs)} 个 include 目录到 libclang")
+            source_path_mapper = None
+            if compile_commands_path and ohos_root:
+                try:
+                    from ohos_build_profile import create_ohos_path_mapper
+                    source_path_mapper = create_ohos_path_mapper(project_root, Path(ohos_root))
+                except Exception:
+                    source_path_mapper = None
 
             libclang_extractor = UnifiedFunctionExtractor(
                 compile_commands_path=compile_commands_path,
                 project_root=project_root,
                 coverage_threshold=coverage_threshold,
-                extra_include_dirs=extra_include_dirs
+                extra_include_dirs=extra_include_dirs,
+                source_path_mapper=source_path_mapper
             )
 
             # 使用带覆盖率跟踪的提取方式
@@ -2674,13 +2971,16 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
         timeout = EXTERNAL_API_TIMEOUT
 
     if use_llm_fallback:
-        try:
-            from openai import OpenAI
-            llm_client = OpenAI(base_url=api_base, api_key=api_key, timeout=timeout)
-            logger.info(f"LLM 兜底已启用: {api_base}, 模型: {llm_model}")
-        except Exception as e:
-            logger.warning(f"LLM 兜底初始化失败: {e}，将仅使用 Tree-sitter")
-            llm_client = None
+        if _llm_fallback_missing_external_key(USE_VLLM, api_key):
+            logger.info("LLM 兜底未启用: 缺少 EXTERNAL_API_KEY 或 DEEPSEEK_API_KEY，将仅使用确定性签名生成")
+        else:
+            try:
+                from openai import OpenAI
+                llm_client = OpenAI(base_url=api_base, api_key=api_key, timeout=timeout)
+                logger.info(f"LLM 兜底已启用: {api_base}, 模型: {llm_model}")
+            except Exception as e:
+                logger.warning(f"LLM 兜底初始化失败: {e}，将仅使用 Tree-sitter")
+                llm_client = None
 
     # ========== Deterministic signature source (bindgen on `.i` TU truth) ==========
     sig_source = (os.environ.get("C2R_SIGNATURE_SOURCE", "bindgen") or "bindgen").strip().lower()
@@ -2801,15 +3101,25 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
                     except Exception:
                         pass
             
-            # 合并签名并去重
+            # 合并签名并去重：源文件定义优先于同名头文件定义
+            source_signature_names = {sig.name for sig in signatures if getattr(sig, "name", None)}
+            header_signature_names = {sig.name for sig in header_signatures if getattr(sig, "name", None)}
+            header_only_names = header_signature_names - source_signature_names
             sig_map = {sig.name: sig for sig in header_signatures}
             sig_map.update({sig.name: sig for sig in signatures})
             signatures = list(sig_map.values())
 
             # 返回额外信息用于 LLM 兜底判断和 per-file fallback 日志
-            return (src_file, signatures, len(header_signatures) if header_signatures else 0, source_code, fallback_reason)
+            return (
+                src_file,
+                signatures,
+                len(header_signatures) if header_signatures else 0,
+                source_code,
+                fallback_reason,
+                header_only_names,
+            )
         except Exception as e:
-            return (src_file, None, str(e), None, None)
+            return (src_file, None, str(e), None, None, set())
     
     # 并行提取函数签名
     print(f"  使用 {max_workers} 个线程并行处理 {len(source_files)} 个源文件...")
@@ -2826,16 +3136,21 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
     ts_fallback_count = 0  # 按文件 tree-sitter 回退计数
 
     for result in module_results:
-        # 处理返回格式（5 个元素: src_file, signatures, header_count, source_code, fallback_reason）
-        if len(result) == 5:
+        # 处理返回格式（6 个元素: src_file, signatures, header_count, source_code, fallback_reason, header_only_names）
+        if len(result) == 6:
+            src_file, signatures, header_count, source_code, fallback_reason, header_only_names = result
+        elif len(result) == 5:
             src_file, signatures, header_count, source_code, fallback_reason = result
+            header_only_names = set()
         elif len(result) == 4:
             src_file, signatures, header_count, source_code = result
             fallback_reason = None
+            header_only_names = set()
         else:
             src_file, signatures, header_count = result
             source_code = None
             fallback_reason = None
+            header_only_names = set()
 
         if signatures is None:
             print(f"  ⚠ {src_file.name} 失败: {header_count}")  # header_count 此时是错误信息
@@ -2898,7 +3213,12 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
                         if name in existing_by_name:
                             new_sigs.append(existing_by_name[name])
                 if new_sigs:
-                    signatures = new_sigs
+                    manifest_names = {
+                        str(m.get("name") or "").strip()
+                        for m in metas
+                        if isinstance(m, dict) and str(m.get("name") or "").strip()
+                    }
+                    signatures = preserve_non_manifest_signatures(new_sigs, signatures or [], manifest_names)
                     used_bindgen_sigs = True
 
         # 日志：如果此文件回退到 tree-sitter
@@ -2988,7 +3308,12 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
                     "c_signature": sig.c_signature,
                     "rust_signature": sig.rust_signature,
                     "source_file": module_name,
-                    "is_static": sig.is_static
+                    "is_static": sig.is_static,
+                    "source_abs": str(Path(src_file).resolve()),
+                    "original_source_file": str(Path(src_file).resolve()),
+                    "from_header": sig.name in header_only_names,
+                    "fallback_reason": fallback_reason or "",
+                    "used_bindgen_signature": bool(used_bindgen_sigs),
                 })
         else:
             # 创建空模块
@@ -3024,6 +3349,23 @@ def translate_skeleton_layered(use_bindgen=True, use_llm_for_signatures=False, u
     function_info_path = source_skeleton_dir / "function_signatures.json"
     with open(function_info_path, 'w', encoding='utf-8') as f:
         json.dump(function_info_list, f, indent=2, ensure_ascii=False)
+
+    # libclang 某些 TU 解析失败时，Stage C 仍可能从源文件本体提取出真实函数骨架。
+    # 这些函数必须同步进入 extracted manifest，否则 Stage2/Stage3 会漏翻译。
+    try:
+        sync_stage_c_source_targets(
+            project_path=project_path,
+            project_root=project_root,
+            function_info_list=function_info_list,
+            source_skeleton_dir=source_skeleton_dir,
+            functions_dir=get_functions_path(project_path),
+            dependencies_dir=get_dependencies_path(project_path),
+            dependencies_not_in_file_dir=get_dependencies_not_in_file_path(project_path),
+            manifest_path=get_extracted_path(project_path) / "functions_manifest.json",
+            verbose=verbose,
+        )
+    except Exception as e:
+        print(f"  ⚠ Stage C 源函数目标同步失败（将继续使用已有 manifest）：{e}")
 
     # =========================================================================
     # 阶段 C.3: 生成确定性签名映射 (func_file -> rust_signature)
@@ -4311,22 +4653,21 @@ if __name__ == "__main__":
         print("\n" + "="*60)
         print("分层骨架翻译流程开始 (Layered Mode)")
         print("="*60 + "\n")
-        
-        print("步骤 1/2: 获取依赖...")
-        step_start = time.time()
-        get_dependencies()
-        step_time = time.time() - step_start
-        print(f"✓ 依赖获取完成 (耗时: {step_time:.1f}秒)\n")
-        
-        print("步骤 2/2: 分层骨架构建...")
-        step_start = time.time()
-        
-        # 设置参数
+
         use_bindgen = not args.no_bindgen
         use_llm_signatures = not args.no_llm_signatures and not args.no_type_mapper  # 如果禁用 TypeMapper，可以使用 LLM
         use_type_mapper = not args.no_type_mapper  # 默认启用 TypeMapper
         use_llm_type_mapper = os.environ.get("USE_LLM_TYPE_MAPPER", "false").lower() == "true"  # LLMTypeMapper
         use_libclang = args.use_libclang or os.environ.get("USE_LIBCLANG", "false").lower() == "true"
+        
+        print("步骤 1/2: 获取依赖...")
+        step_start = time.time()
+        get_dependencies(tu_context_only=use_libclang)
+        step_time = time.time() - step_start
+        print(f"✓ 依赖获取完成 (耗时: {step_time:.1f}秒)\n")
+        
+        print("步骤 2/2: 分层骨架构建...")
+        step_start = time.time()
         
         if use_llm_type_mapper:
             print("  ✓ 启用 LLMTypeMapper（TypeMapper + LLM 验证）")

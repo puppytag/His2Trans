@@ -4,6 +4,7 @@ LLM 提示词保存工具
 用于保存每次调用 LLM 时的真实提示词，方便后续分析和优化。
 """
 import json
+import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional, Any
@@ -70,15 +71,20 @@ def save_llm_prompt(
     
     # 提取 system 和 user prompt
     system_prompt = ""
-    user_prompt = ""
+    user_prompts = []
     for msg in messages:
         role = msg.get("role", "")
         content = msg.get("content", "")
         if role == "system":
             system_prompt = content
         elif role == "user":
-            user_prompt = content
+            user_prompts.append(content)
+    user_prompt = "\n\n".join(user_prompts)
     
+    # 补充 prompt cache 分析元数据；不影响真实请求内容。
+    normalized_metadata = dict(metadata or {})
+    normalized_metadata.setdefault("prompt_cache", _build_prompt_cache_metadata(messages, normalized_metadata))
+
     # 构建保存的数据
     prompt_data = {
         "timestamp": datetime.now().isoformat(),
@@ -89,7 +95,7 @@ def save_llm_prompt(
         "system_prompt": system_prompt,
         "user_prompt": user_prompt,
         "messages": messages,  # 保存完整的消息列表
-        "metadata": metadata or {}
+        "metadata": normalized_metadata
     }
     
     # 保存为 JSON 文件
@@ -163,14 +169,15 @@ def save_llm_prompt_text(
     
     # 提取 system 和 user prompt
     system_prompt = ""
-    user_prompt = ""
+    user_prompts = []
     for msg in messages:
         role = msg.get("role", "")
         content = msg.get("content", "")
         if role == "system":
             system_prompt = content
         elif role == "user":
-            user_prompt = content
+            user_prompts.append(content)
+    user_prompt = "\n\n".join(user_prompts)
     
     lines.append(system_prompt)
     lines.append("")
@@ -181,13 +188,15 @@ def save_llm_prompt_text(
     lines.append(user_prompt)
     
     # 添加元数据
-    if metadata:
+    normalized_metadata = dict(metadata or {})
+    normalized_metadata.setdefault("prompt_cache", _build_prompt_cache_metadata(messages, normalized_metadata))
+    if normalized_metadata:
         lines.append("")
         lines.append("=" * 80)
         lines.append("METADATA")
         lines.append("=" * 80)
         lines.append("")
-        lines.append(json.dumps(metadata, ensure_ascii=False, indent=2))
+        lines.append(json.dumps(normalized_metadata, ensure_ascii=False, indent=2))
     
     # 保存为文本文件
     try:
@@ -199,3 +208,27 @@ def save_llm_prompt_text(
         logging.warning(f"保存提示词文本失败: {e}")
         return None
 
+
+def _stable_messages_hash(messages: List[Dict[str, str]]) -> str:
+    """计算 messages 的稳定哈希，用于分析 prompt cache 前缀。"""
+    payload = json.dumps(messages, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _build_prompt_cache_metadata(messages: List[Dict[str, str]], metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """生成远端 prompt cache 观测所需的最小元数据。"""
+    try:
+        static_count = int(metadata.get("cache_static_message_count", metadata.get("static_message_count", 1)) or 1)
+    except (TypeError, ValueError):
+        static_count = 1
+    static_count = max(0, min(static_count, len(messages)))
+    static_messages = messages[:static_count]
+    static_chars = sum(len(msg.get("content", "") or "") for msg in static_messages)
+    full_chars = sum(len(msg.get("content", "") or "") for msg in messages)
+    return {
+        "static_message_count": static_count,
+        "static_message_chars": static_chars,
+        "dynamic_suffix_chars": max(0, full_chars - static_chars),
+        "static_prefix_hash": _stable_messages_hash(static_messages) if static_messages else "",
+        "full_prompt_hash": _stable_messages_hash(messages),
+    }

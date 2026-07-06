@@ -214,8 +214,8 @@ def get_compile_commands_path(ohos_root: Path = None) -> Optional[Path]:
     Returns:
         compile_commands.json 的路径，如果不存在返回 None
     """
-    # 默认路径（仅兜底；开源版优先使用 his2trans/data/ohos/ohos_root_min）
-    DEFAULT_OHOS_ROOT = (Path(__file__).resolve().parent.parent / "data" / "ohos" / "ohos_root_min")
+    # 硬编码的默认路径（仅兜底）
+    DEFAULT_OHOS_ROOT = Path("/data/home/wangshb/c2-rust_framework/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony")
     DEFAULT_COMPILE_COMMANDS = DEFAULT_OHOS_ROOT / "out" / "rk3568" / "compile_commands.json"
     
     # 1. 检查环境变量（允许 pipeline/profile 选择器显式指定）

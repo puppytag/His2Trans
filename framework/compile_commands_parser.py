@@ -107,27 +107,6 @@ class CompileCommandsParser:
         
         self._load_database()
 
-    def _resolve_entry_directory(self, entry: Dict) -> Path:
-        """
-        Resolve entry['directory'] to an absolute path.
-
-        Why:
-        - For portability, some open-source layouts keep compile_commands entries with
-          relative "directory" (e.g. ".").
-        - Such paths should be interpreted relative to the compile_commands.json location,
-          not the current process working directory.
-        """
-        base_dir = Path(entry.get("directory", ".") or ".")
-        if base_dir.is_absolute():
-            try:
-                return base_dir.resolve()
-            except Exception:
-                return base_dir
-        try:
-            return (self.compile_db_path.parent / base_dir).resolve()
-        except Exception:
-            return (self.compile_db_path.parent / base_dir)
-
     def _get_header_resolution_cache_file(self) -> Path:
         """Per-compile_db cache for missing header resolution results (small JSON; avoids rewriting huge pickle cache)."""
         cache_key = hashlib.md5(str(self.compile_db_path.resolve()).encode()).hexdigest()
@@ -377,7 +356,7 @@ class CompileCommandsParser:
         
         # 转换为 Path 对象并规范化
         result = []
-        base_dir = self._resolve_entry_directory(matched_entry)
+        base_dir = Path(matched_entry.get('directory', '.'))
         
         for inc_path_str in include_paths:
             inc_path = self._normalize_path(inc_path_str, base_dir)
@@ -452,7 +431,7 @@ class CompileCommandsParser:
                 # 极端情况下保底；不会很准确，但比直接失败好
                 args = command.split()
 
-        base_dir = self._resolve_entry_directory(entry)
+        base_dir = Path(entry.get("directory", "."))
 
         def _fallback_sysroot_path(sysroot_path: Path) -> Optional[Path]:
             """
@@ -660,6 +639,21 @@ class CompileCommandsParser:
                 i += 1
                 continue
 
+            # C++ parsing flags that affect libc++/template/header semantics.
+            if a in {"-pthread", "-pthreads"}:
+                clang_flags.append(a)
+                i += 1
+                continue
+            if a == "-std":
+                if i + 1 < len(args):
+                    clang_flags.extend(["-std", args[i + 1]])
+                    i += 2
+                    continue
+            if a.startswith("-std=") or a.startswith("-stdlib="):
+                clang_flags.append(a)
+                i += 1
+                continue
+
             # Common arch/CPU flags that affect builtin macros/types (helpful for preprocessing/bindgen)
             # Keep them verbatim (no path normalization needed).
             if a in ("-mthumb", "-marm"):
@@ -691,14 +685,13 @@ class CompileCommandsParser:
         if not entry_file:
             return None
 
-        entry_dir = self._resolve_entry_directory(entry)
-        rel = Path(entry_file)
-        path = rel
+        entry_dir = entry.get("directory") or ""
+        path = Path(entry_file)
         if not path.is_absolute():
-            path = entry_dir / rel
-            # Fallback: some databases store paths relative to OpenHarmony root.
-            if not path.exists() and self.ohos_root:
-                path = self.ohos_root / rel
+            if entry_dir:
+                path = Path(entry_dir) / path
+            elif self.ohos_root:
+                path = self.ohos_root / path
 
         try:
             return path.resolve(strict=False)
@@ -814,7 +807,7 @@ class CompileCommandsParser:
             
             # 策略1.2: 末尾路径片段匹配（降低同名文件碰撞误选概率）
             source_parts = source_file.parts
-            for suffix_len in (4, 3, 2):
+            for suffix_len in (4, 3):
                 if len(source_parts) < suffix_len:
                     continue
                 suffix = source_parts[-suffix_len:]
@@ -829,10 +822,10 @@ class CompileCommandsParser:
                 if suffix_matches:
                     return _pick_best_entry(suffix_matches, reason="filename_index_suffix_path", suffix_len=suffix_len)
 
-            # 如果没有精确匹配，返回第一个候选（可能是相对路径/同名碰撞）
+            # 如果没有精确/可信 suffix 匹配，不能退回同名候选。
+            # OpenHarmony 中大量文件同名；filename-only 会把非目标模块 TU 当成真值。
             if candidates:
-                # Still prefer target/sysroot style entries (reduces host/target mixups).
-                return _pick_best_entry(list(candidates), reason="filename_index_first_candidate", suffix_len=None)
+                return _return(None, "filename_index_collision", suffix_len=None)
             return _return(None, "filename_index_no_candidates")
         
         # 策略2: 无索引命中时的保底扫描（通常不会走到这里）
@@ -916,7 +909,7 @@ class CompileCommandsParser:
             
             # 提取所有 -I 路径
             include_paths = re.findall(include_pattern, command)
-            base_dir = self._resolve_entry_directory(entry)
+            base_dir = Path(entry.get('directory', '.'))
             
             for inc_path_str in include_paths:
                 inc_path = self._normalize_path(inc_path_str, base_dir)
@@ -1066,6 +1059,40 @@ class CompileCommandsParser:
         """
         if not self._all_include_dirs_cache:
             self.get_all_include_dirs()
+
+        # OHOS libc++ ships a target-specific __config_site beside __config.
+        # Generic basename search can otherwise pick an unrelated libc++ copy
+        # (for example third_party/skia), which breaks bindgen/clang truth.
+        if header_name == "__config_site" and self.ohos_root:
+            preferred_dirs: List[Path] = []
+            try:
+                if preferred_include_dirs:
+                    preferred_dirs.extend(Path(p) for p in preferred_include_dirs if p)
+            except Exception:
+                preferred_dirs = []
+
+            ohos_prebuilts_base = self.ohos_root / "prebuilts" / "clang" / "ohos" / "linux-x86_64"
+            preferred_dirs.extend([
+                ohos_prebuilts_base / "llvm_ndk" / "include" / "libcxx-ohos" / "include" / "c++" / "v1",
+                ohos_prebuilts_base / "llvm" / "include" / "libcxx-ohos" / "include" / "c++" / "v1",
+                ohos_prebuilts_base / "libcxx-ndk" / "include" / "libcxx-ohos" / "include" / "c++" / "v1",
+            ])
+
+            seen_config_dirs: Set[str] = set()
+            for d in preferred_dirs:
+                try:
+                    p = Path(d)
+                    key = str(p)
+                    if key in seen_config_dirs:
+                        continue
+                    seen_config_dirs.add(key)
+                    norm = key.replace("\\", "/")
+                    if "libcxx-ohos/include/c++/v1" not in norm:
+                        continue
+                    if (p / header_name).exists():
+                        return str(p)
+                except Exception:
+                    continue
 
         # Load per-compile-db header resolution cache (small JSON).
         self._load_header_resolution_cache()
@@ -1493,8 +1520,24 @@ class CompileCommandsParser:
             if entries:
                 return entries
 
-            # 否则返回所有候选项（可能是相对路径）
-            return candidates
+            source_parts = source_file.parts
+            for suffix_len in (4, 3):
+                if len(source_parts) < suffix_len:
+                    continue
+                suffix = source_parts[-suffix_len:]
+                suffix_entries = []
+                for entry in candidates:
+                    entry_path = self._resolve_entry_file_path(entry)
+                    if not entry_path:
+                        continue
+                    parts = entry_path.parts
+                    if len(parts) >= suffix_len and parts[-suffix_len:] == suffix:
+                        suffix_entries.append(entry)
+                if suffix_entries:
+                    return suffix_entries
+
+            # OpenHarmony 中同名文件很多；预处理入口也不能退回 basename 候选。
+            return []
 
         return entries
 

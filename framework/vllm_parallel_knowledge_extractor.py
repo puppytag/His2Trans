@@ -10,7 +10,7 @@ to extract:
 - API mappings ("API_Mapping")
 
 The JSON schema and calling pattern intentionally mirrors:
-  <his2trans>/rag_builder/qwen3_coder/8_run_parallel_vllm_client.py
+  /data/home/wangshb/qwen3_coder/8_run_parallel_vllm_client.py
 
 So that the output can be merged into the existing RAG knowledge_base.json format and
 used without changing downstream consumers.
@@ -30,6 +30,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from openai import OpenAI
+
+from llm_global_concurrency import llm_global_slot
 
 
 PROMPT_TEMPLATE = """
@@ -256,13 +258,15 @@ class VllmSampling:
 
 
 _WORKER_CLIENT: Optional[OpenAI] = None
+_WORKER_BASE_URL: str = ""
 _WORKER_MODEL: str = ""
 _WORKER_TIMEOUT: float = 180.0
 _WORKER_SAMPLING: VllmSampling = VllmSampling()
 
 
 def _init_worker(base_url: str, api_key: str, model: str, timeout: float, sampling: VllmSampling) -> None:
-    global _WORKER_CLIENT, _WORKER_MODEL, _WORKER_TIMEOUT, _WORKER_SAMPLING
+    global _WORKER_CLIENT, _WORKER_BASE_URL, _WORKER_MODEL, _WORKER_TIMEOUT, _WORKER_SAMPLING
+    _WORKER_BASE_URL = base_url
     _WORKER_MODEL = model
     _WORKER_TIMEOUT = timeout
     _WORKER_SAMPLING = sampling
@@ -296,18 +300,23 @@ def _process_task(task: Dict[str, Any]) -> Dict[str, Any]:
     messages = [{"role": "user", "content": prompt}]
 
     try:
-        completion = _WORKER_CLIENT.chat.completions.create(
+        with llm_global_slot(
+            base_url=_WORKER_BASE_URL,
             model=_WORKER_MODEL,
-            messages=messages,
-            stop=["<|im_end|>"],
-            temperature=_WORKER_SAMPLING.temperature,
-            top_p=_WORKER_SAMPLING.top_p,
-            max_tokens=_WORKER_SAMPLING.max_tokens,
-            extra_body={
-                "top_k": _WORKER_SAMPLING.top_k,
-                "repetition_penalty": _WORKER_SAMPLING.repetition_penalty,
-            },
-        )
+            label="vllm_parallel_knowledge_extractor",
+        ):
+            completion = _WORKER_CLIENT.chat.completions.create(
+                model=_WORKER_MODEL,
+                messages=messages,
+                stop=["<|im_end|>"],
+                temperature=_WORKER_SAMPLING.temperature,
+                top_p=_WORKER_SAMPLING.top_p,
+                max_tokens=_WORKER_SAMPLING.max_tokens,
+                extra_body={
+                    "top_k": _WORKER_SAMPLING.top_k,
+                    "repetition_penalty": _WORKER_SAMPLING.repetition_penalty,
+                },
+            )
         content = completion.choices[0].message.content
         cleaned = _clean_json_text(content)
         llm_json = json.loads(cleaned)

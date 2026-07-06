@@ -678,12 +678,24 @@ def select_profile_for_project(
                 # without full-scan config, re-probe to avoid sticking to a limited candidate set.
                 if full_scan and not bool(sel_cfg.get("full_scan")):
                     cache_invalid = True
+                # resource_management_lite has many basename-colliding files across resmgr/resmgr_lite
+                # profiles. A limited historical scan can stick to a large non-lite profile, so require
+                # a full-scan decision for this family.
+                if "/resource_management_lite/" in original_rel_low and not bool(sel_cfg.get("full_scan")):
+                    cache_invalid = True
                 # If we can infer better hints now, and the cached choice has no coverage, invalidate.
                 if hinted_out_dirs and chosen not in hinted_out_dirs and int(chosen_hit or 0) == 0:
                     cache_invalid = True
                 if chosen_hit == 0 and any(
                     int((ps or {}).get("coverage_hits", 0)) > 0 for ps in probe_scores.values()
                 ):
+                    cache_invalid = True
+                chosen_score = probe_scores.get(chosen) if isinstance(probe_scores, dict) else None
+                if isinstance(chosen_score, dict):
+                    chosen_success = chosen_score.get("success")
+                    if chosen_success is None or int(chosen_success or 0) == 0:
+                        cache_invalid = True
+                else:
                     cache_invalid = True
             except Exception:
                 cache_invalid = False
@@ -712,6 +724,8 @@ def select_profile_for_project(
         full_scan = False
     else:
         full_scan = truth_mode
+    if original_rel_low and "/resource_management_lite/" in original_rel_low:
+        full_scan = True
     # Also treat top_k<=0 as "no limit", which implies we should not pre-trim candidates by heuristics.
     if top_k_raw <= 0:
         full_scan = True
@@ -943,12 +957,20 @@ def select_profile_for_project(
                     if reason not in strict_reasons:
                         attempted -= 1
                         continue
-                    ctx = parser.preprocess_with_context(
-                        Path(f),
-                        entry,
-                        output_dir=out_probe_dir,
-                        timeout_sec=timeout_s,
-                    )
+                    old_auto = os.environ.get("C2R_PREPROCESS_AUTO_RESOLVE_INCLUDES")
+                    os.environ["C2R_PREPROCESS_AUTO_RESOLVE_INCLUDES"] = "0"
+                    try:
+                        ctx = parser.preprocess_with_context(
+                            Path(f),
+                            entry,
+                            output_dir=out_probe_dir,
+                            timeout_sec=timeout_s,
+                        )
+                    finally:
+                        if old_auto is None:
+                            os.environ.pop("C2R_PREPROCESS_AUTO_RESOLVE_INCLUDES", None)
+                        else:
+                            os.environ["C2R_PREPROCESS_AUTO_RESOLVE_INCLUDES"] = old_auto
                     if ctx and not getattr(ctx, "error", None):
                         success += 1
                         total_functions += int(getattr(ctx, "function_count", 0))
@@ -1069,12 +1091,20 @@ def _probe_best_context(
     for entry in entries[:max_entries]:
         try:
             # We only need success/fail; keep output in a temp dir.
-            ctx = parser.preprocess_with_context(
-                source_file,
-                entry,
-                output_dir=output_dir,
-                timeout_sec=timeout_s,
-            )
+            old_auto = os.environ.get("C2R_PREPROCESS_AUTO_RESOLVE_INCLUDES")
+            os.environ["C2R_PREPROCESS_AUTO_RESOLVE_INCLUDES"] = "0"
+            try:
+                ctx = parser.preprocess_with_context(
+                    source_file,
+                    entry,
+                    output_dir=output_dir,
+                    timeout_sec=timeout_s,
+                )
+            finally:
+                if old_auto is None:
+                    os.environ.pop("C2R_PREPROCESS_AUTO_RESOLVE_INCLUDES", None)
+                else:
+                    os.environ["C2R_PREPROCESS_AUTO_RESOLVE_INCLUDES"] = old_auto
             ok = (ctx is not None) and (not getattr(ctx, "error", None))
             # score by (ok, functions, macros)
             score = (

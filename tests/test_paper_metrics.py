@@ -1,5 +1,7 @@
 import json
+import importlib.util
 import unittest
+from pathlib import Path
 
 from scripts.analysis import paper_metrics
 from scripts import export_current_plot_metrics
@@ -153,6 +155,62 @@ class PaperMetricTests(unittest.TestCase):
         self.assertNotIn("bzip2", manifest.get("projects", {}))
         self.assertFalse((repo_root / "data" / "test_module_rust_tests" / "bzip2").exists())
         self.assertFalse((repo_root / "data" / "source_rq2_tests" / "bzip2").exists())
+
+    def test_archived_oss8_summary_uses_paper_macro_average(self) -> None:
+        script_path = (
+            Path(__file__).resolve().parents[1]
+            / "data"
+            / "paper_artifacts"
+            / "deepseek_v4_pro_oss8_0613_rq2_100pct_minimal"
+            / "scripts"
+            / "run_archived_oss8_metrics.py"
+        )
+        spec = importlib.util.spec_from_file_location("run_archived_oss8_metrics", script_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        project_a, project_b = module.PROJECTS[0], module.PROJECTS[1]
+        rq2 = {"summary": {"tests_passed": 1, "total_tests": 2}, "projects": {}}
+        incremental = {"incremental_compilation": {"compiled_functions": 2, "restored_functions": 2}, "projects": {}}
+        unsafe_report = {"summary": {"total_lines": 100, "raw_unsafe_lines": 46, "required_unsafe_lines": 10}, "projects": {}}
+        warnings = {"summary": {"rustc_warning_count": 3, "warning_count": 0, "warning_count_total": 3}, "projects": {}}
+        for project in module.PROJECTS:
+            rq2["projects"][project] = {"tests_passed": 0, "total_tests": 1, "pass_rate": 0.0}
+            incremental["projects"][project] = {"compiled_functions": 1, "restored_functions": 1, "compile_rate": 1.0}
+            unsafe_report["projects"][project] = {
+                "total_lines": 1,
+                "raw_unsafe_lines": 0,
+                "raw_unsafe_ratio": 0.0,
+                "required_unsafe_lines": 0,
+                "required_unsafe_ratio": 0.0,
+            }
+            warnings["projects"][project] = {"rustc_warning_count": 0, "warning_count": 0, "warning_count_total": 0}
+        rq2["projects"][project_a] = {"tests_passed": 1, "total_tests": 1, "pass_rate": 1.0}
+        unsafe_report["projects"][project_a] = {
+            "total_lines": 10,
+            "raw_unsafe_lines": 1,
+            "raw_unsafe_ratio": 0.1,
+            "required_unsafe_lines": 1,
+            "required_unsafe_ratio": 0.1,
+        }
+        unsafe_report["projects"][project_b] = {
+            "total_lines": 90,
+            "raw_unsafe_lines": 45,
+            "raw_unsafe_ratio": 0.5,
+            "required_unsafe_lines": 9,
+            "required_unsafe_ratio": 0.1,
+        }
+
+        summary = module._make_summary(rq2, incremental, unsafe_report, warnings)
+
+        self.assertEqual(summary["summary"]["metric_policy"], "paper_macro_project_average")
+        self.assertLess(summary["summary"]["unsafe"]["raw_unsafe_ratio"], 0.46)
+        self.assertEqual(summary["summary"]["unsafe"]["micro_raw_unsafe_ratio"], 0.46)
+        markdown = module._render_summary_markdown(summary)
+        self.assertIn("| **Paper macro average** | 100.00% | 12.50% | 3 | 7.50% | 2.50% |", markdown)
+        self.assertNotIn("| **Total** |", markdown)
 
 
 if __name__ == "__main__":

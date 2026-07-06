@@ -31,7 +31,7 @@ import argparse
 import logging
 from pathlib import Path
 from dataclasses import dataclass, asdict
-from typing import List, Tuple, Optional, Dict, Any
+from typing import Callable, List, Tuple, Optional, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 设置日志
@@ -215,12 +215,14 @@ class CompileCommandsLoader:
     CPP_EXTENSIONS = {'.cpp', '.cc', '.cxx', '.hpp', '.hh', '.hxx', '.C'}
 
     def __init__(self, compile_commands_path: Optional[Path] = None,
-                 extra_include_dirs: Optional[List[str]] = None):
+                 extra_include_dirs: Optional[List[str]] = None,
+                 source_path_mapper: Optional[Callable[[Path], Path]] = None):
         self.commands: Dict[str, Dict] = {}
         self.dir_commands: Dict[str, Dict] = {}  # 按目录索引：{目录路径: 第一个文件的编译参数}
         self.basename_index: Dict[str, List[str]] = {}  # 按文件名索引：{basename: [abs_path, ...]}
         self.all_include_dirs: List[str] = []     # 所有 include 路径
         self.extra_include_dirs: List[str] = extra_include_dirs or []  # 额外 include 路径
+        self.source_path_mapper = source_path_mapper
 
         # 默认参数（C 语言，会根据文件扩展名自动切换）
         self.default_args_c = [
@@ -396,7 +398,13 @@ class CompileCommandsLoader:
         except Exception:
             return value
 
-    def _filter_clang_args(self, parts: List[str], directory: str, source_file_abs: str) -> List[str]:
+    def _filter_clang_args(
+        self,
+        parts: List[str],
+        directory: str,
+        source_file_abs: str,
+        entry_file_abs: Optional[str] = None,
+    ) -> List[str]:
         """
         从 compile_commands 的 command/arguments 中提取适用于 libclang 的 clang 参数。
 
@@ -442,13 +450,13 @@ class CompileCommandsLoader:
                 continue
 
             # 3) 跳过输入源文件路径（Index.parse 会单独传 file）
-            if p == source_file_abs:
+            if p == source_file_abs or (entry_file_abs and p == entry_file_abs):
                 idx += 1
                 continue
             try:
                 if not Path(p).is_absolute():
                     maybe = str((Path(directory) / p).resolve(strict=False))
-                    if maybe == source_file_abs:
+                    if maybe == source_file_abs or (entry_file_abs and maybe == entry_file_abs):
                         idx += 1
                         continue
             except Exception:
@@ -535,14 +543,25 @@ class CompileCommandsLoader:
         3. 全局 include + extra_include_dirs：合并所有已知 include 路径
         4. 默认参数 + extra_include_dirs：使用预设的默认参数（根据文件类型自动选择 C/C++）
         """
-        abs_path = str(source_file.resolve())
+        local_abs_path = str(source_file.resolve())
+        abs_path = local_abs_path
+        mapped_path_used = False
+        try:
+            if self.source_path_mapper:
+                mapped = self.source_path_mapper(source_file)
+                if mapped:
+                    abs_path = str(Path(mapped).resolve(strict=False))
+                    mapped_path_used = abs_path != local_abs_path
+        except Exception:
+            abs_path = local_abs_path
+            mapped_path_used = False
 
         # 1. 精确匹配
         if abs_path in self.commands:
             entry = self.commands[abs_path]
             command = entry.get('command', '') or ' '.join(entry.get('arguments', []))
             parts = self._split_entry_command(entry)
-            args = self._filter_clang_args(parts, entry.get('directory', ''), abs_path)
+            args = self._filter_clang_args(parts, entry.get('directory', ''), local_abs_path, abs_path)
             # 防御：当 extra_include_dirs 非常多（例如几千个）时，
             # 逐个追加会导致解析极慢且 args 过长；精确匹配时通常不需要追加。
             if self.extra_include_dirs and len(self.extra_include_dirs) <= 200:
@@ -555,12 +574,12 @@ class CompileCommandsLoader:
             return args
 
         # 2. 目录匹配（fallback）
-        dir_path = str(source_file.resolve().parent)
+        dir_path = os.path.dirname(abs_path)
         if dir_path in self.dir_commands:
             entry = self.dir_commands[dir_path]
             command = entry.get('command', '') or ' '.join(entry.get('arguments', []))
             parts = self._split_entry_command(entry)
-            args = self._filter_clang_args(parts, entry.get('directory', ''), abs_path)
+            args = self._filter_clang_args(parts, entry.get('directory', ''), local_abs_path, abs_path)
             if self.extra_include_dirs and len(self.extra_include_dirs) <= 200:
                 existing_dirs = self._extract_existing_include_dirs(args)
                 for inc_dir in self.extra_include_dirs:
@@ -571,9 +590,15 @@ class CompileCommandsLoader:
             logger.debug(f"使用目录 fallback 参数: {source_file.name}")
             return args
 
-        # 2.5 文件名/后缀匹配（用于 self_contained_modules / workspace 拷贝路径）
+        if mapped_path_used:
+            # 映射后的 OHOS 真路径如果不能精确/同目录命中，说明该文件不在当前
+            # compile_commands 真值闭包里；不能再退回 basename/suffix，避免同名 TU 污染。
+            candidate_paths = []
+        else:
+            candidate_paths = self.basename_index.get(source_file.name, [])
+
+        # 2.5 文件名/后缀匹配（用于没有 OHOS 原路径映射的普通 workspace 拷贝路径）
         basename = source_file.name
-        candidate_paths = self.basename_index.get(basename, [])
         if candidate_paths:
             src_p = Path(abs_path)
             best = None
@@ -592,7 +617,7 @@ class CompileCommandsLoader:
                 entry = self.commands.get(best)
                 if entry:
                     parts = self._split_entry_command(entry)
-                    args = self._filter_clang_args(parts, entry.get('directory', ''), best)
+                    args = self._filter_clang_args(parts, entry.get('directory', ''), local_abs_path, best)
                     logger.info(f"使用 suffix 匹配的 compile_commands 条目: {basename} (suffix_len={best_len})")
                     return args
 
@@ -633,7 +658,8 @@ class UnifiedFunctionExtractor:
                  project_root: Optional[Path] = None,
                  coverage_threshold: float = 0.6,
                  include_headers: bool = False,
-                 extra_include_dirs: Optional[List[str]] = None):
+                 extra_include_dirs: Optional[List[str]] = None,
+                 source_path_mapper: Optional[Callable[[Path], Path]] = None):
         """
         初始化提取器
 
@@ -650,7 +676,8 @@ class UnifiedFunctionExtractor:
         self.index = ci.Index.create()
         self.compile_loader = CompileCommandsLoader(
             compile_commands_path,
-            extra_include_dirs=extra_include_dirs
+            extra_include_dirs=extra_include_dirs,
+            source_path_mapper=source_path_mapper,
         )
         self.project_root = project_root or Path.cwd()
         self.coverage_threshold = coverage_threshold

@@ -1,0 +1,1072 @@
+{
+  "suite": "ohos10_ablation",
+  "primary_rate_policy": "macro_project_average: average the per-project rates over the same 10 OHOS projects",
+  "micro_counts_policy": "kept as evidence, not the primary table rate",
+  "groups": [
+    {
+      "group": "A1",
+      "setting": "initial function translation",
+      "note": "no compiler-driven incremental repair; no post-repair agent",
+      "run_dirs": {
+        "incremental_compile": "/data/home/wangshb/c2-rust_framework/experiment_runs/ablation-ohos10-a1-initial-translation/raw/framework_output",
+        "gtest": "ablation-ohos10-a1-initial-translation",
+        "unsafe": "/data/home/wangshb/c2-rust_framework/experiment_runs/ablation-ohos10-a1-initial-translation"
+      },
+      "artifact_paths": {
+        "incremental_compile_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/incremental_compile_ablation-ohos10-a1-initial-translation.json",
+        "gtest_summary_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/ablation_ohos10_a1_initial_translation_gtests/summary.json",
+        "required_unsafe_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/required_unsafe_ablation-ohos10-a1-initial-translation.json"
+      },
+      "summary": {
+        "project_count": 10,
+        "incremental_compile": {
+          "macro_project_average": 0.9582029934423916,
+          "micro": {
+            "num": 483,
+            "den": 495,
+            "rate": 0.9757575757575757
+          },
+          "denominator_kind": "rust_result_function_instances"
+        },
+        "test_pass": {
+          "macro_project_average": 0.39285714285714285,
+          "micro": {
+            "num": 63,
+            "den": 265,
+            "rate": 0.23773584905660378
+          },
+          "projects_compiled": 6,
+          "projects_executed": 6
+        },
+        "raw_unsafe": {
+          "macro_project_average": 0.15954814922825233,
+          "micro": {
+            "num": 11496,
+            "den": 68580,
+            "rate": 0.16762904636920384
+          }
+        },
+        "required_unsafe": {
+          "macro_project_average": 0.07194720905896547,
+          "micro": {
+            "num": 5120,
+            "den": 68580,
+            "rate": 0.07465733449985419
+          }
+        }
+      },
+      "projects": [
+        {
+          "project": "host__25c1898e1626",
+          "incremental_compile": {
+            "num": 84,
+            "den": 85,
+            "rate": 0.9882352941176471
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 128,
+          "llm_functions": 85,
+          "unimplemented_functions": 43,
+          "test_pass": {
+            "num": 0,
+            "den": 8,
+            "rate": 0.0
+          },
+          "test_stage": "rust_staticlib",
+          "compiled_for_gtest": false,
+          "executed_gtest": false,
+          "raw_unsafe": {
+            "num": 1417,
+            "den": 7665,
+            "rate": 0.18486627527723418
+          },
+          "required_unsafe": {
+            "num": 655,
+            "den": 7665,
+            "rate": 0.08545335942596216
+          }
+        },
+        {
+          "project": "appverify_lite__e5ebe91a98b9",
+          "incremental_compile": {
+            "num": 144,
+            "den": 144,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 163,
+          "llm_functions": 144,
+          "unimplemented_functions": 19,
+          "test_pass": {
+            "num": 0,
+            "den": 8,
+            "rate": 0.0
+          },
+          "test_stage": "gtest_run",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 2308,
+            "den": 11992,
+            "rate": 0.19246164109406272
+          },
+          "required_unsafe": {
+            "num": 897,
+            "den": 11992,
+            "rate": 0.07479986657771848
+          }
+        },
+        {
+          "project": "manager__c248934e0221",
+          "incremental_compile": {
+            "num": 63,
+            "den": 63,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 113,
+          "llm_functions": 63,
+          "unimplemented_functions": 50,
+          "test_pass": {
+            "num": 0,
+            "den": 4,
+            "rate": 0.0
+          },
+          "test_stage": "gtest_run",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1154,
+            "den": 6469,
+            "rate": 0.1783892409955171
+          },
+          "required_unsafe": {
+            "num": 615,
+            "den": 6469,
+            "rate": 0.09506878961199568
+          }
+        },
+        {
+          "project": "shared__541f4e547bdb",
+          "incremental_compile": {
+            "num": 21,
+            "den": 21,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 26,
+          "llm_functions": 21,
+          "unimplemented_functions": 5,
+          "test_pass": {
+            "num": 5,
+            "den": 5,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 371,
+            "den": 3070,
+            "rate": 0.12084690553745929
+          },
+          "required_unsafe": {
+            "num": 190,
+            "den": 3070,
+            "rate": 0.06188925081433225
+          }
+        },
+        {
+          "project": "posix__1b7f59c68bbc",
+          "incremental_compile": {
+            "num": 9,
+            "den": 11,
+            "rate": 0.8181818181818182
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 31,
+          "llm_functions": 11,
+          "unimplemented_functions": 20,
+          "test_pass": {
+            "num": 0,
+            "den": 141,
+            "rate": 0.0
+          },
+          "test_stage": "rust_staticlib",
+          "compiled_for_gtest": false,
+          "executed_gtest": false,
+          "raw_unsafe": {
+            "num": 415,
+            "den": 2001,
+            "rate": 0.20739630184907545
+          },
+          "required_unsafe": {
+            "num": 118,
+            "den": 2001,
+            "rate": 0.05897051474262868
+          }
+        },
+        {
+          "project": "common__89d5ecaafdff",
+          "incremental_compile": {
+            "num": 79,
+            "den": 79,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 84,
+          "llm_functions": 79,
+          "unimplemented_functions": 5,
+          "test_pass": {
+            "num": 39,
+            "den": 42,
+            "rate": 0.9285714285714286
+          },
+          "test_stage": "gtest_run",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 2195,
+            "den": 12025,
+            "rate": 0.18253638253638255
+          },
+          "required_unsafe": {
+            "num": 948,
+            "den": 12025,
+            "rate": 0.07883575883575883
+          }
+        },
+        {
+          "project": "core__ef5242b7ab08",
+          "incremental_compile": {
+            "num": 33,
+            "den": 37,
+            "rate": 0.8918918918918919
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 67,
+          "llm_functions": 37,
+          "unimplemented_functions": 30,
+          "test_pass": {
+            "num": 0,
+            "den": 30,
+            "rate": 0.0
+          },
+          "test_stage": "rust_staticlib",
+          "compiled_for_gtest": false,
+          "executed_gtest": false,
+          "raw_unsafe": {
+            "num": 1576,
+            "den": 11602,
+            "rate": 0.13583864850887778
+          },
+          "required_unsafe": {
+            "num": 667,
+            "den": 11602,
+            "rate": 0.05749008791587657
+          }
+        },
+        {
+          "project": "shared__12e38ea922f7",
+          "incremental_compile": {
+            "num": 7,
+            "den": 7,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 7,
+          "llm_functions": 7,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 15,
+            "den": 15,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 218,
+            "den": 1905,
+            "rate": 0.11443569553805774
+          },
+          "required_unsafe": {
+            "num": 114,
+            "den": 1905,
+            "rate": 0.05984251968503937
+          }
+        },
+        {
+          "project": "osal__0bc4f21396ad",
+          "incremental_compile": {
+            "num": 5,
+            "den": 5,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 7,
+          "llm_functions": 5,
+          "unimplemented_functions": 2,
+          "test_pass": {
+            "num": 4,
+            "den": 4,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 125,
+            "den": 1043,
+            "rate": 0.11984659635666348
+          },
+          "required_unsafe": {
+            "num": 72,
+            "den": 1043,
+            "rate": 0.06903163950143816
+          }
+        },
+        {
+          "project": "sapm__193cdeb43a97",
+          "incremental_compile": {
+            "num": 38,
+            "den": 43,
+            "rate": 0.8837209302325582
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 47,
+          "llm_functions": 43,
+          "unimplemented_functions": 4,
+          "test_pass": {
+            "num": 0,
+            "den": 8,
+            "rate": 0.0
+          },
+          "test_stage": "rust_staticlib",
+          "compiled_for_gtest": false,
+          "executed_gtest": false,
+          "raw_unsafe": {
+            "num": 1717,
+            "den": 10808,
+            "rate": 0.1588638045891932
+          },
+          "required_unsafe": {
+            "num": 844,
+            "den": 10808,
+            "rate": 0.07809030347890451
+          }
+        }
+      ]
+    },
+    {
+      "group": "A2",
+      "setting": "A1 + compiler-driven per-function repair",
+      "note": "no post-repair agent",
+      "run_dirs": {
+        "incremental_compile": "/data/home/wangshb/c2-rust_framework/experiment_runs/ablation-ohos10-a2-incremental-repair/raw/framework_output",
+        "gtest": "ablation-ohos10-a2-incremental-repair",
+        "unsafe": "/data/home/wangshb/c2-rust_framework/experiment_runs/ablation-ohos10-a2-incremental-repair"
+      },
+      "artifact_paths": {
+        "incremental_compile_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/incremental_compile_ablation-ohos10-a2-incremental-repair.json",
+        "gtest_summary_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/ablation_ohos10_a2_incremental_repair_gtests/summary.json",
+        "required_unsafe_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/required_unsafe_ablation-ohos10-a2-incremental-repair.json"
+      },
+      "summary": {
+        "project_count": 10,
+        "incremental_compile": {
+          "macro_project_average": 1.0,
+          "micro": {
+            "num": 631,
+            "den": 631,
+            "rate": 1.0
+          },
+          "denominator_kind": "rust_result_function_instances"
+        },
+        "test_pass": {
+          "macro_project_average": 0.9491666666666667,
+          "micro": {
+            "num": 252,
+            "den": 259,
+            "rate": 0.972972972972973
+          },
+          "projects_compiled": 10,
+          "projects_executed": 10
+        },
+        "raw_unsafe": {
+          "macro_project_average": 0.22522631203899277,
+          "micro": {
+            "num": 15001,
+            "den": 64830,
+            "rate": 0.23138978867808113
+          }
+        },
+        "required_unsafe": {
+          "macro_project_average": 0.09825387098639016,
+          "micro": {
+            "num": 6667,
+            "den": 64830,
+            "rate": 0.10283819219497146
+          }
+        }
+      },
+      "projects": [
+        {
+          "project": "host__25c1898e1626",
+          "incremental_compile": {
+            "num": 118,
+            "den": 118,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 128,
+          "llm_functions": 118,
+          "unimplemented_functions": 10,
+          "test_pass": {
+            "num": 8,
+            "den": 8,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1928,
+            "den": 7296,
+            "rate": 0.2642543859649123
+          },
+          "required_unsafe": {
+            "num": 900,
+            "den": 7296,
+            "rate": 0.12335526315789473
+          }
+        },
+        {
+          "project": "appverify_lite__e5ebe91a98b9",
+          "incremental_compile": {
+            "num": 162,
+            "den": 162,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 163,
+          "llm_functions": 162,
+          "unimplemented_functions": 1,
+          "test_pass": {
+            "num": 5,
+            "den": 8,
+            "rate": 0.625
+          },
+          "test_stage": "gtest_run",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 3690,
+            "den": 12353,
+            "rate": 0.29871286327207963
+          },
+          "required_unsafe": {
+            "num": 1426,
+            "den": 12353,
+            "rate": 0.11543754553549745
+          }
+        },
+        {
+          "project": "manager__c248934e0221",
+          "incremental_compile": {
+            "num": 82,
+            "den": 82,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 113,
+          "llm_functions": 82,
+          "unimplemented_functions": 31,
+          "test_pass": {
+            "num": 4,
+            "den": 4,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1590,
+            "den": 6469,
+            "rate": 0.245787602411501
+          },
+          "required_unsafe": {
+            "num": 832,
+            "den": 6469,
+            "rate": 0.12861338692224455
+          }
+        },
+        {
+          "project": "shared__541f4e547bdb",
+          "incremental_compile": {
+            "num": 26,
+            "den": 26,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 26,
+          "llm_functions": 26,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 5,
+            "den": 5,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 440,
+            "den": 3026,
+            "rate": 0.14540647719762062
+          },
+          "required_unsafe": {
+            "num": 212,
+            "den": 3026,
+            "rate": 0.07005948446794448
+          }
+        },
+        {
+          "project": "posix__1b7f59c68bbc",
+          "incremental_compile": {
+            "num": 31,
+            "den": 31,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 31,
+          "llm_functions": 31,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 135,
+            "den": 135,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 607,
+            "den": 1845,
+            "rate": 0.32899728997289973
+          },
+          "required_unsafe": {
+            "num": 184,
+            "den": 1845,
+            "rate": 0.0997289972899729
+          }
+        },
+        {
+          "project": "common__89d5ecaafdff",
+          "incremental_compile": {
+            "num": 84,
+            "den": 84,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 84,
+          "llm_functions": 84,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 42,
+            "den": 42,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 2237,
+            "den": 11706,
+            "rate": 0.19109858192379975
+          },
+          "required_unsafe": {
+            "num": 1014,
+            "den": 11706,
+            "rate": 0.08662224500256278
+          }
+        },
+        {
+          "project": "core__ef5242b7ab08",
+          "incremental_compile": {
+            "num": 67,
+            "den": 67,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 67,
+          "llm_functions": 67,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 26,
+            "den": 30,
+            "rate": 0.8666666666666667
+          },
+          "test_stage": "gtest_run",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 2117,
+            "den": 9702,
+            "rate": 0.21820243248814677
+          },
+          "required_unsafe": {
+            "num": 920,
+            "den": 9702,
+            "rate": 0.0948258091115234
+          }
+        },
+        {
+          "project": "shared__12e38ea922f7",
+          "incremental_compile": {
+            "num": 7,
+            "den": 7,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 7,
+          "llm_functions": 7,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 15,
+            "den": 15,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 310,
+            "den": 1975,
+            "rate": 0.1569620253164557
+          },
+          "required_unsafe": {
+            "num": 130,
+            "den": 1975,
+            "rate": 0.06582278481012659
+          }
+        },
+        {
+          "project": "osal__0bc4f21396ad",
+          "incremental_compile": {
+            "num": 7,
+            "den": 7,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 7,
+          "llm_functions": 7,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 4,
+            "den": 4,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 216,
+            "den": 1057,
+            "rate": 0.2043519394512772
+          },
+          "required_unsafe": {
+            "num": 103,
+            "den": 1057,
+            "rate": 0.09744560075685904
+          }
+        },
+        {
+          "project": "sapm__193cdeb43a97",
+          "incremental_compile": {
+            "num": 47,
+            "den": 47,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 47,
+          "llm_functions": 47,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 8,
+            "den": 8,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1866,
+            "den": 9401,
+            "rate": 0.19848952239123496
+          },
+          "required_unsafe": {
+            "num": 946,
+            "den": 9401,
+            "rate": 0.1006275928092756
+          }
+        }
+      ]
+    },
+    {
+      "group": "A3",
+      "setting": "A2 + post-repair agent",
+      "note": "uses RQ2 replacement output deepseek-v4-pro-ohos10-full-0613-1_harness_fixed_v2 as requested",
+      "run_dirs": {
+        "incremental_compile": "/data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output",
+        "gtest": "deepseek-v4-pro-ohos10-full-0613-1",
+        "unsafe": "/data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-ohos10-full-0613-1"
+      },
+      "artifact_paths": {
+        "incremental_compile_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/incremental_compile_deepseek-v4-pro-ohos10-full-0613-1.json",
+        "gtest_summary_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/ablation_ohos10_a3_post_agent_gtests/summary.json",
+        "required_unsafe_json": "/data/home/wangshb/c2-rust_framework/paper_experiments/results/required_unsafe_deepseek-v4-pro-ohos10-full-0613-1.json"
+      },
+      "summary": {
+        "project_count": 10,
+        "incremental_compile": {
+          "macro_project_average": 1.0,
+          "micro": {
+            "num": 722,
+            "den": 722,
+            "rate": 1.0
+          },
+          "denominator_kind": "rust_result_function_instances"
+        },
+        "test_pass": {
+          "macro_project_average": 0.9491666666666667,
+          "micro": {
+            "num": 252,
+            "den": 259,
+            "rate": 0.972972972972973
+          },
+          "projects_compiled": 10,
+          "projects_executed": 10
+        },
+        "raw_unsafe": {
+          "macro_project_average": 0.16354067606214473,
+          "micro": {
+            "num": 10659,
+            "den": 64677,
+            "rate": 0.16480356231736165
+          }
+        },
+        "required_unsafe": {
+          "macro_project_average": 0.08478283348176265,
+          "micro": {
+            "num": 5467,
+            "den": 64677,
+            "rate": 0.08452773010498323
+          }
+        }
+      },
+      "projects": [
+        {
+          "project": "host__25c1898e1626",
+          "incremental_compile": {
+            "num": 127,
+            "den": 127,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 137,
+          "llm_functions": 127,
+          "unimplemented_functions": 10,
+          "test_pass": {
+            "num": 8,
+            "den": 8,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1630,
+            "den": 7506,
+            "rate": 0.21715960564881429
+          },
+          "required_unsafe": {
+            "num": 847,
+            "den": 7506,
+            "rate": 0.11284305888622435
+          }
+        },
+        {
+          "project": "appverify_lite__e5ebe91a98b9",
+          "incremental_compile": {
+            "num": 173,
+            "den": 173,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 173,
+          "llm_functions": 173,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 5,
+            "den": 8,
+            "rate": 0.625
+          },
+          "test_stage": "gtest_run",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1833,
+            "den": 11223,
+            "rate": 0.1633253140871425
+          },
+          "required_unsafe": {
+            "num": 914,
+            "den": 11223,
+            "rate": 0.08143990020493629
+          }
+        },
+        {
+          "project": "manager__c248934e0221",
+          "incremental_compile": {
+            "num": 123,
+            "den": 123,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 133,
+          "llm_functions": 123,
+          "unimplemented_functions": 10,
+          "test_pass": {
+            "num": 4,
+            "den": 4,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1568,
+            "den": 6604,
+            "rate": 0.23743185947910359
+          },
+          "required_unsafe": {
+            "num": 910,
+            "den": 6604,
+            "rate": 0.1377952755905512
+          }
+        },
+        {
+          "project": "shared__541f4e547bdb",
+          "incremental_compile": {
+            "num": 27,
+            "den": 27,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 27,
+          "llm_functions": 27,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 5,
+            "den": 5,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 382,
+            "den": 3018,
+            "rate": 0.1265738899933731
+          },
+          "required_unsafe": {
+            "num": 217,
+            "den": 3018,
+            "rate": 0.07190192180251823
+          }
+        },
+        {
+          "project": "posix__1b7f59c68bbc",
+          "incremental_compile": {
+            "num": 31,
+            "den": 31,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 31,
+          "llm_functions": 31,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 135,
+            "den": 135,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 543,
+            "den": 2067,
+            "rate": 0.262699564586357
+          },
+          "required_unsafe": {
+            "num": 194,
+            "den": 2067,
+            "rate": 0.0938558297048863
+          }
+        },
+        {
+          "project": "common__89d5ecaafdff",
+          "incremental_compile": {
+            "num": 88,
+            "den": 88,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 88,
+          "llm_functions": 88,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 42,
+            "den": 42,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1686,
+            "den": 11963,
+            "rate": 0.14093454819025328
+          },
+          "required_unsafe": {
+            "num": 805,
+            "den": 11963,
+            "rate": 0.06729081334113517
+          }
+        },
+        {
+          "project": "core__ef5242b7ab08",
+          "incremental_compile": {
+            "num": 77,
+            "den": 77,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 77,
+          "llm_functions": 77,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 26,
+            "den": 30,
+            "rate": 0.8666666666666667
+          },
+          "test_stage": "gtest_run",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 1837,
+            "den": 9979,
+            "rate": 0.18408658182182583
+          },
+          "required_unsafe": {
+            "num": 742,
+            "den": 9979,
+            "rate": 0.07435614791061229
+          }
+        },
+        {
+          "project": "shared__12e38ea922f7",
+          "incremental_compile": {
+            "num": 8,
+            "den": 8,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 8,
+          "llm_functions": 8,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 15,
+            "den": 15,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 150,
+            "den": 1891,
+            "rate": 0.07932310946589106
+          },
+          "required_unsafe": {
+            "num": 90,
+            "den": 1891,
+            "rate": 0.047593865679534636
+          }
+        },
+        {
+          "project": "osal__0bc4f21396ad",
+          "incremental_compile": {
+            "num": 12,
+            "den": 12,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 12,
+          "llm_functions": 12,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 4,
+            "den": 4,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 138,
+            "den": 1074,
+            "rate": 0.12849162011173185
+          },
+          "required_unsafe": {
+            "num": 98,
+            "den": 1074,
+            "rate": 0.09124767225325885
+          }
+        },
+        {
+          "project": "sapm__193cdeb43a97",
+          "incremental_compile": {
+            "num": 56,
+            "den": 56,
+            "rate": 1.0
+          },
+          "incremental_denominator_kind": "rust_result_function_instances",
+          "scanned_functions": 56,
+          "llm_functions": 56,
+          "unimplemented_functions": 0,
+          "test_pass": {
+            "num": 8,
+            "den": 8,
+            "rate": 1.0
+          },
+          "test_stage": "done",
+          "compiled_for_gtest": true,
+          "executed_gtest": true,
+          "raw_unsafe": {
+            "num": 892,
+            "den": 9352,
+            "rate": 0.09538066723695467
+          },
+          "required_unsafe": {
+            "num": 650,
+            "den": 9352,
+            "rate": 0.0695038494439692
+          }
+        }
+      ]
+    }
+  ]
+}

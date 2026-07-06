@@ -1,0 +1,27 @@
+# Compilation Log (full)
+# Generated at: 2026-06-13T23:05:48.086167
+# Project: /data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output/intermediate/sapm__193cdeb43a97/workspace/skeletons/sapm__193cdeb43a97
+============================================================
+
+     Locking 4 packages to latest compatible versions
+   Compiling find-msvc-tools v0.1.9
+   Compiling shlex v1.3.0
+   Compiling libc v0.2.186
+   Compiling cc v1.2.61
+   Compiling sapm__193cdeb43a97 v0.1.0 (/data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output/intermediate/sapm__193cdeb43a97/workspace/skeletons/sapm__193cdeb43a97)
+warning: static variable `g_audioSapmPowerDownSeq` should have an upper case name
+  --> src/src_audio_sapm.rs:19:12
+   |
+19 | static mut g_audioSapmPowerDownSeq: [i32; 26usize] = unsafe { core::mem::MaybeUninit::<[i32; 26usize]>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_AUDIO_SAPM_POWER_DOWN_SEQ`
+   |
+   = note: `#[warn(non_upper_case_globals)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: static variable `g_audioSapmPowerUpSeq` should have an upper case name
+  --> src/src_audio_sapm.rs:22:12
+   |
+22 | static mut g_audioSapmPowerUpSeq: [i32; 26usize] = unsafe { core::mem::MaybeUninit::<[i32; 26usize]>::zeroed().assume_init() };
+   |            ^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_AUDIO_SAPM_POWER_UP_SEQ`
+
+warning: `sapm__193cdeb43a97` (bin "sapm__193cdeb43a97") generated 2 warnings (run `cargo fix --bin "sapm__193cdeb43a97"` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.59s

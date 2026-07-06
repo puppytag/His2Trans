@@ -17,7 +17,24 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple
 from pathlib import Path
 
+from llm_global_concurrency import llm_global_slot
+
 logger = logging.getLogger(__name__)
+
+
+def _client_base_url(llm_client: object) -> str:
+    """读取 OpenAI-compatible client 的 base_url。"""
+    value = getattr(llm_client, "base_url", "") or getattr(llm_client, "_base_url", "")
+    return str(value or "")
+
+
+def _deepseek_request_kwargs(model_name: str, llm_client: object = None) -> dict[str, object]:
+    """复用 generation.py 的 DeepSeek V4 请求参数。"""
+    try:
+        from generate.generation import EXTERNAL_API_BASE_URL, deepseek_v4_request_kwargs
+        return deepseek_v4_request_kwargs(model_name, _client_base_url(llm_client) or EXTERNAL_API_BASE_URL)
+    except Exception:
+        return {}
 
 
 @dataclass
@@ -126,12 +143,18 @@ class LLMSignatureExtractor:
         """调用 LLM"""
         if hasattr(self.llm_client, 'chat'):
             # OpenAI 兼容接口
-            response = self.llm_client.chat.completions.create(
+            kwargs = {
+                "model": self.model_name,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0,
+            }
+            kwargs.update(_deepseek_request_kwargs(self.model_name, self.llm_client))
+            with llm_global_slot(
+                base_url=_client_base_url(self.llm_client),
                 model=self.model_name,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0,
-                max_tokens=4096
-            )
+                label="llm_signature_extractor",
+            ):
+                response = self.llm_client.chat.completions.create(**kwargs)
             return response.choices[0].message.content
         elif hasattr(self.llm_client, 'generate'):
             # 简单生成接口
@@ -386,15 +409,21 @@ class LLMBindgenFallback:
         prompt = BINDGEN_FALLBACK_PROMPT.format(header_content=header_content)
         
         try:
-            response = self.llm_client.chat.completions.create(
-                model=self.model_name,
-                messages=[
+            kwargs = {
+                "model": self.model_name,
+                "messages": [
                     {"role": "system", "content": "You are a C to Rust FFI expert. Output ONLY raw Rust code without any markdown formatting, code fences, or explanations. Never use ``` in your output."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0,  # 低温度，确保输出稳定
-                max_tokens=16000
-            )
+                "temperature": 0,  # 低温度，确保输出稳定
+            }
+            kwargs.update(_deepseek_request_kwargs(self.model_name, self.llm_client))
+            with llm_global_slot(
+                base_url=_client_base_url(self.llm_client),
+                model=self.model_name,
+                label="llm_bindgen_fallback",
+            ):
+                response = self.llm_client.chat.completions.create(**kwargs)
             
             result = response.choices[0].message.content
             rust_code = self._extract_rust_code(result)

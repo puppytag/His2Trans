@@ -16,16 +16,21 @@ Outputs (per Rust project dir):
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+import fcntl
 import json
 import re
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple
 
 
 _HEADER_EXTS = (".h", ".hpp", ".hh", ".hxx", ".H")
 _SOURCE_EXTS = (".c", ".cpp", ".cc", ".cxx", ".C")
+_LOCKS_GUARD = threading.Lock()
+_PATH_LOCKS: Dict[Path, threading.RLock] = {}
 
 
 def _sanitize_ident(s: str) -> str:
@@ -55,6 +60,31 @@ def _ensure_file(path: Path, content: str) -> None:
     _write_text(path, content)
 
 
+def _thread_lock_for(lock_path: Path) -> threading.RLock:
+    """按锁文件路径复用进程内锁，覆盖同进程多线程并发写。"""
+    resolved = lock_path.resolve()
+    with _LOCKS_GUARD:
+        lock = _PATH_LOCKS.get(resolved)
+        if lock is None:
+            lock = threading.RLock()
+            _PATH_LOCKS[resolved] = lock
+        return lock
+
+
+@contextmanager
+def _locked_path(lock_path: Path) -> Iterator[None]:
+    """用线程锁叠加 flock，串行化同进程线程和跨进程写入。"""
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    thread_lock = _thread_lock_for(lock_path)
+    with thread_lock:
+        with lock_path.open("a", encoding="utf-8") as lock_file:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
 def _insert_unique_between_markers(
     path: Path,
     begin_marker: str,
@@ -67,41 +97,66 @@ def _insert_unique_between_markers(
     it will not be inserted again.
     Returns True if file changed.
     """
-    text = _read_text(path) if path.exists() else ""
-    if begin_marker not in text or end_marker not in text:
-        raise ValueError(f"Missing markers in {path}: {begin_marker} / {end_marker}")
+    lock_path = path.parent / f".{path.name}.c2r.lock"
+    with _locked_path(lock_path):
+        text = _read_text(path) if path.exists() else ""
+        if begin_marker not in text or end_marker not in text:
+            raise ValueError(f"Missing markers in {path}: {begin_marker} / {end_marker}")
 
-    before, rest = text.split(begin_marker, 1)
-    middle, after = rest.split(end_marker, 1)
-    middle_lines = middle.splitlines()
+        before, rest = text.split(begin_marker, 1)
+        middle, after = rest.split(end_marker, 1)
+        middle_lines = middle.splitlines()
 
-    existing_set = set(l.rstrip("\n") for l in middle_lines)
+        existing_set = set(l.rstrip("\n") for l in middle_lines)
 
-    to_add: List[str] = []
-    for l in new_lines:
-        line = l.rstrip("\n")
-        if not line:
-            continue
-        if existing_predicate:
-            if any(existing_predicate(line, ex) for ex in existing_set):
+        to_add: List[str] = []
+        for l in new_lines:
+            line = l.rstrip("\n")
+            if not line:
                 continue
-        else:
-            if line in existing_set:
-                continue
-        to_add.append(line)
+            if existing_predicate:
+                if any(existing_predicate(line, ex) for ex in existing_set):
+                    continue
+            else:
+                if line in existing_set:
+                    continue
+            to_add.append(line)
 
-    if not to_add:
+        if not to_add:
+            return False
+
+        # Keep a trailing blank line for readability.
+        middle_out = "\n".join([ln for ln in middle_lines if ln.strip() != "" or True]).rstrip("\n")
+        if middle_out and not middle_out.endswith("\n"):
+            middle_out += "\n"
+        middle_out += "\n".join(to_add) + "\n"
+
+        new_text = before + begin_marker + middle_out + end_marker + after
+        _write_text(path, new_text)
+        return True
+
+
+def _manifest_has_function(manifest: Dict, func: str) -> bool:
+    """判断 manifest 是否已记录目标 shim 函数。"""
+    entries = manifest.get("field_access_shims")
+    if not isinstance(entries, list):
         return False
+    return any(isinstance(item, dict) and item.get("function") == func for item in entries)
 
-    # Keep a trailing blank line for readability.
-    middle_out = "\n".join([ln for ln in middle_lines if ln.strip() != "" or True]).rstrip("\n")
-    if middle_out and not middle_out.endswith("\n"):
-        middle_out += "\n"
-    middle_out += "\n".join(to_add) + "\n"
 
-    new_text = before + begin_marker + middle_out + end_marker + after
-    _write_text(path, new_text)
-    return True
+def _record_manifest_entry(manifest: Dict, *, c_type: str, field: str, func: str, header: str) -> None:
+    """向 manifest 追加 shim 记录，避免并发或重复调用产生重复项。"""
+    manifest.setdefault("field_access_shims", [])
+    if _manifest_has_function(manifest, func):
+        return
+    manifest["field_access_shims"].append(
+        {
+            "c_type": c_type,
+            "field": field,
+            "function": func,
+            "header": header,
+        }
+    )
 
 
 @dataclass
@@ -274,98 +329,91 @@ class CAccessorShimManager:
         Ensure a `void* c2r_field_ptr_<type>__<field>(void*)` shim exists.
         Returns the shim descriptor if created or already present; None if type header not found.
         """
-        self._ensure_scaffold()
-        self._load_known_funcs()
-
         c_type = (c_type or "").strip()
         field = (field or "").strip()
         if not c_type or not field:
             return None
 
         func = f"c2r_field_ptr_{_sanitize_ident(c_type)}__{_sanitize_ident(field)}"
-        if func in self._known_funcs:
-            return FieldShim(c_type=c_type, field=field, function=func, header=header_hint or "")
+        project_lock = self.rust_project_root / ".c2r_accessor_shims.lock"
+        with _locked_path(project_lock):
+            self._ensure_scaffold()
+            self._load_known_funcs()
 
-        header_path: Optional[Path] = None
-        if header_hint:
-            try:
-                hp = Path(header_hint)
-                if hp.exists() and hp.is_file() and (hp.name.endswith(_HEADER_EXTS) or hp.name.endswith(_SOURCE_EXTS)):
-                    header_path = hp
-            except Exception:
-                header_path = None
-        if header_path is None:
-            header_path = self._find_header_for_type(c_type)
-        if header_path is None:
-            return None
+            if func in self._known_funcs:
+                return FieldShim(c_type=c_type, field=field, function=func, header=header_hint or "")
 
-        header_abs = str(header_path.resolve())
+            header_path: Optional[Path] = None
+            if header_hint:
+                try:
+                    hp = Path(header_hint)
+                    if hp.exists() and hp.is_file() and (hp.name.endswith(_HEADER_EXTS) or hp.name.endswith(_SOURCE_EXTS)):
+                        header_path = hp
+                except Exception:
+                    header_path = None
+            if header_path is None:
+                header_path = self._find_header_for_type(c_type)
+            if header_path is None:
+                return None
 
-        # 1) Inject include into C file (dedup)
-        _insert_unique_between_markers(
-            self.shims_c,
-            "// === C2R_INCLUDE_BEGIN ===",
-            "// === C2R_INCLUDE_END ===",
-            [f'#include "{header_abs}"'],
-        )
+            header_abs = str(header_path.resolve())
 
-        # 2) Add C declaration (header)
-        decl = f"void* {func}(void* base);"
-        _insert_unique_between_markers(
-            self.shims_h,
-            "// === C2R_FIELD_PTR_DECLS_BEGIN ===",
-            "// === C2R_FIELD_PTR_DECLS_END ===",
-            [decl],
-        )
+            # 1) Inject include into C file (dedup)
+            _insert_unique_between_markers(
+                self.shims_c,
+                "// === C2R_INCLUDE_BEGIN ===",
+                "// === C2R_INCLUDE_END ===",
+                [f'#include "{header_abs}"'],
+            )
 
-        # 3) Add C definition
-        # We cast as `c_type*` (works for typedef). If the C type is a struct tag without typedef,
-        # this will fail; users can fix by adding a typedef or adjusting header discovery.
-        definition = "\n".join(
-            [
-                f"void* {func}(void* base) {{",
-                f"    return (void*)(&(({c_type}*)base)->{field});",
-                "}",
-            ]
-        )
-        _insert_unique_between_markers(
-            self.shims_c,
-            "// === C2R_FIELD_PTR_DEFS_BEGIN ===",
-            "// === C2R_FIELD_PTR_DEFS_END ===",
-            [definition],
-            existing_predicate=lambda new, ex: ex.startswith(f"void* {func}("),
-        )
+            # 2) Add C declaration (header)
+            decl = f"void* {func}(void* base);"
+            _insert_unique_between_markers(
+                self.shims_h,
+                "// === C2R_FIELD_PTR_DECLS_BEGIN ===",
+                "// === C2R_FIELD_PTR_DECLS_END ===",
+                [decl],
+            )
 
-        # 4) Inject Rust extern decl into compat.rs
-        rust_decl = "\n".join(
-            [
-                "#[allow(improper_ctypes)]",
-                'extern "C" {',
-                f"    pub fn {func}(base: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void;",
-                "}",
-            ]
-        )
-        _insert_unique_between_markers(
-            self.compat_rs,
-            "// === C2R_ACCESSOR_SHIMS_BEGIN ===",
-            "// === C2R_ACCESSOR_SHIMS_END ===",
-            [rust_decl],
-            existing_predicate=lambda new, ex: f"pub fn {func}(" in ex,
-        )
+            # 3) Add C definition
+            # We cast as `c_type*` (works for typedef). If the C type is a struct tag without typedef,
+            # this will fail; users can fix by adding a typedef or adjusting header discovery.
+            definition = "\n".join(
+                [
+                    f"void* {func}(void* base) {{",
+                    f"    return (void*)(&(({c_type}*)base)->{field});",
+                    "}",
+                ]
+            )
+            _insert_unique_between_markers(
+                self.shims_c,
+                "// === C2R_FIELD_PTR_DEFS_BEGIN ===",
+                "// === C2R_FIELD_PTR_DEFS_END ===",
+                [definition],
+                existing_predicate=lambda new, ex: ex.startswith(f"void* {func}("),
+            )
 
-        # 5) Record manifest
-        manifest = self._load_manifest()
-        manifest.setdefault("field_access_shims", [])
-        manifest["field_access_shims"].append(
-            {
-                "c_type": c_type,
-                "field": field,
-                "function": func,
-                "header": header_abs,
-            }
-        )
-        self._save_manifest(manifest)
+            # 4) Inject Rust extern decl into compat.rs
+            rust_decl = "\n".join(
+                [
+                    "#[allow(improper_ctypes)]",
+                    'extern "C" {',
+                    f"    pub fn {func}(base: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void;",
+                    "}",
+                ]
+            )
+            _insert_unique_between_markers(
+                self.compat_rs,
+                "// === C2R_ACCESSOR_SHIMS_BEGIN ===",
+                "// === C2R_ACCESSOR_SHIMS_END ===",
+                [rust_decl],
+                existing_predicate=lambda new, ex: f"pub fn {func}(" in ex,
+            )
 
-        self._known_funcs.add(func)
-        return FieldShim(c_type=c_type, field=field, function=func, header=header_abs)
+            # 5) Record manifest
+            manifest = self._load_manifest()
+            _record_manifest_entry(manifest, c_type=c_type, field=field, func=func, header=header_abs)
+            self._save_manifest(manifest)
 
+            self._known_funcs.add(func)
+            return FieldShim(c_type=c_type, field=field, function=func, header=header_abs)

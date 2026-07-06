@@ -27,79 +27,6 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
-_RUST_KEYWORDS = {
-    # 2018/2021 keywords + reserved words commonly used by bindgen sanitizers.
-    "as",
-    "break",
-    "const",
-    "continue",
-    "crate",
-    "else",
-    "enum",
-    "extern",
-    "false",
-    "fn",
-    "for",
-    "if",
-    "impl",
-    "in",
-    "let",
-    "loop",
-    "match",
-    "mod",
-    "move",
-    "mut",
-    "pub",
-    "ref",
-    "return",
-    "self",
-    "Self",
-    "static",
-    "struct",
-    "super",
-    "trait",
-    "true",
-    "type",
-    "unsafe",
-    "use",
-    "where",
-    "while",
-    # 2018+ edition keywords
-    "async",
-    "await",
-    "dyn",
-    # reserved for future use (still blocked as identifiers in many contexts)
-    "try",
-    "yield",
-}
-
-
-def _sanitize_rust_field_name(name: str, used: Set[str]) -> str:
-    """
-    Sanitize a C struct field name into a valid Rust field identifier.
-
-    Important: some Rust keywords cannot be used even as raw identifiers (e.g., `super`).
-    To keep things simple and robust, we always use the bindgen-like strategy:
-    - replace non-identifier chars with `_`
-    - if keyword, append `_`
-    - de-dup by appending a numeric suffix
-    """
-    raw = (name or "").strip()
-    s = re.sub(r"[^A-Za-z0-9_]", "_", raw)
-    if not s:
-        s = "_c2r_field"
-    if s[0].isdigit():
-        s = "_" + s
-    if s in _RUST_KEYWORDS:
-        s = s + "_"
-    base = s
-    i = 1
-    while s in used:
-        s = f"{base}_{i}"
-        i += 1
-    used.add(s)
-    return s
-
 TYPE_MAPPER_AVAILABLE = False
 TypeMapper = None
 try:
@@ -379,12 +306,8 @@ def _build_struct_block(type_name: str, fields: Dict[str, str], *, comments: Opt
     Build a conservative `#[repr(C)] pub struct` block for types.rs.
     """
     field_lines = []
-    used_names: Set[str] = set()
     for fname, fty in sorted(fields.items()):
-        safe_name = _sanitize_rust_field_name(fname, used_names)
-        if safe_name != fname:
-            field_lines.append(f"    // C2R_FIELD_RENAME: {fname} -> {safe_name}")
-        field_lines.append(f"    pub {safe_name}: {fty},")
+        field_lines.append(f"    pub {fname}: {fty},")
     if not field_lines:
         field_lines.append("    pub _c2r_private: [u8; 0],")
     else:
@@ -887,23 +810,25 @@ class TypeRecoveryManager:
         except Exception:
             return
 
-    def _record_missing_const(self, name: str) -> None:
+    def _record_missing_const(self, name: str) -> bool:
         try:
             arr = self.report.setdefault("missing_consts", [])
             if any(isinstance(x, dict) and x.get("name") == name for x in arr):
-                return
+                return False
             arr.append({"name": name, "last_seen": self._utc_now()})
+            return True
         except Exception:
-            return
+            return False
 
-    def _record_missing_global(self, name: str) -> None:
+    def _record_missing_global(self, name: str) -> bool:
         try:
             arr = self.report.setdefault("missing_globals", [])
             if any(isinstance(x, dict) and x.get("name") == name for x in arr):
-                return
+                return False
             arr.append({"name": name, "last_seen": self._utc_now()})
+            return True
         except Exception:
-            return
+            return False
 
     def _record_struct_recovery(
         self,
@@ -1018,9 +943,11 @@ class TypeRecoveryManager:
             if modified:
                 types_rs = _read_text(self.types_rs_path)
 
-        # Add missing constants / globals placeholders (heuristic)
+        # Add missing constants placeholders only when explicitly enabled.
+        # Missing globals are recorded as diagnostics, not emitted as fake storage:
+        # a guessed `static mut NAME: i32` compiles but corrupts the available API surface.
         const_lines: List[str] = []
-        globals_lines: List[str] = []
+        report_changed = False
         for v in sorted(missing_values):
             if not v:
                 continue
@@ -1029,16 +956,13 @@ class TypeRecoveryManager:
                     g_content = _read_text(self.globals_rs_path)
                     if re.search(rf"\bstatic\s+mut\s+{re.escape(v)}\b", g_content):
                         continue
-                    self._record_missing_global(v)
-                    globals_lines.append(f"/// C2R_AUTO_GLOBAL: placeholder for `{v}`")
-                    globals_lines.append(f"pub static mut {v}: i32 = 0;")
-                    globals_lines.append("")
+                    report_changed |= self._record_missing_global(v)
                 continue
             if not _looks_like_const(v):
                 continue
             if re.search(rf"\bpub\s+const\s+{re.escape(v)}\b", types_rs):
                 continue
-            self._record_missing_const(v)
+            report_changed |= self._record_missing_const(v)
             if self._emit_missing_consts:
                 const_lines.append(f"/// C2R_AUTO_CONST: placeholder for `{v}` (value unknown)")
                 const_lines.append(f"pub const {v}: i32 = 0;")
@@ -1048,9 +972,6 @@ class TypeRecoveryManager:
             modified |= _append_marked_block(self.types_rs_path, "AUTO_MISSING_CONSTS", const_lines)
             if modified:
                 types_rs = _read_text(self.types_rs_path)
-
-        if globals_lines and self.globals_rs_path.exists():
-            modified |= _append_marked_block(self.globals_rs_path, "AUTO_MISSING_GLOBALS", globals_lines)
 
         # (3) Struct field recovery for E0609
         no_fields = parse_no_field_errors(error_msg)
@@ -1077,6 +998,7 @@ class TypeRecoveryManager:
 
         if modified:
             self._save_cache()
+        if modified or report_changed:
             self._save_report()
         return modified
 

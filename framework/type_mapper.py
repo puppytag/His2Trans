@@ -13,7 +13,9 @@
 import re
 import os
 import logging
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Set
+from llm_global_concurrency import llm_global_slot
+from project_profile import normalize_project_suite
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +38,27 @@ except ImportError:
 # 全局 LLM 客户端（懒加载）
 _llm_client = None
 _llm_model = "qwen3_coder"
+_llm_base_url = ""
+
+
+def _deepseek_request_kwargs() -> dict[str, object]:
+    """复用 generation.py 的 DeepSeek V4 请求参数。"""
+    try:
+        from generate.generation import EXTERNAL_API_BASE_URL, deepseek_v4_request_kwargs
+        return deepseek_v4_request_kwargs(_llm_model, _llm_base_url or EXTERNAL_API_BASE_URL)
+    except Exception:
+        return {}
+
+
+def _call_openai_compatible(client: object, *, model: str, **kwargs):
+    """调用 OpenAI-compatible chat completion，并套用外部 LLM 全局并发锁。"""
+    with llm_global_slot(base_url=_llm_base_url, model=model, label="type_mapper"):
+        return client.chat.completions.create(model=model, **kwargs)
+
 
 def _get_llm_client():
     """懒加载 LLM 客户端 - 复用 generation.py 的配置"""
-    global _llm_client
+    global _llm_client, _llm_base_url
     if _llm_client is None:
         try:
             import os
@@ -64,6 +83,7 @@ def _get_llm_client():
                 api_base = os.environ.get("OPENAI_API_BASE", "http://localhost:8000/v1")
                 api_key = "dummy"
                 timeout = 600.0
+            _llm_base_url = api_base
             _llm_client = OpenAI(base_url=api_base, api_key=api_key, timeout=timeout)
             logger.info(f"[TypeMapper] LLM 兜底已启用: {api_base}")
         except Exception as e:
@@ -108,12 +128,14 @@ Output ONLY the Rust type, nothing else. Example outputs:
 Rust type:'''
 
     try:
-        response = client.chat.completions.create(
-            model=_llm_model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=100,
-            temperature=0.0
-        )
+        kwargs = {
+            "model": _llm_model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.0,
+        }
+        kwargs.update(_deepseek_request_kwargs())
+        model = str(kwargs.pop("model"))
+        response = _call_openai_compatible(client, model=model, **kwargs)
         
         result = response.choices[0].message.content.strip()
         
@@ -135,6 +157,55 @@ Rust type:'''
 
 
 class TypeMapper:
+    @staticmethod
+    def project_suite(project_suite: Optional[str] = None) -> str:
+        """返回规范化项目 suite；未配置或非法值时保持历史 OHOS 行为。"""
+        return normalize_project_suite(project_suite)
+
+    @staticmethod
+    def function_modifier(
+        *,
+        is_static: bool = False,
+        is_callback: bool = False,
+        project_suite: Optional[str] = None,
+        func_name: str = "",
+    ) -> str:
+        """按目标 suite 选择函数 ABI；真实 callback 始终保留 C ABI。"""
+        if is_static or str(func_name or "").strip() == "main":
+            return "fn"
+        if TypeMapper.project_suite(project_suite) == "oss" and not is_callback:
+            return "pub fn"
+        return 'pub extern "C" fn'
+
+    @staticmethod
+    def adapt_function_signature_abi(
+        rust_signature: str,
+        *,
+        is_static: bool = False,
+        is_callback: bool = False,
+        project_suite: Optional[str] = None,
+        func_name: str = "",
+    ) -> str:
+        """将已有定义签名的前缀规范到当前 suite，保留参数和返回类型。"""
+        signature = str(rust_signature or "").strip()
+        modifier = TypeMapper.function_modifier(
+            is_static=is_static,
+            is_callback=is_callback,
+            project_suite=project_suite,
+            func_name=func_name,
+        )
+        pattern = r'^(?:(?:pub|unsafe)\s+)*(?:extern\s+"C"\s+)?fn\s+'
+        if not re.match(pattern, signature):
+            return signature
+        unsafe_required = bool(re.match(r"^(?:(?:pub)\s+)?unsafe\s+", signature))
+        if unsafe_required:
+            modifier = {
+                "fn": "unsafe fn",
+                "pub fn": "pub unsafe fn",
+                'pub extern "C" fn': 'pub unsafe extern "C" fn',
+            }.get(modifier, modifier)
+        return re.sub(pattern, f"{modifier} ", signature, count=1)
+
     """
     确定性类型映射器：替代 LLM 进行 C -> Rust 类型转换
     
@@ -305,6 +376,89 @@ class TypeMapper:
     SPECIAL_KEYWORDS = {"self", "Self", "super", "crate"}
 
     @staticmethod
+    def _truth_mode_enabled() -> bool:
+        """判断当前是否处于 truth mode。"""
+        return (os.environ.get("C2R_TRUTH_MODE", "0") or "0").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        )
+
+    @staticmethod
+    def _prefix_custom_types_enabled() -> bool:
+        """判断自定义类型是否需要 crate::types 前缀。"""
+        prefix_flag = (os.environ.get("C2R_TYPEMAPPER_PREFIX_CUSTOM_TYPES", "") or "").strip().lower()
+        if prefix_flag:
+            return prefix_flag not in ("0", "false", "no", "off")
+        # 默认保持旧契约；truth mode 不加前缀，避免掩盖 TU 类型缺口。
+        return not TypeMapper._truth_mode_enabled()
+
+    @staticmethod
+    def _strip_leading_cv_and_tags(type_name: str) -> str:
+        """移除 C/C++ 类型首尾的 cv/tag 修饰符。"""
+        clean = " ".join((type_name or "").strip().split())
+        changed = True
+        while changed:
+            changed = False
+            for prefix in ("const ", "volatile ", "struct ", "enum ", "union ", "class "):
+                if clean.startswith(prefix):
+                    clean = clean[len(prefix):].strip()
+                    changed = True
+            for suffix in (" const", " volatile"):
+                if clean.endswith(suffix):
+                    clean = clean[:-len(suffix)].strip()
+                    changed = True
+        return clean
+
+    @staticmethod
+    def _has_const_qualifier(type_name: str) -> bool:
+        """判断 C/C++ 类型是否带 const 修饰。"""
+        clean = " ".join((type_name or "").strip().split())
+        return clean == "const" or clean.startswith("const ") or clean.endswith(" const") or " const " in clean
+
+    @staticmethod
+    def _is_std_string_type(type_name: str) -> bool:
+        """识别 C++ std::string spelling，映射为 crate::types::string。"""
+        clean = TypeMapper._strip_leading_cv_and_tags(type_name)
+        clean = clean.replace("std::__1::", "std::").replace("std::__ndk1::", "std::")
+        return clean in {"std::string", "string"} or clean.startswith("std::basic_string<")
+
+    @staticmethod
+    def _custom_type_to_rust_name(type_name: str, known_rust_type_names: Optional[Set[str]] = None) -> str:
+        """把自定义 C/C++ 类型名转换为 Rust FFI 类型名。"""
+        clean = TypeMapper._strip_leading_cv_and_tags(type_name)
+        clean = clean.replace("std::__1::", "std::").replace("std::__ndk1::", "std::")
+        if TypeMapper._is_std_string_type(clean):
+            clean = "string"
+
+        rust_name = clean.replace("::", "_")
+        rust_name = " ".join(rust_name.split())
+        rust_name = rust_name.replace(" ", "_")
+        if rust_name and not rust_name[0].isalpha() and rust_name[0] != "_":
+            rust_name = "_" + rust_name
+
+        known = {n for n in (known_rust_type_names or set()) if isinstance(n, str) and n}
+        if known:
+            exact = rust_name if rust_name in known else ""
+            if exact:
+                return exact
+            suffix = f"_{rust_name}"
+            matches = sorted(n for n in known if n.endswith(suffix))
+            if len(matches) == 1:
+                return matches[0]
+        return rust_name
+
+    @staticmethod
+    def _format_custom_rust_type(type_name: str, known_rust_type_names: Optional[Set[str]] = None) -> str:
+        """按当前模式给自定义类型补 crate::types 前缀。"""
+        rust_type_name = TypeMapper._custom_type_to_rust_name(type_name, known_rust_type_names)
+        if not rust_type_name:
+            return "*mut std::ffi::c_void"
+        return f"crate::types::{rust_type_name}" if TypeMapper._prefix_custom_types_enabled() else rust_type_name
+
+    @staticmethod
     def _extract_type_from_param(param: str) -> str:
         """
         从 C 参数声明中提取类型（移除参数名）
@@ -361,7 +515,12 @@ class TypeMapper:
         return param
 
     @staticmethod
-    def map_c_type(c_type_str: str, is_pointer: bool = False, is_const: bool = False) -> str:
+    def map_c_type(
+        c_type_str: str,
+        is_pointer: bool = False,
+        is_const: bool = False,
+        known_rust_type_names: Optional[Set[str]] = None,
+    ) -> str:
         """
         递归解析 C 类型并转换为 Rust 类型
 
@@ -398,7 +557,7 @@ class TypeMapper:
             params_str = func_ptr_pattern.group(3).strip()
 
             # 转换返回类型
-            rust_ret = TypeMapper.map_c_type(return_type, False, False)
+            rust_ret = TypeMapper.map_c_type(return_type, False, False, known_rust_type_names)
             if rust_ret == "()":
                 rust_ret_str = ""
             else:
@@ -415,7 +574,7 @@ class TypeMapper:
                     if param and param != "...":
                         # 移除参数名，只保留类型
                         param_type = TypeMapper._extract_type_from_param(param)
-                        rust_param = TypeMapper.map_c_type(param_type, False, False)
+                        rust_param = TypeMapper.map_c_type(param_type, False, False, known_rust_type_names)
                         param_types.append(rust_param)
                 rust_params = ", ".join(param_types)
 
@@ -423,13 +582,24 @@ class TypeMapper:
             # 使用 Option 包装，因为 C 函数指针可能为 NULL
             return f"Option<unsafe extern \"C\" fn({rust_params}){rust_ret_str}>"
 
+        # C++ reference 必须在 sanitizer 前处理；`&` 是合法类型语法，不是垃圾字符。
+        ref_match = re.match(r"^(.+?)\s*(&&|&)$", s)
+        if ref_match:
+            inner_type = ref_match.group(1).strip()
+            inner_is_const = is_const or TypeMapper._has_const_qualifier(inner_type)
+            inner_type = TypeMapper._strip_leading_cv_and_tags(inner_type)
+            rust_inner = TypeMapper.map_c_type(inner_type, False, False, known_rust_type_names)
+            if rust_inner == "()":
+                rust_inner = "std::ffi::c_void"
+            return f"*const {rust_inner}" if inner_is_const else f"*mut {rust_inner}"
+
         # 0. 处理数组类型 (Array) - 必须在类型清洗之前处理
         # C 语法：type[] 或 type[N] -> Rust: *mut type 或 [type; N]
 
         # 空数组 (如 usart_pin_map_t[])
         if s.endswith("[]"):
             inner_type = s[:-2].strip()
-            rust_inner = TypeMapper.map_c_type(inner_type, False, False)
+            rust_inner = TypeMapper.map_c_type(inner_type, False, False, known_rust_type_names)
             return f"*mut {rust_inner}"
 
         # 带大小的数组 (如 type[10])
@@ -437,16 +607,8 @@ class TypeMapper:
         if array_match:
             inner_type = array_match.group(1).strip()
             array_size = array_match.group(2)
-            rust_inner = TypeMapper.map_c_type(inner_type, False, False)
+            rust_inner = TypeMapper.map_c_type(inner_type, False, False, known_rust_type_names)
             return f"[{rust_inner}; {array_size}]"
-
-        # ========== 增强: 类型清洗 (解决 pack 项目崩溃问题) ==========
-        # 检测并处理宏解析失败产生的垃圾类型名
-        if TYPE_SANITIZER_AVAILABLE:
-            s = sanitize_type_name(s, fallback="void*")
-            # 如果清洗后变成了 void*，直接返回
-            if s == "void*":
-                return "*mut std::ffi::c_void"
 
         # ========== ★★★ 关键增强：多级指针处理 ★★★ ==========
         # 参考 Simcrat: Type::Ptr(Box::new(Type::Ptr(...)), bool) 递归结构
@@ -479,7 +641,7 @@ class TypeMapper:
             if inner_type == "void" or inner_type == "":
                 rust_inner = "std::ffi::c_void"
             else:
-                rust_inner = TypeMapper.map_c_type(inner_type, False, False)
+                rust_inner = TypeMapper.map_c_type(inner_type, False, False, known_rust_type_names)
 
             # 从内向外包装指针层
             # const_at_level[0] 是最外层的 const 信息（最后剥离的）
@@ -504,12 +666,26 @@ class TypeMapper:
         # 2. 处理 const（非指针情况）
         if s.startswith("const "):
             inner = s[6:].strip()
-            return TypeMapper.map_c_type(inner, False, True)
+            return TypeMapper.map_c_type(inner, False, True, known_rust_type_names)
         
         # 3. 处理 volatile（通常可以忽略）
         if s.startswith("volatile "):
             inner = s[9:].strip()
-            return TypeMapper.map_c_type(inner, False, False)
+            return TypeMapper.map_c_type(inner, False, False, known_rust_type_names)
+
+        # std::string 是 C++ FFI 自定义类型，不应映射成 Rust String 或 void*。
+        if TypeMapper._is_std_string_type(s):
+            return TypeMapper._format_custom_rust_type("string", known_rust_type_names)
+
+        # ========== 增强: 类型清洗 (解决 pack 项目崩溃问题) ==========
+        # 检测并处理宏解析失败产生的垃圾类型名。C++ namespace 类型先转为 Rust 标识符候选，
+        # 避免合法的 `A::B::T` 被 C 标识符校验误判为垃圾类型。
+        if TYPE_SANITIZER_AVAILABLE:
+            sanitizer_input = TypeMapper._custom_type_to_rust_name(s, known_rust_type_names) if "::" in s else s
+            s = sanitize_type_name(sanitizer_input, fallback="void*")
+            # 如果清洗后变成了 void*，直接返回
+            if s == "void*":
+                return "*mut std::ffi::c_void"
         
         # 4. 处理基础类型映射
         if s in TypeMapper.PRIMITIVE_MAP:
@@ -518,7 +694,7 @@ class TypeMapper:
         # 5. 处理自定义类型 (Struct/Enum/Union)
         # 如果不是基础类型，默认认为是 bindgen 生成的类型
         # 移除 struct/enum/union 前缀
-        clean_name = s.replace("struct ", "").replace("enum ", "").replace("union ", "").strip()
+        clean_name = TypeMapper._custom_type_to_rust_name(s, known_rust_type_names)
         
         # 移除可能的 const/volatile 修饰符
         clean_name = clean_name.replace("const", "").replace("volatile", "").strip()
@@ -560,29 +736,7 @@ class TypeMapper:
                 print(f"⚠️ Warning: LLM fallback also failed for '{clean_name}', fallback to void*")
                 return "*mut std::ffi::c_void"
         
-        # 替换空格为下划线（Rust 标识符不能有空格）
-        rust_type_name = clean_name.replace(' ', '_')
-        
-        # 确保类型名以字母或下划线开头
-        if rust_type_name and not rust_type_name[0].isalpha() and rust_type_name[0] != '_':
-            rust_type_name = '_' + rust_type_name
-        
-        truth_mode = (os.environ.get("C2R_TRUTH_MODE", "0") or "0").strip().lower() in (
-            "1",
-            "true",
-            "yes",
-            "y",
-            "on",
-        )
-        prefix_flag = (os.environ.get("C2R_TYPEMAPPER_PREFIX_CUSTOM_TYPES", "") or "").strip().lower()
-        if prefix_flag:
-            prefix_custom_types = prefix_flag not in ("0", "false", "no", "off")
-        else:
-            # Default: non-truth mode keeps the legacy `crate::types::` contract;
-            # truth mode keeps custom types unqualified to avoid hiding TU gaps.
-            prefix_custom_types = not truth_mode
-
-        return f"crate::types::{rust_type_name}" if prefix_custom_types else rust_type_name
+        return TypeMapper._format_custom_rust_type(clean_name, known_rust_type_names)
     
     @staticmethod
     def sanitize_identifier(name: str) -> str:
@@ -633,7 +787,11 @@ class TypeMapper:
     def process_function_signature(
         c_ret_type: str, 
         c_params: List[Tuple[str, str]],
-        is_static: bool = False
+        is_static: bool = False,
+        known_rust_type_names: Optional[Set[str]] = None,
+        is_callback: bool = False,
+        project_suite: Optional[str] = None,
+        func_name: str = "",
     ) -> Tuple[str, str, str]:
         """
         生成 Rust 函数签名
@@ -652,7 +810,7 @@ class TypeMapper:
         if c_ret_type_clean == "void" or not c_ret_type_clean:
             rust_ret = ""  # Rust 默认返回 ()
         else:
-            rust_ret_type = TypeMapper.map_c_type(c_ret_type_clean)
+            rust_ret_type = TypeMapper.map_c_type(c_ret_type_clean, known_rust_type_names=known_rust_type_names)
             rust_ret = f"-> {rust_ret_type}"
         
         # 2. 处理参数
@@ -661,27 +819,28 @@ class TypeMapper:
             c_type_clean = c_type.strip()
             
             # 处理 func(void) 情况
-            if c_type_clean == "void" and not name:
+            clean_name = str(name or "").strip()
+            if c_type_clean == "void" and (not clean_name or clean_name in {"arg", "arg_0", "void"}):
                 continue
             
             # ⚠️ 重要：不要在这里“先把 * 去掉再传 is_pointer=True”。
             # 否则会把 `char *[]` 这种“指针数组（参数退化为 char **）”错误降级成 `*mut c_char`。
             # 直接把原始类型字符串交给 map_c_type 递归解析（指针/数组/const 都在 map_c_type 内处理）。
-            is_ptr_from_name = "*" in name  # 兼容极端提取器把 * 放进参数名的情况
-            rust_type = TypeMapper.map_c_type(c_type_clean, is_ptr_from_name, False)
+            is_ptr_from_name = "*" in clean_name  # 兼容极端提取器把 * 放进参数名的情况
+            rust_type = TypeMapper.map_c_type(c_type_clean, is_ptr_from_name, False, known_rust_type_names)
             
             # 清理参数名
-            clean_param_name = TypeMapper.sanitize_identifier(name)
+            clean_param_name = TypeMapper.sanitize_identifier(clean_name)
             
             rust_params_list.append(f"{clean_param_name}: {rust_type}")
         
         # 3. 确定函数修饰符
-        if is_static:
-            # static 函数：普通 Rust 函数（不导出）
-            func_modifier = "fn"
-        else:
-            # 非 static C 函数：可能被外部调用，使用 extern "C"
-            func_modifier = "pub extern \"C\" fn"
+        func_modifier = TypeMapper.function_modifier(
+            is_static=is_static,
+            is_callback=is_callback,
+            project_suite=project_suite,
+            func_name=func_name,
+        )
         
         params_str = ", ".join(rust_params_list) if rust_params_list else ""
         
@@ -692,7 +851,10 @@ class TypeMapper:
         func_name: str,
         c_ret_type: str,
         c_params: List[Tuple[str, str]],
-        is_static: bool = False
+        is_static: bool = False,
+        known_rust_type_names: Optional[Set[str]] = None,
+        is_callback: bool = False,
+        project_suite: Optional[str] = None,
     ) -> str:
         """
         生成完整的 Rust 函数桩代码
@@ -707,7 +869,13 @@ class TypeMapper:
             完整的 Rust 函数定义字符串
         """
         func_modifier, params_str, rust_ret = TypeMapper.process_function_signature(
-            c_ret_type, c_params, is_static
+            c_ret_type,
+            c_params,
+            is_static,
+            known_rust_type_names,
+            is_callback,
+            project_suite,
+            func_name,
         )
         
         # 清理函数名（避免关键字冲突）
@@ -722,7 +890,12 @@ class TypeMapper:
 
 
 # 便捷函数
-def map_c_to_rust(c_type: str, is_pointer: bool = False, is_const: bool = False) -> str:
+def map_c_to_rust(
+    c_type: str,
+    is_pointer: bool = False,
+    is_const: bool = False,
+    known_rust_type_names: Optional[Set[str]] = None,
+) -> str:
     """
     便捷函数：将 C 类型映射为 Rust 类型
     
@@ -734,7 +907,7 @@ def map_c_to_rust(c_type: str, is_pointer: bool = False, is_const: bool = False)
     Returns:
         Rust 类型字符串
     """
-    return TypeMapper.map_c_type(c_type, is_pointer, is_const)
+    return TypeMapper.map_c_type(c_type, is_pointer, is_const, known_rust_type_names)
 
 
 if __name__ == "__main__":

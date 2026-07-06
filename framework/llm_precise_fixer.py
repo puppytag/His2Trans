@@ -24,7 +24,25 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple, Any
 from dataclasses import dataclass
 
+from llm_global_concurrency import llm_global_slot
+
 logger = logging.getLogger(__name__)
+
+
+def _client_base_url(llm_client: object) -> str:
+    """读取 OpenAI-compatible client 的 base_url。"""
+    value = getattr(llm_client, "base_url", "") or getattr(llm_client, "_base_url", "")
+    return str(value or "")
+
+
+def _deepseek_request_kwargs(model_name: str, llm_client: object = None) -> dict[str, object]:
+    """复用 generation.py 的 DeepSeek V4 请求参数。"""
+    try:
+        from generate.generation import EXTERNAL_API_BASE_URL, deepseek_v4_request_kwargs
+        return deepseek_v4_request_kwargs(model_name, _client_base_url(llm_client) or EXTERNAL_API_BASE_URL)
+    except Exception:
+        return {}
+
 
 # 尝试导入自适应预定义管理器
 try:
@@ -1292,15 +1310,21 @@ class LLMPreciseFixer:
         )
         
         try:
-            response = self.llm_client.chat.completions.create(
-                model=self.model_name,
-                messages=[
+            kwargs = {
+                "model": self.model_name,
+                "messages": [
                     {"role": "system", "content": "You are a Rust FFI expert. Output ONLY the fixed line of code, nothing else."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0,
-                max_tokens=500
-            )
+                "temperature": 0,
+            }
+            kwargs.update(_deepseek_request_kwargs(self.model_name, self.llm_client))
+            with llm_global_slot(
+                base_url=_client_base_url(self.llm_client),
+                model=self.model_name,
+                label="llm_precise_fixer_line",
+            ):
+                response = self.llm_client.chat.completions.create(**kwargs)
             
             fixed_line = response.choices[0].message.content.strip()
             
@@ -1378,15 +1402,21 @@ class LLMPreciseFixer:
                 type_definitions=type_defs
             )
             
-            response = self.llm_client.chat.completions.create(
-                model=self.model_name,
-                messages=[
+            kwargs = {
+                "model": self.model_name,
+                "messages": [
                     {"role": "system", "content": "You are a Rust FFI expert. Output ONLY the fixed Rust code, no explanations."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0,
-                max_tokens=8000
-            )
+                "temperature": 0,
+            }
+            kwargs.update(_deepseek_request_kwargs(self.model_name, self.llm_client))
+            with llm_global_slot(
+                base_url=_client_base_url(self.llm_client),
+                model=self.model_name,
+                label="llm_precise_fixer_file",
+            ):
+                response = self.llm_client.chat.completions.create(**kwargs)
             
             fixed_content = response.choices[0].message.content.strip()
             

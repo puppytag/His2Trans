@@ -1,203 +1,156 @@
 {
-  "generated_at": "2026-03-27T18:33:32",
-  "repo_root": ".",
-  "reference_out_dir": "data/paper_metric_exports/reference_tables",
-  "structured_json_dir": "data/paper_metric_exports/generated_structured_json",
-  "all_match": true,
-  "actual": {
-    "rq1": {
-      "Ours(DS-V3.2 K = 1)": {
-        "ICompRate": 87.85,
-        "FC": 75.0,
-        "Unsafe": 32.15,
-        "Clippy": 464.0
-      },
-      "Ours(DS-V3.2 K = 3)": {
-        "ICompRate": 88.47,
-        "FC": 75.0,
-        "Unsafe": 33.02,
-        "Clippy": 448.8
-      },
-      "Ours(DS-V3.2 K = 5)": {
-        "ICompRate": 90.34,
-        "FC": 75.0,
-        "Unsafe": 35.43,
-        "Clippy": 463.0
-      },
-      "Ours(DS-V3.2 K = 10)": {
-        "ICompRate": 87.23,
-        "FC": 75.0,
-        "Unsafe": 34.06,
-        "Clippy": 446.4
-      },
-      "Ours(Claude-4.5 K = 5)": {
-        "ICompRate": 97.51,
-        "FC": 75.0,
-        "Unsafe": 37.09,
-        "Clippy": 315.4
-      }
-    },
-    "rq2": {
-      "Ours(DS-V3.2)": {
-        "ICompRate": 93.19,
-        "FC": 47.27,
-        "Unsafe": 37.01,
-        "Clippy": 136.44
-      },
-      "Ours(Claude-4.5)": {
-        "ICompRate": 95.74,
-        "FC": 58.18,
-        "Unsafe": 43.91,
-        "Clippy": 101.0
-      }
-    },
-    "rq3": {
-      "Base-1Shot": {
-        "ICompRate": 42.5,
-        "FC": 100.0,
-        "AvgRepair": 0.0
-      },
-      "Base-Rep": {
-        "ICompRate": 90.0,
-        "FC": 100.0,
-        "AvgRepair": 1.52
-      },
-      "Pred-1Shot": {
-        "ICompRate": 47.5,
-        "FC": 100.0,
-        "AvgRepair": 0.0
-      },
-      "Pred-Rep": {
-        "ICompRate": 82.5,
-        "FC": 100.0,
-        "AvgRepair": 1.55
-      },
-      "GT-API": {
-        "ICompRate": 80.0,
-        "FC": 100.0,
-        "AvgRepair": 1.35
-      },
-      "GT-Frag": {
-        "ICompRate": 87.5,
-        "FC": 100.0,
-        "AvgRepair": 1.45
-      },
-      "GT-Full": {
-        "ICompRate": 87.5,
-        "FC": 100.0,
-        "AvgRepair": 1.4
-      }
-    },
-    "rq4": {
-      "Base KB only": {
-        "ICompRate": 41.28,
-        "FC": 37.5,
-        "AvgRepair": 1.55
-      },
-      "Base KB + Accumulated KB": {
-        "ICompRate": 41.64,
-        "FC": 37.5,
-        "AvgRepair": 0.61
-      }
-    }
+  "metric_policy": "Macro project average for method and ablation tables unless a row explicitly reports micro evidence.",
+  "sources": {
+    "method_comparison": "data/paper_metric_exports/source_summaries/method_comparison_metrics.json",
+    "ablation": "data/paper_metric_exports/source_summaries/ablation_ohos10_full_metrics_summary.json",
+    "ohos_archive": "data/paper_artifacts/deepseek_v4_pro_ohos10_0613_harness_fixed_v2/results/ohos_metrics_deepseek-v4-pro-ohos10-full-0613-1_harness_fixed_v2.json",
+    "oss8_archive": "data/paper_artifacts/deepseek_v4_pro_oss8_0613_rq2_100pct_minimal/results/summary.json"
   },
-  "reference": {
-    "rq1": {
-      "Ours(DS-V3.2 K = 1)": {
-        "ICompRate": 87.85,
-        "FC": 75.0,
-        "Unsafe": 32.15,
-        "Clippy": 464.0
+  "key_number_checks": [
+    "RQ1 Ours ICompRate: 100.00",
+    "RQ1 Ours TestPass: 94.92",
+    "RQ1 Ours Unsafe: 16.35",
+    "RQ2 Ours ICompRate: 100.00",
+    "RQ2 Ours TestPass: 100.00",
+    "RQ2 Ours Unsafe: 8.59",
+    "RQ3 A1 ICompRate: 95.82",
+    "RQ3 A1 TestPass: 39.29",
+    "RQ3 A1 Unsafe: 15.95",
+    "RQ3 A2 ICompRate: 100.00",
+    "RQ3 A2 TestPass: 94.92",
+    "RQ3 A2 Unsafe: 22.52",
+    "RQ3 A3 ICompRate: 100.00",
+    "RQ3 A3 TestPass: 94.92",
+    "RQ3 A3 Unsafe: 16.35"
+  ],
+  "tables": {
+    "rq1_ohos10_method_comparison": [
+      {
+        "Method": "Ours",
+        "ICompRate": "100.00",
+        "TestPass": "94.92",
+        "Unsafe": "16.35",
+        "RequiredUnsafe": "8.48"
       },
-      "Ours(DS-V3.2 K = 3)": {
-        "ICompRate": 88.47,
-        "FC": 75.0,
-        "Unsafe": 33.02,
-        "Clippy": 448.8
+      {
+        "Method": "Claude Code",
+        "ICompRate": "100.00",
+        "TestPass": "80.08",
+        "Unsafe": "33.67",
+        "RequiredUnsafe": "14.00"
       },
-      "Ours(DS-V3.2 K = 5)": {
-        "ICompRate": 90.34,
-        "FC": 75.0,
-        "Unsafe": 35.43,
-        "Clippy": 463.0
+      {
+        "Method": "C2Rust",
+        "ICompRate": "99.58",
+        "TestPass": "67.50",
+        "Unsafe": "58.11",
+        "RequiredUnsafe": "13.82"
       },
-      "Ours(DS-V3.2 K = 10)": {
-        "ICompRate": 87.23,
-        "FC": 75.0,
-        "Unsafe": 34.06,
-        "Clippy": 446.4
+      {
+        "Method": "C2SaferRust",
+        "ICompRate": "79.99",
+        "TestPass": "40.92",
+        "Unsafe": "27.63",
+        "RequiredUnsafe": "8.54"
       },
-      "Ours(Claude-4.5 K = 5)": {
-        "ICompRate": 97.51,
-        "FC": 75.0,
-        "Unsafe": 37.09,
-        "Clippy": 315.4
+      {
+        "Method": "EvoC2Rust",
+        "ICompRate": "0.00",
+        "TestPass": "0.00",
+        "Unsafe": "1.16",
+        "RequiredUnsafe": "0.28"
+      },
+      {
+        "Method": "Tymcrat",
+        "ICompRate": "9.09",
+        "TestPass": "0.00",
+        "Unsafe": "38.03",
+        "RequiredUnsafe": "17.73"
       }
-    },
-    "rq2": {
-      "Ours(DS-V3.2)": {
-        "ICompRate": 93.19,
-        "FC": 47.27,
-        "Unsafe": 37.01,
-        "Clippy": 136.44
+    ],
+    "rq2_oss8_method_comparison": [
+      {
+        "Method": "Ours",
+        "ICompRate": "100.00",
+        "TestPass": "100.00",
+        "Unsafe": "8.59",
+        "RequiredUnsafe": "2.94"
       },
-      "Ours(Claude-4.5)": {
-        "ICompRate": 95.74,
-        "FC": 58.18,
-        "Unsafe": 43.91,
-        "Clippy": 101.0
+      {
+        "Method": "Claude Code",
+        "ICompRate": "100.00",
+        "TestPass": "100.00",
+        "Unsafe": "4.04",
+        "RequiredUnsafe": "1.84"
+      },
+      {
+        "Method": "C2Rust",
+        "ICompRate": "100.00",
+        "TestPass": "100.00",
+        "Unsafe": "42.88",
+        "RequiredUnsafe": "21.55"
+      },
+      {
+        "Method": "C2SaferRust",
+        "ICompRate": "100.00",
+        "TestPass": "46.88",
+        "Unsafe": "24.19",
+        "RequiredUnsafe": "10.08"
+      },
+      {
+        "Method": "EvoC2Rust",
+        "ICompRate": "22.30",
+        "TestPass": "12.50",
+        "Unsafe": "1.33",
+        "RequiredUnsafe": "0.31"
+      },
+      {
+        "Method": "Tymcrat",
+        "ICompRate": "49.14",
+        "TestPass": "0.00",
+        "Unsafe": "17.29",
+        "RequiredUnsafe": "11.27"
       }
-    },
-    "rq3": {
-      "Base-1Shot": {
-        "ICompRate": 42.5,
-        "FC": 100.0,
-        "AvgRepair": 0.0
+    ],
+    "rq3_ohos10_ablation": [
+      {
+        "Group": "A1",
+        "Setting": "initial function translation",
+        "ICompRate": "95.82",
+        "TestPass": "39.29",
+        "Unsafe": "15.95",
+        "RequiredUnsafe": "7.19"
       },
-      "Base-Rep": {
-        "ICompRate": 90.0,
-        "FC": 100.0,
-        "AvgRepair": 1.52
+      {
+        "Group": "A2",
+        "Setting": "A1 + compiler-driven per-function repair",
+        "ICompRate": "100.00",
+        "TestPass": "94.92",
+        "Unsafe": "22.52",
+        "RequiredUnsafe": "9.83"
       },
-      "Pred-1Shot": {
-        "ICompRate": 47.5,
-        "FC": 100.0,
-        "AvgRepair": 0.0
-      },
-      "Pred-Rep": {
-        "ICompRate": 82.5,
-        "FC": 100.0,
-        "AvgRepair": 1.55
-      },
-      "GT-API": {
-        "ICompRate": 80.0,
-        "FC": 100.0,
-        "AvgRepair": 1.35
-      },
-      "GT-Frag": {
-        "ICompRate": 87.5,
-        "FC": 100.0,
-        "AvgRepair": 1.45
-      },
-      "GT-Full": {
-        "ICompRate": 87.5,
-        "FC": 100.0,
-        "AvgRepair": 1.4
+      {
+        "Group": "A3",
+        "Setting": "A2 + post-repair agent",
+        "ICompRate": "100.00",
+        "TestPass": "94.92",
+        "Unsafe": "16.35",
+        "RequiredUnsafe": "8.48"
       }
-    },
-    "rq4": {
-      "Base KB only": {
-        "ICompRate": 41.28,
-        "FC": 37.5,
-        "AvgRepair": 1.55
+    ],
+    "rq4_case_evidence": [
+      {
+        "Case": "manager",
+        "Boundary": "HDF service event notification",
+        "Evidence": "His2Trans preserves the system-visible event path and cleanup logic.",
+        "PaperSection": "RQ4 Historical Knowledge Reuse Analysis"
       },
-      "Base KB + Accumulated KB": {
-        "ICompRate": 41.64,
-        "FC": 37.5,
-        "AvgRepair": 0.61
+      {
+        "Case": "shared_12",
+        "Boundary": "HDF SBuf wire-format serialization",
+        "Evidence": "His2Trans preserves external HdfSbufRead*/Write* calls and passes 15/15 tests.",
+        "PaperSection": "RQ4 Historical Knowledge Reuse Analysis"
       }
-    }
-  },
-  "diffs": {},
-  "commands": []
+    ]
+  }
 }

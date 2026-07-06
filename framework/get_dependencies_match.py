@@ -12,26 +12,9 @@ from workspace_config import (
     safe_module_name, safe_module_name_legacy
 )
 import re
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer, WordNetLemmatizer
 import traceback
-
-try:
-    # Optional dependency: only used when falling back to BM25 matching.
-    # Keep it optional to make the open-sourced repo easier to run.
-    from nltk.corpus import stopwords  # type: ignore
-    from nltk.stem import PorterStemmer  # type: ignore
-
-    _NLTK_AVAILABLE = True
-except Exception:
-    stopwords = None  # type: ignore
-    PorterStemmer = None  # type: ignore
-    _NLTK_AVAILABLE = False
-
-# Fallback stopwords if NLTK (or its corpora) is unavailable.
-_FALLBACK_STOP_WORDS = {
-    "a", "an", "the", "and", "or", "but", "if", "then", "else", "for", "while", "do", "in", "on", "of", "to",
-    "from", "with", "by", "as", "is", "are", "was", "were", "be", "been", "being", "this", "that", "these",
-    "those", "it", "its", "we", "you", "they", "he", "she", "i", "me", "my", "our", "your", "their",
-}
 
 
 def read_corpus(corpus_files_path):
@@ -54,13 +37,7 @@ def normalize_text(text):
     words = re.findall(r'[a-zA-Z0-9]+|[^\s\w]+', text)
     # print(words)
     # 去除停用词
-    if _NLTK_AVAILABLE:
-        try:
-            stop_words = set(stopwords.words("english"))  # type: ignore[union-attr]
-        except Exception:
-            stop_words = _FALLBACK_STOP_WORDS
-    else:
-        stop_words = _FALLBACK_STOP_WORDS
+    stop_words = set(stopwords.words('english'))
     words = [word for word in words if word not in stop_words]
     pattern = r'[A-Z][a-z]+|[a-z]+'
     new_words = []
@@ -73,13 +50,9 @@ def normalize_text(text):
     if len(new_words) != 0:
         words = new_words
     
-    # 词干提取（启用以保持与 build_knowledge_base.py 一致；NLTK 不可用时跳过）
-    if _NLTK_AVAILABLE and PorterStemmer is not None:
-        try:
-            stemmer = PorterStemmer()
-            words = [stemmer.stem(word) for word in words]
-        except Exception:
-            pass
+    # 词干提取（启用以保持与 build_knowledge_base.py 一致）
+    stemmer = PorterStemmer()
+    words = [stemmer.stem(word) for word in words]
     
     # 过滤掉仅由符号组成的元素
     symbol_pattern = re.compile(r'^[^\w\s]+$')

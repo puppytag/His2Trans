@@ -132,9 +132,8 @@ def extract_code(content):
 # 用于线程安全的打印锁
 print_lock = Lock()
 
-# vLLM 并发控制信号量 - 限制同时最多 120 个请求
-# 从环境变量获取配置，默认 120
-VLLM_CONCURRENT_LIMIT = int(os.environ.get("VLLM_CONCURRENT_LIMIT", "120"))
+# LLM 并发控制信号量 - 外部 API 和 vLLM 模式共用
+VLLM_CONCURRENT_LIMIT = int(os.environ.get("LLM_CONCURRENT_LIMIT", os.environ.get("VLLM_CONCURRENT_LIMIT", "120")))
 vllm_semaphore = Semaphore(VLLM_CONCURRENT_LIMIT)
 
 def process_single_function(args):
@@ -650,7 +649,7 @@ Now you're going to be shown to the user. You're going to follow the user's inst
             logging.warning(f"保存提示词失败: {e}")
         
         # 调用generation并获取token使用信息
-        # 使用信号量控制并发：同时最多 VLLM_CONCURRENT_LIMIT 个请求
+        # 使用信号量控制 LLM 请求并发
         vllm_semaphore.acquire()
         try:
             result = generation(messages, return_usage=True)
@@ -739,7 +738,7 @@ def read_message(source_dir, target_dir, llm, dependencies_path, rag_path_functi
     print(f"RAG 路径: {rag_path_function}")
     print(f"找到 {len(questions_path)} 个函数文件")
     print(f"使用 {max_workers} 个并行工作线程")
-    print(f"vLLM 并发限制: {VLLM_CONCURRENT_LIMIT} 个同时请求")
+    print(f"LLM 并发限制: {VLLM_CONCURRENT_LIMIT} 个同时请求")
     print(f"{'='*60}\n")
     
     if len(questions_path) == 0:

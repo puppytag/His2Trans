@@ -1,0 +1,39 @@
+# Compilation Log (full)
+# Generated at: 2026-06-13T17:13:06.297764
+# Project: /data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output/intermediate/common__89d5ecaafdff/workspace/skeletons/common__89d5ecaafdff
+============================================================
+
+     Locking 4 packages to latest compatible versions
+   Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.9
+   Compiling libc v0.2.186
+   Compiling cc v1.2.61
+   Compiling common__89d5ecaafdff v0.1.0 (/data/home/wangshb/c2-rust_framework/experiment_runs/deepseek-v4-pro-ohos10-full-0613-1/raw/framework_output/intermediate/common__89d5ecaafdff/workspace/skeletons/common__89d5ecaafdff)
+warning: static variable `g_audioCodecControlsList` should have an upper case name
+  --> src/src_audio_codec_base.rs:19:12
+   |
+19 | static mut g_audioCodecControlsList: [*mut ::core::ffi::c_char; 100usize] = unsafe { core::mem::MaybeUninit::<[*mut ::core::ffi::c_char; ...
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_AUDIO_CODEC_CONTROLS_LIST`
+   |
+   = note: `#[warn(non_upper_case_globals)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: static variable `g_audioSapmCfgNameList` should have an upper case name
+  --> src/src_audio_codec_base.rs:22:12
+   |
+22 | static mut g_audioSapmCfgNameList: [*mut ::core::ffi::c_char; 100usize] = unsafe { core::mem::MaybeUninit::<[*mut ::core::ffi::c_char; 10...
+   |            ^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_AUDIO_SAPM_CFG_NAME_LIST`
+
+warning: static variable `g_audioSapmCompNameList` should have an upper case name
+  --> src/src_audio_codec_base.rs:25:12
+   |
+25 | static mut g_audioSapmCompNameList: [*mut ::core::ffi::c_char; 100usize] = unsafe { core::mem::MaybeUninit::<[*mut ::core::ffi::c_char; 1...
+   |            ^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_AUDIO_SAPM_COMP_NAME_LIST`
+
+warning: static variable `g_audioDaiControlsList` should have an upper case name
+  --> src/src_audio_dai_base.rs:19:12
+   |
+19 | static mut g_audioDaiControlsList: [*mut ::core::ffi::c_char; 100usize] = unsafe { core::mem::MaybeUninit::<[*mut ::core::ffi::c_char; 10...
+   |            ^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper case: `G_AUDIO_DAI_CONTROLS_LIST`
+
+warning: `common__89d5ecaafdff` (bin "common__89d5ecaafdff") generated 4 warnings (run `cargo fix --bin "common__89d5ecaafdff"` to apply 4 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.60s

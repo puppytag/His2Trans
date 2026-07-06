@@ -6,16 +6,18 @@ import re
 import os
 import multiprocessing
 import time
+from pathlib import Path
 from threading import Semaphore
+from llm_global_concurrency import llm_global_slot
 # from tenacity import retry, stop_after_attempt, wait_fixed
 
-# --- vLLM 并发控制 ---
-# 限制同时发送到 vLLM 的请求数，避免多项目并行时请求过多
-VLLM_CONCURRENT_LIMIT = int(os.environ.get("VLLM_CONCURRENT_LIMIT", "120"))
+# --- LLM 并发控制 ---
+# 限制同时发送到 LLM 服务的请求数，外部 API 和 vLLM 模式共用。
+VLLM_CONCURRENT_LIMIT = int(os.environ.get("LLM_CONCURRENT_LIMIT", os.environ.get("VLLM_CONCURRENT_LIMIT", "120")))
 _vllm_semaphore = Semaphore(VLLM_CONCURRENT_LIMIT)
 
 def extract_code(content):
-    
+
 
     # pattern = r'\[translated result\](.*?)'
     # translated_result = re.findall(pattern, content, re.DOTALL)[0].strip()
@@ -35,20 +37,20 @@ def extract_code(content):
         if translated_code == None:
             try:
                 translated_code = re.findall(pattern, translated_result, re.DOTALL)[0].strip()
-                
+
             except:
                 translated_code = None
         else:
             break
-    
+
     if translated_code == None:
         translated_code = translated_result
-    
+
 
     return translated_code
 
 # def extract_code(content):
-    
+
 
 #     pattern = r'\[translated result\](.*?)\[#END\]'
 #     translated_result = re.findall(pattern, content, re.DOTALL)[0].strip()
@@ -61,15 +63,15 @@ def extract_code(content):
 #         if not translated_code:
 #             try:
 #                 translated_code = re.findall(pattern, translated_result, re.DOTALL)[0].strip()
-                
+
 #             except:
 #                 translated_code = None
 #         else:
 #             break
-    
+
 #     if not translated_code:
 #         translated_code = translated_result
-    
+
 
 #     return translated_code
 
@@ -92,47 +94,185 @@ VLLM_MAX_RETRIES = int(os.environ.get("VLLM_MAX_RETRIES", "3"))
 VLLM_RETRY_BACKOFF_SEC = float(os.environ.get("VLLM_RETRY_BACKOFF_SEC", "2.0"))
 VLLM_RETRY_BACKOFF_MAX_SEC = float(os.environ.get("VLLM_RETRY_BACKOFF_MAX_SEC", "30.0"))
 
+
+def _load_local_env_file_once():
+    """按 C++2Rust 方式加载本地 LLM 配置文件，不覆盖已有环境变量。"""
+    if getattr(_load_local_env_file_once, "_loaded", False):
+        return
+    candidates = []
+    configured = os.environ.get("C2RUST_LOCAL_ENV_FILE", "").strip()
+    if configured:
+        candidates.append(Path(configured).expanduser())
+    repo_root = Path(__file__).resolve().parents[1]
+    candidates.append(repo_root / "output" / "mini-swe-agent-config" / ".env")
+    candidates.append(Path("/data/home/wangshb/C++2Rust/output/mini-swe-agent-config/.env"))
+    for env_path in candidates:
+        if not env_path.is_file():
+            continue
+        for raw_line in env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+                value = value[1:-1]
+            if key and key not in os.environ:
+                os.environ[key] = value
+        break
+    _load_local_env_file_once._loaded = True
+
+
+_load_local_env_file_once()
+
 # --- 外部 API 配置 (当 USE_VLLM=false 时使用) ---
-# EXTERNAL_API_KEY = os.environ.get("EXTERNAL_API_KEY", "<YOUR_API_KEY>")
-# EXTERNAL_API_BASE_URL = os.environ.get("EXTERNAL_API_BASE_URL", "https://api.agicto.cn/v1")
-# EXTERNAL_API_MODEL = os.environ.get("EXTERNAL_API_MODEL", "deepseek-v3.2")
-# EXTERNAL_API_MAX_TOKENS = int(os.environ.get("EXTERNAL_API_MAX_TOKENS", "16384"))
-# EXTERNAL_API_TEMPERATURE = float(os.environ.get("EXTERNAL_API_TEMPERATURE", "0.0"))
-# EXTERNAL_API_TOP_P = float(os.environ.get("EXTERNAL_API_TOP_P", "1.0"))
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com").strip()
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro").strip()
+# 框架统一使用 DeepSeek 最高推理深度；旧环境变量里的 high 不再下传到请求。
+DEEPSEEK_REASONING_EFFORT = "max"
+DEEPSEEK_THINKING = os.environ.get("DEEPSEEK_THINKING", "enabled").strip()
 
-
-# External API mode (USE_VLLM=false):
-# - For open-source release, do NOT hard-code any API keys.
-# - Users must provide EXTERNAL_API_KEY via environment variable.
-EXTERNAL_API_KEY = os.environ.get("EXTERNAL_API_KEY", "")
-EXTERNAL_API_BASE_URL = os.environ.get("EXTERNAL_API_BASE_URL", "https://api.deepseek.com/beta")
-EXTERNAL_API_MODEL = os.environ.get("EXTERNAL_API_MODEL", "deepseek-coder")
-EXTERNAL_API_MAX_TOKENS = int(os.environ.get("EXTERNAL_API_MAX_TOKENS", "8192"))
+EXTERNAL_API_KEY = os.environ.get("EXTERNAL_API_KEY") or DEEPSEEK_API_KEY
+EXTERNAL_API_BASE_URL = os.environ.get("EXTERNAL_API_BASE_URL") or (
+    DEEPSEEK_BASE_URL if DEEPSEEK_API_KEY else "https://api.deepseek.com"
+)
+EXTERNAL_API_MODEL = os.environ.get("EXTERNAL_API_MODEL") or (
+    DEEPSEEK_MODEL if DEEPSEEK_API_KEY else "deepseek-v4-pro"
+)
+_EXTERNAL_API_MAX_TOKENS_RAW = os.environ.get("EXTERNAL_API_MAX_TOKENS", "").strip()
+EXTERNAL_API_MAX_TOKENS = int(_EXTERNAL_API_MAX_TOKENS_RAW) if _EXTERNAL_API_MAX_TOKENS_RAW else None
 EXTERNAL_API_TEMPERATURE = float(os.environ.get("EXTERNAL_API_TEMPERATURE", "0.0"))
 EXTERNAL_API_TOP_P = float(os.environ.get("EXTERNAL_API_TOP_P", "1.0"))
-
-# EXTERNAL_API_KEY = os.environ.get("EXTERNAL_API_KEY", "<YOUR_API_KEY>")
-# EXTERNAL_API_BASE_URL = os.environ.get("EXTERNAL_API_BASE_URL", "https://api.kourichat.com/v1")
-# EXTERNAL_API_MODEL = os.environ.get("EXTERNAL_API_MODEL", "claude-opus-4-5-20251101")
-# EXTERNAL_API_MAX_TOKENS = int(os.environ.get("EXTERNAL_API_MAX_TOKENS", "16384"))
-# EXTERNAL_API_TEMPERATURE = float(os.environ.get("EXTERNAL_API_TEMPERATURE", "0.0"))
-
-
-# NOTE: DeepSeek API only supports max_tokens in [1, 8192], agicto may support higher.
-# Use 8192 as default for broad compatibility. Override with EXTERNAL_API_MAX_TOKENS if needed.
-# EXTERNAL_API_MAX_TOKENS = int(os.environ.get("EXTERNAL_API_MAX_TOKENS", "16384"))
 EXTERNAL_API_MAX_RETRIES = int(os.environ.get("EXTERNAL_API_MAX_RETRIES", "3"))
 EXTERNAL_API_RETRY_DELAY = float(os.environ.get("EXTERNAL_API_RETRY_DELAY", "2.0"))
 EXTERNAL_API_RETRY_MAX_DELAY = float(os.environ.get("EXTERNAL_API_RETRY_MAX_DELAY", "30.0"))
 EXTERNAL_API_TIMEOUT = float(os.environ.get("EXTERNAL_API_TIMEOUT", "600.0"))
 
 
+def _is_deepseek_v4_model(model_name: str, base_url: str) -> bool:
+    """判断外部 API 请求是否应携带 DeepSeek V4 推理参数。"""
+    name = (model_name or "").lower()
+    url = (base_url or "").lower()
+    if any(local in url for local in ("localhost", "127.0.0.1", "0.0.0.0")):
+        return False
+    return "deepseek" in name and "v4" in name
+
+
+def deepseek_v4_request_kwargs(model_name: str, base_url: str) -> dict[str, object]:
+    """返回 DeepSeek V4 OpenAI-compatible 请求需要统一携带的推理参数。"""
+    if not _is_deepseek_v4_model(model_name, base_url):
+        return {}
+    kwargs: dict[str, object] = {}
+    if DEEPSEEK_REASONING_EFFORT:
+        kwargs["reasoning_effort"] = DEEPSEEK_REASONING_EFFORT
+    if DEEPSEEK_THINKING:
+        kwargs["extra_body"] = {
+            "thinking": {"type": DEEPSEEK_THINKING}
+        }
+    return kwargs
+
+
+def _chat_completion_with_global_limit(client, *, base_url: str, model_name: str, label: str, **kwargs):
+    """调用 OpenAI-compatible chat completion，并限制外部 LLM 跨进程全局并发。"""
+    with llm_global_slot(base_url=base_url, model=model_name, label=label):
+        return client.chat.completions.create(**kwargs)
+
+
+def _format_external_api_client_init_message(base_url: str, model_name: str, api_key: str) -> str:
+    """生成外部 API 初始化日志，避免把缺 key 误报为真实可调用。"""
+    if api_key:
+        return f"外部 API 客户端初始化成功: {base_url}, 模型: {model_name}"
+    return (
+        f"外部 API 客户端已构造但缺少密钥: {base_url}, 模型: {model_name}; "
+        "真实调用会失败，请设置 EXTERNAL_API_KEY 或 DEEPSEEK_API_KEY"
+    )
+
+
 def _is_timeout_error(e: Exception) -> bool:
     msg = str(e).lower()
     return ("timed out" in msg) or ("timeout" in msg)
 
+
+def _usage_raw_dict(usage):
+    """把 provider usage 对象尽量转成普通 dict，便于保留原始字段。"""
+    if usage is None:
+        return {}
+    if isinstance(usage, dict):
+        return usage
+    for method in ("model_dump", "dict"):
+        fn = getattr(usage, method, None)
+        if callable(fn):
+            try:
+                value = fn()
+                if isinstance(value, dict):
+                    return value
+            except Exception:
+                pass
+    try:
+        return dict(vars(usage))
+    except Exception:
+        return {}
+
+
+def _usage_value(usage, raw, key, default=0):
+    """从 dict 或对象属性读取 usage 字段。"""
+    if isinstance(raw, dict) and key in raw:
+        return raw.get(key)
+    if isinstance(usage, dict):
+        return usage.get(key, default)
+    return getattr(usage, key, default)
+
+
+def _to_int(value) -> int:
+    """安全转换 token 数。"""
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def normalize_usage(usage) -> dict:
+    """归一化普通 token 与远端 prompt cache 命中字段。"""
+    raw = _usage_raw_dict(usage)
+    prompt_tokens = _to_int(_usage_value(usage, raw, "prompt_tokens"))
+    completion_tokens = _to_int(_usage_value(usage, raw, "completion_tokens"))
+    total_tokens = _to_int(_usage_value(usage, raw, "total_tokens"))
+
+    prompt_details = _usage_value(usage, raw, "prompt_tokens_details", {})
+    if prompt_details is None:
+        prompt_details = {}
+    if not isinstance(prompt_details, dict):
+        prompt_details = _usage_raw_dict(prompt_details)
+
+    openai_cached = _to_int(prompt_details.get("cached_tokens", 0) if isinstance(prompt_details, dict) else 0)
+    deepseek_hit = _to_int(_usage_value(usage, raw, "prompt_cache_hit_tokens"))
+    deepseek_miss = _to_int(_usage_value(usage, raw, "prompt_cache_miss_tokens"))
+    generic_hit = _to_int(_usage_value(usage, raw, "cache_hit_tokens"))
+    generic_miss = _to_int(_usage_value(usage, raw, "cache_miss_tokens"))
+
+    cache_hit_tokens = deepseek_hit or generic_hit or openai_cached
+    cache_miss_tokens = deepseek_miss or generic_miss
+    if not cache_miss_tokens and prompt_tokens and cache_hit_tokens:
+        cache_miss_tokens = max(0, prompt_tokens - cache_hit_tokens)
+
+    return {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+        "cached_tokens": cache_hit_tokens,
+        "cache_hit_tokens": cache_hit_tokens,
+        "cache_miss_tokens": cache_miss_tokens,
+        "prompt_cache_hit_tokens": deepseek_hit,
+        "prompt_cache_miss_tokens": deepseek_miss,
+        "prompt_tokens_details": prompt_details,
+        "completion_tokens_details": _usage_raw_dict(_usage_value(usage, raw, "completion_tokens_details", {})),
+        "provider_usage_raw": raw,
+    }
+
 # 是否使用 vLLM（默认启用）
-USE_VLLM = os.environ.get("USE_VLLM", "true").lower() in ("true", "1", "yes")
+USE_VLLM = os.environ.get("USE_VLLM", "false").lower() in ("true", "1", "yes")
 
 # 如果使用 vLLM，设置 multiprocessing start method
 if USE_VLLM:
@@ -213,18 +353,21 @@ class Claude():
             self.retry_delay = EXTERNAL_API_RETRY_DELAY
             self.retry_max_delay = EXTERNAL_API_RETRY_MAX_DELAY
             self.timeout = EXTERNAL_API_TIMEOUT
+            self.is_deepseek_v4 = _is_deepseek_v4_model(self.model_name, self.base_url)
+            self.deepseek_reasoning_effort = DEEPSEEK_REASONING_EFFORT
+            self.deepseek_thinking = DEEPSEEK_THINKING
             try:
                 self.client = OpenAI(
                     api_key=self.api_key,
                     base_url=self.base_url,
                     timeout=self.timeout
                 )
-                print(f"外部 API 客户端初始化成功: {self.base_url}, 模型: {self.model_name}")
+                print(_format_external_api_client_init_message(self.base_url, self.model_name, self.api_key))
             except Exception as e:
                 print(f"外部 API 客户端初始化失败: {e}", file=sys.stderr)
                 raise
 
-    
+
     def generation_slice_in_parallel(self, generator):
         """遗留方法：并行生成（已更新为使用单客户端）"""
         max_workers = 8  # 外部 API 限制并发数
@@ -279,10 +422,10 @@ class Claude():
     # def generation(self, content, client, temperature=0):
     #     # print(content)
     #     response = client.chat.completions.create(
-    #         model=self.model_name, 
+    #         model=self.model_name,
     #         messages=[
     #             {
-    #                 "role": "user", 
+    #                 "role": "user",
     #                 "content": content
     #             }
     #         ],
@@ -291,10 +434,10 @@ class Claude():
     #     # print(response)
     #     if response.choices[0].message.content:
     #         # print(response.choices[0].message.content)
-    #         return response.choices[0].message.content 
+    #         return response.choices[0].message.content
     #     else:
     #         raise ValueError("Empty response from API")
-    
+
     # @retry(stop=stop_after_attempt(5), wait=wait_fixed(10))
     def generation(self, messages, temperature=0, return_usage=False):
         """
@@ -327,7 +470,11 @@ class Claude():
                 last_err = None
                 for attempt in range(1, max(1, VLLM_MAX_RETRIES) + 1):
                     try:
-                        response = self.client.chat.completions.create(
+                        response = _chat_completion_with_global_limit(
+                            self.client,
+                            base_url=self.base_url,
+                            model_name=self.model_name,
+                            label="generation_vllm",
                             model=self.model_name,
                             messages=messages,
                             stop=["<|im_end|>"],
@@ -337,14 +484,10 @@ class Claude():
 
                         if response.choices and response.choices[0].message.content:
                             if return_usage:
-                                usage = response.usage
+                                usage = normalize_usage(response.usage)
                                 return {
                                     "content": response.choices[0].message.content,
-                                    "usage": {
-                                        "prompt_tokens": usage.prompt_tokens if usage else 0,
-                                        "completion_tokens": usage.completion_tokens if usage else 0,
-                                        "total_tokens": usage.total_tokens if usage else 0
-                                    }
+                                    "usage": usage
                                 }
                             return response.choices[0].message.content
 
@@ -368,44 +511,51 @@ class Claude():
                 _vllm_semaphore.release()
         else:
             # 外部 API 模式（带重试机制）
+            if not getattr(self, "api_key", ""):
+                raise ValueError("缺少外部 API 密钥：请设置 EXTERNAL_API_KEY 或 DEEPSEEK_API_KEY")
             last_err = None
             for attempt in range(1, self.max_retries + 1):
                 try:
                     kwargs = {
                         "model": self.model_name,
                         "messages": messages,
-                        "max_tokens": self.max_tokens,
                         "stream": False
                     }
+                    if self.max_tokens is not None:
+                        kwargs["max_tokens"] = self.max_tokens
                     # 只有当 temperature 不为 None 时才加入参数
                     # (注意：如果 EXTERNAL_API_TEMPERATURE 定义为 0.0，if 0.0 可能会被判为 False，
                     # 建议显式判断 is not None)
-                    if getattr(self, 'temperature', None) is not None:
+                    if not getattr(self, "is_deepseek_v4", False) and getattr(self, 'temperature', None) is not None:
                         kwargs["temperature"] = self.temperature
-                        
+
                     # 只有当 top_p 有值时才加入参数
-                    if self.top_p is not None:
+                    if not getattr(self, "is_deepseek_v4", False) and self.top_p is not None:
                         kwargs["top_p"] = self.top_p
+
+                    kwargs.update(deepseek_v4_request_kwargs(self.model_name, getattr(self, "base_url", EXTERNAL_API_BASE_URL)))
 
                     # 使用 **kwargs 解包参数发送请求
                     _vllm_semaphore.acquire()
                     try:
-                        response = self.client.chat.completions.create(**kwargs)
+                        response = _chat_completion_with_global_limit(
+                            self.client,
+                            base_url=self.base_url,
+                            model_name=self.model_name,
+                            label="generation_external",
+                            **kwargs,
+                        )
                     finally:
                         _vllm_semaphore.release()
-                    
+
                     if response and response.choices and len(response.choices) > 0:
                         if response.choices[0].message and response.choices[0].message.content:
                             content = response.choices[0].message.content.strip()
                             if return_usage:
-                                usage = response.usage
+                                usage = normalize_usage(response.usage)
                                 return {
                                     "content": content,
-                                    "usage": {
-                                        "prompt_tokens": getattr(usage, 'prompt_tokens', 0) if usage else 0,
-                                        "completion_tokens": getattr(usage, 'completion_tokens', 0) if usage else 0,
-                                        "total_tokens": getattr(usage, 'total_tokens', 0) if usage else 0
-                                    }
+                                    "usage": usage
                                 }
                             return content
 
@@ -442,11 +592,11 @@ claude = Claude()
 def generation(message, return_usage=False):
     """
     生成翻译结果（单线程版本）
-    
+
     Args:
         message: 消息列表（OpenAI 格式）或单个消息字符串
         return_usage: 是否返回 token 使用信息
-    
+
     Returns:
         如果 return_usage=True，返回 {"content": ..., "usage": {...}}
         否则返回字符串内容
@@ -458,37 +608,37 @@ def generation(message, return_usage=False):
         messages = message
     else:
         raise ValueError("message 必须是字符串或消息列表")
-    
+
     return claude.generation(messages, return_usage=return_usage)
 
 def generation_in_parallel_vllm(tasks, max_workers=None):
     """
     使用 vLLM 多进程并行生成（新函数）
-    
+
     Args:
         tasks: 任务列表，每个任务是一个字典，包含 "messages" 键
         max_workers: 最大工作进程数，默认使用 VLLM_NUM_WORKERS
-    
+
     Returns:
         结果列表，与 tasks 顺序对应
     """
     if not USE_VLLM:
         raise ValueError("generation_in_parallel_vllm 需要启用 vLLM (USE_VLLM=true)")
-    
+
     if max_workers is None:
         max_workers = VLLM_NUM_WORKERS
-    
+
     def process_single_task(task_data):
         """处理单个任务（用于多进程）"""
         global WORKER_CLIENT
         if WORKER_CLIENT is None:
             init_vllm_worker()
-        
+
         try:
             messages = task_data.get("messages", [])
             if not messages:
                 return {"error": "No messages in task", "task": task_data}
-            
+
             # 准备 API 参数
             api_params = {
                 "temperature": VLLM_SAMPLING_PARAMS.get("temperature"),
@@ -499,36 +649,36 @@ def generation_in_parallel_vllm(tasks, max_workers=None):
                 "top_k": VLLM_SAMPLING_PARAMS.get("top_k"),
                 "repetition_penalty": VLLM_SAMPLING_PARAMS.get("repetition_penalty")
             }
-            
-            response = WORKER_CLIENT.chat.completions.create(
+
+            response = _chat_completion_with_global_limit(
+                WORKER_CLIENT,
+                base_url=VLLM_BASE_URL,
+                model_name=VLLM_MODEL_NAME,
+                label="generation_vllm_worker",
                 model=VLLM_MODEL_NAME,
                 messages=messages,
                 stop=["<|im_end|>"],
                 **api_params,
                 extra_body=extra_body_params
             )
-            
+
             if response.choices[0].message.content:
                 result = {
                     "content": response.choices[0].message.content,
                     "task": task_data
                 }
                 if response.usage:
-                    result["usage"] = {
-                        "prompt_tokens": response.usage.prompt_tokens,
-                        "completion_tokens": response.usage.completion_tokens,
-                        "total_tokens": response.usage.total_tokens
-                    }
+                    result["usage"] = normalize_usage(response.usage)
                 return result
             else:
                 return {"error": "Empty response", "task": task_data}
         except Exception as e:
             return {"error": str(e), "task": task_data}
-    
+
     # 使用多进程池
     with multiprocessing.Pool(processes=max_workers, initializer=init_vllm_worker) as pool:
         results = pool.map(process_single_task, tasks)
-    
+
     return results
 
 def generation_in_parallel(message):

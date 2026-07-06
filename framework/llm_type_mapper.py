@@ -27,6 +27,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 
+from llm_global_concurrency import llm_global_slot
+
 # 确保可以导入项目模块
 _project_root = Path(__file__).parent.resolve()
 if str(_project_root) not in sys.path:
@@ -64,6 +66,7 @@ try:
         GLOBAL_VAR_TRANSLATION_USER_PROMPT,
         BATCH_TYPE_MAPPING_SYSTEM_PROMPT,
         BATCH_TYPE_MAPPING_USER_PROMPT,
+        get_signature_translation_prompts,
         extract_available_types,
         format_batch_type_mappings,
     )
@@ -73,6 +76,21 @@ except ImportError:
     print("警告: 类型映射提示词不可用")
 
 logger = logging.getLogger(__name__)
+
+
+def _client_base_url(llm_client: object) -> str:
+    """读取 OpenAI-compatible client 的 base_url。"""
+    value = getattr(llm_client, "base_url", "") or getattr(llm_client, "_base_url", "")
+    return str(value or "")
+
+
+def _deepseek_request_kwargs(model_name: str, llm_client: object = None) -> Dict[str, object]:
+    """复用 generation.py 的 DeepSeek V4 请求参数。"""
+    try:
+        from generate.generation import EXTERNAL_API_BASE_URL, deepseek_v4_request_kwargs
+        return deepseek_v4_request_kwargs(model_name, _client_base_url(llm_client) or EXTERNAL_API_BASE_URL)
+    except Exception:
+        return {}
 
 
 @dataclass
@@ -213,12 +231,18 @@ class LLMTypeMapper:
                     "content": "{"  # 强制以 JSON 开始
                 })
             
-            response = self.llm_client.chat.completions.create(
+            kwargs = {
+                "model": self.model_name,
+                "messages": messages,
+                "temperature": 0.05,  # 更低温度以获得更稳定的结果
+            }
+            kwargs.update(_deepseek_request_kwargs(self.model_name, self.llm_client))
+            with llm_global_slot(
+                base_url=_client_base_url(self.llm_client),
                 model=self.model_name,
-                messages=messages,
-                temperature=0.05,  # 更低温度以获得更稳定的结果
-                max_tokens=1500,
-            )
+                label="llm_type_mapper",
+            ):
+                response = self.llm_client.chat.completions.create(**kwargs)
             
             result = response.choices[0].message.content
             
@@ -358,6 +382,7 @@ class LLMTypeMapper:
         c_function_code: str = "",
         function_name: str = "",
         is_static: bool = False,
+        is_callback: bool = False,
         source_file: str = "",
         other_signatures: str = "",
     ) -> SignatureTranslationResult:
@@ -381,7 +406,11 @@ class LLMTypeMapper:
             # 解析 C 签名
             params, ret_type = self._parse_c_signature(c_signature)
             func_mod, params_str, ret_str = TypeMapper.process_function_signature(
-                ret_type, params, is_static
+                ret_type,
+                params,
+                is_static,
+                is_callback=is_callback,
+                func_name=function_name,
             )
             preprocessed = f"{func_mod} {function_name}({params_str}){ret_str}"
         else:
@@ -415,7 +444,10 @@ class LLMTypeMapper:
                 warnings=["提示词模块不可用"]
             )
         
-        user_prompt = SIGNATURE_TRANSLATION_USER_PROMPT.format(
+        system_prompt, user_prompt_template = get_signature_translation_prompts(
+            TypeMapper.project_suite() if TYPE_MAPPER_AVAILABLE else "ohos"
+        )
+        user_prompt = user_prompt_template.format(
             c_signature=c_signature,
             c_function_code=c_function_code or c_signature,
             preprocessed_signature=preprocessed,
@@ -426,17 +458,24 @@ class LLMTypeMapper:
             source_file=source_file,
         )
         
-        llm_response = self._call_llm(SIGNATURE_TRANSLATION_SYSTEM_PROMPT, user_prompt, force_json=True)
+        llm_response = self._call_llm(system_prompt, user_prompt, force_json=True)
         parsed = self._parse_json_response(llm_response)
         
         if parsed:
             # LLM 直接输出最终的 Rust 签名
             final_sig = parsed.get('rust_signature', preprocessed)
+            if TYPE_MAPPER_AVAILABLE:
+                final_sig = TypeMapper.adapt_function_signature_abi(
+                    final_sig,
+                    is_static=is_static,
+                    is_callback=is_callback,
+                    func_name=function_name,
+                )
             return SignatureTranslationResult(
                 c_signature=c_signature,
                 preprocessed_signature=preprocessed,
                 final_signature=final_sig,
-                function_modifier=parsed.get('function_modifier', 'pub extern "C" fn'),
+                function_modifier=func_mod,
                 parameters=parsed.get('parameters', []),
                 return_type=parsed.get('return_type', {}),
                 needs_correction=(final_sig != preprocessed),
@@ -716,4 +755,3 @@ if __name__ == "__main__":
     print("• 当 LLM 不可用时，才回退到 TypeMapper 预处理结果")
     print("=" * 60)
     print("\n✓ 测试完成")
-

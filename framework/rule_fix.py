@@ -123,51 +123,6 @@ class BracketMismatchFixer(RuleFixer):
         return candidates
 
 
-class KeywordIdentifierFixer(RuleFixer):
-    """
-    Fix identifiers that clash with Rust keywords, typically coming from C field names.
-
-    Our type recovery sanitizes keyword field names using the bindgen-like convention:
-      `super` -> `super_`, `type` -> `type_`, ...
-
-    When the LLM still emits `.super` or `r#super`, rustc reports:
-      "expected identifier, found keyword `super`"
-    This fixer rewrites the obvious field-access forms to the sanitized version.
-    """
-
-    def __init__(self):
-        super().__init__(
-            name="KeywordIdentifierFixer",
-            description="修复与 Rust 关键字冲突的标识符（例如 `.super` -> `.super_`）",
-        )
-
-    def can_fix(self, code: str, error_msg: str) -> bool:
-        if not error_msg:
-            return False
-        msg = error_msg.lower()
-        if "expected identifier" not in msg or "found keyword" not in msg:
-            return False
-        return re.search(r"keyword `([A-Za-z_][A-Za-z0-9_]*)`", error_msg) is not None
-
-    def apply(self, code: str, error_msg: str) -> List[str]:
-        m = re.search(r"keyword `([A-Za-z_][A-Za-z0-9_]*)`", error_msg)
-        if not m:
-            return []
-        kw = m.group(1)
-
-        new_code = code
-        # Field access: `.super` -> `.super_`
-        new_code = re.sub(rf"\\.{re.escape(kw)}\\b", f".{kw}_", new_code)
-        # Raw identifier (LLM guess): `r#type` -> `type_` (we use suffix convention)
-        new_code = re.sub(rf"\\br#{re.escape(kw)}\\b", f"{kw}_", new_code)
-        # Struct literal field: `{ super: ... }` -> `{ super_: ... }`
-        new_code = re.sub(rf"\\b{re.escape(kw)}\\s*:", f"{kw}_:", new_code)
-
-        if new_code == code:
-            return []
-        return [new_code]
-
-
 class TypeCastFixer(RuleFixer):
     """修复类型转换错误"""
 
@@ -311,6 +266,9 @@ class MacroConfusionFixer(RuleFixer):
             "cannot find macro",
             "not a macro",
             "cannot find value",
+            "expected function",
+            "function, tuple struct or tuple variant",
+            "remove the arguments",
             "expected macro",
             "e0433"  # 找不到宏
         ])
@@ -327,10 +285,34 @@ class MacroConfusionFixer(RuleFixer):
             new_code = re.sub(rf'\b{macro_name}!\s*\(\s*\)', macro_name, code)
             if new_code != code:
                 candidates.append(new_code)
+
+        # rustc 对“常量被当函数调用”的典型提示：
+        # expected function, found `u32` / remove the arguments
+        call_names = set()
+        for m in re.finditer(r"(?:function|value|macro)\s+`(\w+)`", error_msg):
+            call_names.add(m.group(1))
+        for m in re.finditer(r"`(\w+)`\s+is not a macro", error_msg):
+            call_names.add(m.group(1))
+        for name in sorted(call_names):
+            new_code = re.sub(rf'\b{name}!\s*\(\s*\)', name, code)
+            new_code = re.sub(rf'\b{name}\s*\(\s*\)', name, new_code)
+            if new_code != code:
+                candidates.append(new_code)
+
+        lowered = error_msg.lower()
+        if "remove the arguments" in lowered or "expected function" in lowered:
+            def _drop_const_call(match: re.Match) -> str:
+                path = match.group(1)
+                ident = path.rsplit("::", 1)[-1]
+                return path if ident.isupper() else match.group(0)
+
+            new_code = re.sub(r'\b((?:(?:crate|self|super)::)?(?:(?:types|compat|globals)::)?[A-Z][A-Z0-9_]*)\s*\(\s*\)', _drop_const_call, code)
+            if new_code != code:
+                candidates.append(new_code)
         
-        # 反向：尝试将常量改为宏调用
+        # 反向：尝试将常量改为宏调用。只在错误明确说期望宏时执行，避免把真实缺失常量改坏。
         value_match = re.search(r"cannot find value\s+`(\w+)`", error_msg)
-        if value_match:
+        if value_match and ("expected macro" in error_msg.lower() or "cannot find macro" in error_msg.lower()):
             value_name = value_match.group(1)
             # 如果是全大写标识符，可能是宏
             if value_name.isupper() and '_' in value_name:
@@ -391,6 +373,41 @@ class ConstShadowingLetBindingFixer(RuleFixer):
             candidates.append(new_code)
 
         return candidates
+
+
+class OffsetOfStabilityFixer(RuleFixer):
+    """修复旧 OHOS rustc 不支持 `offset_of!` 的问题"""
+
+    def __init__(self):
+        super().__init__(
+            name="OffsetOfStabilityFixer",
+            description="把 std/core::mem::offset_of! 改成稳定的 MaybeUninit 指针差值表达式"
+        )
+
+    def can_fix(self, code: str, error_msg: str) -> bool:
+        if "offset_of!" not in code:
+            return False
+        lowered = error_msg.lower()
+        return "offset_of" in lowered or "unstable library feature" in lowered or "error[e0658]" in lowered
+
+    def apply(self, code: str, error_msg: str) -> List[str]:
+        pattern = re.compile(
+            r"(?:(?:std|core)::mem::)?offset_of!\s*\(\s*"
+            r"(?P<type>[A-Za-z_][A-Za-z0-9_:<>]*)\s*,\s*"
+            r"(?P<field>[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*\)"
+        )
+
+        def _replace(match: re.Match) -> str:
+            type_name = match.group("type")
+            field_name = match.group("field")
+            return (
+                f"{{ let uninit = core::mem::MaybeUninit::<{type_name}>::uninit(); "
+                f"let base = uninit.as_ptr(); "
+                f"unsafe {{ core::ptr::addr_of!((*base).{field_name}) as usize - base as usize }} }}"
+            )
+
+        fixed = pattern.sub(_replace, code)
+        return [fixed] if fixed != code else []
 
 
 class FunctionCallSyntaxFixer(RuleFixer):
@@ -706,6 +723,68 @@ class PointerTypeCastFixer(RuleFixer):
         return candidates
 
 
+class PointerMutabilityFixer(RuleFixer):
+    """修复 raw pointer mutability 方向错误"""
+
+    def __init__(self):
+        super().__init__(
+            name="PointerMutabilityFixer",
+            description="修复把不可变引用/const raw pointer 传给 *mut 参数的问题"
+        )
+
+    def can_fix(self, code: str, error_msg: str) -> bool:
+        if "E0308" not in error_msg and "mismatched types" not in error_msg.lower():
+            return False
+        lowered = error_msg.lower()
+        return (
+            "types differ in mutability" in lowered
+            or "expected raw pointer `*mut" in lowered
+            or "expected raw pointer `*mut" in error_msg
+        )
+
+    def apply(self, code: str, error_msg: str) -> List[str]:
+        candidates: List[str] = []
+        line_match = re.search(r":(\d+):(\d+)", error_msg)
+        if not line_match:
+            line_match = re.search(r":(\d+):", error_msg)
+        if not line_match:
+            return candidates
+
+        error_line = int(line_match.group(1))
+        lines = code.split("\n")
+        if not (0 < error_line <= len(lines)):
+            return candidates
+
+        line = lines[error_line - 1]
+        replacements = [
+            (
+                re.compile(
+                    r"&(?P<var>[A-Za-z_][A-Za-z0-9_]*)\s+as\s+\*const\s+\*mut\s+"
+                    r"(?P<inner>[^,;)]+?)\s+as\s+\*const\s+\*const\s+"
+                    r"(?P<void>(?:::)?core::ffi::c_void|libc::c_void)"
+                ),
+                lambda m: (
+                    f"&mut {m.group('var')} as *mut *mut {m.group('inner').strip()} "
+                    f"as *mut *const {m.group('void')}"
+                ),
+            ),
+            (
+                re.compile(r"&\(\*(?P<base>[^)]+)\)\.(?P<field>[A-Za-z_][A-Za-z0-9_]*)"),
+                lambda m: f"core::ptr::addr_of_mut!((*{m.group('base').strip()}).{m.group('field')})",
+            ),
+        ]
+
+        for pattern, replace in replacements:
+            new_line = pattern.sub(replace, line, count=1)
+            if new_line != line:
+                new_lines = list(lines)
+                new_lines[error_line - 1] = new_line
+                candidates.append("\n".join(new_lines))
+                break
+
+        return candidates
+
+
 class SizeTypeMismatchFixer(RuleFixer):
     """修复 size_t/usize 类型不匹配问题"""
 
@@ -844,8 +923,8 @@ class RuleFixManager:
         # 这样即使通用修复器的排除条件不完整，专用修复器也能优先匹配
         self.fixers: List[RuleFixer] = [
             BracketMismatchFixer(),
-            KeywordIdentifierFixer(),
             # 专用类型修复器 - 必须放在通用 TypeCastFixer 之前
+            PointerMutabilityFixer(),    # 处理 *const/*mut 方向和 &field -> *mut
             PointerTypeCastFixer(),      # 处理 *mut c_void vs *mut i8
             SizeTypeMismatchFixer(),     # 处理 u64 vs usize
             CharLiteralFixer(),          # 处理 u8 vs char
@@ -854,6 +933,7 @@ class RuleFixManager:
             BorrowCheckerFixer(),
             MacroConfusionFixer(),
             ConstShadowingLetBindingFixer(),
+            OffsetOfStabilityFixer(),
             FunctionCallSyntaxFixer(),
             NullPointerInitFixer(),
             DereferenceOperatorFixer(),

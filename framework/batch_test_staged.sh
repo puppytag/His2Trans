@@ -1,42 +1,68 @@
 #!/bin/bash
 
 ################################################################################
-# C2Rust 阶段同步批量项目测试脚本
+# C2Rust 批量项目测试脚本
 # 
-# 实现阶段同步：所有项目在同一个阶段完成后，再一起进入下一个阶段
-# - 阶段1（需要vLLM）：依赖分析 + 骨架翻译
+# 默认使用项目级流水线：每个项目独立推进阶段，Jina Reranker 阶段用 GPU 锁互斥。
+# 可用 --stage-sync 回到旧的阶段同步模式。
+# - 阶段1（需要LLM）：依赖分析 + 骨架翻译
 # - 阶段2（需要GPU）：签名匹配 + BM25 + Jina Reranker
-# - 阶段3（需要vLLM）：函数体翻译 + 测试 + 修复
+# - 阶段3（需要LLM）：函数体翻译 + 编译修复 + 可选后置 agentic repair
 # 
-# 这样vLLM只需要启动两次（阶段1开始和阶段3开始），而不是每个项目启动一次
+# 本地 vLLM 只在显式语义评估/知识沉淀时启动；默认翻译阶段走外部 OpenAI-compatible API。
 #
 # 使用方法：
 #   bash batch_test_staged.sh [选项]
 #
 # 可选参数：
-#   --incremental              使用增量式翻译模式
+#   --incremental              使用增量式翻译模式（默认开启，论文主线）
+#   --no-incremental           使用传统函数体批量翻译模式
 #   --max-repair N             增量模式下每个函数最大修复次数 (默认: 5)
 #   --rq3-body C0..C6          RQ3.3 函数体消融条件开关（知识通道 + 修复轮数；不指定则保持默认行为）
-#                             C0=N/N/0, C1=N/N/3, C2=P/P/0, C3=P/P/3, C4=O/P/3, C5=P/O/3, C6=O/O/3
+#                             C0=N/N/0, C1=N/N/5, C2=P/P/0, C3=P/P/5, C4=O/P/5, C5=P/O/5, C6=O/O/5
 #                             其中 N/P/O=none/predicted/oracle（API_Mapping / Partial-Idiom / max-repair）
 #   --oracle-knowledge-root DIR  Oracle 知识根目录（默认: ./oracle_rust；目录结构: <root>/<project>/*.json）
 #   --oracle-auto-extract true|false
 #                             Oracle 条件下是否允许自动抽取并缓存（复用既有知识抽取代码）
 #   --llm NAME                 LLM 名称 (默认: qwen3_coder)
-#   --suite ohos|oss           切换项目集合（默认: ohos；oss 为开源小项目集合）
+#   --suite ohos|oss|generic   切换项目集合（默认: ohos；generic 是 oss 兼容别名）
 #   --skip PROJECT1,PROJECT2   跳过指定的项目（用逗号分隔）
 #   --only PROJECT1,PROJECT2   只运行指定的项目（用逗号分隔）
-#   --max-parallel N           每个阶段的最大并行数（默认: 4）
-#   --max-parallel-workers N   单项目 LLM 翻译阶段最大并行数（默认: 4；外部 API 建议 <= 4）
-#   --run-dir NAME             本次运行输出目录名（ohos: translation_outputs/NAME/；oss: translation_outputs/Our/NAME/；包含 results/ 与 intermediate/），用于实验隔离
+#   --max-parallel N           旧 --stage-sync 模式每阶段最大并行数（默认: min(项目数, 5)，最大: 8）
+#   --max-parallel-workers N   单项目 LLM 翻译阶段最大并行数（默认: 40）
+#   --project-pipeline         项目级流水线模式（默认）：项目完成 Jina 后立即进入阶段3
+#   --stage-sync               旧阶段同步模式：所有项目完成同一阶段后再进入下一阶段
+#   --run-dir NAME             本次运行 ID/旧输出目录名；默认新实验写入 experiment_runs/<NAME>/raw/framework_output/
+#   --archive-root DIR         新实验统一归档根目录（默认: ./experiment_runs）
+#   --experiment-id NAME       显式指定实验 ID；不指定时自动生成或复用 --run-dir
+#   --archive-tag TAG          写入归档 manifest 的自由标签
+#   --legacy-output-layout     使用旧布局：ohos 写 translation_outputs/NAME/，oss 写 translation_outputs/Our/NAME/
 #   --extra-rag-kb-dir DIRS    额外 RAG 知识库目录（独立可删）。可用逗号/分号/冒号分隔多个目录
 #                             （每个目录需包含 knowledge_base.json + bm25_index.pkl）。不指定则不启用
-#   --run-rag true|false       是否执行 BM25 + Jina Reranker（默认: false）
+#   --run-rag true|false       是否执行 BM25 + Jina Reranker（默认: true）
 #   --use-rag true|false       是否在 LLM prompt 注入 RAG 知识（默认: true）
+#   --rag-topk N               RAG/Jina 保留与注入的 top-k（默认: 5，论文主线）
 #   --skeleton-only            只运行阶段1（骨架翻译），用于调试
 #   --bindgen-debug            输出更多 bindgen/types 诊断信息（用于定位 stub 原因）
 #   --bindgen-debug-keep-files 保留 wrapper/preprocessed 临时文件（调试用，磁盘占用会增加）
-#   --jina-workers N           Jina Reranker 并行 worker 数（默认: 4；仅 --jina-parallel 生效）
+#   --agentic-post-repair      阶段3结束后运行后置 agentic repair loop（默认开启）
+#   --skip-agentic-post-repair 跳过后置 agentic repair loop
+#   --post-repair-max-rounds N 后置 agentic repair 最大轮数（默认: 50）
+#   --post-repair-agent-step-limit N
+#                             每轮后置 repair agent 最大 JSON action 步数（默认: 160）
+#   --semantic-audit-step-limit N
+#                             每轮 semantic audit agent 最大 JSON action 步数（默认: 320）
+#   --post-repair-agent-timeout-sec N
+#                             每轮后置 repair/semantic audit agent 超时秒数（默认: 3600）
+#   --post-repair-allow-external-blockers
+#                             semantic audit 只剩外部阻断时允许本项目成功退出
+#   --run-paper-tests          运行论文阶段 held-out/derived 测试；默认不在框架修复阶段运行
+#   --ohos-rustc PATH          后置 OHOS rustc cheap gate 使用的 rustc 路径
+#   --ohos-rust-target TRIPLE  后置 OHOS rustc cheap gate 使用的 target triple
+#   C2R_LLM_REFINE_SIGNATURES=1 可显式开启签名 LLM 复核；默认关闭，避免 Stage1 被可选复核阻塞
+#   --jina-serial              Jina Reranker 串行模式
+#   --jina-parallel            Jina Reranker 并行模式（默认开启）
+#   --jina-workers N           Jina Reranker 并行 worker 数（默认: 2；仅并行模式生效）
 #   --help, -h                 显示帮助信息
 ################################################################################
 
@@ -48,19 +74,34 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # 输出目录布局（用于消融实验/多次运行隔离）：
-# - 同一次运行（一个 run_dir）统一写到 translation_outputs/<run_dir>/
-# - run_dir 下再分为：
+# - 默认新布局：experiment_runs/<experiment_id>/
+#   - run_manifest.json / command.sh / index.json
+#   - raw/framework_output/{results,intermediate}
+#   - analysis/{analysis.json,metrics_summary.json,audit.json,audit.md}
+#   - logs/
+# - 旧布局可通过 --legacy-output-layout 显式启用：translation_outputs/<run_dir>/
+# - 框架原始 run_dir 下仍分为：
 #   - results/       ：最终结果（汇总报告、评估报告、便于对比的产物）
 #   - intermediate/  ：所有中间产物（每项目 workspace、日志、缓存等）
 # - 项目目录名不再追加日期，避免跨午夜导致阶段间读写不同目录
 # 可通过环境变量或参数覆盖：
 #   RUN_DIR_NAME=my_exp bash batch_test_staged.sh ...
 #   bash batch_test_staged.sh --run-dir my_exp ...
+ORIGINAL_ARGS=("$@")
 OUTPUTS_BASE_DIR="$SCRIPT_DIR/translation_outputs"
 RUN_DIR_NAME="${RUN_DIR_NAME:-$(date +%Y%m%d_%H%M%S)}"
+RUN_DIR_EXPLICIT=false
+ARCHIVE_ENABLED="${C2R_ARCHIVE_ENABLED:-true}"
+ARCHIVE_ROOT="${C2R_ARCHIVE_ROOT:-$SCRIPT_DIR/experiment_runs}"
+EXPERIMENT_ID="${C2R_EXPERIMENT_ID:-}"
+ARCHIVE_TAG="${C2R_ARCHIVE_TAG:-}"
+FRAMEWORK_OUTPUT_NAME="${C2R_FRAMEWORK_OUTPUT_NAME:-framework_output}"
+EXPERIMENT_DIR=""
 RUN_ROOT_DIR=""
 RUN_RESULTS_DIR=""
 RUN_INTERMEDIATE_DIR=""
+RUN_EVAL_DIR=""
+RUN_SHARED_DIR=""
 
 # 默认配置
 # Truth-mode（真值优先）：尽量不做派生层修补（types 后处理/LLM fallback/防御性补全等）。
@@ -68,14 +109,14 @@ RUN_INTERMEDIATE_DIR=""
 # - 0: 关闭（默认；更“可编译优先”的行为）
 C2R_TRUTH_MODE="${C2R_TRUTH_MODE:-0}"
 LLM_NAME="qwen3_coder"
-USE_INCREMENTAL=false
-USE_LAYERED_SKELETON="${USE_LAYERED_SKELETON:-$([[ \"$C2R_TRUTH_MODE\" != \"0\" ]] && echo true || echo false)}"  # 分层骨架构建模式（Truth-mode=1 时默认启用）
+USE_INCREMENTAL=true
+MAX_REPAIR=5
+USE_LAYERED_SKELETON="${USE_LAYERED_SKELETON:-true}"  # 分层骨架构建模式（论文主线默认启用）
 USE_BINDGEN=true            # 使用 bindgen 生成类型（仅分层模式）
 USE_LLM_SIGNATURES=false    # 使用 LLM 翻译签名（仅分层模式），默认 false（使用 TypeMapper）
 USE_LLM_TYPE_MAPPER=false   # 使用 LLMTypeMapper（TypeMapper + LLM 验证），默认 false
-USE_LLM_SIG_REFINER=$([[ "$C2R_TRUTH_MODE" != "0" ]] && echo false || echo true)    # Truth-mode 默认关闭（避免 LLM 介入骨架真值层）
+USE_LLM_SIG_REFINER=false   # 签名复核是可选质量增强，默认关闭，避免 Stage1 被外部 LLM 调用阻塞
 USE_RULE_FIX=$([[ "$C2R_TRUTH_MODE" != "0" ]] && echo false || echo true)           # Truth-mode 默认关闭（避免规则修补影响真值）
-MAX_REPAIR=5
 PROJECT_SUITE="${PROJECT_SUITE:-ohos}"
 SKIP_PROJECTS=""
 ONLY_PROJECTS=""
@@ -84,15 +125,20 @@ ONLY_PROJECTS=""
 # - batch_test_staged.sh 将默认值设为 600s，以减少大函数/排队时的超时误判
 VLLM_REQUEST_TIMEOUT="${VLLM_REQUEST_TIMEOUT:-${VLLM_TIMEOUT:-600}}"
 VLLM_TIMEOUT="${VLLM_TIMEOUT:-$VLLM_REQUEST_TIMEOUT}"
-# 根据 CPU 核心数自动设置并行度（最大 8，避免内存压力）
-MAX_PARALLEL=${MAX_PARALLEL:-$(nproc --ignore=2 2>/dev/null || echo 4)}
-MAX_PARALLEL=$((MAX_PARALLEL > 8 ? 8 : MAX_PARALLEL))
-# 单项目（每层）LLM 翻译并行度；过大容易触发外部 API 429
-MAX_PARALLEL_WORKERS="${MAX_PARALLEL_WORKERS:-4}"
-RUN_RAG=false  # 默认跳过 BM25 和 Jina Reranker（如果知识库和项目不变）
+# 项目并行度：默认按实际项目数自动取 min(N, 5)；显式传入 MAX_PARALLEL/--max-parallel 时使用用户值。
+if [[ -n "${MAX_PARALLEL:-}" ]]; then
+    MAX_PARALLEL_AUTO=false
+else
+    MAX_PARALLEL_AUTO=true
+    MAX_PARALLEL=1
+fi
+# 单项目（每层）LLM 翻译并行度；DeepSeek 官方账号级并发较高，默认配合 5 个项目接近 200 总并发。
+MAX_PARALLEL_WORKERS="${MAX_PARALLEL_WORKERS:-40}"
+PROJECT_PIPELINE_MODE="${C2R_PROJECT_PIPELINE_MODE:-true}"
+RUN_RAG=true  # 默认执行 BM25 和 Jina Reranker（论文主线）
 USE_RAG_CONTEXT=true  # 是否在 LLM prompt 注入 RAG 知识（默认 true；即便 RUN_RAG=false 也可复用已有 reranked_results）
-# RQ3.2: RAG top-k（仅当显式设置时生效；默认保持旧行为）
-RAG_TOPK=""
+# RQ3.2: RAG top-k（默认 5，论文主线）
+RAG_TOPK="${RAG_TOPK:-5}"
 # RQ3.3: 函数体消融（知识通道 + 修复轮数）。不设置则保持当前默认行为不变。
 RQ3_BODY_CONDITION=""
 MAX_REPAIR_EXPLICIT=false
@@ -104,30 +150,210 @@ ORACLE_AUTO_EXTRACT=false
 # - 传入一个 run_dir 根目录（包含 intermediate/），或直接传入 intermediate/ 目录
 REUSE_STAGE1_FROM=""
 # 是否跳过“知识沉淀（Learned KB）”
-# - 默认不跳过：保持原流程（post-run 自动生成 Learned KB）
-SKIP_LEARNED_KB=false
+# - 默认跳过：Learned KB 属于按需知识沉淀，不进入日常运行链路
+SKIP_LEARNED_KB=true
 SKELETON_ONLY=false  # 仅运行骨架翻译部分（阶段1），用于调试
-JINA_SERIAL_MODE=true  # Jina Reranker 串行模式（避免 OOM，默认开启）
-JINA_WORKERS="${JINA_WORKERS:-4}"  # Jina Reranker 并行 worker 数（仅 --jina-parallel 生效）
+JINA_SERIAL_MODE=false  # Jina Reranker 并行模式（默认开启）
+JINA_WORKERS="${JINA_WORKERS:-2}"  # Jina Reranker 并行 worker 数（默认 2）
+JINA_LOCK_FILE="${C2R_JINA_LOCK_FILE:-/tmp/c2r_jina_reranker.lock}"
 USE_SELF_HEALING="${USE_SELF_HEALING:-$([[ \"$C2R_TRUTH_MODE\" != \"0\" ]] && echo false || echo true)}"  # AI 原生自愈循环（Truth-mode 默认关闭）
-USE_LIBCLANG=false     # 使用 libclang 提取函数（更准确，默认关闭）
+USE_LIBCLANG=true     # 使用 libclang 提取函数（更准确，论文主线默认开启）
+# libclang 提取 0 个函数时的 no-libclang 回退；auto 表示仅 OSS 启用，避免掩盖 OHOS truth 问题。
+C2R_LIBCLANG_EMPTY_FALLBACK_TO_NO_LIBCLANG="${C2R_LIBCLANG_EMPTY_FALLBACK_TO_NO_LIBCLANG:-auto}"
+RUN_SEMANTIC_EVALUATION=false  # 语义等价性评估（默认关闭，需要 vLLM）
+EVAL_MAX_FILES=0       # 语义评估每个项目的最大文件数（0=全部）
+# 后置 agentic repair：默认开启；需要跳过时显式加 --skip-agentic-post-repair 或设置 C2R_POST_AGENTIC_REPAIR=false。
+POST_AGENTIC_REPAIR="${C2R_POST_AGENTIC_REPAIR:-true}"
+POST_REPAIR_MAX_ROUNDS="${C2R_POST_REPAIR_MAX_ROUNDS:-50}"
+POST_REPAIR_AGENT_STEP_LIMIT="${C2R_POST_REPAIR_AGENT_STEP_LIMIT:-160}"
+SEMANTIC_AUDIT_STEP_LIMIT="${C2R_SEMANTIC_AUDIT_STEP_LIMIT:-320}"
+POST_REPAIR_AGENT_TIMEOUT_SEC="${C2R_POST_REPAIR_AGENT_TIMEOUT_SEC:-3600}"
+POST_REPAIR_ALLOW_EXTERNAL_BLOCKERS="${C2R_POST_REPAIR_ALLOW_EXTERNAL_BLOCKERS:-false}"
+# 论文 held-out/derived 测试默认不在框架阶段运行，避免测试泄漏到 repair。
+RUN_PAPER_EVAL_TESTS="${C2R_RUN_PAPER_EVAL_TESTS:-false}"
+# OHOS cheap gate 配置。后置 repair runner 会通过 Cargo 调用该 rustc 和 target。
+OHOS_RUSTC="${OHOS_RUSTC:-$SCRIPT_DIR/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony/prebuilts/rustc/linux-x86_64/current/bin/rustc}"
+OHOS_RUST_TARGET="${OHOS_RUST_TARGET:-x86_64-unknown-linux-ohos}"
 # bindgen/types 诊断输出（可选）
 BINDGEN_DEBUG="${C2R_BINDGEN_DEBUG:-0}"
 BINDGEN_DEBUG_KEEP_FILES="${C2R_BINDGEN_DEBUG_KEEP_FILES:-0}"
-# TU 闭包门禁：若某项目存在 compile_commands 缺失/预处理失败，则跳过后续阶段。
-# 开源最小输入通常不包含 OpenHarmony 的 compile_commands registry，因此默认关闭（=0），
-# 需要时可通过环境变量显式开启：C2R_REQUIRE_TU_CLOSURE=1 bash batch_test_staged.sh ...
-C2R_REQUIRE_TU_CLOSURE="${C2R_REQUIRE_TU_CLOSURE:-0}"
+# TU 闭包门禁：若某项目存在 compile_commands 缺失/预处理失败，则跳过后续阶段（默认启用；设为 0 可关闭）
+C2R_REQUIRE_TU_CLOSURE="${C2R_REQUIRE_TU_CLOSURE:-1}"
 # 额外 RAG KB（默认不启用；用命令行 --extra-rag-kb-dir 指定）
 EXTRA_RAG_KB_DIRS=""
 
-# 推荐的项目列表（默认使用开源最小 OHOS(test5) 子集；--suite oss 时会在后续覆盖）
+# 推荐的项目列表（按推荐顺序：简单到复杂）
 declare -A RECOMMENDED_PROJECTS=(
-    ["shared__541f4e547bdb"]="$SCRIPT_DIR/../data/ohos/source_projects/shared__541f4e547bdb"
-    ["shared__12e38ea922f7"]="$SCRIPT_DIR/../data/ohos/source_projects/shared__12e38ea922f7"
-    ["host__25c1898e1626"]="$SCRIPT_DIR/../data/ohos/source_projects/host__25c1898e1626"
-    ["osal__0bc4f21396ad"]="$SCRIPT_DIR/../data/ohos/source_projects/osal__0bc4f21396ad"
-    ["appverify_lite__e5ebe91a98b9"]="$SCRIPT_DIR/../data/ohos/source_projects/appverify_lite__e5ebe91a98b9"
+    # # 100 分纯 C 项目（2025-12-04 自动筛选结果）
+    # ["approach_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/approach_ble"
+    # ["coap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/coap"
+    # ["crypto_common"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/crypto_common"
+    # ["dispatcher"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dispatcher"
+    # ["event_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/event_manager"
+    # ["installer"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/installer"
+    # ["ipc_auth"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ipc_auth"
+    # ["mem"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mem"
+    # ["mini"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mini"
+    # ["pack"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pack"
+    # ["pathselect"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pathselect"
+    # ["perf"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/perf"
+    # ["pms_base"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pms_base"
+    # ["qos"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/qos"
+    # ["share_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/share_ble"
+    # ["sysinfo"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/sysinfo"
+    # ["timer_task"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/timer_task"
+    # ["touch_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/touch_ble"
+    # ["trace"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/trace"
+    # ["transmission"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/transmission"
+    # ["virtual_link_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/virtual_link_ble"
+
+    # # ["json"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/json"
+    # ["innerkits"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/innerkits"
+    # ["file_permission_native"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/file_permission_native"
+    # ["parameter_mock"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/parameter_mock"
+    # ["utils_mock"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/utils_mock"
+    # # ["passthrough"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/passthrough"
+    # # ["syscap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/syscap"
+    # ["extend"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/extend"
+    # ["random"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/random"
+    # # ["utils"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/utils"
+    # # ["constant"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/constant"
+    # # ["timer"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/timer"
+    # # ["cJson"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/no_external_deps/without_test/cJson"
+
+    # ["account"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/account"
+    # ["ohos_init_web_adapter"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ohos_init_web_adapter"
+    # ["work"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/work"
+    # ["event"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/event"
+    # ["subscribe_kv_store_sa"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/subscribe_kv_store_sa"
+    # ["access_token_adapter"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/access_token_adapter"
+
+
+
+
+
+
+
+    # # 自动筛选的纯 C 项目（按代码量升序）
+    # ["qos"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/qos"
+    # ["mini"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mini"
+    # ["coap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/coap"
+    # ["transmission"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/transmission"
+    # ["event_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/event_manager"
+    # ["meta_node"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/meta_node"
+    # ["decision_center"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/decision_center"
+    # ["timer_task"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/timer_task"
+
+    
+    
+    
+    # # ["user"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/user"
+    # # ["event"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/event"
+    # ["mem"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mem"
+    # ["pms_base"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pms_base"
+    # ["initsync"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/initsync"
+    # ["sysinfo"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/sysinfo"
+    # ["crypto_common"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/crypto_common"
+    # ["monitor"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/monitor"
+    # ["share_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/share_ble"
+    # ["auth"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/auth"
+    # ["approach_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/approach_ble"
+    # ["touch_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/touch_ble"
+    # ["virtual_link_ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/virtual_link_ble"
+    # ["dsoftbus"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dsoftbus"
+    # ["quickstart"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/quickstart"
+    # ["perf"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/perf"
+    # ["trace"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/trace"
+    # # ["pac"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pac"
+    # # ["srcu-cbmc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/srcu-cbmc"
+    # ["random"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/random"
+    # ["device_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/device_manager"
+    # # ["lib"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/lib"
+    # # ["pack"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pack"
+    # ["statistics"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/statistics"
+    # # ["stream"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/stream"
+    # ["scheduler"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/scheduler"
+    # ["dispatcher"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dispatcher"
+    # # ["memory_security"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/memory_security"
+    # ["ipc_auth"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ipc_auth"
+    # # ["tfa9879"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/tfa9879"
+    # ["manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/manager"
+    # ["config"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/config"
+    # ["huks"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/huks"
+    # # ["dsp"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dsp"
+    # ["disc_mgr"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/disc_mgr"
+    # ["parser"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/parser"
+    # ["multi_partition"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/multi_partition"
+    # # ["hdmi"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hdmi"
+    # ["ethernet"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ethernet"
+    # # ["hi3516"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hi3516"
+    # ["service"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/service"
+    # # ["uart"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/uart"
+    # ["time_sync"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/time_sync"
+    # # ["proc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/proc"
+    # # ["osal"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/osal"
+    # ["mkp"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mkp"
+    # # ["rv"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/rv"
+    # ["installer"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/installer"
+    # ["pathselect"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/pathselect"
+    # ["small"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/small"
+    # ["telnet"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/telnet"
+    # # ["mpp"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mpp"
+    # ["hdi_passthrough"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hdi_passthrough"
+    # # ["hievent"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hievent"
+    # ["vnode"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/vnode"
+    # ["driver"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/driver"
+    # ["tcp"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/tcp"
+    # ["decision_db"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/decision_db"
+    # ["libscrew"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/libscrew"
+    # # ["rk809_codec"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/rk809_codec"
+    # # ["es8323"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/es8323"
+    # # ["jffs2"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/jffs2"
+    # ["virpart"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/virpart"
+    # # ["kernel"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/kernel"
+    # ["network"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/network"
+    # # ["dai"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dai"
+    # ["wifiiot_app"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/wifiiot_app"
+    # ["dynload"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dynload"
+    # ["buffer_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/buffer_manager"
+    # ["syscall"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/syscall"
+    # # ["rkc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/rkc"
+    # # ["camera"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/camera"
+    # ["file"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/file"
+    # # ["hieth-sf"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/hieth-sf"
+    # ["nstackx_coap"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/nstackx_coap"
+    # # ["soc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/soc"
+    # ["tcp_direct"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/tcp_direct"
+    # ["rpc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/rpc"
+    # ["platform"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/platform"
+    # ["ble"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ble"
+    # # ["mpp_help"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/mpp_help"
+    # # ["csky_driver"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/csky_driver"
+    # # ["ipc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/ipc"
+    # ["tlogcat"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/tlogcat"
+    # ["disk"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/disk"
+    # ["device_cert_manager"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/device_cert_manager"
+    # # ["headset_monitor"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/headset_monitor"
+    # # ["shell"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/shell"
+    # # ["porting"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/porting"
+    # ["device_impl"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/device_impl"
+    # ["net_buscenter"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/net_buscenter"
+    # ["dispatch"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules/with_third_party/others/without_test/dispatch"
+
+
+    ["host__25c1898e1626"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/host__25c1898e1626"
+    ["appverify_lite__e5ebe91a98b9"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/appverify_lite__e5ebe91a98b9"
+    ["manager__c248934e0221"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/manager__c248934e0221"
+    ["shared__541f4e547bdb"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/shared__541f4e547bdb"
+    ["posix__1b7f59c68bbc"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/src_test_no_include/others/with_test/posix__1b7f59c68bbc"
+    ["common__89d5ecaafdff"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/common__89d5ecaafdff"
+    ["core__ef5242b7ab08"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/core__ef5242b7ab08"
+    ["resmgr_lite__cfe76e7194ce"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/resmgr_lite__cfe76e7194ce"
+    ["shared__12e38ea922f7"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/shared__12e38ea922f7"
+    ["osal__0bc4f21396ad"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/src_test_no_include/others/with_test/osal__0bc4f21396ad"
+    ["sapm__193cdeb43a97"]="/data/home/wangshb/c2-rust_framework/SelfContained/self_contained_modules_v2/with_third_party/others/with_test/sapm__193cdeb43a97"
+
+
 )
 
 # 解析命令行参数
@@ -135,6 +361,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --incremental)
             USE_INCREMENTAL=true
+            shift
+            ;;
+        --no-incremental)
+            USE_INCREMENTAL=false
             shift
             ;;
         --max-repair)
@@ -185,15 +415,55 @@ while [[ $# -gt 0 ]]; do
             ;;
         --max-parallel)
             MAX_PARALLEL="$2"
+            MAX_PARALLEL_AUTO=false
             shift 2
             ;;
-		--max-parallel-workers)
+        --max-parallel-workers)
 			MAX_PARALLEL_WORKERS="$2"
 			shift 2
 			;;
+        --project-pipeline)
+            PROJECT_PIPELINE_MODE=true
+            shift
+            ;;
+        --stage-sync|--stage-synchronized)
+            PROJECT_PIPELINE_MODE=false
+            shift
+            ;;
         --run-dir)
             RUN_DIR_NAME="$2"
+            RUN_DIR_EXPLICIT=true
             shift 2
+            ;;
+        --archive-root)
+            if [[ -z "${2:-}" ]]; then
+                echo "错误: --archive-root 需要一个目录参数" >&2
+                exit 2
+            fi
+            ARCHIVE_ROOT="$2"
+            ARCHIVE_ENABLED=true
+            shift 2
+            ;;
+        --experiment-id)
+            if [[ -z "${2:-}" ]]; then
+                echo "错误: --experiment-id 需要一个名称参数" >&2
+                exit 2
+            fi
+            EXPERIMENT_ID="$2"
+            ARCHIVE_ENABLED=true
+            shift 2
+            ;;
+        --archive-tag)
+            if [[ -z "${2:-}" ]]; then
+                echo "错误: --archive-tag 需要一个标签参数" >&2
+                exit 2
+            fi
+            ARCHIVE_TAG="$2"
+            shift 2
+            ;;
+        --legacy-output-layout|--no-archive)
+            ARCHIVE_ENABLED=false
+            shift
             ;;
         --extra-rag-kb-dir)
             EXTRA_RAG_KB_DIRS="$2"
@@ -244,16 +514,42 @@ while [[ $# -gt 0 ]]; do
             SKIP_LEARNED_KB=true
             shift
             ;;
+        --run-learned-kb|--enable-learned-kb)
+            SKIP_LEARNED_KB=false
+            shift
+            ;;
+        --llm-concurrent-limit)
+            if [[ ! "$2" =~ ^[0-9]+$ ]]; then
+                echo "错误: --llm-concurrent-limit 需要非负整数，但得到了: $2" >&2
+                exit 2
+            fi
+            LLM_CONCURRENT_LIMIT="$2"
+            C2R_LLM_GLOBAL_CONCURRENCY_LIMIT="$2"
+            shift 2
+            ;;
         --vllm-global-limit|--vllm-concurrent-limit)
-            VLLM_CONCURRENT_LIMIT="$2"
+            if [[ ! "$2" =~ ^[0-9]+$ ]]; then
+                echo "错误: $1 需要非负整数，但得到了: $2" >&2
+                exit 2
+            fi
+            LLM_CONCURRENT_LIMIT="$2"
+            C2R_LLM_GLOBAL_CONCURRENCY_LIMIT="$2"
             shift 2
             ;;
         --layered)
             USE_LAYERED_SKELETON=true
             shift
             ;;
+        --no-layered)
+            USE_LAYERED_SKELETON=false
+            shift
+            ;;
         --skeleton-only)
             SKELETON_ONLY=true
+            shift
+            ;;
+        --jina-serial)
+            JINA_SERIAL_MODE=true
             shift
             ;;
         --jina-parallel)
@@ -288,6 +584,10 @@ while [[ $# -gt 0 ]]; do
             USE_LIBCLANG=true
             shift
             ;;
+        --no-libclang)
+            USE_LIBCLANG=false
+            shift
+            ;;
         --bindgen-debug)
             BINDGEN_DEBUG=1
             shift
@@ -297,6 +597,86 @@ while [[ $# -gt 0 ]]; do
             BINDGEN_DEBUG_KEEP_FILES=1
             shift
             ;;
+        --run-evaluation)
+            RUN_SEMANTIC_EVALUATION=true
+            shift
+            ;;
+        --skip-evaluation)
+            RUN_SEMANTIC_EVALUATION=false
+            shift
+            ;;
+        --eval-max-files)
+            EVAL_MAX_FILES="$2"
+            shift 2
+            ;;
+        --agentic-post-repair)
+            POST_AGENTIC_REPAIR=true
+            shift
+            ;;
+        --skip-agentic-post-repair|--no-agentic-post-repair)
+            POST_AGENTIC_REPAIR=false
+            shift
+            ;;
+        --post-repair-max-rounds)
+            if [[ -z "${2:-}" ]] || [[ ! "$2" =~ ^[0-9]+$ ]]; then
+                echo "错误: --post-repair-max-rounds 需要一个非负整数参数" >&2
+                exit 2
+            fi
+            POST_REPAIR_MAX_ROUNDS="$2"
+            shift 2
+            ;;
+        --post-repair-agent-step-limit)
+            if [[ -z "${2:-}" ]] || [[ ! "$2" =~ ^[0-9]+$ ]] || [[ "$2" -lt 1 ]]; then
+                echo "错误: --post-repair-agent-step-limit 需要一个正整数参数" >&2
+                exit 2
+            fi
+            POST_REPAIR_AGENT_STEP_LIMIT="$2"
+            shift 2
+            ;;
+        --semantic-audit-step-limit)
+            if [[ -z "${2:-}" ]] || [[ ! "$2" =~ ^[0-9]+$ ]] || [[ "$2" -lt 1 ]]; then
+                echo "错误: --semantic-audit-step-limit 需要一个正整数参数" >&2
+                exit 2
+            fi
+            SEMANTIC_AUDIT_STEP_LIMIT="$2"
+            shift 2
+            ;;
+        --post-repair-agent-timeout-sec)
+            if [[ -z "${2:-}" ]] || [[ ! "$2" =~ ^[0-9]+$ ]] || [[ "$2" -lt 1 ]]; then
+                echo "错误: --post-repair-agent-timeout-sec 需要一个正整数秒数" >&2
+                exit 2
+            fi
+            POST_REPAIR_AGENT_TIMEOUT_SEC="$2"
+            shift 2
+            ;;
+        --post-repair-allow-external-blockers)
+            POST_REPAIR_ALLOW_EXTERNAL_BLOCKERS=true
+            shift
+            ;;
+        --run-paper-tests)
+            RUN_PAPER_EVAL_TESTS=true
+            shift
+            ;;
+        --skip-paper-tests|--no-paper-tests)
+            RUN_PAPER_EVAL_TESTS=false
+            shift
+            ;;
+        --ohos-rustc)
+            if [[ -z "${2:-}" ]]; then
+                echo "错误: --ohos-rustc 需要一个路径参数" >&2
+                exit 2
+            fi
+            OHOS_RUSTC="$2"
+            shift 2
+            ;;
+        --ohos-rust-target)
+            if [[ -z "${2:-}" ]]; then
+                echo "错误: --ohos-rust-target 需要一个 target triple 参数" >&2
+                exit 2
+            fi
+            OHOS_RUST_TARGET="$2"
+            shift 2
+            ;;
         --help|-h)
             echo "C2Rust 阶段同步批量项目测试脚本"
             echo ""
@@ -304,55 +684,87 @@ while [[ $# -gt 0 ]]; do
             echo "  bash batch_test_staged.sh [选项]"
             echo ""
             echo "可选参数："
-            echo "  --incremental              使用增量式翻译模式"
-            echo "  --layered                  使用分层骨架构建模式（bindgen + tree-sitter）"
+            echo "  --incremental              使用增量式翻译模式（默认开启，论文主线）"
+            echo "  --no-incremental           使用传统函数体批量翻译模式"
+            echo "  --layered                  使用分层骨架构建模式（默认开启，bindgen + tree-sitter）"
+            echo "  --no-layered               禁用分层骨架构建模式"
             echo "  --no-bindgen               禁用 bindgen 类型生成（仅分层模式）"
             echo "  --no-llm-signatures        禁用 LLM 签名翻译（仅分层模式）"
             echo "  --use-llm-type-mapper      启用 LLMTypeMapper（TypeMapper + LLM 验证）"
             echo "  --no-rule-fix              禁用规则修复（直接走增量修复/LLM 修复）"
-            echo "  --no-self-healing          禁用 AI 原生自愈循环（可以不启动 vLLM）"
-            echo "  --use-libclang             使用 libclang 提取函数（更准确，能处理复杂宏和属性）"
+            echo "  --no-self-healing          禁用 AI 原生自愈循环"
+            echo "  --use-libclang             使用 libclang 提取函数（默认开启，更准确，能处理复杂宏和属性）"
+            echo "  --no-libclang              禁用 libclang 提取函数"
             echo "  --bindgen-debug            输出更多 bindgen/types 诊断信息（用于定位 stub 原因）"
             echo "  --bindgen-debug-keep-files 保留 wrapper/preprocessed 临时文件（调试用，磁盘占用会增加）"
+            echo "  --agentic-post-repair      阶段3最终项目生成后运行后置 agentic repair loop"
+            echo "                             流程: cargo check -> OHOS rustc -> semantic audit -> repair（clippy 仅在后分析中统计）"
+            echo "  --skip-agentic-post-repair 跳过后置 agentic repair loop"
+            echo "  --post-repair-max-rounds N 后置 repair 最大轮数（默认: 50）"
+            echo "  --post-repair-agent-step-limit N"
+            echo "                             每轮后置 repair agent 最大 JSON action 步数（默认: 160）"
+            echo "  --semantic-audit-step-limit N"
+            echo "                             每轮 semantic audit agent 最大 JSON action 步数（默认: 320）"
+            echo "  --post-repair-agent-timeout-sec N"
+            echo "                             每轮后置 repair/semantic audit agent 超时秒数（默认: 3600）"
+            echo "  --post-repair-allow-external-blockers"
+            echo "                             semantic audit 只剩外部阻断时允许本项目成功退出"
+            echo "  --run-paper-tests          运行论文阶段 held-out/derived 测试；默认不在框架修复阶段运行"
+            echo "  --skip-paper-tests         不运行论文阶段 held-out/derived 测试（默认）"
+            echo "  --ohos-rustc PATH          后置 OHOS rustc cheap gate 使用的 rustc 路径"
+            echo "  --ohos-rust-target TRIPLE  后置 OHOS rustc cheap gate 使用的 target triple"
             echo "  --max-repair N             增量模式下每个函数最大修复次数 (默认: 5)"
             echo "  --rq3-body C0..C6          RQ3.3 函数体消融条件（知识通道 + 修复轮数；不指定则保持默认行为）"
-            echo "                             C0=N/N/0, C1=N/N/3, C2=P/P/0, C3=P/P/3, C4=O/P/3, C5=P/O/3, C6=O/O/3"
+            echo "                             C0=N/N/0, C1=N/N/5, C2=P/P/0, C3=P/P/5, C4=O/P/5, C5=P/O/5, C6=O/O/5"
             echo "  --oracle-knowledge-root DIR Oracle 知识根目录（默认: ./oracle_rust；目录结构: <root>/<project>/*.json）"
             echo "  --oracle-auto-extract true|false"
             echo "                             Oracle 条件下是否允许自动抽取并缓存（默认: false；若使用 --rq3-body 且涉及 oracle，则默认开启）"
             echo "  --llm NAME                 LLM 名称 (默认: qwen3_coder)"
-            echo "  --suite ohos|oss           切换项目集合（默认: ohos）"
+            echo "  --suite ohos|oss|generic   切换项目集合（默认: ohos；generic 是 oss 兼容别名）"
             echo "                             - ohos: SelfContained/OpenHarmony 模块"
             echo "                             - oss:  ComparisonMethod/Our/oss_projects.sh (开源小项目集合)"
             echo "  --skip PROJECT1,PROJECT2   跳过指定的项目（用逗号分隔）"
             echo "  --only PROJECT1,PROJECT2   只运行指定的项目（用逗号分隔）"
-            echo "  --max-parallel N           每个阶段的最大并行数（默认: 4）"
-            echo "  --max-parallel-workers N   单项目 LLM 翻译阶段最大并行数（默认: 4；外部 API 建议 <= 4）"
-            echo "  --run-dir NAME             本次运行输出目录名（包含 results/ 与 intermediate/）"
-            echo "                             - ohos: translation_outputs/NAME/"
-            echo "                             - oss : translation_outputs/Our/NAME/"
+            echo "  --max-parallel N           每个阶段的最大并行数（默认: min(项目数, 5)；最大: 8）"
+            echo "  --max-parallel-workers N   单项目 LLM 翻译阶段最大并行数（默认: 40）"
+            echo "  --project-pipeline         项目级流水线模式（默认）：项目完成 Jina 后立即进入阶段3"
+            echo "  --stage-sync               旧阶段同步模式：所有项目完成同一阶段后再进入下一阶段"
+            echo "  --run-dir NAME             本次运行 ID/旧输出目录名"
+            echo "                             默认新布局: experiment_runs/NAME/raw/framework_output/"
+            echo "  --archive-root DIR         新实验统一归档根目录（默认: ./experiment_runs）"
+            echo "  --experiment-id NAME       显式指定实验 ID；不指定时自动生成或复用 --run-dir"
+            echo "  --archive-tag TAG          写入归档 manifest 的自由标签"
+            echo "  --legacy-output-layout     使用旧布局：ohos 写 translation_outputs/NAME/，oss 写 translation_outputs/Our/NAME/"
             echo "  --extra-rag-kb-dir DIRS    额外 RAG 知识库目录（独立可删）。可用逗号/分号/冒号分隔多个目录"
             echo "                             （每个目录需包含 knowledge_base.json + bm25_index.pkl）。不指定则不启用"
-            echo "  --run-rag true|false       是否执行 BM25 和 Jina Reranker（默认: false）"
+            echo "  --run-rag true|false       是否执行 BM25 和 Jina Reranker（默认: true）"
             echo "                             如果知识库和项目不变，可以设置为 false 跳过"
             echo "  --use-rag true|false       是否在 LLM prompt 注入 RAG 知识（默认: true）"
-            echo "  --rag-topk N               RAG 注入知识的 top-k（正整数；用于 RQ3.2，例如 3/5/10；"
-            echo "                             限制注入的知识条目数=K，而非前 K 个代码对；默认不设置=保持旧行为：API=10/Partial=2）"
+            echo "  --rag-topk N               RAG/Jina 保留与注入的 top-k（默认: 5，论文主线）"
             echo "  --reuse-stage1-from DIR    复用历史 Stage1 产物（依赖分析+骨架翻译），避免重复生成骨架"
             echo "                             DIR 可为 run_dir 根目录（包含 intermediate/）或直接为 intermediate 目录"
-            echo "  --skip-learned-kb          跳过知识沉淀（Learned KB）生成（默认: 不跳过）"
-            echo "  --jina-parallel            Jina Reranker 并行模式（使用智能GPU排队调度）"
-            echo "                             默认: 串行模式（一次处理一个项目，避免 OOM）"
+            echo "  --skip-learned-kb          跳过知识沉淀（Learned KB）生成（默认行为，保留用于显式表达）"
+            echo "  --run-learned-kb           启用知识沉淀（Learned KB）生成（按需使用，日常默认关闭）"
+            echo "  --jina-parallel            Jina Reranker 并行模式（默认开启，使用智能GPU排队调度）"
+            echo "  --jina-serial              Jina Reranker 串行模式（一次处理一个项目，避免 OOM）"
             echo "                             并行模式会根据 GPU 内存自动排队，多GPU可同时处理多项目"
-            echo "  --jina-workers N           Jina Reranker 并行 worker 数（默认: 4；仅 --jina-parallel 生效）"
-            echo "  --vllm-global-limit N      设置 LLM 请求并发上限（VLLM_CONCURRENT_LIMIT=N；vLLM/外部 API 均生效）"
+            echo "  --jina-workers N           Jina Reranker 并行 worker 数（默认: 2；仅并行模式生效）"
+            echo "  --llm-concurrent-limit N   设置 LLM 请求并发上限（LLM_CONCURRENT_LIMIT=N）"
             echo "  --skeleton-only            只运行阶段1（骨架翻译），用于调试骨架生成问题"
             echo "  --help, -h                 显示帮助信息"
             echo ""
+            echo "高级/兼容参数（非日常主线）："
+            echo "  --run-evaluation           启用本地语义等价性评估（需要 vLLM）"
+            echo "  --skip-evaluation          跳过本地语义等价性评估（默认）"
+            echo "  --eval-max-files N         语义评估每个项目的最大文件数（默认: 0=全部）"
+            echo "  --vllm-global-limit N      兼容旧参数，等价于 --llm-concurrent-limit"
+            echo "  --vllm-concurrent-limit N  兼容旧参数，等价于 --llm-concurrent-limit"
+            echo ""
             echo "阶段说明："
-            echo "  阶段1: 依赖分析 + 骨架翻译（需要vLLM）"
+            echo "  阶段1: 依赖分析 + 骨架翻译（需要LLM；默认外部 API）"
             echo "  阶段2: 签名匹配 + BM25 + Jina Reranker（需要GPU）"
-            echo "  阶段3: 函数体翻译 + 测试 + 修复（需要vLLM）"
+            echo "  阶段3: 函数体翻译 + 编译修复 + 可选后置 agentic repair（需要LLM；默认外部 API）"
+            echo "  阶段4: 本地语义等价性评估（高级可选，需要 vLLM，--run-evaluation 启用）"
             echo ""
             echo "分层骨架构建模式 (--layered)："
             echo "  阶段 A: 使用 bindgen 生成类型定义（绝对正确）"
@@ -390,12 +802,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# 解析参数后再次限制并行度（防止 --max-parallel 覆盖上面的默认 cap）
-if [[ "$MAX_PARALLEL" =~ ^[0-9]+$ ]] && [[ $MAX_PARALLEL -gt 8 ]]; then
+# 解析参数后再次限制显式并行度（防止 --max-parallel 覆盖上面的 cap）
+if [[ "$MAX_PARALLEL_AUTO" != "true" ]] && [[ "$MAX_PARALLEL" =~ ^[0-9]+$ ]] && [[ $MAX_PARALLEL -gt 8 ]]; then
     MAX_PARALLEL=8
 fi
 if [[ ! "$MAX_PARALLEL_WORKERS" =~ ^[0-9]+$ ]] || [[ $MAX_PARALLEL_WORKERS -lt 1 ]]; then
-    MAX_PARALLEL_WORKERS=4
+    MAX_PARALLEL_WORKERS=40
 fi
 
 # ============================================================================
@@ -415,7 +827,7 @@ if [[ -n "${RQ3_BODY_CONDITION:-}" ]]; then
         C1)
             RQ3_API_MODE="none"
             RQ3_PARTIAL_MODE="none"
-            RQ3_MAX_REPAIR="3"
+            RQ3_MAX_REPAIR="5"
             ;;
         C2)
             RQ3_API_MODE="predicted"
@@ -425,22 +837,22 @@ if [[ -n "${RQ3_BODY_CONDITION:-}" ]]; then
         C3)
             RQ3_API_MODE="predicted"
             RQ3_PARTIAL_MODE="predicted"
-            RQ3_MAX_REPAIR="3"
+            RQ3_MAX_REPAIR="5"
             ;;
         C4)
             RQ3_API_MODE="oracle"
             RQ3_PARTIAL_MODE="predicted"
-            RQ3_MAX_REPAIR="3"
+            RQ3_MAX_REPAIR="5"
             ;;
         C5)
             RQ3_API_MODE="predicted"
             RQ3_PARTIAL_MODE="oracle"
-            RQ3_MAX_REPAIR="3"
+            RQ3_MAX_REPAIR="5"
             ;;
         C6)
             RQ3_API_MODE="oracle"
             RQ3_PARTIAL_MODE="oracle"
-            RQ3_MAX_REPAIR="3"
+            RQ3_MAX_REPAIR="5"
             ;;
         *)
             echo "错误: --rq3-body 仅支持 C0..C6，但得到了: $RQ3_BODY_CONDITION" >&2
@@ -466,15 +878,27 @@ if [[ -n "${RQ3_BODY_CONDITION:-}" ]]; then
 fi
 
 # ============================================================================
-# 项目集合切换（ohos vs oss）
+# 项目集合切换（ohos vs oss；generic 是 oss 的兼容别名）
 # ============================================================================
+case "$PROJECT_SUITE" in
+    generic)
+        PROJECT_SUITE="oss"
+        ;;
+    openharmony)
+        PROJECT_SUITE="ohos"
+        ;;
+esac
+
 case "$PROJECT_SUITE" in
     ohos)
         # 默认：保持原行为（输出写到 translation_outputs/<run_dir>/）
         ;;
     oss)
-        # 开源小项目：输出隔离到 translation_outputs/Our/<run_dir>/
-        OUTPUTS_BASE_DIR="$SCRIPT_DIR/translation_outputs/Our"
+        # 旧布局下开源小项目隔离到 translation_outputs/Our/<run_dir>/。
+        # 新归档布局下统一由 experiment_runs/<experiment_id>/raw/framework_output 承载。
+        if [[ "$ARCHIVE_ENABLED" != "true" ]]; then
+            OUTPUTS_BASE_DIR="$SCRIPT_DIR/translation_outputs/Our"
+        fi
 
         OSS_PROJECTS_FILE="$SCRIPT_DIR/ComparisonMethod/Our/oss_projects.sh"
         if [[ ! -f "$OSS_PROJECTS_FILE" ]]; then
@@ -497,14 +921,16 @@ case "$PROJECT_SUITE" in
         done
         ;;
     *)
-        echo "错误: --suite 取值必须是 ohos 或 oss，但得到了: $PROJECT_SUITE" >&2
+        echo "错误: --suite 取值必须是 ohos 或 oss/generic，但得到了: $PROJECT_SUITE" >&2
         exit 2
         ;;
 esac
 
 # 是否注入 RAG 上下文（由 translate_function.py / incremental_translate.py 消费）
 export C2R_USE_RAG_CONTEXT="${USE_RAG_CONTEXT}"
-# RQ3.2: RAG top-k（仅当显式传入 --rag-topk 时导出；默认不干预）
+export EXTERNAL_API_BASE_URL="${EXTERNAL_API_BASE_URL:-https://api.deepseek.com}"
+export EXTERNAL_API_MODEL="${EXTERNAL_API_MODEL:-deepseek-v4-pro}"
+# RQ3.2: RAG top-k（默认 5，论文主线；传 --rag-topk 可覆盖）
 if [[ -n "${RAG_TOPK:-}" ]]; then
     export C2R_RAG_TOPK="${RAG_TOPK}"
 fi
@@ -540,16 +966,114 @@ print_warning() {
     echo -e "${YELLOW}⚠ $1${NC}"
 }
 
+sanitize_path_component() {
+    local raw="$1"
+    local cleaned
+    cleaned=$(printf '%s' "$raw" | tr -c 'A-Za-z0-9_.-' '_' | sed 's/^[._-]*//; s/[._-]*$//')
+    if [[ -z "$cleaned" ]]; then
+        cleaned="run"
+    fi
+    printf '%s' "$cleaned"
+}
+
+archive_command_line() {
+    local quoted_args
+    quoted_args=$(printf '%q ' "${ORIGINAL_ARGS[@]}")
+    printf 'cd %q && bash batch_test_staged.sh %s' "$SCRIPT_DIR" "$quoted_args"
+}
+
+initialize_output_layout() {
+    if [[ "$ARCHIVE_ENABLED" == "true" ]]; then
+        mkdir -p "$ARCHIVE_ROOT"
+        if [[ -z "${EXPERIMENT_ID:-}" ]]; then
+            if [[ "$RUN_DIR_EXPLICIT" == "true" ]]; then
+                EXPERIMENT_ID="$RUN_DIR_NAME"
+            else
+                local stamp
+                stamp=$(date +%Y%m%d_%H%M%S)
+                local method
+                method="${EXTERNAL_API_MODEL:-$LLM_NAME}"
+                EXPERIMENT_ID="${stamp}_${PROJECT_SUITE}_$(sanitize_path_component "$method")"
+                if [[ -n "$ARCHIVE_TAG" ]]; then
+                    EXPERIMENT_ID="${EXPERIMENT_ID}_$(sanitize_path_component "$ARCHIVE_TAG")"
+                fi
+            fi
+        fi
+        EXPERIMENT_ID=$(sanitize_path_component "$EXPERIMENT_ID")
+        EXPERIMENT_DIR="$ARCHIVE_ROOT/$EXPERIMENT_ID"
+        RUN_ROOT_DIR="$EXPERIMENT_DIR/raw/$FRAMEWORK_OUTPUT_NAME"
+        RUN_SHARED_DIR="$ARCHIVE_ROOT/shared"
+        RUN_DIR_NAME="$EXPERIMENT_ID"
+    else
+        RUN_ROOT_DIR="$OUTPUTS_BASE_DIR/$RUN_DIR_NAME"
+        RUN_SHARED_DIR="$OUTPUTS_BASE_DIR/shared"
+    fi
+
+    RUN_RESULTS_DIR="$RUN_ROOT_DIR/results"
+    RUN_INTERMEDIATE_DIR="$RUN_ROOT_DIR/intermediate"
+    RUN_EVAL_DIR="$RUN_RESULTS_DIR/evaluation_reports"
+    mkdir -p "$RUN_RESULTS_DIR" "$RUN_EVAL_DIR" "$RUN_INTERMEDIATE_DIR"
+
+    if [[ "$ARCHIVE_ENABLED" == "true" ]]; then
+        mkdir -p "$EXPERIMENT_DIR/analysis" "$EXPERIMENT_DIR/logs" "$EXPERIMENT_DIR/artifacts"
+    fi
+
+    # shared：不随单次 run 清理的公共缓存/产物（例如 OpenHarmony compile_commands 提取结果）
+    mkdir -p "$RUN_SHARED_DIR/ohos_profiles/compile_commands" "$RUN_SHARED_DIR/ohos_profiles/projects"
+}
+
+archive_update_status() {
+    local status="$1"
+    if [[ "$ARCHIVE_ENABLED" != "true" ]]; then
+        return 0
+    fi
+    local archive_script="$SCRIPT_DIR/scripts/analysis/archive_experiment_run.py"
+    if [[ ! -f "$archive_script" ]]; then
+        print_warning "未找到归档脚本: $archive_script"
+        return 0
+    fi
+    python3 "$archive_script" \
+        --run-dir "$RUN_ROOT_DIR" \
+        --experiment-dir "$EXPERIMENT_DIR" \
+        --experiment-id "$EXPERIMENT_ID" \
+        --suite "$PROJECT_SUITE" \
+        --method "${EXTERNAL_API_MODEL:-$LLM_NAME}" \
+        --tag "$ARCHIVE_TAG" \
+        --llm-name "$LLM_NAME" \
+        --status "$status" \
+        --command "$(archive_command_line)" >/dev/null 2>&1 || \
+        print_warning "统一归档状态更新失败（status=$status），不影响原始实验产物"
+}
+
+archive_on_exit() {
+    local rc=$?
+    if [[ "$ARCHIVE_ENABLED" == "true" && -n "${RUN_ROOT_DIR:-}" && -d "${RUN_ROOT_DIR:-}" ]]; then
+        if [[ $rc -eq 0 ]]; then
+            archive_update_status "completed" || true
+        else
+            archive_update_status "failed" || true
+        fi
+    fi
+    exit $rc
+}
+
+initialize_output_layout
+trap archive_on_exit EXIT
+archive_update_status "running"
+
 # ========== ★★★ 资源检查和信息展示 ★★★ ==========
 check_resources() {
+    local project_count="${1:-}"
     print_section "资源检查"
 
     # 统计项目数量
-    local project_count=0
-    if [[ -n "$ONLY_PROJECTS" ]]; then
+    if [[ -z "$project_count" ]]; then
+        project_count=0
+    fi
+    if [[ "$project_count" -eq 0 && -n "$ONLY_PROJECTS" ]]; then
         IFS=',' read -ra PROJ_ARRAY <<< "$ONLY_PROJECTS"
         project_count=${#PROJ_ARRAY[@]}
-    else
+    elif [[ "$project_count" -eq 0 ]]; then
         project_count=${#RECOMMENDED_PROJECTS[@]}
     fi
 
@@ -571,7 +1095,9 @@ check_resources() {
 
     # 显示 Jina Reranker 模式信息
     if [[ "$RUN_RAG" == "true" ]]; then
-        if [[ "$JINA_SERIAL_MODE" == "true" ]]; then
+        if [[ "$PROJECT_PIPELINE_MODE" == "true" ]]; then
+            print_info "Jina Reranker: 项目流水线锁模式（只串行 Stage2.5）"
+        elif [[ "$JINA_SERIAL_MODE" == "true" ]]; then
             print_info "Jina Reranker: 串行模式"
         else
             print_info "Jina Reranker: 并行模式（GPU 排队机制已启用）"
@@ -582,33 +1108,41 @@ check_resources() {
     echo ""
     print_info "运行配置："
     print_info "  - MAX_PARALLEL: $MAX_PARALLEL"
+    print_info "  - MAX_PARALLEL_WORKERS: $MAX_PARALLEL_WORKERS"
+    print_info "  - 估算 LLM 总并发上限: $((MAX_PARALLEL * MAX_PARALLEL_WORKERS))"
     print_info "  - USE_LIBCLANG: $USE_LIBCLANG (CPU 密集型)"
     print_info "  - RUN_RAG: $RUN_RAG"
     print_info "  - USE_RAG_CONTEXT: $USE_RAG_CONTEXT"
+    print_info "  - PROJECT_PIPELINE_MODE: $PROJECT_PIPELINE_MODE"
+    print_info "  - POST_AGENTIC_REPAIR: $POST_AGENTIC_REPAIR"
+    if [[ "$POST_AGENTIC_REPAIR" == "true" ]]; then
+        print_info "  - POST_REPAIR_MAX_ROUNDS: $POST_REPAIR_MAX_ROUNDS"
+        print_info "  - OHOS_RUST_TARGET: $OHOS_RUST_TARGET"
+    fi
+    print_info "  - RUN_PAPER_EVAL_TESTS: $RUN_PAPER_EVAL_TESTS"
+    print_info "  - ARCHIVE_ENABLED: $ARCHIVE_ENABLED"
+    if [[ "$ARCHIVE_ENABLED" == "true" ]]; then
+        print_info "  - EXPERIMENT_DIR: $EXPERIMENT_DIR"
+    fi
     if [[ "$RUN_RAG" == "true" ]]; then
         print_info "  - JINA_SERIAL_MODE: $JINA_SERIAL_MODE"
+        print_info "  - JINA_LOCK_FILE: $JINA_LOCK_FILE"
     fi
     print_info "  - 项目数量: $project_count"
     echo ""
 
-    # 说明阶段同步模式的资源隔离
-    print_info "阶段同步模式资源隔离："
-    print_info "  - 阶段1/3: vLLM 独占 GPU"
-    print_info "  - 阶段2.5: Jina Reranker 独占 GPU（vLLM 已关闭）"
+    # 说明运行模式的资源隔离
+    if [[ "$PROJECT_PIPELINE_MODE" == "true" ]]; then
+        print_info "项目级流水线资源隔离："
+    else
+        print_info "阶段同步模式资源隔离："
+    fi
+    print_info "  - 阶段1/3: 默认走外部 OpenAI-compatible API，不占本地 GPU"
+    print_info "  - 阶段2.5: Jina Reranker 使用本地 GPU；项目流水线模式下由 flock 串行互斥"
+    print_info "  - 阶段4/知识沉淀: 仅显式开启时使用本地 vLLM"
     print_info "  - libclang: 仅使用 CPU，不占用 GPU"
     echo ""
 }
-
-# 执行资源检查
-check_resources
-
-# 初始化本次运行的输出根目录（所有项目共享同一个 RUN 目录）
-RUN_ROOT_DIR="$OUTPUTS_BASE_DIR/$RUN_DIR_NAME"
-RUN_RESULTS_DIR="$RUN_ROOT_DIR/results"
-RUN_INTERMEDIATE_DIR="$RUN_ROOT_DIR/intermediate"
-mkdir -p "$RUN_RESULTS_DIR" "$RUN_INTERMEDIATE_DIR"
-# shared：不随 run 清理的公共缓存/产物（例如 OpenHarmony compile_commands 提取结果）
-mkdir -p "$OUTPUTS_BASE_DIR/shared/ohos_profiles/compile_commands" "$OUTPUTS_BASE_DIR/shared/ohos_profiles/projects"
 
 # 检查项目路径是否存在
 check_project_paths() {
@@ -661,7 +1195,11 @@ should_skip_project() {
 
 # vLLM 管理函数
 VLLM_URL="${VLLM_URL:-http://localhost:8000/v1}"
-LOG_DIR="$RUN_INTERMEDIATE_DIR/logs"
+if [[ "$ARCHIVE_ENABLED" == "true" ]]; then
+    LOG_DIR="$EXPERIMENT_DIR/logs"
+else
+    LOG_DIR="$RUN_INTERMEDIATE_DIR/logs"
+fi
 VIRTUAL_ENV_NAME="${VIRTUAL_ENV_NAME:-c2r_frame}"
 RERANKER_ENV_NAME="${RERANKER_ENV_NAME:-jina_reranker_env}"
 mkdir -p "$LOG_DIR"
@@ -683,6 +1221,12 @@ activate_conda_env() {
         # Don't call `conda env list` here: it's slow and can crash when plugins misbehave.
         conda activate "$target_env" >/dev/null 2>&1 || true
         if [ "$CONDA_DEFAULT_ENV" = "$target_env" ]; then
+            # 确保 ripgrep 所在路径可用，供 Python 子进程调用
+            RG_BIN_DIR="/data/home/wangshb/.vscode-server/extensions/openai.chatgpt-0.4.47/bin/linux-x86_64"
+            case ":$PATH:" in
+                *":$RG_BIN_DIR:"*) ;;
+                *) export PATH="$PATH:$RG_BIN_DIR" ;;
+            esac
             return 0
         fi
     fi
@@ -723,17 +1267,17 @@ PY
         fi
     fi
     
-	    DEPLOY_VLLM_SCRIPT="${DEPLOY_VLLM_SCRIPT:-}"
-		    if [ -z "$DEPLOY_VLLM_SCRIPT" ]; then
-		        if [ -f "$SCRIPT_DIR/../rag_builder/qwen3_coder/deploy_no_quantization.sh" ]; then
-		            DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/../rag_builder/qwen3_coder/deploy_no_quantization.sh"
-		        elif [ -f "$SCRIPT_DIR/qwen3_coder/deploy_no_quantization.sh" ]; then
-		            DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/qwen3_coder/deploy_no_quantization.sh"
-		        else
-		            print_error "未找到 deploy_no_quantization.sh，请设置 DEPLOY_VLLM_SCRIPT"
-		            return 1
-		        fi
-		    fi
+    DEPLOY_VLLM_SCRIPT="${DEPLOY_VLLM_SCRIPT:-}"
+	    if [ -z "$DEPLOY_VLLM_SCRIPT" ]; then
+	        if [ -f "$SCRIPT_DIR/qwen3_coder/deploy_no_quantization.sh" ]; then
+	            DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/qwen3_coder/deploy_no_quantization.sh"
+	        elif [ -f "/data/home/wangshb/qwen3_coder/deploy_no_quantization.sh" ]; then
+	            DEPLOY_VLLM_SCRIPT="/data/home/wangshb/qwen3_coder/deploy_no_quantization.sh"
+	        else
+	            print_error "未找到 deploy_no_quantization.sh，请设置 DEPLOY_VLLM_SCRIPT"
+	            return 1
+	        fi
+	    fi
 
 	    # Default vLLM env: some deploy scripts treat "unset" as "set to empty", which can crash vLLM.
 	    # Keep these defaults conservative and overrideable by the caller.
@@ -1323,22 +1867,6 @@ prepare_project_output_dir() {
         ln -sf "$SCRIPT_DIR/workspace/rag/knowledge_base.json" "$workspace_dir/rag/knowledge_base.json"
         ln -sf "$SCRIPT_DIR/workspace/rag/bm25_index.pkl" "$workspace_dir/rag/bm25_index.pkl"
     fi
-
-    # 可选：预置的 reranked_results（用于“无 GPU / reranker 失败”时仍能注入 RAG 知识）
-    # 说明：
-    # - 我们把预置 reranked_results 放在框架目录的 workspace/rag/reranked_results/<project>/ 下；
-    # - 每次 run 初始化项目 workspace 时，将其复制到 <workspace>/rag/reranked_results/<project>/，
-    #   保持 run 自洽（避免 symlink 到共享目录导致后续 reranker 覆盖/并发污染）。
-    local prebuilt_reranked_dir="$SCRIPT_DIR/workspace/rag/reranked_results/$proj_name"
-    local dst_reranked_dir="$workspace_dir/rag/reranked_results/$proj_name"
-    if [[ -d "$prebuilt_reranked_dir" ]]; then
-        mkdir -p "$dst_reranked_dir" 2>/dev/null || true
-        if command -v rsync >/dev/null 2>&1; then
-            rsync -a --include='*.txt' --exclude='*' "$prebuilt_reranked_dir/" "$dst_reranked_dir/" 2>/dev/null || true
-        else
-            find "$prebuilt_reranked_dir" -maxdepth 1 -type f -name "*.txt" -exec cp -f {} "$dst_reranked_dir/" \; 2>/dev/null || true
-        fi
-    fi
     
     echo "$workspace_dir"
 }
@@ -1353,45 +1881,36 @@ setup_project_env() {
     
     export PROJECT_NAME="$proj_name"
     export PROJECT_ROOT="$workspace_dir/projects/$proj_name"
+    export PROJECT_SUITE="$PROJECT_SUITE"
+    export C2R_PROJECT_SUITE="$PROJECT_SUITE"
+    export C2RUST_PROJECT_PROFILE="$([[ "$PROJECT_SUITE" == "oss" ]] && echo generic || echo "$PROJECT_SUITE")"
     export LLM_NAME="$LLM_NAME"
     export C2R_TRUTH_MODE="$C2R_TRUTH_MODE"
-    export C2R_REQUIRE_TU_CLOSURE="$C2R_REQUIRE_TU_CLOSURE"
     export VIRTUAL_ENV_NAME="$VIRTUAL_ENV_NAME"
     export C2R_WORKSPACE_ROOT="$workspace_dir"
     # run 级别目录（用于把缓存/日志/结果都收敛到同一个实验目录）
     export C2R_RUN_ROOT="$RUN_ROOT_DIR"
     export C2R_RUN_RESULTS_DIR="$RUN_RESULTS_DIR"
     export C2R_RUN_INTERMEDIATE_DIR="$RUN_INTERMEDIATE_DIR"
-    export C2R_CACHE_ROOT="${C2R_CACHE_ROOT:-$RUN_INTERMEDIATE_DIR/cache}"
+    # compile_commands/profile caches are content-addressed by source path and mtime, so they can be
+    # safely shared across experiment runs. Keeping them run-local makes OHOS runs repeatedly parse
+    # hundreds of MB of JSON before any translation starts.
+    export C2R_CACHE_ROOT="${C2R_CACHE_ROOT:-$RUN_SHARED_DIR/cache}"
     mkdir -p "$C2R_CACHE_ROOT" 2>/dev/null || true
 
     # ---------------------------------------------------------------------
-    # OpenAI-compat 配置对齐（vLLM vs 外部 API）
+    # vLLM / OpenAI-compat 配置对齐（避免阶段间变量名不一致导致“静默失败/全部翻译失败”）
     #
-    # - generate/generation.py 会根据 USE_VLLM 选择 vLLM 或外部 API；
-    # - 但仍有部分模块会读取 OPENAI_API_BASE / VLLM_BASE_URL / VLLM_MODEL_NAME，
-    #   因此这里按模式把这些变量对齐，避免“静默全部失败/打到错误 endpoint”。
+    # - generate/generation.py 使用 VLLM_BASE_URL + VLLM_MODEL_NAME
+    # - 其他模块（如 translate.py 的部分兜底、LLMTypeMapper）可能使用 OPENAI_API_BASE
+    # - batch_test_staged.sh 自身使用 VLLM_URL 做健康检查
+    #
+    # 这里统一导出，保证所有子进程看到一致的地址与模型名。
+    # 注意：vLLM 的 model= 必须使用 served_model_name（通常与 LLM_NAME 一致）。
     # ---------------------------------------------------------------------
-    # generate/generation.py uses USE_VLLM to decide vLLM vs external API.
-    # Default: local vLLM.
-    export USE_VLLM="${USE_VLLM:-true}"
-
-    if [[ "$USE_VLLM" =~ ^(true|1|yes)$ ]]; then
-        # vLLM 模式：model= 必须使用 vLLM 启动时的 served_model_name（通常与 LLM_NAME 一致）
-        export VLLM_BASE_URL="$VLLM_URL"
-        export OPENAI_API_BASE="$VLLM_URL"
-        export VLLM_MODEL_NAME="$LLM_NAME"
-    else
-        # 外部 API 模式：让“legacy 读取 VLLM_* / OPENAI_API_BASE 的模块”也能打到外部 endpoint。
-        export VLLM_BASE_URL="${EXTERNAL_API_BASE_URL:-https://api.deepseek.com/beta}"
-        export OPENAI_API_BASE="$VLLM_BASE_URL"
-        export VLLM_MODEL_NAME="${EXTERNAL_API_MODEL:-deepseek-coder}"
-        # Best-effort: align key for call sites that still read VLLM_API_KEY
-        if [[ -n "${EXTERNAL_API_KEY:-}" ]]; then
-            export VLLM_API_KEY="$EXTERNAL_API_KEY"
-        fi
-    fi
-
+    export VLLM_BASE_URL="$VLLM_URL"
+    export OPENAI_API_BASE="$VLLM_URL"
+    export VLLM_MODEL_NAME="$LLM_NAME"
     export VLLM_REQUEST_TIMEOUT="$VLLM_REQUEST_TIMEOUT"
     export VLLM_TIMEOUT="$VLLM_TIMEOUT"
 
@@ -1417,11 +1936,13 @@ setup_project_env() {
     export USE_BINDGEN="$USE_BINDGEN"
     export USE_LLM_SIGNATURES="$USE_LLM_SIGNATURES"
     export USE_LLM_TYPE_MAPPER="$USE_LLM_TYPE_MAPPER"  # LLMTypeMapper（TypeMapper + LLM 验证）
-    # 签名复核器默认开启（见 llm_signature_refiner.py）；这里显式导出便于脚本内一致管理
-    if [[ "$USE_LLM_SIG_REFINER" == "false" ]]; then
-        export C2R_LLM_REFINE_SIGNATURES="0"
-    else
-        export C2R_LLM_REFINE_SIGNATURES="1"
+    # 签名复核器是可选质量增强；显式环境变量优先，默认关闭，避免 Stage1 被外部 API 阻塞。
+    if [[ -z "${C2R_LLM_REFINE_SIGNATURES:-}" ]]; then
+        if [[ "$USE_LLM_SIG_REFINER" == "true" ]]; then
+            export C2R_LLM_REFINE_SIGNATURES="1"
+        else
+            export C2R_LLM_REFINE_SIGNATURES="0"
+        fi
     fi
     export USE_TYPE_MAPPER="true"  # 默认启用 TypeMapper（确定性规则引擎）
     export USE_SELF_HEALING="$USE_SELF_HEALING"  # AI 原生自愈循环
@@ -1472,23 +1993,12 @@ setup_project_env() {
         unset C2R_PROFILE_CACHE_DIR
     else
         # OpenHarmony 根目录与 registry（可被外部环境覆盖）
-        export OHOS_ROOT="${OHOS_ROOT:-$SCRIPT_DIR/../data/ohos/ohos_root_min}"
-        # Registry is optional in the open-source layout; only set it if the default exists.
-        if [[ -z "${OHOS_CC_REGISTRY:-}" ]] && [[ -f "$OHOS_ROOT/compile_commands_all/summary.tsv" ]]; then
-            export OHOS_CC_REGISTRY="$OHOS_ROOT/compile_commands_all/summary.tsv"
-        fi
-        # 开源最小输入：允许每个子项目自带 compile_commands.json（只需覆盖该项目用到的最小编译上下文）
-        # 这样可以启用预处理上下文选择与更完整的 bindgen/types 生成，从而显著提升函数体翻译可编译率。
-        if [[ -f "$PROJECT_ROOT/compile_commands.json" ]]; then
-            export COMPILE_COMMANDS_PATH="$PROJECT_ROOT/compile_commands.json"
-            export OHOS_COMPILE_COMMANDS="$COMPILE_COMMANDS_PATH"
-        else
-            unset COMPILE_COMMANDS_PATH
-            unset OHOS_COMPILE_COMMANDS
-        fi
+        export OHOS_ROOT="${OHOS_ROOT:-$SCRIPT_DIR/SelfContained/ohos_full/OpenHarmony-v5.0.1-Release/OpenHarmony}"
+        export OHOS_CC_REGISTRY="${OHOS_CC_REGISTRY:-$OHOS_ROOT/compile_commands_all/summary.tsv}"
         # shared（不属于某一次 run 的产物）：以 translation_outputs/shared 为默认放置点
-        export C2R_OHOS_CC_EXTRACT_ROOT="${C2R_OHOS_CC_EXTRACT_ROOT:-$OUTPUTS_BASE_DIR/shared/ohos_profiles/compile_commands}"
-        export C2R_PROFILE_CACHE_DIR="${C2R_PROFILE_CACHE_DIR:-$OUTPUTS_BASE_DIR/shared/ohos_profiles/projects}"
+        export C2R_OHOS_CC_EXTRACT_ROOT="${C2R_OHOS_CC_EXTRACT_ROOT:-$RUN_SHARED_DIR/ohos_profiles/compile_commands}"
+        export C2R_PROFILE_CACHE_DIR="${C2R_PROFILE_CACHE_DIR:-$RUN_SHARED_DIR/ohos_profiles/projects}"
+        unset COMPILE_COMMANDS_PATH
     fi
 
     # ---------------------------------------------------------------------
@@ -1510,14 +2020,28 @@ setup_project_env() {
     export RAYON_NUM_THREADS="${RAYON_NUM_THREADS:-$per_task_jobs}"
     export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 
-    # LLM 并行度：不限制单项目并发，由 Semaphore(VLLM_CONCURRENT_LIMIT) 全局控制
+    # LLM 并行度：不限制单项目并发，由 Semaphore(LLM_CONCURRENT_LIMIT) 控制
     export PARALLEL_TRANSLATE="${PARALLEL_TRANSLATE:-1}"
     # LLM 并行度：限制每个项目内的“翻译-only”并发，避免外部 API 429
-    export MAX_PARALLEL_WORKERS="${MAX_PARALLEL_WORKERS:-4}"
+    export MAX_PARALLEL_WORKERS="${MAX_PARALLEL_WORKERS:-40}"
 
-    # LLM 请求并发限制：进程内 Semaphore 控制单进程并发；跨项目总并发仍主要由 MAX_PARALLEL/MAX_PARALLEL_WORKERS 决定
-    export VLLM_CONCURRENT_LIMIT="${VLLM_CONCURRENT_LIMIT:-120}"
-    print_info "LLM 并发限制: VLLM_CONCURRENT_LIMIT=$VLLM_CONCURRENT_LIMIT (进程内 Semaphore)"
+    # cargo check 默认超时调大，避免大 crate/冷 target 被误判为函数体错误。
+    export C2R_CARGO_CHECK_TIMEOUT_SEC="${C2R_CARGO_CHECK_TIMEOUT_SEC:-300}"
+    print_info "cargo check 超时: C2R_CARGO_CHECK_TIMEOUT_SEC=$C2R_CARGO_CHECK_TIMEOUT_SEC 秒"
+
+    # LLM 请求并发限制：项目内 Semaphore 默认跟随 MAX_PARALLEL_WORKERS；跨进程全局锁默认限制外部 API 峰值为 100。
+    export LLM_CONCURRENT_LIMIT="${LLM_CONCURRENT_LIMIT:-${VLLM_CONCURRENT_LIMIT:-$MAX_PARALLEL_WORKERS}}"
+    export VLLM_CONCURRENT_LIMIT="$LLM_CONCURRENT_LIMIT"  # 兼容旧 Python 入口
+    export C2R_LLM_GLOBAL_CONCURRENCY_LIMIT="${C2R_LLM_GLOBAL_CONCURRENCY_LIMIT:-${C2RUST_LLM_GLOBAL_CONCURRENCY_LIMIT:-100}}"
+    if [[ "$C2R_LLM_GLOBAL_CONCURRENCY_LIMIT" =~ ^[0-9]+$ ]] && [[ "$C2R_LLM_GLOBAL_CONCURRENCY_LIMIT" -gt 100 ]]; then
+        C2R_LLM_GLOBAL_CONCURRENCY_LIMIT=100
+    fi
+    export C2RUST_LLM_GLOBAL_CONCURRENCY_LIMIT="$C2R_LLM_GLOBAL_CONCURRENCY_LIMIT"
+    export C2R_LLM_GLOBAL_CONCURRENCY_WAIT_TIMEOUT_SEC="${C2R_LLM_GLOBAL_CONCURRENCY_WAIT_TIMEOUT_SEC:-${C2RUST_LLM_GLOBAL_CONCURRENCY_WAIT_TIMEOUT_SEC:-0}}"
+    export C2RUST_LLM_GLOBAL_CONCURRENCY_WAIT_TIMEOUT_SEC="$C2R_LLM_GLOBAL_CONCURRENCY_WAIT_TIMEOUT_SEC"
+    export C2R_LLM_GLOBAL_CONCURRENCY_DIR="${C2R_LLM_GLOBAL_CONCURRENCY_DIR:-${C2RUST_LLM_GLOBAL_CONCURRENCY_DIR:-$SCRIPT_DIR/experiment_runs/shared/llm_global_concurrency}}"
+    export C2RUST_LLM_GLOBAL_CONCURRENCY_DIR="$C2R_LLM_GLOBAL_CONCURRENCY_DIR"
+    print_info "LLM 并发限制: LLM_CONCURRENT_LIMIT=$LLM_CONCURRENT_LIMIT (进程内 Semaphore), C2R_LLM_GLOBAL_CONCURRENCY_LIMIT=$C2R_LLM_GLOBAL_CONCURRENCY_LIMIT (跨进程外部 API 全局令牌池，令牌不足时等待), C2R_LLM_GLOBAL_CONCURRENCY_WAIT_TIMEOUT_SEC=$C2R_LLM_GLOBAL_CONCURRENCY_WAIT_TIMEOUT_SEC, C2R_LLM_GLOBAL_CONCURRENCY_DIR=$C2R_LLM_GLOBAL_CONCURRENCY_DIR"
 
     # 导出其他必要的环境变量
     export SKIP_VLLM_MANAGEMENT=1  # 阻止子进程管理vLLM
@@ -1661,6 +2185,83 @@ reuse_stage1_artifacts() {
     return 0
 }
 
+# 构造 Stage1 translate.py 参数，便于 fallback 时复用同一组选项。
+build_stage1_translate_args() {
+    local use_libclang_for_stage="$1"
+    local args=""
+
+    if [[ "$USE_LAYERED_SKELETON" == "true" ]]; then
+        args="--layered"
+        if [[ "$USE_BINDGEN" == "false" ]]; then
+            args="$args --no-bindgen"
+        fi
+        if [[ "$USE_LLM_SIGNATURES" == "false" ]]; then
+            args="$args --no-llm-signatures"
+        fi
+        if [[ "$use_libclang_for_stage" == "true" ]]; then
+            args="$args --use-libclang"
+        fi
+    fi
+
+    printf '%s' "$args"
+}
+
+# 读取 Stage1 manifest 中的真实待翻译函数数。
+count_stage1_extracted_functions() {
+    local proj_name="$1"
+    local manifest_path="${C2R_WORKSPACE_ROOT}/extracted/${proj_name}/functions_manifest.json"
+
+    python3 - "$manifest_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+manifest = Path(sys.argv[1])
+count = 0
+
+if manifest.exists():
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8", errors="ignore") or "{}")
+        funcs = data.get("functions") if isinstance(data, dict) else None
+        if isinstance(funcs, list):
+            count = len(funcs)
+        else:
+            total = data.get("total_functions") if isinstance(data, dict) else 0
+            count = int(total or 0)
+    except Exception:
+        count = 0
+
+print(count)
+PY
+}
+
+# 判断 libclang 空提取是否应回退到 no-libclang 路径。
+should_fallback_to_no_libclang_for_empty_extract() {
+    local extracted_count="$1"
+
+    [[ "$USE_LIBCLANG" == "true" ]] || return 1
+    [[ "$USE_LAYERED_SKELETON" == "true" ]] || return 1
+    [[ "$extracted_count" =~ ^[0-9]+$ ]] || extracted_count=0
+    [[ "$extracted_count" -eq 0 ]] || return 1
+
+    case "${C2R_LIBCLANG_EMPTY_FALLBACK_TO_NO_LIBCLANG,,}" in
+        1|true|yes|on)
+            return 0
+            ;;
+        0|false|no|off)
+            return 1
+            ;;
+        auto|"")
+            [[ "$PROJECT_SUITE" == "oss" ]]
+            return $?
+            ;;
+        *)
+            [[ "$PROJECT_SUITE" == "oss" ]]
+            return $?
+            ;;
+    esac
+}
+
 # 执行单个项目的阶段1（依赖分析 + 骨架翻译）
 run_stage1() {
     local proj_name="$1"
@@ -1707,7 +2308,7 @@ run_stage1() {
             echo "SUCCESS|$start_time|$end_time|$duration" > "$result_file"
             return 0
         fi
-        
+
         # 步骤1: 分析 C/C++ 依赖（步骤0准备工作由get_dependencies.py内部处理）
         # 注意：项目名称通过环境变量 PROJECT_NAME 传递，不使用命令行参数
         cd "$SCRIPT_DIR"
@@ -1730,25 +2331,49 @@ print('✓ 工作目录已创建')
             fi
         fi
         
-        # 步骤2: 翻译代码骨架（vLLM应该已经在运行）
+        # 步骤2: 翻译代码骨架（使用当前 LLM 后端，默认外部 API）
         # 注意：项目名称通过环境变量 PROJECT_NAME 传递
         # 根据环境变量选择分层模式或传统模式
-        local translate_args=""
-        if [[ "$USE_LAYERED_SKELETON" == "true" ]]; then
-            translate_args="--layered"
-            if [[ "$USE_BINDGEN" == "false" ]]; then
-                translate_args="$translate_args --no-bindgen"
-            fi
-            if [[ "$USE_LLM_SIGNATURES" == "false" ]]; then
-                translate_args="$translate_args --no-llm-signatures"
-            fi
-            if [[ "$USE_LIBCLANG" == "true" ]]; then
-                translate_args="$translate_args --use-libclang"
-            fi
-        fi
+        local translate_args
+        translate_args=$(build_stage1_translate_args "$USE_LIBCLANG")
         if ! python3 translate.py $translate_args 2>&1 | tee -a "$log_file.step2"; then
             echo "FAIL|步骤2失败" > "$result_file"
             return 1
+        fi
+
+        local extracted_count
+        extracted_count=$(count_stage1_extracted_functions "$proj_name" 2>/dev/null || echo "0")
+        if ! [[ "$extracted_count" =~ ^[0-9]+$ ]]; then
+            extracted_count=0
+        fi
+
+        if should_fallback_to_no_libclang_for_empty_extract "$extracted_count"; then
+            echo "⚠ libclang 未提取到函数，触发 OSS no-libclang 回退: $proj_name" | tee -a "$log_file.step1" "$log_file.step2"
+            echo "  回退原因: functions_manifest 为空或缺失；典型场景是 header-implemented 项目" | tee -a "$log_file.step1" "$log_file.step2"
+
+            if ! USE_LIBCLANG=false python3 get_dependencies.py 2>&1 | tee -a "$log_file.step1"; then
+                echo "FAIL|libclang空提取后 no-libclang 步骤1失败" > "$result_file"
+                return 1
+            fi
+
+            local fallback_translate_args
+            fallback_translate_args=$(build_stage1_translate_args "false")
+            if ! USE_LIBCLANG=false python3 translate.py $fallback_translate_args 2>&1 | tee -a "$log_file.step2"; then
+                echo "FAIL|libclang空提取后 no-libclang 步骤2失败" > "$result_file"
+                return 1
+            fi
+
+            local fallback_extracted_count
+            fallback_extracted_count=$(count_stage1_extracted_functions "$proj_name" 2>/dev/null || echo "0")
+            if ! [[ "$fallback_extracted_count" =~ ^[0-9]+$ ]]; then
+                fallback_extracted_count=0
+            fi
+            if [[ "$fallback_extracted_count" -eq 0 ]]; then
+                echo "FAIL|no-libclang fallback 后仍未提取到函数" > "$result_file"
+                return 1
+            fi
+
+            echo "✓ no-libclang fallback 成功: 提取到 ${fallback_extracted_count} 个函数" | tee -a "$log_file.step1" "$log_file.step2"
         fi
         
         local end_time=$(date +%s)
@@ -1837,9 +2462,13 @@ run_stage2_5() {
             return 1
         fi
 
-        # 步骤5: Jina Reranker 精排
+        # 步骤5: Jina Reranker 精排。GPU 阶段跨项目互斥，Stage3 不在锁内。
         cd "$SCRIPT_DIR"
-        if ! python3 resort_by_unixcoder.py 2>&1 | tee -a "$log_file.step5"; then
+        if ! (
+            flock 9
+            echo "获得 Jina Reranker GPU 锁: $JINA_LOCK_FILE" | tee -a "$log_file.step5"
+            python3 resort_by_unixcoder.py
+        ) 9>"$JINA_LOCK_FILE" 2>&1 | tee -a "$log_file.step5"; then
             echo "FAIL|步骤5失败（Jina Reranker）" > "$result_file"
             # 切回默认环境
             activate_conda_env "$VIRTUAL_ENV_NAME" >/dev/null 2>&1 || true
@@ -1856,7 +2485,7 @@ run_stage2_5() {
     } 2>&1 | tee "$log_file"
 }
 
-# 执行单个项目的阶段3（函数体翻译 + 测试 + 修复）
+# 执行单个项目的阶段3（函数体翻译 + 编译修复 + 可选后置 agentic repair）
 run_stage3() {
     local proj_name="$1"
     local proj_path="$2"
@@ -1867,7 +2496,7 @@ run_stage3() {
     
     {
         echo "============================================================"
-        echo "项目 $proj_name - 阶段3: 函数体翻译 + 测试 + 修复"
+        echo "项目 $proj_name - 阶段3: 函数体翻译 + 编译修复 + 可选后置 agentic repair"
         echo "============================================================"
         
         setup_project_env "$proj_name" "$proj_path"
@@ -1880,12 +2509,22 @@ run_stage3() {
         
         cd "$SCRIPT_DIR"
         
+        local stage7_failed=false
+
         # 根据模式选择翻译方式
         if [[ "$USE_INCREMENTAL" == true ]]; then
             # 增量式翻译模式
             if ! python3 incremental_translate.py "$proj_name" "$LLM_NAME" "$MAX_REPAIR" 2>&1 | tee -a "$log_file.step7"; then
-                echo "FAIL|步骤7失败（增量翻译）" > "$result_file"
-                return 1
+                stage7_failed=true
+                local WORKSPACE_BASE="${C2R_WORKSPACE_ROOT}"
+                local FINAL_RUST_ROOT="${WORKSPACE_BASE}/final_projects/${proj_name}/translate_by_${LLM_NAME}"
+                if [[ "$POST_AGENTIC_REPAIR" == "true" && -d "$FINAL_RUST_ROOT" ]]; then
+                    echo "WARN|步骤7失败（增量翻译），但最终项目已生成，继续执行后置 agentic repair" > "$result_file.warn"
+                    echo "步骤7失败但最终项目已生成，继续执行后置 agentic repair: $FINAL_RUST_ROOT" | tee -a "$log_file.step7"
+                else
+                    echo "FAIL|步骤7失败（增量翻译）" > "$result_file"
+                    return 1
+                fi
             fi
         else
             # 传统并行模式
@@ -1925,6 +2564,40 @@ run_stage3() {
         else
             if ! python3 merge_final_project.py "$proj_name" "$LLM_NAME" 2>&1 | tee -a "$log_file.step11"; then
                 echo "WARN|步骤11失败（最终合并），继续执行" > "$result_file.warn"
+            fi
+        fi
+
+        if [[ "$POST_AGENTIC_REPAIR" == "true" ]]; then
+            local WORKSPACE_BASE="${C2R_WORKSPACE_ROOT}"
+            local FINAL_RUST_ROOT="${WORKSPACE_BASE}/final_projects/${proj_name}/translate_by_${LLM_NAME}"
+            local POST_REPAIR_OUTPUT_DIR="${WORKSPACE_BASE}/post_repair/${proj_name}/translate_by_${LLM_NAME}"
+            local POST_REPAIR_ARGS=(
+                "scripts/agentic_repair/post_repair_agent.py"
+                "run"
+                "--project" "$proj_name"
+                "--llm-name" "$LLM_NAME"
+                "--workspace-dir" "$WORKSPACE_BASE"
+                "--source-project-root" "$PROJECT_ROOT"
+                "--rendered-root" "$FINAL_RUST_ROOT"
+                "--output-dir" "$POST_REPAIR_OUTPUT_DIR"
+                "--suite" "$PROJECT_SUITE"
+                "--max-rounds" "$POST_REPAIR_MAX_ROUNDS"
+                "--agent-step-limit" "$POST_REPAIR_AGENT_STEP_LIMIT"
+                "--semantic-audit-step-limit" "$SEMANTIC_AUDIT_STEP_LIMIT"
+                "--agent-timeout-sec" "$POST_REPAIR_AGENT_TIMEOUT_SEC"
+            )
+            if [[ "$PROJECT_SUITE" == "ohos" ]]; then
+                POST_REPAIR_ARGS+=("--ohos-rustc" "$OHOS_RUSTC" "--ohos-rust-target" "$OHOS_RUST_TARGET")
+            fi
+            if [[ "$POST_REPAIR_ALLOW_EXTERNAL_BLOCKERS" == "true" ]]; then
+                POST_REPAIR_ARGS+=("--allow-external-blockers")
+            fi
+            echo "步骤12: 后置 agentic repair loop" | tee -a "$log_file.step12"
+            echo "  最终 Rust 项目: $FINAL_RUST_ROOT" | tee -a "$log_file.step12"
+            echo "  后置 repair 输出: $POST_REPAIR_OUTPUT_DIR" | tee -a "$log_file.step12"
+            if ! python3 "${POST_REPAIR_ARGS[@]}" 2>&1 | tee -a "$log_file.step12"; then
+                echo "FAIL|步骤12失败（后置 agentic repair loop）" > "$result_file"
+                return 1
             fi
         fi
         
@@ -2090,6 +2763,157 @@ run_stage_parallel() {
     return 0
 }
 
+run_post_stage_analyses() {
+    local projects=("$@")
+
+    print_section "生成翻译结果汇总报告"
+    if activate_conda_env "$VIRTUAL_ENV_NAME" >/dev/null 2>&1; then
+        cd "$SCRIPT_DIR"
+        if [[ -f "$SCRIPT_DIR/generate_summary_report.py" ]]; then
+            python3 "$SCRIPT_DIR/generate_summary_report.py" \
+                --outputs-dir "$RUN_INTERMEDIATE_DIR" \
+                --evaluation-dir "$RUN_EVAL_DIR" \
+                --report-out "$RUN_RESULTS_DIR/translation_summary_report.json" \
+                2>&1 || print_warning "报告生成失败"
+        else
+            print_warning "未找到 generate_summary_report.py，跳过报告生成"
+        fi
+    else
+        print_warning "无法激活 conda 环境，跳过报告生成"
+    fi
+    echo ""
+
+    print_stub_projects_summary "$LLM_NAME" "${projects[@]}"
+    print_build_context_problem_projects_summary "$LLM_NAME" "${projects[@]}"
+
+    print_section "Post-run 分析（unsafe/CodeBLEU/失败分布）"
+    if [[ -f "$SCRIPT_DIR/post_run_analysis.py" ]]; then
+        python3 "$SCRIPT_DIR/post_run_analysis.py" \
+            --run-intermediate-dir "$RUN_INTERMEDIATE_DIR" \
+            --run-results-dir "$RUN_RESULTS_DIR" \
+            --llm-name "$LLM_NAME" \
+            2>&1 | tee -a "$LOG_DIR/post_run_analysis.log" || \
+            print_warning "post_run_analysis.py 运行失败（已忽略）"
+    else
+        print_warning "未找到 post_run_analysis.py，跳过 post-run 分析"
+    fi
+
+    if [[ -f "$SCRIPT_DIR/scripts/analysis/repair_perf_diagnostics.py" ]]; then
+        python3 "$SCRIPT_DIR/scripts/analysis/repair_perf_diagnostics.py" \
+            --run-dir "$RUN_ROOT_DIR" \
+            --run-intermediate-dir "$RUN_INTERMEDIATE_DIR" \
+            --logs-dir "$LOG_DIR" \
+            --output "$RUN_RESULTS_DIR/repair_perf_diagnostics.json" \
+            2>&1 | tee -a "$LOG_DIR/repair_perf_diagnostics.log" || \
+            print_warning "repair_perf_diagnostics.py 运行失败（已忽略）"
+    else
+        print_warning "未找到 repair_perf_diagnostics.py，跳过 repair/性能诊断"
+    fi
+
+    if [[ "$PROJECT_SUITE" == "ohos" ]]; then
+        print_section "OHOS(test5) 运行后统计分析（默认不跑论文测试）"
+        local OHOS_TEST5_ANALYZER="$SCRIPT_DIR/scripts/analysis/analyze_c2r_compilation_rate_ohos_test5.py"
+        if [[ -f "$OHOS_TEST5_ANALYZER" ]]; then
+            local OHOS_ANALYZER_ARGS=(
+                "$OHOS_TEST5_ANALYZER"
+                "--run-dir" "$RUN_ROOT_DIR"
+                "--run-clippy"
+                "--analyze-unsafe"
+                "--verify-incremental"
+            )
+            if [[ "$RUN_PAPER_EVAL_TESTS" == "true" ]]; then
+                OHOS_ANALYZER_ARGS+=("--run-ohos-tests" "--run-derived-tests")
+                print_info "已启用 --run-paper-tests：OHOS/derived 测试会作为论文阶段评估运行"
+            else
+                print_info "未启用 --run-paper-tests：跳过 OHOS gtest 和 derived Rust tests"
+            fi
+            python3 "${OHOS_ANALYZER_ARGS[@]}" \
+                2>&1 | tee -a "$LOG_DIR/compilation_analysis_ohos_test5.log" || \
+                print_warning "analyze_c2r_compilation_rate_ohos_test5.py 运行失败（已忽略）"
+        else
+            print_warning "未找到 $OHOS_TEST5_ANALYZER，跳过 OHOS(test5) 运行结果分析"
+        fi
+    fi
+}
+
+check_project_tu_closure() {
+    local proj_name="$1"
+    local tu_map="$RUN_INTERMEDIATE_DIR/${proj_name}/workspace/.preprocessed/tu_context_map.json"
+    python3 - "$tu_map" >/dev/null 2>&1 <<'PY'
+import json, sys
+from pathlib import Path
+
+p = Path(sys.argv[1])
+if not p.exists():
+    sys.exit(1)
+try:
+    data = json.loads(p.read_text(encoding="utf-8", errors="ignore"))
+except Exception:
+    sys.exit(1)
+
+files = data.get("files") or {}
+if not isinstance(files, dict) or not files:
+    sys.exit(1)
+
+included = 0
+missing_entry = 0
+preprocess_error = 0
+preprocessed_missing = 0
+
+for _k, v in files.items():
+    if not isinstance(v, dict):
+        preprocess_error += 1
+        continue
+    if v.get("excluded_by_compile_commands"):
+        continue
+    included += 1
+    if v.get("compile_commands_entry") is None:
+        missing_entry += 1
+    if str(v.get("error") or "").strip():
+        preprocess_error += 1
+    pre = v.get("preprocessed_file")
+    if not pre:
+        preprocessed_missing += 1
+    else:
+        try:
+            if not Path(str(pre)).exists():
+                preprocessed_missing += 1
+        except Exception:
+            preprocessed_missing += 1
+
+if included == 0:
+    sys.exit(2)
+sys.exit(0 if (missing_entry == 0 and preprocess_error == 0 and preprocessed_missing == 0) else 1)
+PY
+}
+
+check_project_truth_mode() {
+    local proj_name="$1"
+    local report_path="$RUN_INTERMEDIATE_DIR/${proj_name}/workspace/skeletons/${proj_name}/types_generation_report.json"
+    python3 - "$report_path" >/dev/null 2>&1 <<'PY'
+import json, sys
+from pathlib import Path
+
+p = Path(sys.argv[1])
+if not p.exists():
+    sys.exit(1)
+try:
+    data = json.loads(p.read_text(encoding="utf-8", errors="ignore"))
+except Exception:
+    sys.exit(1)
+
+mode = str(data.get("mode") or "").strip().lower()
+success = bool(data.get("success"))
+valid = bool(data.get("final_output_valid"))
+if success and valid and mode and mode != "stub":
+    sys.exit(0)
+tu_truth = data.get("tu_truth")
+if isinstance(tu_truth, dict) and str(tu_truth.get("tu_context_map") or "").strip():
+    sys.exit(0)
+sys.exit(1)
+PY
+}
+
 # ============================================
 # 流水线调度函数（单个项目完整流程）
 # ============================================
@@ -2107,6 +2931,39 @@ run_project_pipeline() {
     if ! run_stage1 "$proj_name" "$proj_path" "$stage1_log" "$stage1_result"; then
         print_error "[流水线] $proj_name 阶段1失败"
         return 1
+    fi
+
+    if [[ "$C2R_REQUIRE_TU_CLOSURE" != "0" ]]; then
+        local tu_rc=0
+        if check_project_tu_closure "$proj_name"; then
+            tu_rc=0
+        else
+            tu_rc=$?
+        fi
+        if [[ "$tu_rc" -eq 2 ]]; then
+            print_warning "[流水线] $proj_name 在所选 profile 下无可构建源文件，跳过后续阶段"
+            printf "%s\n" "$proj_name" >> "$LOG_DIR/route_a_no_built_sources_projects.txt" 2>/dev/null || true
+            return 2
+        elif [[ "$tu_rc" -ne 0 ]]; then
+            print_warning "[流水线] $proj_name TU 闭包不完整，跳过后续阶段"
+            printf "%s\n" "$proj_name" >> "$LOG_DIR/tu_closure_skipped_projects.txt" 2>/dev/null || true
+            return 2
+        fi
+    fi
+
+    if [[ "$C2R_TRUTH_MODE" != "0" ]]; then
+        if ! check_project_truth_mode "$proj_name"; then
+            print_warning "[流水线] $proj_name Truth-mode types.rs 未得到 bindgen 真值，跳过后续阶段"
+            printf "%s\n" "$proj_name" >> "$LOG_DIR/truth_mode_skipped_stub_types_projects.txt" 2>/dev/null || true
+            return 2
+        fi
+    fi
+
+    if [[ "$SKELETON_ONLY" == "true" ]]; then
+        local project_end_time=$(date +%s)
+        local project_duration=$((project_end_time - project_start_time))
+        print_success "[流水线] $proj_name 完成（骨架模式，耗时: ${project_duration}秒）"
+        return 0
     fi
 
     # 阶段2
@@ -2129,14 +2986,6 @@ run_project_pipeline() {
         fi
     else
         print_info "[流水线] $proj_name 跳过阶段2.5（RUN_RAG=false）"
-    fi
-
-    # 骨架翻译模式下跳过阶段3
-    if [[ "$SKELETON_ONLY" == "true" ]]; then
-        local project_end_time=$(date +%s)
-        local project_duration=$((project_end_time - project_start_time))
-        print_success "[流水线] $proj_name 完成（骨架模式，耗时: ${project_duration}秒）"
-        return 0
     fi
 
     # 阶段3
@@ -2165,14 +3014,15 @@ run_pipeline_mode() {
 
     print_section "流水线模式启动"
     print_info "项目数量: ${#projects[@]}"
-    print_info "最大并行数: $MAX_PARALLEL"
+    print_info "启动策略: 最多 $MAX_PARALLEL 个项目同时运行；Jina Reranker 阶段由 flock 串行"
     print_info "每个项目将独立完成所有阶段"
     echo ""
 
     local pids=()
-    local running_count=0
+    local launched_count=0
     local completed_count=0
     local failed_count=0
+    local skipped_count=0
     local total=${#projects[@]}
 
     declare -A project_pids
@@ -2182,63 +3032,83 @@ run_pipeline_mode() {
     # vLLM 仅在阶段4（语义评估）和知识沉淀时启动
     print_info "流水线模式使用外部 API，跳过本地 vLLM 启动"
 
-    # 启动项目（流水线方式）
+    # 启动项目（流水线方式）：不做阶段栅栏，但限制同时运行的项目数。
+    # 唯一强制串行资源是 run_stage2_5 内部的 Jina GPU flock。
     for proj_name in "${projects[@]}"; do
         local proj_path="${RECOMMENDED_PROJECTS[$proj_name]}"
 
-        # 等待槽位可用
-        while [[ $running_count -ge $MAX_PARALLEL ]]; do
-            # 检查已完成的进程
-            for pid in "${!project_pids[@]}"; do
-                if ! kill -0 "$pid" 2>/dev/null; then
-                    wait "$pid" 2>/dev/null
-                    local exit_code=$?
-                    local finished_proj="${project_pids[$pid]}"
-                    unset project_pids[$pid]
-
-                    running_count=$((running_count - 1))
-
-                    if [[ $exit_code -eq 0 ]]; then
-                        completed_count=$((completed_count + 1))
-                        project_status[$finished_proj]="SUCCESS"
-                    else
-                        failed_count=$((failed_count + 1))
-                        project_status[$finished_proj]="FAILED"
-                    fi
-
-                    print_info "[流水线] 进度: 完成=$completed_count, 失败=$failed_count, 运行=$running_count, 总计=$total"
+        while [[ ${#pids[@]} -ge $MAX_PARALLEL ]]; do
+            local active_pids=()
+            for pid in "${pids[@]}"; do
+                if kill -0 "$pid" 2>/dev/null; then
+                    active_pids+=("$pid")
+                    continue
                 fi
-            done
 
-            if [[ $running_count -ge $MAX_PARALLEL ]]; then
+                local exit_code=0
+                wait "$pid" 2>/dev/null || exit_code=$?
+                local finished_proj="${project_pids[$pid]}"
+
+                if [[ $exit_code -eq 0 ]]; then
+                    completed_count=$((completed_count + 1))
+                    project_status[$finished_proj]="SUCCESS"
+                elif [[ $exit_code -eq 2 ]]; then
+                    skipped_count=$((skipped_count + 1))
+                    project_status[$finished_proj]="SKIPPED"
+                else
+                    failed_count=$((failed_count + 1))
+                    project_status[$finished_proj]="FAILED"
+                fi
+
+                unset project_pids[$pid]
+                print_info "[流水线] 进度: 成功=$completed_count, 跳过=$skipped_count, 失败=$failed_count, 总计=$total"
+            done
+            pids=("${active_pids[@]}")
+            if [[ ${#pids[@]} -ge $MAX_PARALLEL ]]; then
                 sleep 2
             fi
         done
 
         # 启动新项目
-        print_info "[流水线] [$((completed_count + failed_count + running_count + 1))/$total] 启动: $proj_name"
+        launched_count=$((launched_count + 1))
+        print_info "[流水线] [$launched_count/$total] 启动: $proj_name"
         run_project_pipeline "$proj_name" "$proj_path" &
         local pid=$!
         project_pids[$pid]="$proj_name"
         pids+=($pid)
-        running_count=$((running_count + 1))
     done
 
     # 等待所有项目完成
     print_info "等待所有项目完成..."
-    for pid in "${pids[@]}"; do
-        if kill -0 "$pid" 2>/dev/null; then
-            wait "$pid" 2>/dev/null
-            local exit_code=$?
+    while [[ ${#pids[@]} -gt 0 ]]; do
+        local active_pids=()
+        for pid in "${pids[@]}"; do
+            if kill -0 "$pid" 2>/dev/null; then
+                active_pids+=("$pid")
+                continue
+            fi
+
+            local exit_code=0
+            wait "$pid" 2>/dev/null || exit_code=$?
             local finished_proj="${project_pids[$pid]}"
 
             if [[ $exit_code -eq 0 ]]; then
                 completed_count=$((completed_count + 1))
                 project_status[$finished_proj]="SUCCESS"
+            elif [[ $exit_code -eq 2 ]]; then
+                skipped_count=$((skipped_count + 1))
+                project_status[$finished_proj]="SKIPPED"
             else
                 failed_count=$((failed_count + 1))
                 project_status[$finished_proj]="FAILED"
             fi
+
+            unset project_pids[$pid]
+            print_info "[流水线] 进度: 成功=$completed_count, 跳过=$skipped_count, 失败=$failed_count, 总计=$total"
+        done
+        pids=("${active_pids[@]}")
+        if [[ ${#pids[@]} -gt 0 ]]; then
+            sleep 2
         fi
     done
 
@@ -2252,6 +3122,7 @@ run_pipeline_mode() {
     # 输出结果
     print_section "流水线执行完成"
     echo "成功: $completed_count"
+    echo "跳过: $skipped_count"
     echo "失败: $failed_count"
     echo "总计: $total"
 
@@ -2265,14 +3136,28 @@ run_pipeline_mode() {
         done
     fi
 
-    return $([[ $failed_count -eq 0 ]] && echo 0 || echo 1)
+    if [[ $skipped_count -gt 0 ]]; then
+        echo ""
+        echo "跳过的项目:"
+        for proj in "${!project_status[@]}"; do
+            if [[ "${project_status[$proj]}" == "SKIPPED" ]]; then
+                echo "  - $proj"
+            fi
+        done
+    fi
+
+    return $([[ $failed_count -eq 0 && $skipped_count -eq 0 ]] && echo 0 || echo 1)
 }
 
 # 主函数
 main() {
     print_section "C2Rust 流水线批量项目测试"
     echo "模式: 流水线并行执行"
-    echo "最大并行数: $MAX_PARALLEL"
+    if [[ "$MAX_PARALLEL_AUTO" == "true" ]]; then
+        echo "最大并行数: 自动（实际项目数确认后取 min(项目数, 5)）"
+    else
+        echo "最大并行数: $MAX_PARALLEL"
+    fi
     if [[ "$SKELETON_ONLY" == "true" ]]; then
         echo "运行模式: 仅骨架翻译（--skeleton-only）"
     fi
@@ -2289,6 +3174,16 @@ main() {
     echo "输出目录: $RUN_ROOT_DIR"
     echo "  - results:      $RUN_RESULTS_DIR"
     echo "  - intermediate: $RUN_INTERMEDIATE_DIR"
+    if [[ "$ARCHIVE_ENABLED" == "true" ]]; then
+        echo "统一归档目录: $EXPERIMENT_DIR"
+        echo "  - manifest:     $EXPERIMENT_DIR/run_manifest.json"
+        echo "  - analysis:     $EXPERIMENT_DIR/analysis/"
+        echo "  - logs:         $EXPERIMENT_DIR/logs/"
+    fi
+    echo "语义等价性评估: $RUN_SEMANTIC_EVALUATION"
+    if [[ "$RUN_SEMANTIC_EVALUATION" == "true" ]] && [[ "$EVAL_MAX_FILES" -gt 0 ]]; then
+        echo "  - 每项目最大文件数: $EVAL_MAX_FILES"
+    fi
     echo ""
     echo "推荐的项目列表："
     for proj_name in "${!RECOMMENDED_PROJECTS[@]}"; do
@@ -2343,6 +3238,19 @@ main() {
     fi
     
     local total_projects=${#projects_to_run[@]}
+    if [[ "$MAX_PARALLEL_AUTO" == "true" ]]; then
+        if [[ $total_projects -ge 5 ]]; then
+            MAX_PARALLEL=5
+        else
+            MAX_PARALLEL=$total_projects
+        fi
+    fi
+    if [[ ! "$MAX_PARALLEL" =~ ^[0-9]+$ ]] || [[ $MAX_PARALLEL -lt 1 ]]; then
+        MAX_PARALLEL=1
+    elif [[ $MAX_PARALLEL -gt 8 ]]; then
+        MAX_PARALLEL=8
+    fi
+    check_resources "$total_projects"
     local overall_start_time=$(date +%s)
     
     # vLLM URL（用于清理时检查，必须在 cleanup_on_exit 函数之前定义）
@@ -2354,20 +3262,45 @@ main() {
     VLLM_STARTED_BY_SCRIPT=false
     
     # 关键：设置退出时的清理函数（确保 vLLM 被关闭）
-    cleanup_on_exit() {
-        local exit_code=$?
-        # 检查 vLLM 是否在运行（由本脚本启动的）
-        if [[ "$VLLM_STARTED_BY_SCRIPT" == "true" ]]; then
-            if curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
-                print_warning "检测到脚本退出，正在清理 vLLM..."
-                stop_vllm
-            fi
-        fi
-        exit $exit_code
-    }
+	    cleanup_on_exit() {
+	        local exit_code=$?
+	        # 检查 vLLM 是否在运行（由本脚本启动的）
+	        if [[ "$VLLM_STARTED_BY_SCRIPT" == "true" ]]; then
+	            if curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
+	                print_warning "检测到脚本退出，正在清理 vLLM..."
+	                stop_vllm
+	            fi
+	        fi
+	        if [[ "$ARCHIVE_ENABLED" == "true" ]]; then
+	            if [[ $exit_code -eq 0 ]]; then
+	                archive_update_status "completed" || true
+	            else
+	                archive_update_status "failed" || true
+	            fi
+	        fi
+	        exit $exit_code
+	    }
     
     # 注册 trap：在脚本退出（正常或异常）时执行清理
     trap cleanup_on_exit EXIT INT TERM
+
+    if [[ "$PROJECT_PIPELINE_MODE" == "true" ]]; then
+        print_section "========== 项目级流水线模式 =========="
+        print_info "各项目独立推进 Stage1 -> Stage2 -> Jina -> Stage3；Jina 阶段由 GPU 锁串行互斥"
+        local pipeline_rc=0
+        run_pipeline_mode "${projects_to_run[@]}" || pipeline_rc=$?
+        run_post_stage_analyses "${projects_to_run[@]}"
+        if [[ "$SKIP_LEARNED_KB" == "true" ]]; then
+            print_info "跳过知识沉淀（--skip-learned-kb）"
+        else
+            print_warning "项目级流水线模式暂不自动运行 Learned KB；请用 --stage-sync 跑需要知识沉淀的论文归档流程"
+        fi
+        if [[ "$pipeline_rc" -eq 0 ]]; then
+            exit 0
+        else
+            exit 1
+        fi
+    fi
 
     # ========================================================================
     # 阶段1: 依赖分析 + 骨架翻译（使用外部 API，不启动本地 vLLM）
@@ -2577,9 +3510,6 @@ PY
             VLLM_STARTED_BY_SCRIPT=false
         fi
 
-        # 取消 trap
-        trap - EXIT INT TERM
-
         # 总结
         local overall_end_time=$(date +%s)
         local overall_duration=$((overall_end_time - overall_start_time))
@@ -2592,7 +3522,7 @@ PY
         echo "阶段1失败: ${#failed_stage1[@]}"
         echo "总耗时: ${overall_minutes}分${overall_seconds}秒"
         echo ""
-        echo "骨架输出目录: translation_outputs/${RUN_DIR_NAME}/intermediate/<项目名>/workspace/skeletons/"
+        echo "骨架输出目录: ${RUN_INTERMEDIATE_DIR}/<项目名>/workspace/skeletons/"
 
         # 骨架编译统计
         print_info "统计骨架编译情况..."
@@ -2743,7 +3673,8 @@ PY
                     --intermediate-dir "$RUN_INTERMEDIATE_DIR" \
                     --serial \
                     2>&1 | tee -a "$LOG_DIR/jina_reranker_batch.log"; then
-                    print_warning "部分项目 Jina Reranker 失败，继续执行"
+                    print_error "Jina Reranker 失败；RUN_RAG=true 时 RAG 是实验硬依赖，停止流程"
+                    exit 1
                 else
                     print_success "所有项目的 Jina Reranker 处理完成"
                 fi
@@ -2756,7 +3687,8 @@ PY
                     --intermediate-dir "$RUN_INTERMEDIATE_DIR" \
                     --workers "$JINA_WORKERS" \
                     2>&1 | tee -a "$LOG_DIR/jina_reranker_batch.log"; then
-                    print_warning "部分项目 Jina Reranker 失败，继续执行"
+                    print_error "Jina Reranker 失败；RUN_RAG=true 时 RAG 是实验硬依赖，停止流程"
+                    exit 1
                 else
                     print_success "所有项目的 Jina Reranker 处理完成"
                 fi
@@ -2771,34 +3703,21 @@ PY
     fi
 
     # ========================================================================
-    # 阶段3: 函数体翻译 + 测试 + 修复（需要 LLM；默认使用本地 vLLM）
+    # 阶段3: 函数体翻译 + 编译修复 + 可选后置 agentic repair（使用外部 API，不启动本地 vLLM）
     # ========================================================================
-    print_section "========== 阶段3: 函数体翻译 + 测试 + 修复 =========="
+    print_section "========== 阶段3: 函数体翻译 + 编译修复 + 可选后置 agentic repair =========="
 
-    # 阶段3 需要 LLM。默认使用本地 vLLM（USE_VLLM=true），并在此处统一启动，避免每项目重复启动。
-    # 若你希望使用外部 API，请设置：USE_VLLM=false 并提供 EXTERNAL_API_KEY（且需要可用网络）。
-    if [[ "${USE_VLLM:-true}" =~ ^(true|1|yes)$ ]]; then
-        if ! curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
-            print_info "阶段3需要本地 vLLM，启动 vLLM 服务..."
-            if ! start_vllm; then
-                print_error "无法启动 vLLM：阶段3可能失败（可改用 USE_VLLM=false + EXTERNAL_API_KEY）"
-            else
-                if [[ "${VLLM_START_ACTION:-}" == "started" ]]; then
-                    VLLM_STARTED_BY_SCRIPT=true
-                fi
-            fi
-        else
-            print_info "vLLM 已就绪: $VLLM_URL"
+	    # 阶段3使用外部 API，不启动本地 vLLM
+	    print_info "阶段3使用外部 API 进行函数体翻译，跳过本地 vLLM 启动"
+        if [[ "$POST_AGENTIC_REPAIR" == "true" ]]; then
+            print_info "后置 agentic repair 已启用：cheap gates 通过后才运行 semantic audit；不运行论文 held-out/derived 测试"
         fi
-    else
-        print_info "USE_VLLM=false：阶段3将使用外部 API（需 EXTERNAL_API_KEY + 可用网络）"
-    fi
-    echo ""
+	    echo ""
 
     # 并行运行阶段3
     local failed_stage3=()
     local failed_list_file=$(mktemp)
-    FAILED_LIST_OUTPUT="$failed_list_file" run_stage_parallel "阶段3: 函数体翻译 + 测试 + 修复" "run_stage3" "${projects_to_run[@]}" || true
+    FAILED_LIST_OUTPUT="$failed_list_file" run_stage_parallel "阶段3: 函数体翻译 + 编译修复 + 可选后置 agentic repair" "run_stage3" "${projects_to_run[@]}" || true
     if [[ -f "$failed_list_file" ]] && [[ -s "$failed_list_file" ]]; then
         while IFS= read -r proj_name; do
             [[ -n "$proj_name" ]] && failed_stage3+=("$proj_name")
@@ -2806,8 +3725,104 @@ PY
     fi
     rm -f "$failed_list_file"
 
+    # ========================================================================
+    # 阶段4: 语义等价性评估（必须使用本地 vLLM）
+    # ========================================================================
+    if [[ "$RUN_SEMANTIC_EVALUATION" == "true" ]]; then
+        print_section "========== 阶段4: 语义等价性评估 =========="
+
+        # 语义评估必须使用本地 vLLM
+        print_info "语义等价性评估需要本地 vLLM..."
+
+        # 等待 GPU 显存释放（阶段3可能刚结束，GPU 显存还没完全释放）
+        print_info "等待 GPU 显存释放..."
+        local gpu_wait_max=60
+        local gpu_wait_count=0
+        while [[ $gpu_wait_count -lt $gpu_wait_max ]]; do
+            # 检查是否有 Python 进程占用 GPU（排除 Xorg 等系统进程）
+            local gpu_python_procs=$(nvidia-smi --query-compute-apps=pid,process_name --format=csv,noheader 2>/dev/null | grep -i python | wc -l)
+            if [[ "$gpu_python_procs" -eq 0 ]]; then
+                print_info "GPU 显存已释放"
+                break
+            fi
+            print_info "等待 GPU 显存释放... ($gpu_wait_count/$gpu_wait_max 秒，仍有 $gpu_python_procs 个 Python 进程)"
+            sleep 5
+            gpu_wait_count=$((gpu_wait_count + 5))
+        done
+        if [[ $gpu_wait_count -ge $gpu_wait_max ]]; then
+            print_warning "等待 GPU 显存释放超时，继续尝试启动 vLLM..."
+        fi
+
+        # 确保本地 vLLM 正在运行
+        if ! curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
+            print_info "启动 vLLM 服务（语义评估需要）..."
+            if ! start_vllm; then
+                print_error "无法启动 vLLM，语义等价性评估失败"
+                print_warning "跳过语义评估，继续执行..."
+            else
+                if [[ "${VLLM_START_ACTION:-}" == "started" ]]; then
+                    VLLM_STARTED_BY_SCRIPT=true
+                fi
+            fi
+        fi
+
+        # 检查 vLLM 是否可用
+        if curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
+            print_info "vLLM 已就绪: $VLLM_URL"
+            print_info "开始语义等价性评估..."
+
+            if activate_conda_env "$VIRTUAL_ENV_NAME" >/dev/null 2>&1; then
+                cd "$SCRIPT_DIR"
+
+                if [[ -f "$SCRIPT_DIR/semantic_equivalence_evaluator.py" ]]; then
+                    local eval_projects=""
+                    for proj_name in "${projects_to_run[@]}"; do
+                        if [[ -n "$eval_projects" ]]; then
+                            eval_projects="${eval_projects},${proj_name}"
+                        else
+                            eval_projects="${proj_name}"
+                        fi
+                    done
+
+                    # 语义评估必须使用本地 vLLM，传递 vLLM URL 和模型名称
+                    local eval_args="--projects $eval_projects"
+                    eval_args="$eval_args --outputs-dir $RUN_INTERMEDIATE_DIR"
+                    eval_args="$eval_args --report-dir $RUN_EVAL_DIR"
+                    eval_args="$eval_args --vllm-url $VLLM_URL"
+                    eval_args="$eval_args --model $LLM_NAME"
+
+                    if [[ "$EVAL_MAX_FILES" -gt 0 ]]; then
+                        eval_args="$eval_args --max-files $EVAL_MAX_FILES"
+                    fi
+
+                    print_info "评估参数: $eval_args"
+
+                    python3 "$SCRIPT_DIR/semantic_equivalence_evaluator.py" $eval_args \
+                        2>&1 | tee -a "$LOG_DIR/semantic_evaluation.log" || \
+                        print_warning "语义等价性评估失败或部分失败"
+
+                    local summary_file="$RUN_EVAL_DIR/evaluation_summary.json"
+                    if [[ -f "$summary_file" ]]; then
+                        print_info "语义等价性评估完成"
+                        print_info "报告目录: $RUN_EVAL_DIR/"
+                    fi
+                else
+                    print_warning "未找到 semantic_equivalence_evaluator.py，跳过评估"
+                fi
+            else
+                print_warning "无法激活 conda 环境，跳过语义等价性评估"
+            fi
+        else
+            print_warning "vLLM 服务不可用，跳过语义等价性评估"
+        fi
+
+        echo ""
+    else
+        print_info "跳过语义等价性评估（使用 --run-evaluation 启用）"
+    fi
+
     # 注意：此处不要提前关闭 vLLM。
-    # 后续的“知识沉淀（Learned KB）”在启用 --extract-knowledge 时仍需要 vLLM（或外部 API）。
+    # 后续的“知识沉淀（Learned KB）”在启用 --extract-knowledge 时仍需要 vLLM。
 
     # ========================================================================
     # 总结
@@ -2830,6 +3845,19 @@ PY
     fi
     echo "阶段2失败: ${#failed_stage2[@]}"
     echo "阶段3失败: ${#failed_stage3[@]}"
+    if [[ "$RUN_SEMANTIC_EVALUATION" == "true" ]]; then
+        echo "阶段4: 语义等价性评估已完成"
+        if [[ -f "$RUN_EVAL_DIR/evaluation_summary.json" ]]; then
+            local eval_avg=$(python3 -c "
+import json
+try:
+    with open('$RUN_EVAL_DIR/evaluation_summary.json') as f:
+        print(json.load(f).get('average_score', 'N/A'))
+except: print('N/A')
+" 2>/dev/null)
+            echo "  平均语义等价性得分: $eval_avg"
+        fi
+    fi
     echo "总耗时: ${overall_minutes}分${overall_seconds}秒"
     echo ""
 
@@ -2921,6 +3949,7 @@ PY
         if [[ -f "$SCRIPT_DIR/generate_summary_report.py" ]]; then
             python3 "$SCRIPT_DIR/generate_summary_report.py" \
                 --outputs-dir "$RUN_INTERMEDIATE_DIR" \
+                --evaluation-dir "$RUN_EVAL_DIR" \
                 --report-out "$RUN_RESULTS_DIR/translation_summary_report.json" \
                 2>&1 || print_warning "报告生成失败"
         else
@@ -2950,75 +3979,101 @@ PY
         print_warning "未找到 post_run_analysis.py，跳过 post-run 分析"
     fi
 
-    # NOTE (open-source cleanup):
-    # We no longer run the paper-style OHOS(test5) evaluation at the end of the framework pipeline.
-    # If you need paper metrics (CR/FC/Unsafe/Clippy), run the scripts under repo `scripts/` manually.
+    if [[ -f "$SCRIPT_DIR/scripts/analysis/repair_perf_diagnostics.py" ]]; then
+        python3 "$SCRIPT_DIR/scripts/analysis/repair_perf_diagnostics.py" \
+            --run-dir "$RUN_ROOT_DIR" \
+            --run-intermediate-dir "$RUN_INTERMEDIATE_DIR" \
+            --logs-dir "$LOG_DIR" \
+            --output "$RUN_RESULTS_DIR/repair_perf_diagnostics.json" \
+            2>&1 | tee -a "$LOG_DIR/repair_perf_diagnostics.log" || \
+            print_warning "repair_perf_diagnostics.py 运行失败（已忽略）"
+    else
+        print_warning "未找到 repair_perf_diagnostics.py，跳过 repair/性能诊断"
+    fi
+
+    # ========================================================================
+    # OHOS(test5): 运行后统计分析
+    # 默认不运行论文 held-out/derived 测试；只有 --run-paper-tests 才启用。
+    # 说明：该脚本不会修改翻译输出，产物写入 results/compilation_analysis_ohos_test5.json
+    # ========================================================================
+    if [[ "$PROJECT_SUITE" == "ohos" ]]; then
+        print_section "OHOS(test5) 运行后统计分析（默认不跑论文测试）"
+        local OHOS_TEST5_ANALYZER="$SCRIPT_DIR/scripts/analysis/analyze_c2r_compilation_rate_ohos_test5.py"
+        if [[ -f "$OHOS_TEST5_ANALYZER" ]]; then
+            local OHOS_ANALYZER_ARGS=(
+                "$OHOS_TEST5_ANALYZER"
+                "--run-dir" "$RUN_ROOT_DIR"
+                "--run-clippy"
+                "--analyze-unsafe"
+                "--verify-incremental"
+            )
+            if [[ "$RUN_PAPER_EVAL_TESTS" == "true" ]]; then
+                OHOS_ANALYZER_ARGS+=("--run-ohos-tests" "--run-derived-tests")
+                print_info "已启用 --run-paper-tests：OHOS/derived 测试会作为论文阶段评估运行"
+            else
+                print_info "未启用 --run-paper-tests：跳过 OHOS gtest 和 derived Rust tests"
+            fi
+            python3 "${OHOS_ANALYZER_ARGS[@]}" \
+                2>&1 | tee -a "$LOG_DIR/compilation_analysis_ohos_test5.log" || \
+                print_warning "analyze_c2r_compilation_rate_ohos_test5.py 运行失败（已忽略）"
+        else
+            print_warning "未找到 $OHOS_TEST5_ANALYZER，跳过 OHOS(test5) 运行结果分析"
+        fi
+    fi
 
     if [[ "$SKIP_LEARNED_KB" == "true" ]]; then
         print_info "跳过知识沉淀（--skip-learned-kb）"
     else
         print_section "知识沉淀（Learned KB，可独立删除）"
         if [[ -f "$SCRIPT_DIR/distill_learned_kb.py" ]]; then
-	            if ls "$RUN_INTERMEDIATE_DIR"/*/workspace/incremental_work/*/translate_by_* >/dev/null 2>&1; then
-	                LEARNED_KB_DIR="$OUTPUTS_BASE_DIR/shared/learned_kb/$RUN_DIR_NAME"
-	                local distill_extract_args="--extract-knowledge --vllm-resume"
+            if ls "$RUN_INTERMEDIATE_DIR"/*/workspace/incremental_work/*/translate_by_* >/dev/null 2>&1; then
+                    LEARNED_KB_DIR="$RUN_SHARED_DIR/learned_kb/$RUN_DIR_NAME"
 
-	                if [[ "${USE_VLLM:-true}" =~ ^(true|1|yes)$ ]]; then
-	                    # vLLM 模式：知识沉淀依赖本地 vLLM
-	                    print_info "知识沉淀使用本地 vLLM..."
+                # 知识沉淀必须使用本地 vLLM
+                print_info "知识沉淀需要本地 vLLM..."
 
-	                    # 确保本地 vLLM 正在运行（如果阶段4已启动则复用）
-	                    if ! curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
-	                        print_info "启动 vLLM 服务（知识沉淀需要）..."
-	                        if ! start_vllm; then
-	                            print_error "无法启动 vLLM，跳过知识沉淀"
-	                        else
-	                            if [[ "${VLLM_START_ACTION:-}" == "started" ]]; then
-	                                VLLM_STARTED_BY_SCRIPT=true
-	                            fi
-	                        fi
-	                    fi
+                # 确保本地 vLLM 正在运行（如果阶段4已启动则复用）
+                if ! curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
+                    print_info "启动 vLLM 服务（知识沉淀需要）..."
+                    if ! start_vllm; then
+                        print_error "无法启动 vLLM，知识沉淀失败"
+                        print_warning "跳过知识沉淀，继续执行..."
+                    else
+                        if [[ "${VLLM_START_ACTION:-}" == "started" ]]; then
+                            VLLM_STARTED_BY_SCRIPT=true
+                        fi
+                    fi
+                fi
 
-	                    if curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
-	                        print_info "vLLM 已就绪: $VLLM_URL"
-	                        python3 "$SCRIPT_DIR/distill_learned_kb.py" \
-	                            --run-intermediate-dir "$RUN_INTERMEDIATE_DIR" \
-	                            --out-dir "$LEARNED_KB_DIR" \
-	                            --llm-name "$LLM_NAME" \
-	                            --vllm-base-url "$VLLM_URL" \
-	                            --vllm-model "$LLM_NAME" \
-	                            $distill_extract_args \
-	                            2>&1 | tee -a "$LOG_DIR/distill_learned_kb.log" || \
-	                            print_warning "distill_learned_kb.py 运行失败（已忽略）"
-	                    else
-	                        print_warning "vLLM 服务不可用，跳过知识沉淀"
-	                    fi
-	                else
-	                    # 外部 API 模式：不启动 vLLM；distill 脚本将从 generation.py 读取 EXTERNAL_API_* 配置
-	                    print_info "知识沉淀使用外部 API（USE_VLLM=false）"
-	                    if [[ -z "${EXTERNAL_API_KEY:-}" ]]; then
-	                        print_warning "EXTERNAL_API_KEY 未设置，跳过知识沉淀"
-	                    else
-	                        python3 "$SCRIPT_DIR/distill_learned_kb.py" \
-	                            --run-intermediate-dir "$RUN_INTERMEDIATE_DIR" \
-	                            --out-dir "$LEARNED_KB_DIR" \
-	                            --llm-name "$LLM_NAME" \
-	                            $distill_extract_args \
-	                            2>&1 | tee -a "$LOG_DIR/distill_learned_kb.log" || \
-	                            print_warning "distill_learned_kb.py 运行失败（已忽略）"
-	                    fi
-	                fi
+                # 检查 vLLM 是否可用
+                if curl -s "$VLLM_URL/models" >/dev/null 2>&1; then
+                    print_info "vLLM 已就绪: $VLLM_URL"
 
-	                echo ""
-	                print_info "Learned KB 目录: $LEARNED_KB_DIR"
-	                print_info "删除命令: rm -rf $LEARNED_KB_DIR"
-	                print_info "下次运行可叠加使用（不修改原KB）:"
-	                print_info "  bash batch_test_staged.sh --extra-rag-kb-dir \"$LEARNED_KB_DIR/rag\" ..."
-	                print_info "  （等价环境变量：C2R_EXTRA_RAG_KB_DIR=\"$LEARNED_KB_DIR/rag\"）"
-	            else
-	                print_info "未检测到阶段3输出（incremental_work），跳过 Learned KB 生成"
-	            fi
-	        else
+                    local distill_extract_args="--extract-knowledge --vllm-resume"
+
+                    python3 "$SCRIPT_DIR/distill_learned_kb.py" \
+                        --run-intermediate-dir "$RUN_INTERMEDIATE_DIR" \
+                        --out-dir "$LEARNED_KB_DIR" \
+                        --llm-name "$LLM_NAME" \
+                        --vllm-base-url "$VLLM_URL" \
+                        --vllm-model "$LLM_NAME" \
+                        $distill_extract_args \
+                        2>&1 | tee -a "$LOG_DIR/distill_learned_kb.log" || \
+                        print_warning "distill_learned_kb.py 运行失败（已忽略）"
+
+                    echo ""
+                    print_info "Learned KB 目录: $LEARNED_KB_DIR"
+                    print_info "删除命令: rm -rf $LEARNED_KB_DIR"
+                    print_info "下次运行可叠加使用（不修改原KB）:"
+                    print_info "  bash batch_test_staged.sh --extra-rag-kb-dir \"$LEARNED_KB_DIR/rag\" ..."
+                    print_info "  （等价环境变量：C2R_EXTRA_RAG_KB_DIR=\"$LEARNED_KB_DIR/rag\"）"
+                else
+                    print_warning "vLLM 服务不可用，跳过知识沉淀"
+                fi
+            else
+                print_info "未检测到阶段3输出（incremental_work），跳过 Learned KB 生成"
+            fi
+        else
             print_warning "未找到 distill_learned_kb.py，跳过知识沉淀"
         fi
     fi
@@ -3030,10 +4085,7 @@ PY
 	        VLLM_STARTED_BY_SCRIPT=false
 	    fi
 
-	    # 取消 trap（正常完成，不需要清理）
-	    trap - EXIT INT TERM
-
-	    # 返回适当的退出码
+		    # 返回适当的退出码
 	    if [[ ${#failed_stage3[@]} -gt 0 ]] || [[ ${#failed_stage2[@]} -gt 0 ]] || [[ ${#failed_stage1[@]} -gt 0 ]]; then
 	        exit 1
 	    else

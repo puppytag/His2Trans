@@ -17,6 +17,7 @@
 import os
 import re
 import json
+import ast
 import subprocess
 import tempfile
 import time
@@ -412,14 +413,14 @@ class SkeletonBuilder:
         except Exception:
             self._ohos_build_out_dir = None
         
+        # 优先加载 TU 上下文映射，include 收集可复用 pinned compile_commands entry。
+        # 注意：映射文件位于 <workspace>/.preprocessed/tu_context_map.json，由阶段1依赖分析产生。
+        self._load_tu_context_map()
+
         # 收集所有可能的头文件目录
         print(f"  [收集] 正在收集头文件搜索目录...")
         self.include_dirs = self._collect_include_dirs()
         print(f"  ✓ 收集完成: {len(self.include_dirs)} 个头文件搜索目录")
-
-        # 在 include 收集完成后加载 TU 上下文映射（可选）
-        # 注意：映射文件位于 <workspace>/.preprocessed/tu_context_map.json，由阶段1依赖分析产生。
-        self._load_tu_context_map()
         
         # 确保输出目录存在
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -672,8 +673,44 @@ class SkeletonBuilder:
         """
         include_dirs = set()
         
-        # 优先：从 compile_commands.json 获取所有 include 路径
-        if self.compile_commands_parser:
+        # 优先：从 TU map 的 pinned entry 获取 include 路径，避免全量扫描大型 OHOS profile。
+        if self.compile_commands_parser and getattr(self, "_tu_context_files", None):
+            try:
+                print(f"    [tu_context] 从 pinned compile_commands entry 提取 include 路径...")
+                pinned_entries = []
+                for rec in (self._tu_context_files or {}).values():
+                    if not isinstance(rec, dict) or rec.get("excluded_by_compile_commands"):
+                        continue
+                    entry = rec.get("compile_commands_entry")
+                    if isinstance(entry, dict):
+                        pinned_entries.append(entry)
+                for entry in pinned_entries:
+                    flags = self.compile_commands_parser.get_clang_flags_for_entry(entry, normalize_paths=True)
+                    i = 0
+                    while i < len(flags):
+                        flag = flags[i]
+                        if flag in ("-I", "-isystem") and i + 1 < len(flags):
+                            p = Path(str(flags[i + 1]))
+                            if p.exists():
+                                include_dirs.add(p)
+                            i += 2
+                            continue
+                        if isinstance(flag, str) and flag.startswith("-I") and flag != "-I":
+                            p = Path(flag[2:].strip())
+                            if p.exists():
+                                include_dirs.add(p)
+                        elif isinstance(flag, str) and flag.startswith("-isystem") and flag != "-isystem":
+                            p = Path(flag[len("-isystem"):].strip())
+                            if p.exists():
+                                include_dirs.add(p)
+                        i += 1
+                print(f"    ✓ 从 TU map 获取了 {len(include_dirs)} 个 include 路径")
+            except Exception as e:
+                logger.warning(f"从 TU map 获取 include 路径失败: {e}")
+                print(f"    ✗ 从 TU map 获取 include 路径失败: {e}")
+
+        # 回退：从 compile_commands.json 获取所有 include 路径
+        if self.compile_commands_parser and not include_dirs:
             try:
                 print(f"    [compile_commands] 从 compile_commands.json 提取所有 include 路径...")
                 # 优化：不传入 source_files，直接提取所有 include 路径（更快）
@@ -2270,6 +2307,84 @@ class SkeletonBuilder:
             fixes_applied += len(invalid_link_pattern.findall(content))
             content = new_content
 
+        # 6.3.1 移除 libc++ 模板元编程泄出的短小写 const。
+        # bindgen 可能从 C++ 模板生成 `pub const value: std___libcpp...`；
+        # 这会让 Rust `match value { value => ... }` 中的第二个 value 被解释为常量模式。
+        libcpp_template_const_pattern = re.compile(
+            r'^\s*pub\s+const\s+([a-z][A-Za-z0-9_]*)\s*:\s*([^;]*(?:__libcpp|__bindgen_ty_)[^;]*)\s*=\s*[^;]+;\s*$',
+            re.MULTILINE,
+        )
+        libcpp_template_consts = libcpp_template_const_pattern.findall(content)
+        if libcpp_template_consts:
+            content = libcpp_template_const_pattern.sub('', content)
+            fixes_applied += len(libcpp_template_consts)
+            logger.info(f"移除 {len(libcpp_template_consts)} 个 bindgen/libc++ 模板噪声常量")
+
+        # 6.3.2 移除 libc++ 模板内部 extern static。
+        # 例如 `pub static std_value: _Tp;` 中 `_Tp` 是 C++ 模板参数，Rust static 不能带泛型。
+        std_template_static_pattern = re.compile(
+            r'(?ms)^\s*unsafe\s+extern\s+"C"\s*\{\s*'
+            r'(?:#\[[^\n]*\]\s*)*'
+            r'pub\s+static\s+(?:mut\s+)?std_[A-Za-z0-9_]*\s*:\s*_[A-Z][A-Za-z0-9_]*(?:<[^;]+>)?\s*;\s*'
+            r'\}\s*'
+        )
+        removed_template_statics = len(std_template_static_pattern.findall(content))
+        if removed_template_statics:
+            content = std_template_static_pattern.sub('', content)
+            fixes_applied += removed_template_statics
+            logger.info(f"移除 {removed_template_statics} 个 bindgen/libc++ 模板 static")
+
+        # 6.3.3 修复 bindgen 漏写的 C++ 模板参数。
+        # bindgen 有时生成 `pub type std_Foo = Bar<_Pred>;` 或 `pub struct std_Foo { field: _Pred }`，
+        # 但没有在 Foo 上声明 `<_Pred>`，导致 E0425。
+        template_param_pattern = re.compile(r'\b(_[A-Z][A-Za-z0-9_]*)\b')
+
+        def _extract_template_params(text: str) -> List[str]:
+            seen: Set[str] = set()
+            params: List[str] = []
+            for name in template_param_pattern.findall(text or ""):
+                if name in seen:
+                    continue
+                seen.add(name)
+                params.append(name)
+            return params
+
+        def _add_missing_alias_generics(match: re.Match) -> str:
+            nonlocal fixes_applied
+            prefix = match.group("prefix")
+            rhs = match.group("rhs")
+            suffix = match.group("suffix")
+            params = _extract_template_params(rhs)
+            if not params:
+                return match.group(0)
+            fixes_applied += 1
+            return f"{prefix}<{', '.join(params)}> = {rhs}{suffix}"
+
+        template_generic_start = fixes_applied
+        before_template_generic_fix = content
+        alias_missing_generics_pattern = re.compile(
+            r'(?m)^(?P<prefix>\s*pub\s+type\s+std_[A-Za-z_]\w*)\s*=\s*(?P<rhs>[^;]*\b_[A-Z][A-Za-z0-9_]*\b[^;]*)(?P<suffix>;)\s*$'
+        )
+        content = alias_missing_generics_pattern.sub(_add_missing_alias_generics, content)
+
+        def _add_missing_struct_generics(match: re.Match) -> str:
+            nonlocal fixes_applied
+            header = match.group("header")
+            body = match.group("body")
+            params = _extract_template_params(body)
+            if not params:
+                return match.group(0)
+            fixes_applied += 1
+            return f"{header}<{', '.join(params)}> {{{body}}}"
+
+        struct_missing_generics_pattern = re.compile(
+            r'(?ms)^(?P<header>\s*pub\s+struct\s+std_[A-Za-z_]\w*)\s*\{(?P<body>.*?)^\}',
+        )
+        content = struct_missing_generics_pattern.sub(_add_missing_struct_generics, content)
+        template_generic_fixes = fixes_applied - template_generic_start
+        if before_template_generic_fix != content:
+            logger.info(f"修复 {template_generic_fixes} 个 bindgen/C++ 模板泛型参数残片")
+
         # 6.4 移除“孤立 attributes”（常见报错：expected item after attributes）
         # 当 types.rs 末尾或某处出现 #[...] 但后面没有任何 item，会导致语法错误。
         # 典型场景：bindgen/后处理过程中截断或移除了 item，但遗留了属性行。
@@ -2625,6 +2740,15 @@ class SkeletonBuilder:
                 wrapper_content: List[str] = []
                 wrapper_content.append("// Auto-generated wrapper for clang -E preprocessing")
                 wrapper_content.append("")
+                # OHOS musl's stddef.h does not provide global nullptr_t, while libc++ cstddef
+                # imports it with `using ::nullptr_t;`.
+                wrapper_content.append("#ifdef __cplusplus")
+                wrapper_content.append("#ifndef __C2R_GLOBAL_NULLPTR_T")
+                wrapper_content.append("#define __C2R_GLOBAL_NULLPTR_T 1")
+                wrapper_content.append("typedef decltype(nullptr) nullptr_t;")
+                wrapper_content.append("#endif")
+                wrapper_content.append("#endif")
+                wrapper_content.append("")
                 # musl's bits/alltypes.h uses __NEED_* gating. Keep only safe defaults here:
                 # - For sched_param, prefer including <sched.h> (avoid defining __NEED_struct_sched_param manually).
                 wrapper_content.append("#ifndef __NEED_struct_cpu_set_t")
@@ -2827,6 +2951,14 @@ class SkeletonBuilder:
                 if h_dir_str not in added_dirs:
                     context_flags.extend(["-I", h_dir_str])
                     added_dirs.add(h_dir_str)
+
+            ohos_support_flags, ohos_support_meta = self._build_ohos_clang_support_flags(include_cxx_stdlib=prefer_cxx)
+            if ohos_support_flags:
+                context_flags.extend(ohos_support_flags)
+                for flag, path in self._extract_clang_include_args(ohos_support_flags):
+                    if path:
+                        added_dirs.add(path)
+            tu_ctx["ohos_support_flags"] = ohos_support_meta
 
             def _make_include_diag(dirs: Set[Path]) -> Dict[str, Any]:
                 include_dirs_list = sorted(str(p) for p in (dirs or set()))
@@ -3185,7 +3317,7 @@ class SkeletonBuilder:
                 last_auto_resolve: Optional[Dict[str, Any]] = None
 
                 for preprocess_round in range(1, max_preprocess_attempts + 1):
-                    modes = ["c++", "c"] if prefer_cxx else ["c", "c++"]
+                    modes = self._bindgen_language_modes(prefer_cxx)
                     preprocess_result = None
                     preprocess_lang = None
                     preprocess_cmd = None
@@ -3334,6 +3466,7 @@ class SkeletonBuilder:
                     "--default-enum-style=consts",
                     "--no-prepend-enum-name",
                     "--ignore-functions",
+                    "--ignore-methods",
                     "--no-size_t-is-usize",
                     "--",
                     "-x", "c++" if preprocess_lang == "c++" else "c",
@@ -3702,6 +3835,116 @@ pub const LOS_ERRNO_TSK_ID_INVALID: u32 = 0x02000207;
         v = os.environ.get(name, default)
         return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
 
+    def _find_ohos_clang_resource_include(self) -> Optional[Path]:
+        """查找 OHOS clang resource headers。"""
+        if not self.ohos_root:
+            return None
+        base = (
+            self.ohos_root
+            / "prebuilts"
+            / "clang"
+            / "ohos"
+            / "linux-x86_64"
+            / "llvm"
+            / "lib"
+            / "clang"
+        )
+        if not base.exists():
+            return None
+        current = base / "current" / "include"
+        if current.exists():
+            return current
+        versions: List[Path] = []
+        try:
+            for p in base.iterdir():
+                inc = p / "include"
+                if inc.exists():
+                    versions.append(inc)
+        except Exception:
+            versions = []
+        if not versions:
+            return None
+        versions.sort(key=lambda p: str(p))
+        return versions[-1]
+
+    def _build_ohos_clang_support_flags(self, *, include_cxx_stdlib: bool) -> Tuple[List[str], Dict[str, Any]]:
+        """构建 OHOS clang/bindgen 需要的确定性目标宏和 libc++ include。"""
+        meta: Dict[str, Any] = {
+            "enabled": False,
+            "include_cxx_stdlib": bool(include_cxx_stdlib),
+            "defines": [],
+            "resource_include": None,
+            "cxx_paths": [],
+            "cxx_paths_count": 0,
+        }
+        if not self.ohos_root:
+            return [], meta
+
+        flags: List[str] = ["-D__OHOS_FAMILY__=1"]
+        meta["enabled"] = True
+        meta["defines"].append("__OHOS_FAMILY__=1")
+
+        if not include_cxx_stdlib:
+            return flags, meta
+
+        resource_inc = self._find_ohos_clang_resource_include()
+        if resource_inc:
+            flags.extend(["-isystem", str(resource_inc)])
+            meta["resource_include"] = str(resource_inc)
+
+        ohos_prebuilts_base = self.ohos_root / "prebuilts" / "clang" / "ohos" / "linux-x86_64"
+        candidates = [
+            ohos_prebuilts_base / "llvm_ndk" / "include" / "libcxx-ohos" / "include" / "c++" / "v1",
+            ohos_prebuilts_base / "llvm" / "include" / "libcxx-ohos" / "include" / "c++" / "v1",
+            ohos_prebuilts_base / "libcxx-ndk" / "include" / "libcxx-ohos" / "include" / "c++" / "v1",
+        ]
+        seen: Set[str] = set()
+        for p in candidates:
+            if not p.exists() or not (p / "__config_site").exists():
+                continue
+            key = str(p)
+            if key in seen:
+                continue
+            seen.add(key)
+            meta["cxx_paths"].append(key)
+        meta["cxx_paths_count"] = len(meta["cxx_paths"])
+        if meta["cxx_paths"]:
+            flags.append("-nostdinc++")
+            for key in meta["cxx_paths"]:
+                flags.extend(["-isystem", key])
+        return flags, meta
+
+    @staticmethod
+    def _bindgen_language_modes(prefer_cxx: bool) -> List[str]:
+        """返回 bindgen/clang 语言模式；C++ TU 不回退到 C 模式。"""
+        return ["c++"] if prefer_cxx else ["c", "c++"]
+
+    @staticmethod
+    def _extract_clang_include_args(argv: List[str]) -> List[Tuple[str, str]]:
+        """从 clang 参数中按顺序提取 include 目录。"""
+        res: List[Tuple[str, str]] = []
+        i = 0
+        while i < len(argv):
+            a = argv[i]
+            if a == "-I" and i + 1 < len(argv):
+                res.append(("-I", argv[i + 1]))
+                i += 2
+                continue
+            if isinstance(a, str) and a.startswith("-I") and a != "-I":
+                res.append(("-I", a[len("-I"):]))
+                i += 1
+                continue
+            if a == "-isystem" and i + 1 < len(argv):
+                res.append(("-isystem", argv[i + 1]))
+                i += 2
+                continue
+            if isinstance(a, str) and a.startswith("-isystem") and a != "-isystem":
+                res.append(("-isystem", a[len("-isystem"):]))
+                i += 1
+                continue
+            i += 1
+        return res
+
     def _write_types_generation_report(self, report: dict):
         """
         写入 types 生成报告
@@ -3776,6 +4019,15 @@ pub const LOS_ERRNO_TSK_ID_INVALID: u32 = 0x02000207;
         ):
             wrapper_content: List[str] = []
             wrapper_content.append("// Auto-generated wrapper header for bindgen")
+            wrapper_content.append("")
+            # OHOS musl's stddef.h does not provide global nullptr_t, while libc++ cstddef
+            # imports it with `using ::nullptr_t;`.
+            wrapper_content.append("#ifdef __cplusplus")
+            wrapper_content.append("#ifndef __C2R_GLOBAL_NULLPTR_T")
+            wrapper_content.append("#define __C2R_GLOBAL_NULLPTR_T 1")
+            wrapper_content.append("typedef decltype(nullptr) nullptr_t;")
+            wrapper_content.append("#endif")
+            wrapper_content.append("#endif")
             wrapper_content.append("")
 
             # musl's bits/alltypes.h uses __NEED_* gating; missing some __NEED_* may cause incomplete types.
@@ -3919,28 +4171,7 @@ pub const LOS_ERRNO_TSK_ID_INVALID: u32 = 0x02000207;
 
         def _extract_include_args(argv: List[str]) -> List[Tuple[str, str]]:
             """Extract include directory args (-I/-isystem) from clang argv in order."""
-            res: List[Tuple[str, str]] = []
-            i = 0
-            while i < len(argv):
-                a = argv[i]
-                if a == "-I" and i + 1 < len(argv):
-                    res.append(("-I", argv[i + 1]))
-                    i += 2
-                    continue
-                if a.startswith("-I") and a != "-I":
-                    res.append(("-I", a[len("-I"):]))
-                    i += 1
-                    continue
-                if a == "-isystem" and i + 1 < len(argv):
-                    res.append(("-isystem", argv[i + 1]))
-                    i += 2
-                    continue
-                if a.startswith("-isystem") and a != "-isystem":
-                    res.append(("-isystem", a[len("-isystem"):]))
-                    i += 1
-                    continue
-                i += 1
-            return res
+            return self._extract_clang_include_args(argv)
 
         def _is_out_gen_path(p: str) -> bool:
             norm = (p or "").replace("\\", "/")
@@ -3983,6 +4214,7 @@ pub const LOS_ERRNO_TSK_ID_INVALID: u32 = 0x02000207;
                 "--default-enum-style=consts",
                 "--no-prepend-enum-name",
                 "--ignore-functions",
+                "--ignore-methods",
                 "--no-size_t-is-usize",
                 "--",
             ]
@@ -4020,6 +4252,28 @@ pub const LOS_ERRNO_TSK_ID_INVALID: u32 = 0x02000207;
                 Best-effort: add C++ standard library headers.
                 Prefer OpenHarmony prebuilts' libc++ when available; otherwise fall back to host.
                 """
+                ohos_flags, ohos_meta = self._build_ohos_clang_support_flags(include_cxx_stdlib=True)
+                if ohos_meta.get("cxx_paths_count", 0) > 0:
+                    ohos_meta = dict(ohos_meta)
+                    ohos_meta.update({
+                        "added": True,
+                        "mode": "ohos_prebuilts",
+                        "paths": list(ohos_meta.get("cxx_paths") or []),
+                        "paths_count": int(ohos_meta.get("cxx_paths_count") or 0),
+                        "clang_resource": ohos_meta.get("resource_include"),
+                    })
+                    return ohos_flags, ohos_meta
+                if self.ohos_root:
+                    ohos_meta = dict(ohos_meta)
+                    ohos_meta.update({
+                        "added": bool(ohos_flags),
+                        "mode": "ohos_prebuilts_missing_config_site",
+                        "paths": [],
+                        "paths_count": 0,
+                        "clang_resource": ohos_meta.get("resource_include"),
+                    })
+                    return ohos_flags, ohos_meta
+
                 cpp_flags: List[str] = []
                 meta: Dict[str, Any] = {"added": False, "mode": None, "paths": [], "paths_count": 0, "clang_resource": None}
 
@@ -4110,7 +4364,7 @@ pub const LOS_ERRNO_TSK_ID_INVALID: u32 = 0x02000207;
 
             # Build language-mode attempts: try preferred mode first, then fallback.
             mode_attempts: List[Dict[str, Any]] = []
-            modes = ["c++", "c"] if prefer_cxx else ["c", "c++"]
+            modes = self._bindgen_language_modes(prefer_cxx)
             for lang in modes:
                 mode_flags: List[str] = ["-x", "c++", "-std=c++17"] if lang == "c++" else ["-x", "c"]
                 cpp_flags: List[str] = []
@@ -5957,10 +6211,150 @@ pub type mode_t = u32;
 
     @staticmethod
     def _parse_defined_type_names_from_types_rs_text(types_rs: str) -> Set[str]:
-        """Extract `pub (struct|enum|union|type) Name` items from types.rs (best-effort)."""
+        """提取 types.rs 中可通过 `crate::types::Name` 访问的类型名。"""
         if not types_rs:
             return set()
-        return set(re.findall(r"\bpub\s+(?:struct|enum|union|type)\s+([A-Za-z_]\w*)\b", types_rs))
+        out = set(re.findall(r"\bpub\s+(?:struct|enum|union|type)\s+([A-Za-z_]\w*)\b", types_rs))
+        for group in re.findall(r"\bpub\s+use\s+[^;]+::\{([^}]+)\}", types_rs):
+            for raw in group.split(","):
+                name = raw.strip()
+                if " as " in name:
+                    name = name.split(" as ", 1)[1].strip()
+                if name and re.match(r"^[A-Za-z_]\w*$", name):
+                    out.add(name)
+        for name in re.findall(r"\bpub\s+use\s+[^;{}]+::([A-Za-z_]\w*)\s*;", types_rs):
+            out.add(name)
+        return out
+
+    @staticmethod
+    def _select_tu_type_exports(
+        defined_types: Set[str],
+        exported_names: Set[str],
+        already_defined_names: Optional[Set[str]] = None,
+    ) -> List[str]:
+        """选择本轮 TU bindgen 实际生成、且当前 types.rs 尚未定义的类型名。"""
+        return sorted((defined_types or set()) - (exported_names or set()) - (already_defined_names or set()))
+
+    @staticmethod
+    def _eval_c_integer_constant_expr(expr: str, known_values: Dict[str, int]) -> Optional[int]:
+        """安全求值 C enum 中的整型常量表达式。"""
+        if not expr:
+            return None
+
+        s = str(expr).strip()
+        s = re.sub(r"\b(0[xX][0-9A-Fa-f]+|\d+)(?:[uUlL]+)\b", r"\1", s)
+        for name, value in sorted((known_values or {}).items(), key=lambda item: len(item[0]), reverse=True):
+            s = re.sub(rf"\b{re.escape(name)}\b", str(int(value)), s)
+        if not re.fullmatch(r"[0-9A-Fa-fxX+\-*/%()|&^~<>\s]+", s):
+            return None
+
+        try:
+            node = ast.parse(s, mode="eval")
+        except SyntaxError:
+            return None
+
+        def _eval(node_obj: ast.AST) -> int:
+            if isinstance(node_obj, ast.Expression):
+                return _eval(node_obj.body)
+            if isinstance(node_obj, ast.Constant) and isinstance(node_obj.value, int):
+                return int(node_obj.value)
+            if isinstance(node_obj, ast.UnaryOp):
+                val = _eval(node_obj.operand)
+                if isinstance(node_obj.op, ast.USub):
+                    return -val
+                if isinstance(node_obj.op, ast.UAdd):
+                    return val
+                if isinstance(node_obj.op, ast.Invert):
+                    return ~val
+            if isinstance(node_obj, ast.BinOp):
+                left = _eval(node_obj.left)
+                right = _eval(node_obj.right)
+                if isinstance(node_obj.op, ast.Add):
+                    return left + right
+                if isinstance(node_obj.op, ast.Sub):
+                    return left - right
+                if isinstance(node_obj.op, ast.Mult):
+                    return left * right
+                if isinstance(node_obj.op, ast.Div):
+                    return int(left / right)
+                if isinstance(node_obj.op, ast.FloorDiv):
+                    return left // right
+                if isinstance(node_obj.op, ast.Mod):
+                    return left % right
+                if isinstance(node_obj.op, ast.LShift):
+                    return left << right
+                if isinstance(node_obj.op, ast.RShift):
+                    return left >> right
+                if isinstance(node_obj.op, ast.BitOr):
+                    return left | right
+                if isinstance(node_obj.op, ast.BitAnd):
+                    return left & right
+                if isinstance(node_obj.op, ast.BitXor):
+                    return left ^ right
+            raise ValueError("unsupported enum constant expression")
+
+        try:
+            return int(_eval(node))
+        except Exception:
+            return None
+
+    @staticmethod
+    def _infer_tu_truth_constant_type(name: str, value: int) -> str:
+        """根据常量名和值推断 Rust 常量类型。"""
+        return "i32" if int(value) < 0 or int(value) <= 0x7FFFFFFF else "u32"
+
+    @staticmethod
+    def _extract_tu_truth_constants_from_text(text: str) -> Dict[str, Tuple[str, str]]:
+        """从预处理后的 TU 文本中提取常见 OHOS enum 常量真值。"""
+        if not text:
+            return {}
+
+        interesting_prefixes = (
+            "HDF_",
+            "LOG_",
+            "LOS_",
+            "SOFTBUS_",
+            "AUDIO_",
+            "SERVICE_",
+            "DEVICE_",
+            "HILOG_",
+        )
+        cleaned = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+        cleaned = re.sub(r"//.*", "", cleaned)
+        out: Dict[str, Tuple[str, str]] = {}
+        known_values: Dict[str, int] = {}
+
+        enum_pattern = re.compile(
+            r"(?:typedef\s+)?enum(?:\s+[A-Za-z_]\w*)?\s*\{(?P<body>.*?)\}\s*(?:[A-Za-z_]\w*)?\s*;",
+            re.S,
+        )
+        for enum_match in enum_pattern.finditer(cleaned):
+            current_value: Optional[int] = None
+            for raw_item in enum_match.group("body").split(","):
+                item = re.sub(r"(?m)^\s*#.*$", "", raw_item).strip()
+                if not item:
+                    continue
+                m = re.match(r"^([A-Za-z_]\w*)\s*(?:=\s*(.+))?$", item, re.S)
+                if not m:
+                    continue
+                name = m.group(1)
+                expr = (m.group(2) or "").strip()
+                if expr:
+                    value = SkeletonBuilder._eval_c_integer_constant_expr(expr, known_values)
+                elif current_value is not None:
+                    value = current_value + 1
+                else:
+                    value = 0
+                if value is None:
+                    continue
+                current_value = int(value)
+                known_values[name] = int(value)
+                if name.startswith(interesting_prefixes):
+                    out[name] = (
+                        SkeletonBuilder._infer_tu_truth_constant_type(name, int(value)),
+                        str(int(value)),
+                    )
+        return out
 
     @staticmethod
     def _prefix_types_in_rust_type_expr(type_expr: str, type_names: Set[str]) -> str:
@@ -7323,8 +7717,7 @@ pub type mode_t = u32;
                 if not ok:
                     continue
                 defined = self._extract_defined_type_names_from_bindgen_output(out_rs)
-                requested = {n for n in (types or set()) if isinstance(n, str) and n.strip()}
-                present = [n for n in sorted(requested) if n in defined]
+                present = self._select_tu_type_exports(defined, exported_names, defined_types)
                 if present:
                     generated_units.append(prov)
                     exported_by_provider[prov] = present
@@ -8792,9 +9185,8 @@ pub type mode_t = u32;
             if child.type == 'function_definition':
                 sig = self._parse_function_definition(child, source_code)
                 if sig:
-                    # 标记为类方法
                     sig.name = f"{class_name}_{sig.name}"  # 添加类名前缀
-                    sig.is_callback = True  # 成员方法可能作为回调
+                    sig.is_callback = False
                     methods.append(sig)
             elif child.type == 'declaration':
                 # 可能是成员函数声明（只有声明没有定义）
@@ -8840,7 +9232,7 @@ pub type mode_t = u32;
                 return_type=return_type,
                 parameters=parameters,
                 is_static=False,
-                is_callback=True  # C++ 方法通常需要特殊处理
+                is_callback=False
             )
             
         except Exception as e:
@@ -9240,6 +9632,11 @@ pub type mode_t = u32;
                             elif is_array:
                                 param_type += '[]'
 
+                            # C 的 func(void) 表示无参数，不能生成 arg: ()。
+                            clean_param_type = param_type.replace('const', '').replace('volatile', '').strip()
+                            if clean_param_type == 'void' and not is_pointer and not is_array and not param_name:
+                                continue
+
                             # 如果没有找到参数名，使用默认值
                             if not param_name:
                                 param_name = 'arg'
@@ -9280,6 +9677,39 @@ pub type mode_t = u32;
                 p_base = extract_base_type(param_type)
                 if p_base and p_base not in primitives:
                     self.collected_custom_types.add(p_base)
+
+    @staticmethod
+    def _normalize_collected_type_names(
+        type_names: Set[str],
+        defined_types: Set[str],
+        rust_primitives: Set[str],
+    ) -> Set[str]:
+        """将收集到的 C/C++ 类型名归一到当前 types.rs 中真实存在的 Rust 类型名。"""
+        normalized: Set[str] = set()
+        known = {t for t in (defined_types or set()) if isinstance(t, str) and t}
+        primitives = set(rust_primitives or set())
+        for raw in type_names or set():
+            name = str(raw or "").strip()
+            if not name:
+                continue
+            if name in primitives or name in known:
+                normalized.add(name)
+                continue
+            if TYPE_MAPPER_AVAILABLE:
+                try:
+                    before_count = len(normalized)
+                    mapped = TypeMapper.map_c_type(name, known_rust_type_names=known)
+                    for found in re.findall(r"crate::types::([A-Za-z_]\w*)", mapped or ""):
+                        if found:
+                            normalized.add(found)
+                    if mapped and re.match(r"^[A-Za-z_]\w*$", mapped) and mapped not in primitives:
+                        normalized.add(mapped)
+                    if len(normalized) > before_count and name not in normalized:
+                        continue
+                except Exception:
+                    pass
+            normalized.add(name)
+        return normalized
     
     def generate_function_stubs(
         self, 
@@ -9319,7 +9749,12 @@ pub type mode_t = u32;
             # Basic sanity: must look like a Rust fn signature.
             if " fn " not in f" {rs} ":
                 return False
-            sig.rust_signature = rs
+            sig.rust_signature = TypeMapper.adapt_function_signature_abi(
+                rs,
+                is_static=sig.is_static,
+                is_callback=sig.is_callback,
+                func_name=sig.name,
+            )
             try:
                 stubs[sig.name] = self._generate_stub(sig)
             except Exception:
@@ -9332,6 +9767,8 @@ pub type mode_t = u32;
         sig_refiner = None
         if self._env_flag("C2R_TRUTH_MODE", "0"):
             # Truth-mode: keep signatures fully deterministic (no LLM refiner).
+            sig_refiner = None
+        elif not self._env_flag("C2R_LLM_REFINE_SIGNATURES", "1"):
             sig_refiner = None
         else:
             try:
@@ -9356,6 +9793,16 @@ pub type mode_t = u32;
                 logger.info("LLMTypeMapper 已初始化，将使用 LLM 辅助验证类型映射")
             except Exception as e:
                 logger.warning(f"LLMTypeMapper 初始化失败: {e}，回退到 TypeMapper")
+
+        known_rust_type_names: Set[str] = set()
+        try:
+            types_rs_path = self.output_dir / "src" / "types.rs"
+            if types_rs_path.exists():
+                known_rust_type_names = self._parse_defined_type_names_from_types_rs_text(
+                    types_rs_path.read_text(encoding="utf-8", errors="ignore")
+                )
+        except Exception:
+            known_rust_type_names = set()
         
         # 优先使用 TypeMapper（确定性规则引擎）
         if use_type_mapper and TYPE_MAPPER_AVAILABLE:
@@ -9383,9 +9830,17 @@ pub type mode_t = u32;
                                 is_array = "[" in c_type and "]" in c_type
 
                                 # 参数名需要做 Rust 关键字规避（与 TypeMapper 保持一致）
-                                clean_name = param_name
+                                clean_name = str(param_name or "").strip()
+                                clean_c_type = c_type.replace("const", "").replace("volatile", "").strip()
+                                if (
+                                    clean_c_type == "void"
+                                    and not is_ptr
+                                    and not is_array
+                                    and clean_name in {"", "arg", "arg_0", "void"}
+                                ):
+                                    continue
                                 if TYPE_MAPPER_AVAILABLE:
-                                    clean_name = TypeMapper.sanitize_identifier(param_name)
+                                    clean_name = TypeMapper.sanitize_identifier(clean_name)
 
                                 result = llm_type_mapper_instance.map_type(
                                     c_type,
@@ -9408,7 +9863,11 @@ pub type mode_t = u32;
                             )
                             
                             # 生成函数签名
-                            func_mod = "fn" if sig.is_static else "pub extern \"C\" fn"
+                            func_mod = TypeMapper.function_modifier(
+                                is_static=sig.is_static,
+                                is_callback=sig.is_callback,
+                                func_name=sig.name,
+                            )
                             func_name = sig.name
                             if TYPE_MAPPER_AVAILABLE:
                                 func_name = TypeMapper.sanitize_identifier(sig.name)
@@ -9423,6 +9882,7 @@ pub type mode_t = u32;
                                     c_signature=sig.c_signature,
                                     candidate_rust_signature=sig.rust_signature,
                                     is_static=sig.is_static,
+                                    is_callback=sig.is_callback,
                                 )
                                 if r.ok and r.refined_signature:
                                     sig.rust_signature = r.refined_signature
@@ -9434,7 +9894,12 @@ pub type mode_t = u32;
                     
                     # 使用 TypeMapper 生成函数桩（默认或回退）
                     func_mod, params_str, ret_str = TypeMapper.process_function_signature(
-                        sig.return_type, sig.parameters, sig.is_static
+                        sig.return_type,
+                        sig.parameters,
+                        sig.is_static,
+                        known_rust_type_names=known_rust_type_names,
+                        is_callback=sig.is_callback,
+                        func_name=sig.name,
                     )
                     # 确保函数名与 stub 一致（TypeMapper 会规避 Rust 关键字）
                     func_name = TypeMapper.sanitize_identifier(sig.name)
@@ -9447,6 +9912,7 @@ pub type mode_t = u32;
                             c_signature=sig.c_signature,
                             candidate_rust_signature=sig.rust_signature,
                             is_static=sig.is_static,
+                            is_callback=sig.is_callback,
                         )
                         if r.ok and r.refined_signature:
                             sig.rust_signature = r.refined_signature
@@ -9459,7 +9925,12 @@ pub type mode_t = u32;
                     if llm_translate_fn:
                         try:
                             rust_sig = llm_translate_fn(sig.c_signature)
-                            sig.rust_signature = rust_sig
+                            sig.rust_signature = TypeMapper.adapt_function_signature_abi(
+                                rust_sig,
+                                is_static=sig.is_static,
+                                is_callback=sig.is_callback,
+                                func_name=sig.name,
+                            )
                         except Exception as e2:
                             logger.warning(f"LLM 翻译失败: {sig.name}, {e2}")
                             sig.rust_signature = self._fallback_signature_translation(sig)
@@ -9476,7 +9947,12 @@ pub type mode_t = u32;
                     # 使用 LLM 翻译签名
                     try:
                         rust_sig = llm_translate_fn(sig.c_signature)
-                        sig.rust_signature = rust_sig
+                        sig.rust_signature = TypeMapper.adapt_function_signature_abi(
+                            rust_sig,
+                            is_static=sig.is_static,
+                            is_callback=sig.is_callback,
+                            func_name=sig.name,
+                        )
                     except Exception as e:
                         logger.warning(f"LLM 翻译失败: {sig.name}, {e}")
                         sig.rust_signature = self._fallback_signature_translation(sig)
@@ -9494,6 +9970,7 @@ pub type mode_t = u32;
                         c_signature=sig.c_signature,
                         candidate_rust_signature=sig.rust_signature,
                         is_static=sig.is_static,
+                        is_callback=sig.is_callback,
                     )
                     if r.ok and r.refined_signature:
                         sig.rust_signature = r.refined_signature
@@ -9553,14 +10030,12 @@ pub type mode_t = u32;
         
         params_str = ", ".join(rust_params)
         
-        # 生成函数签名
-        # static 函数: 普通 Rust 函数
-        # 非 static 函数: pub extern "C" fn（可能被外部调用）
-        if sig.is_static:
-            return f"fn {sig.name}({params_str}){return_clause}"
-        else:
-            # 非 static C 函数通常可能被外部调用，使用 extern "C"
-            return f"pub extern \"C\" fn {sig.name}({params_str}){return_clause}"
+        modifier = TypeMapper.function_modifier(
+            is_static=sig.is_static,
+            is_callback=sig.is_callback,
+            func_name=sig.name,
+        )
+        return f"{modifier} {sig.name}({params_str}){return_clause}"
     
     def _generate_stub(self, sig: FunctionSignature) -> str:
         """
@@ -9580,6 +10055,9 @@ pub type mode_t = u32;
             sig_part = sig_part.rstrip('{').strip()
         else:
             sig_part = rust_sig
+
+        sig_part = sig_part.rstrip(";").rstrip()
+        sig_part = sig_part.rstrip("`'").rstrip()
         
         # 始终生成只包含 unimplemented!() 的桩代码
         # 不保留任何函数体内容
@@ -10283,17 +10761,27 @@ fn main() {
         这是解决 "cannot find type" 的兜底方案。
         在所有文件处理完后调用此方法，生成缺失的不透明结构体。
         """
-        # Truth-mode: do not generate defensive opaque types / common constants.
-        # Keep missing types as compile-time signals (usually indicates incomplete TU/build context).
-        if self._env_flag("C2R_TRUTH_MODE", "0") or (not self._env_flag("C2R_ENABLE_FINALIZE_TYPES_RS", "1")):
-            logger.info("finalize_types_rs skipped (truth-mode or disabled)")
+        types_rs_path = self.output_dir / "src" / "types.rs"
+
+        if not self._env_flag("C2R_ENABLE_FINALIZE_TYPES_RS", "1"):
+            logger.info("finalize_types_rs skipped (disabled)")
+            return
+
+        # Truth-mode: do not generate defensive opaque types or broad common constants.
+        # TU enum constants are different: they are exact facts from the selected `.i` and must
+        # enter types.rs so typed-constant hints can reach function translation prompts.
+        if self._env_flag("C2R_TRUTH_MODE", "0"):
+            existing_content = ""
+            if types_rs_path.exists():
+                with open(types_rs_path, 'r', encoding='utf-8') as f:
+                    existing_content = f.read()
+            self._append_tu_truth_constants(types_rs_path, existing_content)
+            logger.info("finalize_types_rs skipped defensive opaque types (truth-mode); kept TU truth constants")
             return
 
         if not TYPE_UTILS_AVAILABLE:
             logger.warning("type_utils 不可用，跳过 finalize_types_rs")
             return
-        
-        types_rs_path = self.output_dir / "src" / "types.rs"
         
         # 1. 读取现有的 types.rs，看看 bindgen 已经生成了什么
         existing_content = ""
@@ -10337,7 +10825,12 @@ fn main() {
             'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
             'int8_t', 'int16_t', 'int32_t', 'int64_t'
         }
-        missing_types = self.collected_custom_types - defined_types - rust_primitives
+        collected_custom_types = self._normalize_collected_type_names(
+            set(self.collected_custom_types or set()),
+            defined_types,
+            rust_primitives,
+        )
+        missing_types = collected_custom_types - defined_types - rust_primitives
         
         if not missing_types:
             logger.debug("没有缺失的类型需要生成")
@@ -10594,6 +11087,96 @@ fn main() {
 
         logger.info(f"Tier-0 primitive typedef fixes applied: {len(fixes)}")
         return {"applied": len(fixes), "fixes": fixes}
+
+    def _collect_tu_truth_constants(self) -> Dict[str, Tuple[str, str]]:
+        """收集 stage1 pinned `.i` 中的 enum 常量真值。"""
+        constants: Dict[str, Tuple[str, str]] = {}
+        seen_paths: Set[Path] = set()
+        for rec in (getattr(self, "_tu_context_files", {}) or {}).values():
+            if not isinstance(rec, dict):
+                continue
+            raw_path = rec.get("preprocessed_file")
+            if not raw_path:
+                continue
+            try:
+                pre_path = Path(str(raw_path)).expanduser()
+            except Exception:
+                continue
+            if pre_path in seen_paths or not pre_path.exists():
+                continue
+            seen_paths.add(pre_path)
+            try:
+                text = pre_path.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+            for name, item in self._extract_tu_truth_constants_from_text(text).items():
+                constants.setdefault(name, item)
+        return constants
+
+    @staticmethod
+    def _rewrite_existing_constants_with_truth(
+        existing_content: str,
+        truth_constants: Dict[str, Tuple[str, str]],
+    ) -> Tuple[str, int]:
+        """用 TU 真值改写 types.rs 中已存在但值错误的常量。"""
+        if not existing_content or not truth_constants:
+            return existing_content or "", 0
+
+        replaced = 0
+        updated = existing_content
+        for name, (_truth_type, truth_value) in sorted(truth_constants.items(), key=lambda kv: len(kv[0]), reverse=True):
+            pattern = re.compile(
+                rf"(?m)^(?P<prefix>\s*pub\s+const\s+{re.escape(name)}\s*:\s*[^=;]+?=\s*)(?P<value>[^;]+)(?P<suffix>;)",
+            )
+
+            def _replace(match: re.Match) -> str:
+                nonlocal replaced
+                current = (match.group("value") or "").strip()
+                if current == truth_value:
+                    return match.group(0)
+                replaced += 1
+                return f"{match.group('prefix')}{truth_value}{match.group('suffix')}"
+
+            updated = pattern.sub(_replace, updated)
+        return updated, replaced
+
+    def _append_tu_truth_constants(self, types_rs_path: Path, existing_content: str) -> str:
+        """只把预处理 TU 中的确定性 enum 常量写入 types.rs。"""
+        truth_constants = self._collect_tu_truth_constants()
+        if not truth_constants:
+            return existing_content or ""
+
+        types_rs_path.parent.mkdir(parents=True, exist_ok=True)
+        updated_content, replaced = self._rewrite_existing_constants_with_truth(existing_content or "", truth_constants)
+        if replaced:
+            try:
+                types_rs_path.write_text(updated_content, encoding="utf-8", errors="ignore")
+                existing_content = updated_content
+                logger.info(f"已用 TU 真值改写 {replaced} 个常量")
+            except Exception:
+                existing_content = updated_content
+
+        defined_constants = set(re.findall(r'pub const (\w+):', existing_content or ""))
+        constants_to_add = [
+            (name, typ, value)
+            for name, (typ, value) in sorted(truth_constants.items())
+            if name not in defined_constants
+        ]
+        if not constants_to_add:
+            return existing_content or ""
+
+        with open(types_rs_path, 'a', encoding='utf-8') as f:
+            f.write("\n// ============================================================\n")
+            f.write("// TU Truth Constants (from preprocessed translation units)\n")
+            f.write("// ============================================================\n\n")
+            for name, typ, value in constants_to_add:
+                f.write(f"pub const {name}: {typ} = {value};\n")
+
+        logger.info(f"已追加 {len(constants_to_add)} 个 TU 真值常量到 types.rs")
+        try:
+            return types_rs_path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            return existing_content or ""
     
     def _append_common_constants(self, types_rs_path: Path, existing_content: str):
         """
@@ -10603,6 +11186,10 @@ fn main() {
         这些常量在 OpenHarmony/SoftBus 项目中经常使用，
         LLM 翻译时会保留原始常量名，因此需要预先定义。
         """
+        truth_constants = self._collect_tu_truth_constants()
+        if truth_constants:
+            existing_content = self._append_tu_truth_constants(types_rs_path, existing_content)
+
         # 检查已存在的常量，避免重复定义
         defined_constants = set(re.findall(r'pub const (\w+):', existing_content))
         
@@ -10628,6 +11215,18 @@ fn main() {
                 # POSIX 常量
                 ("PTHREAD_MUTEX_INITIALIZER", "pthread_mutex_t", "unsafe { ::core::mem::zeroed() }"),
             ]
+
+        if truth_constants:
+            constant_map: Dict[str, Tuple[str, str]] = {}
+            for name, typ, value in all_constants:
+                if name in truth_constants:
+                    truth_type, truth_value = truth_constants[name]
+                    constant_map[name] = (typ or truth_type, truth_value)
+                else:
+                    constant_map[name] = (typ, value)
+            for name, (typ, value) in truth_constants.items():
+                constant_map.setdefault(name, (typ, value))
+            all_constants = [(name, typ, value) for name, (typ, value) in constant_map.items()]
         
         # 先确保 pthread 类型存在（在常量之前添加）
         self._ensure_pthread_types(types_rs_path, existing_content)
@@ -11131,6 +11730,12 @@ def create_signature_translation_prompt(c_signature: str) -> str:
     
     这个提示词专门用于翻译签名，难度低，准确率高
     """
+    suite = TypeMapper.project_suite() if TYPE_MAPPER_AVAILABLE else "ohos"
+    target_rule = (
+        "For an OSS project function definition, use `pub fn`; keep `extern \"C\"` only for a real callback/function-pointer ABI."
+        if suite == "oss"
+        else "For a non-static OHOS project function definition, use `pub extern \"C\" fn`."
+    )
     return f'''Translate the following C function signature to Rust.
 
 Rules:
@@ -11139,6 +11744,7 @@ Rules:
 3. Common type mappings: int→i32, unsigned int→u32, char→i8, void*→*mut std::ffi::c_void
 4. Pointer parameters: Type* → *mut Type or *const Type
 5. For callbacks/function pointers, use: extern "C" fn(...) -> ...
+6. {target_rule}
 
 C Signature:
 {c_signature}

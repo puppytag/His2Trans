@@ -14,6 +14,7 @@ import os
 import sys
 import re
 import json
+import copy
 import hashlib
 import shutil
 import subprocess
@@ -25,6 +26,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 import logging
 from threading import Semaphore
+from project_profile import is_oss_suite
 
 # 导入日志配置
 from log_config import ensure_logging_setup, LogPrinter
@@ -32,10 +34,8 @@ ensure_logging_setup()
 logger = logging.getLogger(__name__)
 log = LogPrinter(__name__)
 
-# vLLM 并发控制信号量 - 限制同时最多 N 个请求（全局共享，跨进程）
-# 从环境变量获取配置，默认 4（降低并发避免超时）
-# 原来默认 120 导致大量请求超时
-VLLM_CONCURRENT_LIMIT = int(os.environ.get("VLLM_CONCURRENT_LIMIT", "120"))
+# LLM 并发控制信号量 - 限制同时最多 N 个请求（外部 API 和 vLLM 模式共用）
+VLLM_CONCURRENT_LIMIT = int(os.environ.get("LLM_CONCURRENT_LIMIT", os.environ.get("VLLM_CONCURRENT_LIMIT", "120")))
 _vllm_semaphore = Semaphore(VLLM_CONCURRENT_LIMIT)
 
 
@@ -68,6 +68,12 @@ from workspace_config import get_reranked_path, get_project_path
 from scripts.semantic_slice import extract_semantic_slice
 from scripts.dependency_prober import collect_global_declarations
 from scripts.usage_index import ensure_usage_examples
+from translation_context_bundle import build_context_prefix, context_prefix_limit_from_env
+from translation_dependency_closure import build_dependency_closure
+from translation_truth_manifest import build_truth_manifest
+from cpp_call_extractor import extract_cpp_called_identifiers
+from canonical_result import build_compile_result, write_compile_result
+from translation_prompt_builder import build_unit_repair_prompt, build_unit_translation_prompt
 
 # types.rs context slicing (reduce prompt size deterministically)
 try:
@@ -121,7 +127,62 @@ logging.getLogger("openai").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-CONTEXT_PREFIX_CHAR_LIMIT = 8000
+CONTEXT_PREFIX_CHAR_LIMIT = context_prefix_limit_from_env()
+USAGE_PROMPT_MAX_CHARS = int(os.environ.get("C2R_USAGE_PROMPT_MAX_CHARS", "2500"))
+USAGE_PROMPT_MAX_SYMBOLS = int(os.environ.get("C2R_USAGE_PROMPT_MAX_SYMBOLS", "8"))
+USAGE_PROMPT_MAX_EXAMPLES_PER_SYMBOL = int(os.environ.get("C2R_USAGE_PROMPT_MAX_EXAMPLES_PER_SYMBOL", "2"))
+USAGE_PROMPT_MAX_SNIPPET_CHARS = int(os.environ.get("C2R_USAGE_PROMPT_MAX_SNIPPET_CHARS", "500"))
+USAGE_LOW_VALUE_SYMBOLS = {
+    "p",
+    "q",
+    "i",
+    "j",
+    "k",
+    "n",
+    "len",
+    "length",
+    "size",
+    "cnt",
+    "count",
+    "rc",
+    "ret",
+    "err",
+    "end",
+    "start",
+    "tmp",
+    "ptr",
+    "buf",
+    "data",
+    "LOG_ERROR",
+    "LOG_INFO",
+    "LOG_DEBUG",
+    "LOG_WARN",
+}
+PROMPT_LOW_VALUE_DECL_SYMBOLS = {
+    "i",
+    "j",
+    "k",
+    "n",
+    "ret",
+    "rc",
+    "err",
+    "result",
+    "request",
+    "response",
+    "tmp",
+    "s",
+    "str",
+    "path",
+    "name",
+    "id",
+    "value",
+    "data",
+    "buf",
+    "len",
+    "size",
+    "count",
+    "index",
+}
 
 # Token 限制常量（防止超过模型最大上下文窗口）
 # Qwen3-Coder-30B 的最大上下文是 262144 tokens (256K)
@@ -133,9 +194,10 @@ CONTEXT_PREFIX_CHAR_LIMIT = 8000
 # 说明：
 # - skeleton_context 通常是 prompt 的主体；过大（例如 30k~80k tokens）会显著增加 vLLM 的
 #   KV cache 压力与排队时间，导致 Request timed out + 重试风暴。
-# - 允许通过环境变量覆盖；默认不主动截断（保持历史行为），由“选择性上下文”策略来降 token。
-MAX_SKELETON_CONTEXT_CHARS = int(os.environ.get("MAX_SKELETON_CONTEXT_CHARS", "2000000"))
-MAX_TOTAL_PROMPT_CHARS = int(os.environ.get("MAX_TOTAL_PROMPT_CHARS", "2000000"))  # ~500K tokens
+# - 未显式设置上限时不裁剪，交给大上下文模型或上游 API 暴露真实错误。
+MAX_SKELETON_CONTEXT_CHARS = context_prefix_limit_from_env("MAX_SKELETON_CONTEXT_CHARS")
+MAX_TOTAL_PROMPT_CHARS = context_prefix_limit_from_env("MAX_TOTAL_PROMPT_CHARS")
+MAX_INPUT_TOKENS = context_prefix_limit_from_env("C2R_MAX_INPUT_TOKENS")
 
 def estimate_tokens(text: str) -> int:
     """粗略估计文本的 token 数量（英文约 4 字符/token，中文约 2 字符/token）"""
@@ -302,7 +364,7 @@ class FunctionLocation:
 
 class CallGraphAnalyzer:
     """调用图分析器，用于拓扑排序"""
-    
+
     def __init__(
         self,
         functions_dir: Path,
@@ -315,24 +377,24 @@ class CallGraphAnalyzer:
         self.functions: Dict[str, FunctionInfo] = {}
         self.call_graph: Dict[str, Set[str]] = defaultdict(set)  # caller -> callees
         self.reverse_graph: Dict[str, Set[str]] = defaultdict(set)  # callee -> callers
-    
+
     def analyze(self) -> List[str]:
         """
         分析调用图并返回拓扑排序后的函数列表（自底向上）
-        
+
         返回: 按依赖顺序排列的函数文件名列表（叶子函数在前）
         """
         # 1. 加载所有函数
         self._load_functions()
-        
+
         # 2. 构建调用图
         self._build_call_graph()
-        
+
         # 3. 拓扑排序
         sorted_functions = self._topological_sort()
-        
+
         return sorted_functions
-    
+
     def _load_functions(self):
         """加载所有函数信息"""
         if self.target_func_files:
@@ -348,13 +410,13 @@ class CallGraphAnalyzer:
 
         for func_file in func_files:
             func_name = func_file.stem  # e.g., "cJsonMock_1"
-            
+
             with open(func_file, 'r', encoding='utf-8', errors='ignore') as f:
                 c_code = f.read()
-            
+
             # 提取实际函数名
             actual_name = self._extract_function_name(c_code)
-            
+
             # 解析文件名获取基础信息
             parts = func_name.rsplit('_', 1)
             if len(parts) == 2:
@@ -366,7 +428,7 @@ class CallGraphAnalyzer:
             else:
                 file_name = func_name
                 index = 0
-            
+
             self.functions[func_name] = FunctionInfo(
                 name=actual_name or func_name,
                 file_name=file_name,
@@ -375,7 +437,7 @@ class CallGraphAnalyzer:
                 rust_signature="",
                 dependencies=set()
             )
-    
+
     def _extract_function_name(self, c_code: str) -> Optional[str]:
         """从 C 代码中提取函数名"""
         def _unwrap_to_identifier(decl_node):
@@ -435,7 +497,7 @@ class CallGraphAnalyzer:
             pass
 
         return None
-    
+
     def _build_call_graph(self):
         """构建调用图（优先从步骤1生成的调用图文件读取）"""
         import json
@@ -598,7 +660,7 @@ class CallGraphAnalyzer:
                 logger.warning("调用图文件存在但格式不匹配或无法映射，回退到字符串匹配方式")
             except Exception as e:
                 logger.warning(f"读取调用图文件失败: {e}，回退到原有字符串匹配方式")
-        
+
         # 回退到原有逻辑（向后兼容）
         logger.info("使用字符串匹配方式构建调用图（向后兼容）")
         for func_name, func_info in self.functions.items():
@@ -607,7 +669,7 @@ class CallGraphAnalyzer:
             if dep_file.exists():
                 with open(dep_file, 'r', encoding='utf-8', errors='ignore') as f:
                     dep_content = f.read()
-                
+
                 # 解析依赖的函数
                 for other_name, other_info in self.functions.items():
                     if other_name == func_name:
@@ -617,7 +679,7 @@ class CallGraphAnalyzer:
                         self.call_graph[func_name].add(other_name)
                         self.reverse_graph[other_name].add(func_name)
                         func_info.dependencies.add(other_name)
-    
+
     def _topological_sort(self) -> List[str]:
         """
         拓扑排序，返回自底向上的顺序（叶子函数在前）
@@ -628,27 +690,27 @@ class CallGraphAnalyzer:
             for callee in callees:
                 if callee in in_degree:
                     in_degree[callee] += 1
-        
+
         # 从叶子函数开始（入度为 0，即不被任何函数调用）
         # 注意：这里我们反向思考，先翻译"不调用其他函数的函数"
         # 所以我们计算的是"出度"
         out_degree = {name: len(self.call_graph.get(name, set())) for name in self.functions}
-        
+
         result = []
         queue = [name for name, degree in out_degree.items() if degree == 0]
         visited = set()
-        
+
         while queue:
             # 按文件名和索引排序，保持稳定性
             queue.sort(key=lambda x: (self.functions[x].file_name, self.functions[x].index))
             current = queue.pop(0)
-            
+
             if current in visited:
                 continue
-            
+
             visited.add(current)
             result.append(current)
-            
+
             # 处理依赖于当前函数的函数
             for caller in self.reverse_graph.get(current, set()):
                 if caller not in visited:
@@ -656,30 +718,30 @@ class CallGraphAnalyzer:
                     deps = self.call_graph.get(caller, set())
                     if all(d in visited for d in deps):
                         queue.append(caller)
-        
+
         # 处理剩余的函数（可能存在循环依赖）
         for name in self.functions:
             if name not in visited:
                 result.append(name)
-        
+
         return result
-    
+
     def get_parallel_layers(self) -> List[List[str]]:
         """
         返回分层的函数列表，每层内的函数可以并行处理
-        
+
         原理：
         - 第1层：出度为0的函数（叶子函数，不调用其他函数）
         - 第2层：依赖的函数都在第1层的函数
         - 第N层：依赖的函数都在前N-1层的函数
-        
+
         Returns:
             List[List[str]]: 每层是一个可并行处理的函数列表
         """
         out_degree = {name: len(self.call_graph.get(name, set())) for name in self.functions}
         visited = set()
         layers = []
-        
+
         while len(visited) < len(self.functions):
             # 找出当前可以处理的函数（所有依赖都已在之前的层处理完）
             current_layer = []
@@ -689,25 +751,25 @@ class CallGraphAnalyzer:
                 deps = self.call_graph.get(name, set())
                 if all(d in visited for d in deps):
                     current_layer.append(name)
-            
+
             if not current_layer:
                 # 有循环依赖，将剩余函数放入最后一层
                 remaining = [n for n in self.functions if n not in visited]
                 if remaining:
                     layers.append(remaining)
                 break
-            
+
             # 按文件名和索引排序
             current_layer.sort(key=lambda x: (self.functions[x].file_name, self.functions[x].index))
             layers.append(current_layer)
             visited.update(current_layer)
-        
+
         return layers
 
 
 class IncrementalTranslator:
     """增量式翻译器"""
-    
+
     def __init__(
         self,
         project_name: str,
@@ -729,7 +791,7 @@ class IncrementalTranslator:
         # Deterministic internal symbol resolver (E0425): symbol -> {module_stem}
         self._internal_symbol_to_modules: Dict[str, Set[str]] = {}
         self._internal_symbol_index_built = False
-        
+
         # 路径配置
         self.functions_dir = get_functions_path(project_name)
         self.dependencies_dir = get_dependencies_path(project_name)
@@ -792,10 +854,10 @@ class IncrementalTranslator:
         self._oracle_funckey_to_path: Dict[str, Path] = {}
         self.project_src_dir = get_project_path(project_name)
         self.source_skeleton_dir = get_source_skeleton_path(project_name)
-        
+
         # 工作目录（用于增量编译测试）
         self.work_dir = self.workspace_root / "incremental_work" / project_name / f"translate_by_{llm_name}"
-        
+
         # 修复历史目录（保存每次修复尝试的错误信息和翻译代码）
         self.repair_history_dir = get_repair_history_path(project_name, llm_name)
 
@@ -805,7 +867,7 @@ class IncrementalTranslator:
         self.manual_fix_manifest_path = self.manual_fix_root / "manifest.jsonl"
         # 失败注释模式：off|simple|llm（默认 simple，避免额外 LLM 调用拖慢整体吞吐）
         self.failure_comment_mode = os.environ.get("C2R_FAILURE_COMMENT_MODE", "simple").strip().lower()
-        
+
         # LLM 提示词保存目录（保存到 output 目录）
         # 优先使用 workspace_root/llm_prompts，如果不存在则使用默认位置
         self.llm_prompts_dir = self.workspace_root / "llm_prompts" / project_name / f"translate_by_{llm_name}"
@@ -813,6 +875,11 @@ class IncrementalTranslator:
         self.context_cache_dir = self.workspace_root / "context_cache" / project_name
         self.context_cache_dir.mkdir(parents=True, exist_ok=True)
         self.usage_examples_file = self.context_cache_dir / "_usage_examples.json"
+        self._dependency_closure_manifest_by_func: Dict[str, str] = {}
+        self._truth_manifest_by_func: Dict[str, str] = {}
+        self._context_prefix_max_chars = CONTEXT_PREFIX_CHAR_LIMIT
+        self._usage_examples_per_symbol = context_prefix_limit_from_env("C2R_USAGE_MAX_EXAMPLES_PER_SYMBOL")
+        self._run_id = f"{project_name}__{llm_name}"
         self._source_file_cache: Dict[str, Optional[Path]] = {}
         # cache: preprocessed .i path -> {name: [prototype,...]}
         self._preprocessed_decl_index: Dict[Path, Dict[str, List[str]]] = {}
@@ -832,6 +899,8 @@ class IncrementalTranslator:
         self._preprocessed_fn_index_cache: Dict[Path, Dict[Tuple[str, str, int], List[Tuple[int, int]]]] = {}
         # pre_path -> {static_inline_fn_name,...} (best-effort, used to avoid generating extern decls for inline helpers)
         self._preprocessed_static_inline_names_cache: Dict[Path, Set[str]] = {}
+        # (file_name, index) -> preprocessed truth metadata for prompt evidence layering.
+        self._preprocessed_truth_replacements: Dict[Tuple[str, int], Dict[str, str]] = {}
         if self._enable_preprocessed_function_slices:
             self._load_functions_manifest()
 
@@ -939,10 +1008,9 @@ class IncrementalTranslator:
         self._extern_vars_missing: List[Dict[str, Any]] = []
 
         # ========== C2Rust fallback for failed functions ==========
-        # If a function fails after all LLM repair attempts and would be rolled back to `unimplemented!()`,
-        # we can optionally fill it with a deterministic C2Rust transpile fallback (mechanical, unsafe OK).
-        # To avoid breaking the project, we only keep the fallback if `cargo check` succeeds.
-        self._enable_c2rust_fallback = os.environ.get("C2R_ENABLE_C2RUST_FALLBACK", "true").strip().lower() in (
+        # 默认关闭：失败函数保留骨架占位符，并把 LLM 失败译文与修复上下文落盘给后置 repair agent。
+        # 只有显式实验设置 C2R_ENABLE_C2RUST_FALLBACK=1 时才启用机械兜底。
+        self._enable_c2rust_fallback = os.environ.get("C2R_ENABLE_C2RUST_FALLBACK", "false").strip().lower() in (
             "1",
             "true",
             "yes",
@@ -966,6 +1034,7 @@ class IncrementalTranslator:
         except Exception:
             self._rust_callee_signature_hints_max = 16
         self._rust_signature_index: Optional[Dict[str, List[str]]] = None
+        self._rust_signature_fact_index: Optional[Dict[str, List[Dict[str, str]]]] = None
 
         # ========== Typed constants/macros + field access hints (for E0308 / struct-field guidance) ==========
         self._enable_typed_const_hints = os.environ.get("C2R_ENABLE_TYPED_CONST_HINTS", "true").lower() in (
@@ -1039,14 +1108,14 @@ class IncrementalTranslator:
 
         # 超时失败的函数列表（用于重试）
         self.timeout_failed_funcs: List[str] = []
-        
+
         # 不透明类型集合（动态检测）
         self.opaque_types: Set[str] = set()
 
         # RustMap 风格 safe globals（来自 skeleton 的 globals_accessors.json）
         # 映射: 原始变量名 -> {get/set/with/cell/rust_type/...}
         self.safe_globals: Dict[str, Dict] = {}
-        
+
         # 调用图上下文提供器（可选）
         self.call_graph_context_provider = None
         self._init_call_graph_context()
@@ -1084,6 +1153,19 @@ class IncrementalTranslator:
         - Later stages run in separate processes, so we must re-apply the selection to the environment,
           otherwise helpers like `TypeRecoveryManager` may fall back to the hard-coded rk3568 compile DB.
         """
+        if is_oss_suite():
+            try:
+                env_cc = (os.environ.get("COMPILE_COMMANDS_PATH") or "").strip() or (os.environ.get("OHOS_COMPILE_COMMANDS") or "").strip()
+                if env_cc and Path(env_cc).expanduser().exists():
+                    os.environ.setdefault("COMPILE_COMMANDS_PATH", str(Path(env_cc).expanduser().resolve()))
+                    return
+                project_cc = Path(self.project_src_dir).expanduser().resolve() / "compile_commands.json"
+                if project_cc.is_file():
+                    os.environ.setdefault("COMPILE_COMMANDS_PATH", str(project_cc))
+            except Exception:
+                pass
+            return
+
         # If the caller already pinned compile_commands explicitly, keep it.
         try:
             env_cc = (os.environ.get("OHOS_COMPILE_COMMANDS") or "").strip() or (os.environ.get("COMPILE_COMMANDS_PATH") or "").strip()
@@ -1714,6 +1796,10 @@ class IncrementalTranslator:
                 if not sliced:
                     continue
                 fi.c_code = sliced
+                self._preprocessed_truth_replacements[(str(fi.file_name), int(fi.index))] = {
+                    "source_layer": "preprocessed",
+                    "preprocessed_file": str(pre_path.resolve()),
+                }
                 replaced += 1
                 local_replaced += 1
 
@@ -2085,14 +2171,14 @@ unsafe {
         """初始化调用图上下文提供器"""
         try:
             from call_graph import CallGraphBuilder, LLMContextProvider
-            
+
             # 尝试加载预构建的调用图
             # 优先使用 source_skeletons 中的调用图（包含 signature/body），其次使用 extracted 中的调用图
             call_graph_path = self.source_skeleton_dir / "call_graph.json"
             fallback_path = self.dependencies_dir.parent / "call_graph.json"
             if not call_graph_path.exists() and fallback_path.exists():
                 call_graph_path = fallback_path
-            
+
             if call_graph_path.exists():
                 call_graph = CallGraphBuilder.load(call_graph_path)
                 self.call_graph_context_provider = LLMContextProvider(call_graph)
@@ -2146,11 +2232,12 @@ unsafe {
         Returns:
             Rust 签名，如果未找到则返回 None
         """
-        if not self.func_file_to_rust_sig:
+        mapping = getattr(self, "func_file_to_rust_sig", None) or {}
+        if not mapping:
             return None
 
         # func_name 就是 func_file（例如 "src_disk_12"）
-        return self.func_file_to_rust_sig.get(func_name)
+        return mapping.get(func_name)
 
     def _select_target_func_files(self) -> Optional[Set[str]]:
         """
@@ -2175,20 +2262,20 @@ unsafe {
             logger.debug(f"读取签名匹配目录失败，跳过过滤: {e}")
 
         return None
-    
+
     def _get_call_graph_context(self, func_info: FunctionInfo) -> str:
         """
         获取函数的调用图上下文（被调用函数的签名或已翻译代码）
-        
+
         Args:
             func_info: 函数信息
-            
+
         Returns:
             调用上下文字符串
         """
         if not self.call_graph_context_provider:
             return ""
-        
+
         try:
             context = self.call_graph_context_provider.get_context_for_translation(
                 func_info.name,
@@ -2217,7 +2304,7 @@ unsafe {
         if not self._functions_by_func_file:
             return ""
 
-        lines: List[str] = []
+        by_symbol: Dict[str, List[Tuple[str, str, str]]] = defaultdict(list)
         for callee_func_file in sorted(callee_func_files):
             callee = self._functions_by_func_file.get(callee_func_file)
             if not callee:
@@ -2226,22 +2313,160 @@ unsafe {
             callee_mod = (callee.file_name or "").strip()
             if not callee_name or not callee_mod:
                 continue
-            lines.append(f"{callee_func_file} ({callee_name}) -> crate::{callee_mod}::{callee_name}")
+            by_symbol[callee_name].append(
+                (str(callee_func_file), callee_mod, f"crate::{callee_mod}::{callee_name}")
+            )
 
-        if not lines:
+        lines: List[str] = []
+        ambiguous_lines: List[str] = []
+        for callee_name in sorted(by_symbol):
+            candidates = by_symbol[callee_name]
+            unique_paths = sorted({path for _, _, path in candidates})
+            if len(unique_paths) > 1:
+                ambiguous_lines.append(f"{callee_name}: " + ", ".join(unique_paths))
+                continue
+            func_key, _, path = candidates[0]
+            lines.append(f"{func_key} ({callee_name}) -> {path}")
+
+        if not lines and not ambiguous_lines:
             return ""
 
         # Keep it compact: direct callees only, limited lines.
         # 强化提示：明确告诉 LLM 必须使用完整路径
-        return (
+        parts = [
             "\n## Internal Callees: Deterministic Rust Module Paths (CRITICAL - E0425 FIX)\n"
             "**⚠️ YOU MUST USE THE FULL PATH when calling these functions!**\n"
             "- WRONG: `ZopfliCalculateEntropy(...)` → ERROR: E0425 cannot find function\n"
             "- CORRECT: `crate::src_tree::ZopfliCalculateEntropy(...)`\n\n"
-            "Mapping (use the RIGHT side path):\n"
-            "```text\n"
-            + "\n".join(lines[:80])
-            + "\n```\n"
+        ]
+        if lines:
+            parts.append(
+                "Mapping (use the RIGHT side path):\n"
+                "```text\n"
+                + "\n".join(lines[:80])
+                + "\n```\n"
+            )
+        if ambiguous_lines:
+            parts.append(
+                "\nAmbiguous same-name callees (NOT high-confidence call targets; do not call unless receiver/source proves the candidate):\n"
+                "```text\n"
+                + "\n".join(ambiguous_lines[:40])
+                + "\n```\n"
+            )
+        return "".join(parts)
+
+    def _load_json_report_from_work_or_skeleton(self, report_name: str) -> Dict[str, Any]:
+        """读取骨架生成报告；优先 work_dir，兼容 skeleton_dir。"""
+        for base in (getattr(self, "work_dir", None), getattr(self, "skeleton_dir", None)):
+            if not base:
+                continue
+            path = Path(base) / report_name
+            if not path.is_file():
+                continue
+            try:
+                data = json.loads(path.read_text(encoding="utf-8", errors="ignore") or "{}")
+            except Exception:
+                data = {}
+            if isinstance(data, dict):
+                data["_report_path"] = str(path.resolve())
+                return data
+        return {}
+
+    def _build_build_truth_diagnostics(self) -> str:
+        """把 types/globals 生成模式压缩成函数级 prompt 证据，避免模型误判 truth 层。"""
+        lines: List[str] = []
+
+        def _short_item(value: Any) -> str:
+            if isinstance(value, dict):
+                for key in ("name", "symbol", "type", "path", "file", "module"):
+                    if value.get(key):
+                        return str(value.get(key))[:120]
+            text = str(value)
+            return text[:120] + ("..." if len(text) > 120 else "")
+
+        types_report = self._load_json_report_from_work_or_skeleton("types_generation_report.json")
+        if types_report:
+            mode = str(types_report.get("mode") or "unknown")
+            success = types_report.get("success")
+            type_bits = [f"mode={mode}"]
+            if success is not None:
+                type_bits.append(f"success={bool(success)}")
+            if types_report.get("truth_mode") is not None:
+                type_bits.append(f"truth_mode={bool(types_report.get('truth_mode'))}")
+            lines.append("- types.rs generation: " + ", ".join(type_bits))
+            if mode == "stub":
+                lines.append(
+                    "  NOTE: types.rs is Tier-C stub/opaque fallback for compilation; do not infer real struct fields or constructors from it."
+                )
+            for key, label in (
+                ("global_missing_types", "global_missing_types"),
+                ("generated_global_units", "generated_global_units"),
+                ("generated_local_units", "generated_local_units"),
+            ):
+                value = types_report.get(key)
+                if isinstance(value, list) and value:
+                    preview = ", ".join(_short_item(x) for x in value[:12])
+                    suffix = f" ... (+{len(value) - 12})" if len(value) > 12 else ""
+                    lines.append(f"  {label}: {preview}{suffix}")
+
+        globals_report = self._load_json_report_from_work_or_skeleton("globals_generation_report.json")
+        if globals_report:
+            lines.append(
+                "- globals.rs generation: "
+                f"mode={globals_report.get('mode', 'unknown')}, "
+                f"globals={int(globals_report.get('globals_total') or 0)}, "
+                f"file_static={int(globals_report.get('file_static_total') or 0)}, "
+                f"module_local_static={int(globals_report.get('module_local_static_total') or 0)}, "
+                f"bindgen_ok={int(globals_report.get('bindgen_ok') or 0)}"
+            )
+        unavailable_globals: List[str] = []
+        missing = globals_report.get("bindgen_missing_names")
+        if isinstance(missing, list) and missing:
+            unavailable_globals.extend(str(x) for x in missing if str(x).strip())
+        if globals_report:
+            for key, label in (
+                ("omitted_globals", "omitted_globals"),
+                ("omitted_module_local_statics", "omitted_module_local_statics"),
+            ):
+                value = globals_report.get(key)
+                if isinstance(value, list) and value:
+                    names = []
+                    for item in value[:12]:
+                        if isinstance(item, dict):
+                            names.append(str(item.get("name") or item.get("symbol") or item))
+                        else:
+                            names.append(str(item))
+                    suffix = f" ... (+{len(value) - 12})" if len(value) > 12 else ""
+                    lines.append(f"  {label}: {', '.join(names)}{suffix}")
+                    unavailable_globals.extend(names)
+
+        recovery_report = self._load_json_report_from_work_or_skeleton("types_recovery_report.json")
+        if recovery_report:
+            recovered_missing = recovery_report.get("missing_globals")
+            if isinstance(recovered_missing, list):
+                for item in recovered_missing:
+                    if isinstance(item, dict):
+                        name = str(item.get("name") or "").strip()
+                    else:
+                        name = str(item).strip()
+                    if name:
+                        unavailable_globals.append(name)
+
+        unavailable_globals = sorted({name for name in unavailable_globals if name})
+        if unavailable_globals:
+            preview = ", ".join(unavailable_globals[:24])
+            suffix = f" ... (+{len(unavailable_globals) - 24})" if len(unavailable_globals) > 24 else ""
+            lines.append(f"  unavailable_globals_not_declared_in_crate: {preview}{suffix}")
+            lines.append(
+                "  Rule: do not reference unavailable globals or synthesize replacement storage; use only declared globals/accessors/local values."
+            )
+
+        if not lines:
+            return ""
+        return (
+            "\n## Build Truth Diagnostics (types/globals generation)\n"
+            + "\n".join(lines)
+            + "\nUse these diagnostics to avoid inventing unavailable fields, constructors, globals, or module paths.\n"
         )
 
     def _ensure_internal_symbol_module_index(self) -> None:
@@ -2259,7 +2484,7 @@ unsafe {
 
         special_files = {"types.rs", "globals.rs", "compat.rs", "main.rs", "lib.rs", "compatibility.rs"}
         idx: Dict[str, Set[str]] = defaultdict(set)
-        for rs_file in src_dir.glob("*.rs"):
+        for rs_file in sorted(src_dir.glob("*.rs")):
             if rs_file.name in special_files:
                 continue
             try:
@@ -2359,11 +2584,11 @@ unsafe {
                     continue
 
         return changed_any
-    
+
     def _register_translated_function(self, func_info: FunctionInfo, rust_code: str):
         """
         注册已翻译的函数（用于为后续翻译提供上下文）
-        
+
         Args:
             func_info: 函数信息
             rust_code: 翻译后的 Rust 代码
@@ -2377,11 +2602,11 @@ unsafe {
                 )
             except Exception as e:
                 logger.debug(f"注册已翻译函数失败 {func_info.name}: {e}")
-    
+
     def run(self) -> bool:
         """
         运行增量式翻译流程
-        
+
         返回: 是否全部成功
         """
         print(f"\n{'='*60}")
@@ -2390,7 +2615,7 @@ unsafe {
         print(f"项目: {self.project_name}")
         print(f"LLM: {self.llm_name}")
         print(f"{'='*60}\n")
-        
+
         # 1. 分析调用图并获取拓扑排序
         print("步骤 1: 分析调用图...")
         target_funcs = self._select_target_func_files()
@@ -2445,11 +2670,11 @@ unsafe {
         self.stats["total"] = len(sorted_functions)
         print(f"  找到 {len(sorted_functions)} 个函数")
         print(f"  翻译顺序: 自底向上（叶子函数优先）")
-        
+
         # 2. 准备工作目录（复制骨架）
         print("\n步骤 2: 准备工作目录...")
         self._prepare_work_dir()
-        
+
         # 2.5 验证骨架文件内容
         print("\n  验证骨架文件...")
         self._validate_skeleton_files()
@@ -2504,7 +2729,7 @@ unsafe {
                 self._print_tu_context_gap_summary()
                 return False
             print("  ⚠️ 已设置 C2R_ALLOW_BASELINE_COMPILE_FAILURE=1，继续执行（可能产生大量失败/修复尝试）")
-        
+
         # 3. 提取骨架上下文
         print("\n步骤 3: 提取骨架上下文...")
         # 默认启用 types.rs slice：不把整个 types.rs 塞进每次 prompt（过大且导致 vLLM 超时/排队）
@@ -2519,33 +2744,33 @@ unsafe {
                     f"[TypesSlice] non-types context: {len(self._skeleton_non_types_context)} chars, "
                     f"types symbols: {len(self._types_registry.names)}"
                 )
-        
+
         # 4. 增量翻译与验证
         print("\n步骤 4: 增量翻译与验证...")
-        
+
         # 检查是否启用并行翻译（从环境变量读取）
         enable_parallel = os.environ.get("PARALLEL_TRANSLATE", "1").lower() in ("1", "true", "yes")
         max_parallel_workers = int(os.environ.get("MAX_PARALLEL_WORKERS", "4"))
-        
+
         if enable_parallel and len(sorted_functions) > 3:
             # 分层并行翻译模式
             layers = analyzer.get_parallel_layers()
             print(f"  启用分层并行翻译: {len(layers)} 层, 最大 {max_parallel_workers} 并行")
-            
+
             # 统计每层函数数量
             layer_sizes = [len(layer) for layer in layers]
             print(f"  各层函数数量: {layer_sizes}")
-            
+
             processed = 0
             for layer_idx, layer in enumerate(layers, 1):
                 print(f"\n--- 第 {layer_idx}/{len(layers)} 层 ({len(layer)} 个函数) ---")
-                
+
                 if len(layer) == 1:
                     # 单个函数，串行处理
                     func_name = layer[0]
                     processed += 1
                     print(f"\n[{processed}/{len(sorted_functions)}] 处理: {func_name}")
-                    
+
                     success = self._process_function(
                         func_name,
                         analyzer.functions[func_name],
@@ -2562,9 +2787,9 @@ unsafe {
                     # 多个函数，并行翻译（但串行注入和编译以避免文件冲突）
                     # 第一步：并行调用 LLM 获取翻译结果
                     from concurrent.futures import ThreadPoolExecutor, as_completed
-                    
+
                     print(f"  并行翻译 {len(layer)} 个函数（LLM 调用）...")
-                    
+
                     # 并行翻译函数（只调用 LLM，不注入）
                     translation_results = {}
                     with ThreadPoolExecutor(max_workers=min(max_parallel_workers, len(layer))) as executor:
@@ -2578,7 +2803,7 @@ unsafe {
                                 skeleton_context
                             )
                             future_to_func[future] = func_name
-                        
+
                         for future in as_completed(future_to_func):
                             func_name = future_to_func[future]
                             try:
@@ -2587,13 +2812,13 @@ unsafe {
                             except Exception as e:
                                 logger.error(f"并行翻译 {func_name} 失败: {e}")
                                 translation_results[func_name] = None
-                    
+
                     # 第二步：串行注入和编译（避免文件冲突）
                     print(f"  串行注入和编译 {len(layer)} 个函数...")
                     for func_name in layer:
                         processed += 1
                         print(f"\n[{processed}/{len(sorted_functions)}] 注入: {func_name}")
-                        
+
                         translated_code = translation_results.get(func_name)
                         func_info = analyzer.functions[func_name]
                         if translated_code is None:
@@ -2614,7 +2839,7 @@ unsafe {
                                 self.stats["failed"] += 1
                                 print(f"  ✗ 翻译失败")
                             continue
-                        
+
                         # 注入并编译
                         success = self._inject_and_compile_with_repair(
                             func_name,
@@ -2622,10 +2847,10 @@ unsafe {
                             translated_code,
                             skeleton_context
                         )
-                        
+
                         if getattr(func_info, "skipped", False):
                             continue
-                        
+
                         if success:
                             self.stats["compiled"] += 1
                             print(f"  ✓ 编译通过")
@@ -2636,7 +2861,7 @@ unsafe {
             # 串行翻译模式（原有逻辑）
             for i, func_name in enumerate(sorted_functions, 1):
                 print(f"\n[{i}/{len(sorted_functions)}] 处理: {func_name}")
-                
+
                 success = self._process_function(
                     func_name,
                     analyzer.functions[func_name],
@@ -2644,7 +2869,7 @@ unsafe {
                 )
                 if getattr(analyzer.functions[func_name], "skipped", False):
                     continue
-                
+
                 if success:
                     self.stats["compiled"] += 1
                     print(f"  ✓ 编译通过")
@@ -2694,19 +2919,19 @@ unsafe {
         # 5. 自动填充 trait impl 方法（如果对应的独立函数已翻译）
         print("\n步骤 5: 自动填充 trait impl 方法...")
         self._fill_trait_impl_methods()
-        
+
         # 6. 统计功能完整性（检查 unimplemented!() 占位符）
         print("\n步骤 6: 保存统计信息...")
         self._count_unimplemented_functions()
         self._save_translation_stats()
-        
+
         # 7. 保存最终结果
         print("\n步骤 7: 保存最终结果...")
         save_success = self._save_final_project()
         if not save_success:
             print(f"  ⚠ 警告: 保存最终项目失败，但继续输出统计信息")
             logger.warning("保存最终项目失败")
-        
+
         # 8. 输出统计
         print(f"\n{'='*60}")
         print(f"增量式翻译完成")
@@ -2725,7 +2950,7 @@ unsafe {
         still_unimplemented = self.stats.get('still_unimplemented', 0)
         if still_unimplemented > 0:
             print(f"⚠️ 仍未实现: {still_unimplemented} (编译通过但函数体是占位符)")
-        
+
         if self.stats['total'] > 0:
             success_rate = (self.stats['compiled'] / self.stats['total']) * 100
             # 计算真正的功能完整率（排除仍是占位符的函数）
@@ -2743,12 +2968,13 @@ unsafe {
 
         # 输入闭包诊断：compile_commands/预处理产物缺失等（不是翻译 bug）
         self._print_tu_context_gap_summary()
-        
+
         # 成功判断：
         # - 完全成功 (返回 2): 最终项目能编译 + 所有函数都成功 + 无占位符函数体（unimplemented!）
         # - 部分成功 (返回 1): 最终项目能编译 + 但有函数失败/跳过/注入失败/仍为占位符
         # - 失败 (返回 0): 最终项目无法编译
         final_compile_success = self._compile_project()
+        self._save_canonical_compile_result(final_compile_ok=final_compile_success)
 
         still_unimplemented = int(self.stats.get("still_unimplemented", 0) or 0)
         skipped = int(self.stats.get("skipped", 0) or 0)
@@ -2766,7 +2992,7 @@ unsafe {
         else:
             print("✗ 失败：项目无法编译")
             return 0  # 失败
-    
+
     def _prepare_work_dir(self):
         """准备工作目录"""
         if self.work_dir.exists():
@@ -2826,7 +3052,7 @@ unsafe {
         # 扫描所有 .rs 文件（排除特殊文件）
         special_files = {"types.rs", "globals.rs", "main.rs", "compat.rs", "compatibility.rs"}
 
-        for rs_file in src_dir.glob("*.rs"):
+        for rs_file in sorted(src_dir.glob("*.rs")):
             if rs_file.name in special_files:
                 continue
 
@@ -2938,14 +3164,14 @@ unsafe {
                 return result
 
         return None
-    
+
     def _validate_skeleton_files(self):
         """验证骨架文件是否有有效内容"""
         src_dir = self.work_dir / "src"
         if not src_dir.exists():
             print(f"  ⚠ 警告: 骨架目录不存在: {src_dir}")
             return
-        
+
         rs_files = list(src_dir.glob("*.rs"))
         empty_files = []
         valid_files = []
@@ -2953,15 +3179,15 @@ unsafe {
         total_functions = 0
         total_types = 0
         total_statics = 0
-        
+
         for rs_file in rs_files:
             with open(rs_file, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
-            
+
             # 检查是否只有注释或空白
-            code_lines = [line for line in content.splitlines() 
+            code_lines = [line for line in content.splitlines()
                          if line.strip() and not line.strip().startswith("//")]
-            
+
             # 特殊文件处理（分层骨架）
             if rs_file.name == 'types.rs':
                 # 统计类型定义数量
@@ -2970,7 +3196,7 @@ unsafe {
                 if type_count > 0 or len(code_lines) > 3:
                     special_files.append((rs_file.name, f"{type_count} types"))
                 continue
-            
+
             if rs_file.name == 'globals.rs':
                 # 统计静态变量数量
                 static_count = len(re.findall(r'\bstatic\s+(?:mut\s+)?\w+', content))
@@ -2978,25 +3204,25 @@ unsafe {
                 if static_count > 0 or len(code_lines) > 3:
                     special_files.append((rs_file.name, f"{static_count} statics"))
                 continue
-            
+
             if rs_file.name in ['main.rs', 'lib.rs']:
                 # 跳过入口文件
                 continue
-            
+
             # 统计函数定义数量
             fn_count = len(re.findall(r'\bfn\s+\w+\s*\(', content))
             total_functions += fn_count
-            
+
             if len(code_lines) < 3 or fn_count == 0:
                 empty_files.append(rs_file.name)
             else:
                 valid_files.append((rs_file.name, fn_count))
-        
+
         # 输出验证结果
         print(f"  ✓ 骨架文件: {len(rs_files)} 个")
         print(f"    - 模块文件: {len(valid_files)} 个有效, {len(empty_files)} 个空/无函数")
         print(f"    - 函数签名总数: {total_functions}")
-        
+
         if special_files:
             print(f"    - 特殊文件 (分层骨架):")
             for name, info in special_files:
@@ -3005,39 +3231,39 @@ unsafe {
                 print(f"    - 类型定义总数: {total_types}")
             if total_statics > 0:
                 print(f"    - 静态变量总数: {total_statics}")
-        
+
         if empty_files:
             print(f"  ⚠ 警告: 以下骨架文件为空或无函数定义（可能导致签名匹配失败）:")
             for name in empty_files[:5]:
                 print(f"      - {name}")
             if len(empty_files) > 5:
                 print(f"      ... 还有 {len(empty_files) - 5} 个文件")
-    
+
     def _extract_skeleton_context(self, *, include_types_rs_defs: bool = True) -> str:
         """
         提取骨架中的类型定义和函数签名作为上下文
         同时检测不透明类型
-        
+
         支持分层骨架结构:
         - types.rs: bindgen 生成的类型定义（优先处理）
         - globals.rs: tree-sitter 提取的全局变量
         - 其他 .rs 文件: 函数签名和模块级定义
         """
         context_parts = []
-        
+
         src_dir = self.work_dir / "src"
         if not src_dir.exists():
             return ""
-        
+
         # 清空并重新检测不透明类型
         self.opaque_types.clear()
-        
+
         # 优先处理 types.rs（分层骨架的类型定义）
         types_file = src_dir / "types.rs"
         if types_file.exists():
             with open(types_file, 'r', encoding='utf-8', errors='ignore') as f:
                 types_content = f.read()
-            
+
             # 检测不透明类型
             file_opaque_types = self._detect_opaque_types(types_content)
             self.opaque_types.update(file_opaque_types)
@@ -3048,13 +3274,13 @@ unsafe {
                 if type_defs:
                     context_parts.append("// From types.rs (bindgen-generated types)")
                     context_parts.extend(type_defs)
-        
+
         # 处理 globals.rs（分层骨架的全局变量）
         globals_file = src_dir / "globals.rs"
         if globals_file.exists():
             with open(globals_file, 'r', encoding='utf-8', errors='ignore') as f:
                 globals_content = f.read()
-            
+
             # 提取 static 变量声明
             static_defs = self._extract_static_declarations(globals_content)
             if static_defs:
@@ -3066,31 +3292,38 @@ unsafe {
             if accessor_sigs:
                 context_parts.append("// From globals.rs (accessor functions)")
                 context_parts.extend(accessor_sigs)
-        
+
         # 处理其他模块文件
-        for rs_file in src_dir.glob("*.rs"):
+        for rs_file in sorted(src_dir.glob("*.rs")):
             # 跳过已处理的特殊文件和 main.rs
             if rs_file.name in ['types.rs', 'globals.rs', 'main.rs', 'lib.rs']:
                 continue
-            
+
             with open(rs_file, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
-            
+
             # 检测不透明类型
             file_opaque_types = self._detect_opaque_types(content)
             self.opaque_types.update(file_opaque_types)
-            
+
             # 提取 struct、enum、type 定义
             type_defs = self._extract_type_definitions(content)
             if type_defs:
                 context_parts.append(f"// From {rs_file.name}")
                 context_parts.extend(type_defs)
-            
+
             # 提取函数签名
             func_sigs = self._extract_function_signatures(content)
             if func_sigs:
-                context_parts.extend(func_sigs)
-        
+                context_parts.append(
+                    f"// From {rs_file.name} (functions; module path: crate::{rs_file.stem})"
+                )
+                for sig in func_sigs:
+                    func_name = self._extract_function_name_from_rust_signature(sig)
+                    if func_name:
+                        context_parts.append(f"// CALL AS: crate::{rs_file.stem}::{func_name}(...)")
+                    context_parts.append(sig)
+
         return "\n\n".join(context_parts)
 
     def _reload_types_registry(self) -> None:
@@ -3213,10 +3446,13 @@ unsafe {
     ) -> str:
         """
         Build per-function skeleton context:
+        - other files: shared non-types context first (cache-friendly common prefix)
         - types.rs: sliced (small, per-function)
-        - other files: shared non-types context (globals, helper fns, etc.)
         """
         parts: List[str] = []
+
+        if non_types_context:
+            parts.append(non_types_context.strip())
 
         if self._types_registry and TYPES_SLICE_AVAILABLE:
             seeds = self._seed_symbols_for_types_slice(func_info)
@@ -3227,10 +3463,15 @@ unsafe {
             if types_slice:
                 parts.append(types_slice)
 
-        if non_types_context:
-            parts.append(non_types_context.strip())
-
         return "\n\n".join([p for p in parts if p]).strip()
+
+    def _stable_skeleton_context_prefix_chars(self, skeleton_context: str) -> int:
+        """返回当前函数上下文中可视为跨函数稳定前缀的字符数。"""
+        shared = (getattr(self, "_skeleton_non_types_context", "") or "").strip()
+        current = (skeleton_context or "").strip()
+        if not shared or not current.startswith(shared):
+            return 0
+        return len(shared)
 
     # ---------------------------------------------------------------------
     # Dependency signature hints (C-level): extracted/<proj>/dependencies/<func_key>.txt
@@ -3465,6 +3706,13 @@ unsafe {
         if self._rust_signature_index is not None:
             return
         index: Dict[str, List[str]] = defaultdict(list)
+        fact_index: Dict[str, List[Dict[str, str]]] = defaultdict(list)
+        functions_by_key = getattr(self, "_functions_by_func_file", {}) or {}
+        sig_to_func_keys: Dict[str, List[str]] = defaultdict(list)
+        for func_key, sig in (getattr(self, "func_file_to_rust_sig", {}) or {}).items():
+            sig = str(sig or "").strip()
+            if func_key and sig:
+                sig_to_func_keys[sig].append(str(func_key))
         try:
             if self.signature_dir.exists():
                 for sig_file in sorted(self.signature_dir.glob("*.txt")):
@@ -3479,9 +3727,31 @@ unsafe {
                         continue
                     name = m.group(1)
                     index[name].append(sig)
+                    matched_keys = list(sig_to_func_keys.get(sig) or [])
+                    if not matched_keys and sig_file.stem in functions_by_key:
+                        matched_keys = [sig_file.stem]
+                    if not matched_keys and sig_file.stem:
+                        matched_keys = [sig_file.stem]
+
+                    for func_key in matched_keys:
+                        callee = functions_by_key.get(func_key)
+                        module = str(getattr(callee, "file_name", "") or "")
+                        if not module and func_key:
+                            module = str(func_key).rsplit("_", 1)[0]
+                        fact: Dict[str, str] = {
+                            "func_key": str(func_key),
+                            "symbol": name,
+                            "rust_signature": sig,
+                        }
+                        if module:
+                            fact["module"] = module
+                            fact["rust_path"] = f"crate::{module}::{name}"
+                        fact_index[name].append(fact)
         except Exception:
             index = {}
+            fact_index = {}
         self._rust_signature_index = dict(index)
+        self._rust_signature_fact_index = dict(fact_index)
 
     @staticmethod
     def _choose_best_rust_signature(candidates: List[str]) -> str:
@@ -3696,7 +3966,7 @@ unsafe {
         return (
             "\n## Observed C Field Accesses (map these to Rust types/fields)\n"
             + "\n".join(lines)
-            + "\nNote: If the base type is opaque (`type X = c_void`), DO NOT access fields; use accessor shims or return defaults.\n"
+            + "\nNote: If the base type is opaque (`type X = c_void`), DO NOT access fields; use accessor shims or existing APIs, or replace only the unreadable field expression.\n"
         )
 
     @staticmethod
@@ -3987,29 +4257,7 @@ unsafe {
     def _extract_called_identifiers_from_c(c_code: str) -> Set[str]:
         if not c_code:
             return set()
-        stop = {
-            "if",
-            "for",
-            "while",
-            "switch",
-            "return",
-            "sizeof",
-            "alignof",
-            "typedef",
-            "struct",
-            "enum",
-            "union",
-            "case",
-            "break",
-            "continue",
-        }
-        called: Set[str] = set()
-        for m in re.finditer(r"\b([A-Za-z_]\w*)\s*\(", c_code):
-            name = m.group(1)
-            if name in stop:
-                continue
-            called.add(name)
-        return called
+        return set(extract_cpp_called_identifiers(c_code))
 
     @staticmethod
     def _extract_local_type_names_from_c(c_code: str) -> Set[str]:
@@ -4084,21 +4332,28 @@ unsafe {
             return (s, len(proto))
 
         return max(prototypes, key=score)
-    
+
     def _extract_static_declarations(self, content: str) -> List[str]:
         """
         从代码中提取 static 变量声明
         """
         static_defs = []
-        
-        # 匹配 static mut 和 static 声明
-        static_pattern = r'^(\s*(?:pub\s+)?static\s+(?:mut\s+)?\w+\s*:\s*[^=;]+(?:\s*=\s*[^;]+)?;)'
-        
-        for match in re.finditer(static_pattern, content, re.MULTILINE):
-            decl = match.group(1).strip()
-            if decl and not decl.startswith('//'):
-                static_defs.append(decl)
-        
+
+        pending_auto_global = False
+        for line in (content or "").splitlines():
+            stripped = line.strip()
+            if "C2R_AUTO_GLOBAL" in stripped:
+                pending_auto_global = True
+                continue
+            if not stripped or stripped.startswith("//") or stripped.startswith("#!"):
+                continue
+            if pending_auto_global:
+                pending_auto_global = False
+                if re.match(r'^(?:pub\s+)?static\s+(?:mut\s+)?\w+\s*:', stripped):
+                    continue
+            if re.match(r'^(?:pub\s+)?static\s+(?:mut\s+)?\w+\s*:\s*[^=;]+(?:\s*=\s*[^;]+)?;', stripped):
+                static_defs.append(stripped)
+
         return static_defs
 
     def _locate_source_file(self, func_info: FunctionInfo) -> Optional[Path]:
@@ -6938,7 +7193,7 @@ unsafe {
         reason: str,
     ) -> None:
         """
-        Append the failed LLM output *below* the function as a block comment, for manual inspection.
+        将失败 LLM 译文以行注释插到函数下方；诊断信息不写进源码。
         """
         if not llm_code:
             return
@@ -6954,60 +7209,137 @@ unsafe {
         except Exception:
             return
 
-        marker = f"C2R_LLM_FAILED_OUTPUT_BEGIN func_key: {func_name}"
-        if marker in code:
+        marker = f"C2R_FAILED_TRANSLATION_BEGIN func_key: {func_name}"
+        legacy_marker = f"C2R_LLM_FAILED_OUTPUT_BEGIN func_key: {func_name}"
+        if marker in code or legacy_marker in code:
             return
 
-        if rust_parser is None or RUST_LANGUAGE is None:
-            return
-
+        insert_pos: Optional[int] = None
+        content_bytes = code.encode("utf-8")
         try:
-            content_bytes = code.encode("utf-8")
-            tree = rust_parser.parse(content_bytes)
-            query = RUST_LANGUAGE.query(
-                """
-                (function_item
-                    name: (identifier) @name
+            if rust_parser is not None and RUST_LANGUAGE is not None:
+                tree = rust_parser.parse(content_bytes)
+                query = RUST_LANGUAGE.query(
+                    """
+                    (function_item
+                        name: (identifier) @name
+                    )
+                    """
                 )
-                """
-            )
-            captures = query.captures(tree.root_node)
-            target_node = None
-            for node, cap in captures:
-                if cap != "name":
-                    continue
-                name = content_bytes[node.start_byte : node.end_byte].decode("utf-8", errors="ignore")
-                if name == func_info.name:
-                    target_node = node.parent  # function_item
-                    break
-            if target_node is None:
-                return
-            insert_pos = int(target_node.end_byte)
+                captures = query.captures(tree.root_node)
+                target_node = None
+                for node, cap in captures:
+                    if cap != "name":
+                        continue
+                    name = content_bytes[node.start_byte : node.end_byte].decode("utf-8", errors="ignore")
+                    if name == func_info.name:
+                        target_node = node.parent  # function_item
+                        break
+                if target_node is not None:
+                    insert_pos = int(target_node.end_byte)
         except Exception:
+            insert_pos = None
+
+        if insert_pos is None:
+            insert_pos = self._find_rust_function_end_fallback(code, func_info.name)
+        if insert_pos is None:
             return
 
-        safe_llm = (llm_code or "").replace("*/", "* /")
-        saved = str(artifact_path) if artifact_path is not None else ""
+        safe_llm = llm_code.rstrip("\n")
         comment_lines = [
             "",
-            "/* === C2R_LLM_FAILED_OUTPUT_BEGIN ===",
-            f" * func_key: {func_name}",
-            f" * reason: {reason}",
+            f"// === {marker} ===",
         ]
-        if saved:
-            comment_lines.append(f" * saved_translation: {saved}")
-        comment_lines.append(" * ------------------------------------------------------------")
-        comment_lines.append(safe_llm.rstrip("\n"))
-        comment_lines.append(" * ------------------------------------------------------------")
-        comment_lines.append(f" * {marker}")
-        comment_lines.append(" * === C2R_LLM_FAILED_OUTPUT_END === */")
+        for line in safe_llm.splitlines():
+            comment_lines.append(f"// {line}")
+        comment_lines.append(f"// === C2R_FAILED_TRANSLATION_END func_key: {func_name} ===")
         comment = "\n".join(comment_lines) + "\n"
 
         try:
-            new_bytes = content_bytes[:insert_pos] + comment.encode("utf-8") + content_bytes[insert_pos:]
-            _atomic_write_text(target_file, new_bytes.decode("utf-8", errors="ignore"))
+            new_code = code[:insert_pos] + comment + code[insert_pos:]
+            _atomic_write_text(target_file, new_code)
         except Exception:
             return
+
+    def _find_rust_function_end_fallback(self, code: str, func_name: str) -> Optional[int]:
+        """在没有 Rust tree-sitter 时，用轻量词法扫描定位函数结束位置。"""
+        if not code or not func_name:
+            return None
+        match = re.search(r"\bfn\s+" + re.escape(func_name) + r"\s*(?:<|\()", code)
+        if not match:
+            return None
+        brace = code.find("{", match.end())
+        if brace < 0:
+            return None
+
+        depth = 0
+        i = brace
+        state = "code"
+        block_depth = 0
+        while i < len(code):
+            ch = code[i]
+            nxt = code[i + 1] if i + 1 < len(code) else ""
+
+            if state == "line_comment":
+                if ch == "\n":
+                    state = "code"
+                i += 1
+                continue
+            if state == "block_comment":
+                if ch == "/" and nxt == "*":
+                    block_depth += 1
+                    i += 2
+                    continue
+                if ch == "*" and nxt == "/":
+                    block_depth -= 1
+                    i += 2
+                    if block_depth <= 0:
+                        state = "code"
+                    continue
+                i += 1
+                continue
+            if state == "string":
+                if ch == "\\":
+                    i += 2
+                    continue
+                if ch == '"':
+                    state = "code"
+                i += 1
+                continue
+            if state == "char":
+                if ch == "\\":
+                    i += 2
+                    continue
+                if ch == "'":
+                    state = "code"
+                i += 1
+                continue
+
+            if ch == "/" and nxt == "/":
+                state = "line_comment"
+                i += 2
+                continue
+            if ch == "/" and nxt == "*":
+                state = "block_comment"
+                block_depth = 1
+                i += 2
+                continue
+            if ch == '"':
+                state = "string"
+                i += 1
+                continue
+            if ch == "'":
+                state = "char"
+                i += 1
+                continue
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return i + 1
+            i += 1
+        return None
 
     def _ensure_extern_decls_from_preprocessed(self, functions: Dict[str, FunctionInfo]) -> int:
         """
@@ -7373,7 +7705,7 @@ unsafe {
                 if kind:
                     payload["kind"] = kind
                 global_defs.append(payload)
-        # 去重 + 限制数量
+        # 去重后完整写回缓存，避免在缓存层永久丢上下文。
         deduped = []
         seen = set()
         for item in global_defs:
@@ -7383,8 +7715,7 @@ unsafe {
             seen.add(key)
             deduped.append(item)
         if deduped:
-            max_items = 6
-            data["global_definitions"] = deduped[:max_items]
+            data["global_definitions"] = deduped
             self._write_semantic_cache(cache_file, data)
         return data
 
@@ -7399,42 +7730,121 @@ unsafe {
             return ""
         return self._format_global_declarations(target)
 
-    def _get_usage_examples_context(self, func_info: FunctionInfo, semantic_data: Optional[Dict] = None) -> Tuple[str, List[Dict[str, Any]]]:
-        if not self.project_src_dir or not self.project_src_dir.exists():
-            return "", []
-        data = semantic_data or func_info.semantic_data or self._load_semantic_data(func_info)
-        if not data:
-            return "", []
-        unresolved = [sym.strip() for sym in (data.get("unresolved_symbols") or []) if sym]
-        if not unresolved:
-            return "", []
-        symbols = unresolved[:8]
+    def _is_low_value_usage_symbol(self, symbol: str) -> bool:
+        """判断 usage 检索符号是否属于低语义噪声。"""
+        sym = (symbol or "").strip()
+        if not sym:
+            return True
+        if sym in USAGE_LOW_VALUE_SYMBOLS:
+            return True
+        if len(sym) <= 2:
+            return True
+        if sym.startswith("LOG_"):
+            return True
+        return False
+
+    def _usage_sidecar_path(self, func_info: FunctionInfo) -> Path:
+        """返回当前函数完整 usage examples 的 sidecar 路径。"""
+        safe_file = "".join(c if c.isalnum() or c in ("_", "-") else "_" for c in func_info.file_name)
+        safe_name = "".join(c if c.isalnum() or c in ("_", "-") else "_" for c in func_info.name)
+        return self.context_cache_dir / "usage_examples" / f"{safe_file}_{func_info.index}_{safe_name}.json"
+
+    def _write_usage_sidecar(
+        self,
+        func_info: FunctionInfo,
+        *,
+        requested_symbols: List[str],
+        prompt_symbols: List[str],
+        usage_map: Dict[str, List[Dict[str, Any]]],
+        skipped_symbols: List[Dict[str, str]],
+    ) -> Optional[Path]:
+        """写入完整 usage examples，供后续 agent 或人工按需读取。"""
         try:
-            usage_map = ensure_usage_examples(
-                self.project_src_dir,
-                self.usage_examples_file,
-                symbols,
-                max_examples_per_symbol=2
-            )
+            path = self._usage_sidecar_path(func_info)
+            payload = {
+                "function": {
+                    "name": func_info.name,
+                    "file_name": func_info.file_name,
+                    "index": func_info.index,
+                },
+                "requested_symbols": requested_symbols,
+                "prompt_symbols": prompt_symbols,
+                "skipped_symbols": skipped_symbols,
+                "examples_by_symbol": usage_map,
+            }
+            _atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=2))
+            return path.resolve()
         except Exception as exc:
-            logger.debug(f"用法示例收集失败 [{func_info.name}]: {exc}")
-            return "", []
+            logger.debug(f"写入 usage sidecar 失败 [{func_info.name}]: {exc}")
+            return None
+
+    def _compact_usage_snippet_for_prompt(self, symbol: str, snippet: str) -> str:
+        """为 prompt 生成聚焦调用点的 usage 预览，完整片段保留在 sidecar。"""
+        lines = [line.rstrip() for line in (snippet or "").splitlines() if line.strip()]
+        if not lines:
+            return ""
+        focused: List[str] = []
+        capturing = False
+        balance = 0
+        for line in lines:
+            if symbol in line:
+                capturing = True
+            if not capturing:
+                continue
+            if self._line_is_low_value_usage_noise(line) and symbol not in line:
+                continue
+            focused.append(line)
+            balance += line.count("(") - line.count(")")
+            if ";" in line and balance <= 0:
+                break
+            if len(focused) >= 8:
+                break
+        if not focused:
+            focused = [line for line in lines if not self._line_is_low_value_usage_noise(line)][:3]
+        text = "\n".join(focused).strip()
+        if len(text) > USAGE_PROMPT_MAX_SNIPPET_CHARS:
+            text = text[:USAGE_PROMPT_MAX_SNIPPET_CHARS].rstrip() + "\n/* ...see sidecar for full usage... */"
+        return text
+
+    def _line_is_low_value_usage_noise(self, line: str) -> bool:
+        """判断 usage 预览行是否主要由低价值日志/变量符号构成。"""
+        text = line.strip()
+        if not text:
+            return True
+        if re.search(r"\bLOG_(ERROR|INFO|DEBUG|WARN|WARNING)\s*\(", text):
+            return True
+        return False
+
+    def _format_compact_usage_examples(
+        self,
+        *,
+        usage_map: Dict[str, List[Dict[str, Any]]],
+        symbols: List[str],
+        sidecar_path: Optional[Path],
+    ) -> Tuple[str, List[Dict[str, Any]]]:
+        """把 usage examples 压缩成 prompt 摘要，完整信息只放 sidecar。"""
         parts: List[str] = []
         usage_stats: List[Dict[str, Any]] = []
-        total_len = 0
-        limit = 2500
-        for symbol in symbols:
+        if sidecar_path:
+            parts.append(f"Full usage examples sidecar: {sidecar_path}")
+        parts.append(
+            "This unit translation prompt includes only compact representative usage examples. The complete set is preserved in the sidecar for later repair agents or manual audit."
+        )
+
+        used_chars = sum(len(part) + 2 for part in parts)
+        for symbol in symbols[:max(0, USAGE_PROMPT_MAX_SYMBOLS)]:
             entries = usage_map.get(symbol) or []
             if not entries:
                 continue
             usage_stats.append({
                 "symbol": symbol,
-                "example_count": len(entries)
+                "example_count": len(entries),
             })
-            symbol_lines: List[str] = [f"// Symbol: {symbol}"]
+            symbol_lines: List[str] = [f"// Symbol: {symbol} ({len(entries)} examples in sidecar)"]
             added = False
-            for entry in entries[:2]:
-                snippet = (entry.get("snippet") or entry.get("code") or "").strip()
+            for entry in entries[:max(0, USAGE_PROMPT_MAX_EXAMPLES_PER_SYMBOL)]:
+                raw_snippet = (entry.get("snippet") or entry.get("code") or "").strip()
+                snippet = self._compact_usage_snippet_for_prompt(symbol, raw_snippet)
                 if not snippet:
                     continue
                 location = entry.get("file") or entry.get("source_path")
@@ -7454,17 +7864,68 @@ unsafe {
                 if arg_count is not None:
                     header += f" (args={arg_count})"
                 block = f"{header}\n{snippet}"
-                prospective_len = total_len + len(block) + 1
-                if prospective_len > limit:
+                prospective = used_chars + len(block) + len(symbol_lines[-1]) + 4
+                if prospective > USAGE_PROMPT_MAX_CHARS:
                     break
                 symbol_lines.append(block)
-                total_len = prospective_len
+                used_chars = prospective
                 added = True
             if added:
                 parts.append("\n".join(symbol_lines))
-            if total_len >= limit:
+            if used_chars >= USAGE_PROMPT_MAX_CHARS:
                 break
         return "\n\n".join(parts).strip(), usage_stats
+
+    def _get_usage_examples_context(self, func_info: FunctionInfo, semantic_data: Optional[Dict] = None) -> Tuple[str, List[Dict[str, Any]]]:
+        if not self.project_src_dir or not self.project_src_dir.exists():
+            return "", []
+        data = semantic_data or func_info.semantic_data or self._load_semantic_data(func_info)
+        if not data:
+            return "", []
+        unresolved = [sym.strip() for sym in (data.get("unresolved_symbols") or []) if sym]
+        if not unresolved:
+            return "", []
+        seen_symbols: Set[str] = set()
+        requested_symbols: List[str] = []
+        prompt_symbols: List[str] = []
+        skipped_symbols: List[Dict[str, str]] = []
+        for sym in unresolved:
+            if sym in seen_symbols:
+                continue
+            seen_symbols.add(sym)
+            requested_symbols.append(sym)
+            if self._is_low_value_usage_symbol(sym):
+                skipped_symbols.append({"symbol": sym, "reason": "low_value_symbol"})
+                continue
+            prompt_symbols.append(sym)
+        try:
+            usage_map = ensure_usage_examples(
+                self.project_src_dir,
+                self.usage_examples_file,
+                requested_symbols,
+                max_examples_per_symbol=getattr(self, "_usage_examples_per_symbol", None)
+            )
+        except Exception as exc:
+            logger.debug(f"用法示例收集失败 [{func_info.name}]: {exc}")
+            return "", []
+        sidecar_path = self._write_usage_sidecar(
+            func_info,
+            requested_symbols=requested_symbols,
+            prompt_symbols=prompt_symbols,
+            usage_map=usage_map,
+            skipped_symbols=skipped_symbols,
+        )
+        prompt_text, usage_stats = self._format_compact_usage_examples(
+            usage_map=usage_map,
+            symbols=prompt_symbols,
+            sidecar_path=sidecar_path,
+        )
+        if skipped_symbols:
+            usage_stats.append({
+                "skipped_low_value_symbols": len(skipped_symbols),
+                "sidecar_path": str(sidecar_path) if sidecar_path else "",
+            })
+        return prompt_text, usage_stats
 
     def _type_exists_in_skeleton(self, type_name: str, file_name: str) -> bool:
         # 尝试两种文件名格式：src_xxx.rs 和 xxx.rs（向后兼容）
@@ -7545,18 +8006,221 @@ unsafe {
         logger.info(f"跳过函数 {func_name}: {reason}")
         self.stats["skipped"] += 1
 
+    def _preprocessed_truth_info(self, func_info: FunctionInfo) -> Optional[Dict[str, str]]:
+        """返回当前函数是否已使用 .i 预处理真值源码。"""
+        replacements = getattr(self, "_preprocessed_truth_replacements", {}) or {}
+        key = (str(getattr(func_info, "file_name", "") or ""), int(getattr(func_info, "index", 0) or 0))
+        info = replacements.get(key)
+        if isinstance(info, dict):
+            return info
+        return None
+
+    @staticmethod
+    def _looks_like_function_like_macro_snippet(symbol: str, snippet: str) -> bool:
+        """判断片段是否更像原始源码中的函数式宏调用，而不是可链接声明。"""
+        sym = (symbol or "").strip()
+        text = (snippet or "").strip()
+        if not sym or not text:
+            return False
+        if re.search(rf"\b#define\s+{re.escape(sym)}\s*\(", text):
+            return True
+        if re.search(rf"\b{re.escape(sym)}\s*\([^;{{}}]*\)\s*\{{", text):
+            return True
+        if re.search(rf"\b{re.escape(sym)}\s*\(", text) and not re.search(
+            rf"\b(?:extern|static|inline|int|void|char|bool|_Bool|uint\d+_t|int\d+_t|size_t|struct\s+\w+)\s+{re.escape(sym)}\s*\(",
+            text,
+        ):
+            return True
+        return False
+
+    @staticmethod
+    def _looks_like_test_source_path(path_text: str) -> bool:
+        """判断声明来源是否明显来自测试/单测文件。"""
+        if not path_text:
+            return False
+        try:
+            path = Path(path_text)
+            parts = [part.lower() for part in path.parts]
+            name = path.name.lower()
+        except Exception:
+            raw = str(path_text).lower()
+            parts = re.split(r"[\\/]+", raw)
+            name = parts[-1] if parts else raw
+        test_dirs = {"test", "tests", "unittest", "unittests", "unit_test", "unit_tests", "gtest", "mock"}
+        if any(part in test_dirs for part in parts):
+            return True
+        if re.search(r"(^|[_\-.])(test|tests|unittest|unittests)([_\-.]|$)", name):
+            return True
+        return False
+
+    @staticmethod
+    def _looks_like_high_value_declaration_snippet(snippet: str) -> bool:
+        """判断低价值名字是否承载真实类型/常量/原型声明。"""
+        text = (snippet or "").strip()
+        if not text:
+            return False
+        head = text.splitlines()[0].strip()
+        if re.match(r"^#\s*define\s+[A-Za-z_]\w+\b", head):
+            return True
+        if re.search(r"\b(?:typedef|enum|struct|union)\b", text):
+            return True
+        if re.match(r"^(?:extern\s+)?(?:static\s+)?const\b", head):
+            return True
+        if re.match(r"^extern\b", head):
+            return True
+        if re.match(r"^static\s+const\b", head):
+            return True
+        if "{" not in text and re.search(r"\b[A-Za-z_]\w*\s*\([^;{}]*\)\s*;", text):
+            return True
+        return False
+
+    def _filter_semantic_data_for_prompt(
+        self,
+        func_info: FunctionInfo,
+        data: Optional[Dict[str, Any]],
+    ) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+        """过滤 prompt evidence，避免测试污染和弱声明覆盖确定性真值。"""
+        if not data:
+            return data, {"active": False}
+        truth_info = self._preprocessed_truth_info(func_info)
+
+        filtered = copy.deepcopy(data)
+        global_defs = filtered.get("global_definitions") or []
+        kept_defs: List[Dict[str, Any]] = []
+        macro_filtered_symbols: Set[str] = set()
+        test_filtered_symbols: Set[str] = set()
+        low_value_filtered_symbols: Set[str] = set()
+        filtered_items = 0
+        for entry in global_defs:
+            if not isinstance(entry, dict):
+                continue
+            symbol = str(entry.get("symbol") or "").strip()
+            kind = str(entry.get("kind") or "").strip()
+            snippet = str(entry.get("code") or "")
+            source_path = str(entry.get("source_path") or entry.get("origin") or "")
+            if self._looks_like_test_source_path(source_path):
+                test_filtered_symbols.add(symbol)
+                filtered_items += 1
+                continue
+            if symbol.lower() in PROMPT_LOW_VALUE_DECL_SYMBOLS and not self._looks_like_high_value_declaration_snippet(snippet):
+                low_value_filtered_symbols.add(symbol)
+                filtered_items += 1
+                continue
+            if truth_info:
+                if kind in {"text_snippet", "macro"} and self._looks_like_function_like_macro_snippet(symbol, snippet):
+                    macro_filtered_symbols.add(symbol)
+                    filtered_items += 1
+                    continue
+            kept = dict(entry)
+            if truth_info:
+                kept.setdefault("source_layer", "original")
+            kept_defs.append(kept)
+        filtered["global_definitions"] = kept_defs
+
+        unresolved = [str(sym).strip() for sym in (filtered.get("unresolved_symbols") or []) if str(sym).strip()]
+        filtered_symbol_union = macro_filtered_symbols | test_filtered_symbols | low_value_filtered_symbols
+        if filtered_symbol_union:
+            unresolved = [sym for sym in unresolved if sym not in filtered_symbol_union]
+            filtered["unresolved_symbols"] = unresolved
+
+        policy = {
+            "rag_and_declarations_policy": "Declarations are advisory unless backed by source/signature/dependency/types truth.",
+            "filtered_test_or_unittest_declarations": len(test_filtered_symbols),
+            "filtered_low_value_declarations": len(low_value_filtered_symbols),
+        }
+        if truth_info:
+            policy.update(
+                {
+                    "target_source_layer": "preprocessed",
+                    "preprocessed_file": truth_info.get("preprocessed_file", ""),
+                    "original_source_policy": (
+                        "Original-source snippets are advisory only; function-like macro call snippets are excluded "
+                        "from high-confidence prompt evidence because the target function source already comes from the macro-expanded .i TU."
+                    ),
+                }
+            )
+        filtered["_prompt_evidence_policy"] = policy
+        return filtered, {
+            "active": bool(truth_info),
+            "preprocessed_file": truth_info.get("preprocessed_file", "") if truth_info else "",
+            "filtered_original_items": filtered_items,
+            "filtered_symbols": sorted(filtered_symbol_union),
+            "filtered_function_like_macro_symbols": sorted(macro_filtered_symbols),
+            "filtered_test_symbols": sorted(test_filtered_symbols),
+            "filtered_low_value_symbols": sorted(low_value_filtered_symbols),
+        }
+
     def _build_context_prefix(self, func_info: FunctionInfo) -> Tuple[str, Dict[str, Any]]:
-        semantic_data = func_info.semantic_data or self._load_semantic_data(func_info)
+        raw_semantic_data = func_info.semantic_data or self._load_semantic_data(func_info)
+        semantic_data, truth_meta = self._filter_semantic_data_for_prompt(func_info, raw_semantic_data)
         semantic_context = self._format_semantic_context(semantic_data) if semantic_data else ""
         global_context = self._format_global_declarations(semantic_data) if semantic_data else ""
         usage_context, usage_stats = self._get_usage_examples_context(func_info, semantic_data=semantic_data)
-        
+        dependency_closure_context = ""
+        dependency_closure_stats: Dict[str, Any] = {}
+        dependency_closure_manifest: Optional[Dict[str, Any]] = None
+        dependency_closure_manifest_path: Optional[Path] = None
+        func_key = f"{func_info.file_name}_{func_info.index}"
+        try:
+            closure = build_dependency_closure(func_info, self)
+            self._dependency_closure_manifest_by_func[func_key] = str(closure.manifest_path)
+            dependency_closure_context = closure.prompt_block
+            dependency_closure_manifest = closure.manifest
+            dependency_closure_manifest_path = closure.manifest_path
+            dependency_closure_stats = {
+                "manifest_path": str(closure.manifest_path),
+                "called_symbols": len(closure.manifest.get("called_symbols") or []),
+                "facts": len(closure.manifest.get("facts") or []),
+                "hints": len(closure.manifest.get("hints") or []),
+                "gaps": len(closure.manifest.get("gaps") or []),
+            }
+        except Exception as exc:
+            logger.debug(f"依赖闭包构建失败 [{func_info.name}]: {exc}")
+
+        truth_manifest_context = ""
+        truth_manifest_stats: Dict[str, Any] = {}
+        try:
+            truth_bundle = build_truth_manifest(
+                func_info,
+                self,
+                dependency_manifest=dependency_closure_manifest,
+                dependency_manifest_path=dependency_closure_manifest_path,
+            )
+            if not hasattr(self, "_truth_manifest_by_func") or not isinstance(getattr(self, "_truth_manifest_by_func", None), dict):
+                self._truth_manifest_by_func = {}
+            self._truth_manifest_by_func[func_key] = str(truth_bundle.manifest_path)
+            truth_manifest_context = truth_bundle.prompt_block
+            cpp_facts = truth_bundle.manifest.get("cpp_receiver_facts") or {}
+            dep_summary = truth_bundle.manifest.get("dependency_summary") or {}
+            truth_manifest_stats = {
+                "manifest_path": str(truth_bundle.manifest_path),
+                "source_layer": truth_bundle.manifest.get("function", {}).get("source_layer"),
+                "member_calls": len(cpp_facts.get("member_calls") or []),
+                "field_accesses": len(cpp_facts.get("field_accesses") or []),
+                "ambiguous_callees": len(dep_summary.get("ambiguous_callees") or []),
+            }
+        except Exception as exc:
+            logger.debug(f"truth manifest 构建失败 [{func_info.name}]: {exc}")
+
         # 获取调用图上下文（被调用函数的签名或已翻译代码）
         call_graph_context = self._get_call_graph_context(func_info)
 
         block_candidates: List[Dict[str, Any]] = []
-        
-        # 优先添加调用图上下文（最相关的上下文）
+
+        if dependency_closure_context:
+            block_candidates.append({
+                "label": "Dependency Closure",
+                "content": dependency_closure_context,
+                "stats": dependency_closure_stats,
+            })
+        if truth_manifest_context:
+            block_candidates.append({
+                "label": "Translation Truth Manifest",
+                "content": truth_manifest_context,
+                "stats": truth_manifest_stats,
+            })
+
+        # 继续添加调用图上下文（可能包含已翻译 callee 代码）
         if call_graph_context:
             block_candidates.append({
                 "label": "Called Functions Context",
@@ -7566,7 +8230,7 @@ unsafe {
                     "context_length": len(call_graph_context)
                 }
             })
-        
+
         if semantic_context:
             block_candidates.append({
                 "label": "Semantic Slice",
@@ -7593,48 +8257,11 @@ unsafe {
                 }
             })
 
-        selected_blocks: List[str] = []
-        block_meta: List[Dict[str, Any]] = []
-        used_chars = 0
-        for block in block_candidates:
-            content = block.get("content", "").strip()
-            label = block.get("label", "unknown")
-            stats = block.get("stats") or {}
-            if not content:
-                block_meta.append({
-                    "label": label,
-                    "length": 0,
-                    "included": False,
-                    "reason": "empty",
-                    "stats": stats
-                })
-                continue
-            block_text = f"// ===== {label} =====\n{content}"
-            block_length = len(block_text)
-            if used_chars + block_length > CONTEXT_PREFIX_CHAR_LIMIT:
-                block_meta.append({
-                    "label": label,
-                    "length": block_length,
-                    "included": False,
-                    "reason": "budget",
-                    "stats": stats
-                })
-                continue
-            selected_blocks.append(block_text)
-            used_chars += block_length
-            block_meta.append({
-                "label": label,
-                "length": block_length,
-                "included": True,
-                "stats": stats
-            })
-
-        prefix = "\n\n".join(selected_blocks).strip()
-        meta = {
-            "context_budget": CONTEXT_PREFIX_CHAR_LIMIT,
-            "context_used": used_chars,
-            "context_blocks": block_meta
-        }
+        prefix, meta = build_context_prefix(
+            block_candidates,
+            max_chars=getattr(self, "_context_prefix_max_chars", None),
+        )
+        meta["preprocessed_truth_context"] = truth_meta
         return prefix, meta
 
     def _save_context_summary(self, func_info: FunctionInfo, context_meta: Optional[Dict[str, Any]]) -> Optional[Path]:
@@ -7672,19 +8299,17 @@ unsafe {
         definitions = data.get("infile_definitions") or []
         if definitions:
             parts.append("// Semantic slice: helper definitions from source file")
-            for item in definitions[:3]:
+            for item in definitions:
                 name = item.get("name", "unknown")
                 snippet = (item.get("code") or "").strip()
                 if not snippet:
                     continue
-                if len(snippet) > 1200:
-                    snippet = snippet[:1200] + "\n/* ...truncated... */"
                 parts.append(f"// ---- definition: {name} ----\n{snippet}")
         unresolved = data.get("unresolved_symbols") or []
         unresolved = [sym for sym in unresolved if sym]
         if unresolved:
             parts.append("// Symbols referenced but not defined in this file:")
-            parts.append(", ".join(sorted(set(unresolved))[:20]))
+            parts.append(", ".join(sorted(set(unresolved))))
         semantic_context = "\n".join(parts).strip()
         # C2R: 记录语义上下文长度，暂不截断，观察是否超限
         if len(semantic_context) > 4000:
@@ -7698,33 +8323,33 @@ unsafe {
         if not entries:
             return ""
         parts: List[str] = []
-        for entry in entries[:8]:  # C2R: 增加到 8 个全局声明
+        for entry in entries:
             symbol = entry.get("symbol") or "unknown"
             origin = entry.get("source_path")
             header = f"// ---- declaration: {symbol}"
             if origin:
                 header += f" ({Path(origin).name})"
+            source_layer = str(entry.get("source_layer") or "").strip()
+            if source_layer:
+                header += f" [source_layer={source_layer}]"
             header += " ----"
             snippet = (entry.get("code") or "").strip()
             if not snippet:
                 continue
-            if len(snippet) > 2000:  # C2R: 增加单个片段限制
-                logger.info(f"[上下文统计] global snippet '{symbol}' 过长: {len(snippet)} 字符，截断到 2000")
-                snippet = snippet[:2000] + "\n/* ...truncated... */"
             parts.append(f"{header}\n{snippet}")
         global_context = "\n\n".join(parts).strip()
         # C2R: 记录全局上下文长度，暂不截断
         if len(global_context) > 4000:
             logger.info(f"[上下文统计] global_context 长度: {len(global_context)} 字符 (~{len(global_context)//4} tokens)")
         return global_context
-    
+
     def _extract_type_definitions(self, code: str) -> List[str]:
         """提取类型定义（包括常量）"""
         definitions = []
-        
+
         try:
             tree = rust_parser.parse(bytes(code, 'utf-8'))
-            
+
             # 查询 struct、enum、type alias 和 const
             # 注意：必须包含 const_item，否则 types.rs 中的常量定义会被截断
             query = RUST_LANGUAGE.query("""
@@ -7733,7 +8358,7 @@ unsafe {
                 (type_item) @type
                 (const_item) @const
             """)
-            
+
             captures = query.captures(tree.root_node)
             for node, _ in captures:
                 # 提取完整的定义，确保不被截断
@@ -7742,13 +8367,13 @@ unsafe {
                     definitions.append(definition)
         except Exception as e:
             logger.debug(f"提取类型定义失败: {e}")
-        
+
         return definitions
-    
+
     def _detect_opaque_types(self, code: str) -> Set[str]:
         """
         通用方法：检测骨架中的不透明类型（如 type X = c_void）
-        
+
         返回: 不透明类型名称集合
         """
         opaque_types = set()
@@ -7819,10 +8444,10 @@ unsafe {
     def _extract_function_signatures(self, code: str) -> List[str]:
         """提取函数签名（不包含函数体）"""
         signatures = []
-        
+
         try:
             tree = rust_parser.parse(bytes(code, 'utf-8'))
-            
+
             query = RUST_LANGUAGE.query("""
                 (function_item
                     name: (identifier) @name
@@ -7830,7 +8455,7 @@ unsafe {
                     return_type: (type_identifier)? @ret
                 ) @func
             """)
-            
+
             captures = query.captures(tree.root_node)
             for node, capture_name in captures:
                 if capture_name == 'func':
@@ -7842,44 +8467,171 @@ unsafe {
                         signatures.append(sig + ";")
         except Exception as e:
             logger.debug(f"提取函数签名失败: {e}")
-        
+
+        if not signatures:
+            for match in re.finditer(
+                r'(?ms)^\s*((?:pub(?:\s*\([^)]*\))?\s+)?(?:unsafe\s+)?(?:extern\s+"C"\s+)?fn\s+[A-Za-z_]\w*\s*\([^{};]*\)\s*(?:->\s*[^{;\n]+)?)\s*\{',
+                code or "",
+            ):
+                sig = (match.group(1) or "").strip()
+                if sig:
+                    signatures.append(sig + ";")
+
         return signatures
-    
+
+    @staticmethod
+    def _extract_function_name_from_rust_signature(signature: str) -> str:
+        """从 Rust 函数签名中提取函数名。"""
+        m = re.search(r'\bfn\s+((?:r#)?[A-Za-z_][A-Za-z0-9_]*)\b', signature or "")
+        return (m.group(1) or "").strip() if m else ""
+
+    @staticmethod
+    def _normalize_rust_identifier(name: str) -> str:
+        """规范化 Rust raw identifier，用于函数名比较。"""
+        name = (name or "").strip()
+        return name[2:] if name.startswith("r#") else name
+
+    @staticmethod
+    def _signature_compare_key(signature: str) -> str:
+        """生成 Rust 函数签名比较键，保留大小写差异。"""
+        sig = (signature or "").strip()
+        if sig.endswith(";"):
+            sig = sig[:-1].rstrip()
+        brace_idx = sig.find("{")
+        if brace_idx != -1:
+            sig = sig[:brace_idx].rstrip()
+        sig = re.sub(r"\s+", " ", sig)
+        sig = re.sub(r"\s*::\s*", "::", sig)
+        sig = re.sub(r"\s*->\s*", " -> ", sig)
+        sig = re.sub(r"\s*:\s*", ": ", sig)
+        sig = re.sub(r"\s*,\s*", ", ", sig)
+        sig = re.sub(r"\s*\(\s*", "(", sig)
+        sig = re.sub(r"\s*\)\s*", ")", sig)
+        return re.sub(r"\s+", " ", sig).strip()
+
+    @classmethod
+    def _extract_fn_name_from_signature(cls, signature: str) -> str:
+        """从 Rust 函数签名中提取函数名。"""
+        m = re.search(r"\bfn\s+(r#[A-Za-z_]\w*|[A-Za-z_]\w*)\b", signature or "")
+        if not m:
+            return ""
+        return cls._normalize_rust_identifier(m.group(1))
+
+    @classmethod
+    def _extract_first_rust_fn_signature(cls, code: str) -> Optional[Tuple[str, str]]:
+        """从 Rust 代码片段中提取第一个完整函数签名。"""
+        if not code:
+            return None
+        pat = re.compile(
+            r'(?ms)(?P<sig>'
+            r'(?:pub(?:\([^)]*\))?\s+)?'
+            r'(?:unsafe\s+)?'
+            r'(?:extern\s+"C"\s+)?'
+            r'fn\s+(?P<name>r#[A-Za-z_]\w*|[A-Za-z_]\w*)\s*'
+            r'\([^{};]*\)'
+            r'(?:\s*->\s*[^{};]+)?'
+            r'(?:\s+where\s+[^{};]+)?'
+            r')\s*\{'
+        )
+        m = pat.search(code)
+        if not m:
+            return None
+        name = cls._normalize_rust_identifier(m.group("name"))
+        sig = re.sub(r"\s+", " ", m.group("sig")).strip()
+        return name, sig
+
+    @classmethod
+    def _collect_top_level_rust_fn_signatures(cls, code: str) -> List[Tuple[str, str]]:
+        """收集 Rust 文件中的顶层函数签名。"""
+        entries: List[Tuple[str, str]] = []
+        if not code:
+            return entries
+
+        # 优先使用 tree-sitter；当前环境缺 Rust parser 时走下方正则兜底。
+        try:
+            if rust_parser is not None and RUST_LANGUAGE is not None:
+                tree = rust_parser.parse(bytes(code, 'utf-8'))
+                query = RUST_LANGUAGE.query("""
+                    (function_item
+                        name: (identifier) @func_name
+                    ) @func_def
+                """)
+                captures = query.captures(tree.root_node)
+                for node, capture_name in captures:
+                    if capture_name != 'func_name':
+                        continue
+                    func_def_node = node.parent
+                    while func_def_node and func_def_node.type != 'function_item':
+                        func_def_node = func_def_node.parent
+                    if not func_def_node:
+                        continue
+                    parent = func_def_node.parent
+                    if parent and parent.type == 'impl_item':
+                        continue
+                    func_text = code[func_def_node.start_byte:func_def_node.end_byte]
+                    brace_idx = func_text.find('{')
+                    if brace_idx == -1:
+                        continue
+                    name = cls._normalize_rust_identifier(code[node.start_byte:node.end_byte])
+                    sig = func_text[:brace_idx].strip()
+                    entries.append((name, sig))
+                if entries:
+                    return entries
+        except Exception as e:
+            logger.debug(f"tree-sitter 收集 Rust 顶层函数签名失败，改用正则兜底: {e}")
+
+        pat = re.compile(
+            r'(?ms)(?P<sig_start>^|\n)\s*'
+            r'(?:#\[[^\n]*\]\s*)*'
+            r'(?P<sig>'
+            r'(?:pub(?:\([^)]*\))?\s+)?'
+            r'(?:unsafe\s+)?'
+            r'(?:extern\s+"C"\s+)?'
+            r'fn\s+(?P<name>r#[A-Za-z_]\w*|[A-Za-z_]\w*)\s*'
+            r'\([^{};]*\)'
+            r'(?:\s*->\s*[^{};]+)?'
+            r'(?:\s+where\s+[^{};]+)?'
+            r')\s*\{'
+        )
+        for m in pat.finditer(code):
+            start = m.start("sig")
+            prefix = code[:start]
+            if prefix.count("{") != prefix.count("}"):
+                continue
+            name = cls._normalize_rust_identifier(m.group("name"))
+            sig = re.sub(r"\s+", " ", m.group("sig")).strip()
+            entries.append((name, sig))
+        return entries
+
     def _extract_standalone_signature_from_skeleton(self, func_name: str, func_info: FunctionInfo) -> Optional[str]:
         """
         从骨架文件中提取独立函数签名（非 trait 方法）
-        
+
         优先返回 `pub fn xxx(...)` 格式的独立函数签名
         """
         # 尝试两种文件名格式：src_xxx.rs 和 xxx.rs（向后兼容）
         rs_filename_with_prefix = "src_" + func_info.file_name + ".rs"
         rs_filename = func_info.file_name + ".rs"
         skeleton_file = self.work_dir / "src" / rs_filename_with_prefix
-        
+
         if not skeleton_file.exists():
             # 回退到不带前缀的格式（向后兼容）
             skeleton_file = self.work_dir / "src" / rs_filename
             if not skeleton_file.exists():
                 return None
-        
+
         try:
             with open(skeleton_file, 'r', encoding='utf-8', errors='ignore') as f:
                 code = f.read()
-            
-            tree = rust_parser.parse(bytes(code, 'utf-8'))
-            
-            # 查询所有函数定义
-            query = RUST_LANGUAGE.query("""
-                (function_item
-                    name: (identifier) @func_name
-                ) @func_def
-            """)
-            
-            captures = query.captures(tree.root_node)
-            
+
             # 从 C 代码中提取实际函数名
             actual_func_name = func_info.name
-            
+            entries = self._collect_top_level_rust_fn_signatures(code)
+
+            for node_text, sig in entries:
+                if node_text == actual_func_name:
+                    return sig
+
             # 构建多种可能的函数名变体（通用匹配策略）
             possible_names = {
                 actual_func_name,
@@ -7892,39 +8644,91 @@ unsafe {
                 # 移除下划线：get_object_item -> getobjectitem
                 actual_func_name.replace('_', '').lower(),
             }
-            
-            for node, capture_name in captures:
-                if capture_name == 'func_name':
-                    node_text = code[node.start_byte:node.end_byte]
-                    
-                    # 检查函数名是否匹配（支持多种命名风格）
-                    if (node_text in possible_names or
-                        node_text.lower() in {n.lower() for n in possible_names} or
-                        node_text.replace('_', '').lower() in {n.replace('_', '').lower() for n in possible_names}):
-                        
-                        # 获取函数定义节点
-                        func_def_node = node.parent
-                        while func_def_node and func_def_node.type != 'function_item':
-                            func_def_node = func_def_node.parent
-                        
-                        if func_def_node:
-                            # 检查是否在 impl 块中（trait 方法）
-                            parent = func_def_node.parent
-                            if parent and parent.type == 'impl_item':
-                                continue  # 跳过 trait 方法
-                            
-                            # 提取签名（到 { 之前）
-                            func_text = code[func_def_node.start_byte:func_def_node.end_byte]
-                            brace_idx = func_text.find('{')
-                            if brace_idx != -1:
-                                sig = func_text[:brace_idx].strip()
-                                return sig
-            
+            possible_lower = {n.lower() for n in possible_names}
+            possible_flat = {n.replace('_', '').lower() for n in possible_names}
+
+            fuzzy_matches: List[Tuple[str, str]] = []
+            for node_text, sig in entries:
+                if (node_text in possible_names or
+                    node_text.lower() in possible_lower or
+                    node_text.replace('_', '').lower() in possible_flat):
+                    fuzzy_matches.append((node_text, sig))
+
+            if len(fuzzy_matches) == 1:
+                return fuzzy_matches[0][1]
+            if len(fuzzy_matches) > 1:
+                logger.warning(
+                    f"[{func_name}] 骨架签名模糊匹配不唯一，跳过骨架签名: "
+                    f"target={actual_func_name}, candidates={[name for name, _ in fuzzy_matches]}"
+                )
+
         except Exception as e:
             logger.debug(f"从骨架提取签名失败: {e}")
-        
+
         return None
-    
+
+    def _translation_cache_validation_failure(
+        self,
+        func_name: str,
+        func_info: FunctionInfo,
+        cached_code: str,
+    ) -> Optional[str]:
+        """返回 translated 缓存不可复用的原因；None 表示可继续复用。"""
+        if not (cached_code or "").strip():
+            return "empty_cache"
+
+        target_signature = (getattr(func_info, "rust_signature", "") or "").strip()
+        if target_signature.startswith("impl "):
+            return None
+
+        parsed = self._extract_first_rust_fn_signature(cached_code)
+        if not parsed:
+            # 兼容 body-only 缓存，由注入逻辑用目标签名包装。
+            return None
+
+        cached_name, cached_signature = parsed
+        target_name = self._extract_fn_name_from_signature(target_signature) or getattr(func_info, "name", "") or ""
+        target_name = self._normalize_rust_identifier(target_name)
+        if target_name and cached_name != target_name:
+            return "function_name_mismatch"
+
+        if target_signature:
+            cached_key = self._signature_compare_key(cached_signature)
+            target_key = self._signature_compare_key(target_signature)
+            if cached_key != target_key:
+                return "signature_mismatch"
+
+        return None
+
+    def _record_invalid_translation_cache(
+        self,
+        func_name: str,
+        func_info: FunctionInfo,
+        translated_file: Path,
+        reason: str,
+        cached_code: str,
+    ) -> None:
+        """记录不可复用的 translated 缓存，但不中断当前翻译流程。"""
+        try:
+            parsed = self._extract_first_rust_fn_signature(cached_code)
+            payload = {
+                "func_name": func_name,
+                "reason": reason,
+                "cache_path": str(Path(translated_file).resolve()),
+                "target_function_name": self._extract_fn_name_from_signature(getattr(func_info, "rust_signature", "") or "")
+                    or getattr(func_info, "name", ""),
+                "target_signature": getattr(func_info, "rust_signature", "") or "",
+                "cached_function_name": parsed[0] if parsed else "",
+                "cached_signature": parsed[1] if parsed else "",
+            }
+            diag_dir = getattr(self, "repair_history_dir", None)
+            if not diag_dir:
+                return
+            diag_path = Path(diag_dir) / "_invalid_translation_cache" / f"{func_name}.json"
+            _atomic_write_text(diag_path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+        except Exception as e:
+            logger.debug(f"[{func_name}] 写入无效 translated 缓存诊断失败: {e}")
+
     def _process_function(
         self,
         func_name: str,
@@ -7995,21 +8799,31 @@ unsafe {
                 return False  # 返回 False 表示跳过，不是成功
 
             func_info.rust_signature = rust_signature
-        
+
         # 2. 检查是否已有翻译结果
         translated_file = self.translated_dir / f"{func_name}.txt"
+        invalid_cache_reason: Optional[str] = None
         if translated_file.exists():
             with open(translated_file, 'r', encoding='utf-8', errors='ignore') as f:
                 translated_content = f.read()
-            
-            # 尝试直接使用现有翻译
-            if self._try_inject_and_compile(func_name, func_info, translated_content):
+
+            invalid_cache_reason = self._translation_cache_validation_failure(func_name, func_info, translated_content)
+            if invalid_cache_reason:
+                logger.warning(f"[{func_name}] 跳过 translated 缓存: {invalid_cache_reason} ({translated_file})")
+                self._record_invalid_translation_cache(
+                    func_name,
+                    func_info,
+                    translated_file,
+                    invalid_cache_reason,
+                    translated_content,
+                )
+            elif self._try_inject_and_compile(func_name, func_info, translated_content):
                 self.stats["translated"] += 1
                 return True
 
         # types.rs slice: extra symbols accumulated from rustc errors during repair attempts
         types_slice_extra_symbols: Set[str] = set()
-        
+
         # 3. 翻译函数
         per_func_context = self._build_skeleton_context_for_function(
             func_info,
@@ -8019,12 +8833,19 @@ unsafe {
         translated_code = self._translate_function(func_info, per_func_context)
         if not translated_code:
             return False
-        
+
         self.stats["translated"] += 1
-        
+
         # 注册已翻译函数（用于为后续函数提供调用上下文）
         self._register_translated_function(func_info, translated_code)
-        
+        if invalid_cache_reason:
+            try:
+                self.translated_dir.mkdir(parents=True, exist_ok=True)
+                with open(translated_file, 'w', encoding='utf-8') as f:
+                    f.write(translated_code)
+            except Exception as e:
+                logger.debug(f"[{func_name}] 覆盖无效 translated 缓存失败: {e}")
+
         # 4. 注入并编译（不回退，以便修复循环能获取正确的编译错误）
         # 注意：这里设置 rollback_on_failure=False，让翻译后的代码保留在文件中
         # 这样修复循环中 _get_compile_error() 才能获取到正确的编译错误
@@ -8081,21 +8902,44 @@ unsafe {
                     logger.debug(f"[C2Rust fallback] {func_name}: injection_failed path failed (ignored): {e}")
             print("  ❌ 无法将翻译结果注入骨架（已保留翻译工件，保留占位符）")
             return False
-        
+
+        initial_error_msg = ""
+        try:
+            initial_error_msg = self._get_compile_error() or ""
+        except Exception:
+            initial_error_msg = ""
+        initial_non_function_reason = self._classify_non_function_repair_error(initial_error_msg)
+        if initial_non_function_reason:
+            print(f"  ⚠️ 编译错误属于非函数体可修范围，停止当前函数 repair: {initial_non_function_reason}")
+            func_history_dir = self.repair_history_dir / func_name
+            func_history_dir.mkdir(parents=True, exist_ok=True)
+            error_file = func_history_dir / "non_function_compile_error.txt"
+            _atomic_write_text(error_file, initial_error_msg or "(无错误信息)")
+            return self._record_non_function_repair_stop(
+                func_name=func_name,
+                func_info=func_info,
+                translated_code=translated_code,
+                reason=initial_non_function_reason,
+                error_msg=initial_error_msg,
+                func_history_dir=func_history_dir,
+                error_file=error_file,
+            )
+
         # 5. 修复循环（带错误历史追踪）
         # 此时文件中保留的是翻译后的代码（可能有编译错误）
         error_history = []  # 记录历史错误，避免重复
         repair_attempts_history = []  # 记录每次尝试的完整错误和代码
+        repair_stop_reason = ""
         # 创建函数修复历史目录
         func_history_dir = self.repair_history_dir / func_name
         func_history_dir.mkdir(parents=True, exist_ok=True)
-        
+
         for attempt in range(self.max_repair_attempts):
             print(f"  修复尝试 {attempt + 1}/{self.max_repair_attempts}...")
-            
+
             # 获取编译错误（此时文件中是翻译后的代码，可以获取正确的错误）
             error_msg = self._get_compile_error()
-            
+
             # 保存每次尝试的完整错误信息
             error_file = func_history_dir / f"attempt_{attempt + 1}_error.txt"
             _atomic_write_text(
@@ -8112,7 +8956,7 @@ unsafe {
                     ]
                 ),
             )
-            
+
             # 保存当前尝试的翻译代码（修复前的代码）
             code_file = func_history_dir / f"attempt_{attempt + 1}_code.rs"
             _atomic_write_text(
@@ -8144,20 +8988,47 @@ unsafe {
                     error_msg = self._get_compile_error()
             except Exception as e:
                 logger.debug(f"[{func_name}] 字段 accessor shim 修复失败: {e}")
-            
+
+            non_function_reason = self._classify_non_function_repair_error(error_msg)
+            if non_function_reason:
+                print(f"  ⚠️ 编译错误属于非函数体可修范围，停止当前函数 repair: {non_function_reason}")
+                return self._record_non_function_repair_stop(
+                    func_name=func_name,
+                    func_info=func_info,
+                    translated_code=translated_code,
+                    reason=non_function_reason,
+                    error_msg=error_msg,
+                    func_history_dir=func_history_dir,
+                    error_file=error_file,
+                    repair_attempts_history=repair_attempts_history
+                    + [
+                        {
+                            "attempt_num": attempt + 1,
+                            "error_msg": error_msg,
+                            "code_before": translated_code,
+                        }
+                    ],
+                )
+
             # 检查是否是重复错误（陷入死循环）
             error_key = error_msg[:500] if error_msg else ""
-            if error_key in error_history[-3:] if len(error_history) >= 3 else False:
-                print(f"  检测到重复错误（历史记录已传递给LLM）...")
+            if self._should_stop_repair_for_repeated_error(error_history, error_key):
+                repair_stop_reason = "repeated_compile_error"
+                print("  ⚠️ 连续重复同一编译错误，停止当前函数 repair")
+                _atomic_write_text(
+                    func_history_dir / "repeated_error_stop.txt",
+                    f"reason=repeated_compile_error\nattempt={attempt + 1}\n",
+                )
+                break
             error_history.append(error_key)
-            
+
             # 保存本次尝试的完整信息到历史记录（用于传递给LLM）
             repair_attempts_history.append({
                 "attempt_num": attempt + 1,
                 "error_msg": error_msg,  # 完整错误信息
                 "code_before": translated_code,  # 修复前的代码
             })
-            
+
             # 保存错误历史到文件
             history_file = func_history_dir / "error_history.txt"
             history_lines = [
@@ -8169,7 +9040,7 @@ unsafe {
                 history_lines.append(f"\n尝试 {i}:\n{err}\n")
                 history_lines.append(f"{'-'*60}\n")
             _atomic_write_text(history_file, "".join(history_lines))
-            
+
             # 请求 LLM 修复（传递完整历史记录）
             # 注意：传递所有历史记录，让 LLM 能看到之前所有的尝试
             # 第1次修复时，repair_attempts_history 已经包含了当前（第1次）的错误和代码
@@ -8189,7 +9060,7 @@ unsafe {
                 error_history=error_history[-3:],  # 错误摘要（用于检测重复）
                 repair_attempts_history=repair_attempts_history  # 传递所有历史记录
             )
-            
+
             # 保存修复后的代码
             if repaired_code:
                 repaired_code_file = func_history_dir / f"attempt_{attempt + 1}_repaired_code.rs"
@@ -8207,11 +9078,11 @@ unsafe {
                         ]
                     ),
                 )
-                
+
                 # 更新历史记录，添加修复后的代码
                 if len(repair_attempts_history) > 0:
                     repair_attempts_history[-1]["code_after"] = repaired_code
-            
+
             # 注入修复后的代码并编译（不回退，以便下次循环能获取正确的错误）
             if repaired_code and self._try_inject_and_compile(func_name, func_info, repaired_code, rollback_on_failure=False):
                 # 修复成功，保存成功标记
@@ -8230,17 +9101,18 @@ unsafe {
                 return True
             if getattr(func_info, "injection_failed", False):
                 break
-            
+
             translated_code = repaired_code or translated_code
-        
+
         # 6. 修复失败，保存失败标记
         failure_file = func_history_dir / "repair_failed.txt"
+        failure_reason = repair_stop_reason or f"repair_failed_after_{self.max_repair_attempts}"
         _atomic_write_text(
             failure_file,
             "".join(
                 [
                     f"函数: {func_name}\n",
-                    f"修复失败: 经过 {self.max_repair_attempts} 次尝试后仍无法修复\n",
+                    f"修复失败原因: {failure_reason}\n",
                     "所有尝试的错误信息和代码已保存在当前目录\n",
                 ]
             ),
@@ -8256,13 +9128,14 @@ unsafe {
             func_name,
             func_info,
             translated_code,
-            reason=f"repair_failed_after_{self.max_repair_attempts}",
+            reason=failure_reason,
             error_msg=final_error_msg,
+            repair_attempts_history=repair_attempts_history,
         )
         base_comment = self._build_manual_fix_comment(
             func_name,
             func_info,
-            reason=f"repair_failed_after_{self.max_repair_attempts}",
+            reason=failure_reason,
             artifact_path=artifact,
             error_msg=final_error_msg,
         )
@@ -8321,12 +9194,12 @@ unsafe {
             )
         except Exception:
             pass
-        
+
         # 如果 C2Rust 兜底成功并且项目可编译，则视为本函数已“恢复成功”
         if used_c2rust_fallback:
             return True
         return False
-    
+
     def _translate_function_only(
         self,
         func_name: str,
@@ -8335,40 +9208,44 @@ unsafe {
     ) -> Optional[str]:
         """
         仅翻译函数（不注入），用于并行翻译模式
-        
+
         Args:
             func_name: 函数名
             func_info: 函数信息
             skeleton_context: 骨架上下文
-            
+
         Returns:
             翻译后的代码，或 None（如果失败）
         """
         # 1. 读取 Rust 签名
-        rust_signature = ""
+        rust_signature = self._load_signature_from_mapping(func_name) or ""
         placeholder_info = None
-        
+
         # 调试日志：记录签名提取过程
         logger.debug(f"[{func_name}] 开始签名提取, C函数名={func_info.name}, 文件名={func_info.file_name}")
-        
-        skeleton_sig = self._extract_standalone_signature_from_skeleton(func_name, func_info)
-        if skeleton_sig:
-            rust_signature = skeleton_sig
-            logger.debug(f"[{func_name}] 从骨架提取签名成功: {skeleton_sig[:80]}...")
+
+        if rust_signature:
+            logger.debug(f"[{func_name}] 从确定性映射读取签名: {rust_signature[:80]}...")
         else:
-            logger.debug(f"[{func_name}] 骨架签名提取失败，尝试签名文件")
-            signature_file = self.signature_dir / f"{func_name}.txt"
-            if signature_file.exists():
-                with open(signature_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    rust_signature = f.read().strip()
-                logger.debug(f"[{func_name}] 从签名文件读取: {rust_signature[:80] if rust_signature else '(空)'}")
-                if "&self" in rust_signature:
-                    rust_signature = rust_signature.replace("&self, ", "").replace("&self,", "").replace("(&self)", "()")
-                    if not rust_signature.startswith("pub "):
-                        rust_signature = "pub " + rust_signature
+            skeleton_sig = self._extract_standalone_signature_from_skeleton(func_name, func_info)
+            if skeleton_sig:
+                rust_signature = skeleton_sig
+                logger.debug(f"[{func_name}] 从骨架提取签名成功: {skeleton_sig[:80]}...")
             else:
-                logger.debug(f"[{func_name}] 签名文件不存在: {signature_file}")
-        
+                logger.debug(f"[{func_name}] 骨架签名提取失败，尝试签名文件")
+                signature_dir = getattr(self, "signature_dir", None)
+                signature_file = Path(signature_dir) / f"{func_name}.txt" if signature_dir else None
+                if signature_file and signature_file.exists():
+                    with open(signature_file, 'r', encoding='utf-8', errors='ignore') as f:
+                        rust_signature = f.read().strip()
+                    logger.debug(f"[{func_name}] 从签名文件读取: {rust_signature[:80] if rust_signature else '(空)'}")
+                    if "&self" in rust_signature:
+                        rust_signature = rust_signature.replace("&self, ", "").replace("&self,", "").replace("(&self)", "()")
+                        if not rust_signature.startswith("pub "):
+                            rust_signature = "pub " + rust_signature
+                else:
+                    logger.debug(f"[{func_name}] 签名文件不存在: {signature_file}")
+
         if not rust_signature:
             logger.debug(f"[{func_name}] 尝试从 C++ 代码推断签名")
             placeholder_info = self._infer_signature_from_cpp(func_info)
@@ -8384,7 +9261,7 @@ unsafe {
                 logger.debug(f"[{func_name}] 推断签名: {rust_signature[:80] if rust_signature else '(空)'}")
             else:
                 logger.debug(f"[{func_name}] 推断签名失败")
-        
+
         if not rust_signature:
             # 详细记录失败原因
             logger.warning(f"[{func_name}] 翻译失败: 无法获取 Rust 签名")
@@ -8395,15 +9272,27 @@ unsafe {
             func_info.skipped = True
             setattr(func_info, "skip_reason", "无法获取 Rust 签名")
             return None
-        
+
         func_info.rust_signature = rust_signature
-        
+
         # 2. 检查是否已有翻译结果
         translated_file = self.translated_dir / f"{func_name}.txt"
         if translated_file.exists():
             with open(translated_file, 'r', encoding='utf-8', errors='ignore') as f:
-                return f.read()
-        
+                translated_content = f.read()
+            invalid_cache_reason = self._translation_cache_validation_failure(func_name, func_info, translated_content)
+            if invalid_cache_reason:
+                logger.warning(f"[{func_name}] 跳过 translated 缓存: {invalid_cache_reason} ({translated_file})")
+                self._record_invalid_translation_cache(
+                    func_name,
+                    func_info,
+                    translated_file,
+                    invalid_cache_reason,
+                    translated_content,
+                )
+            else:
+                return translated_content
+
         # 3. 翻译函数
         per_func_context = self._build_skeleton_context_for_function(func_info, skeleton_context)
         translated_code = self._translate_function(func_info, per_func_context)
@@ -8413,6 +9302,7 @@ unsafe {
                 translated_code = self._rewrite_safe_globals_in_code(translated_code)
             except Exception:
                 pass
+            self.stats.setdefault("translated", 0)
             self.stats["translated"] += 1
             # 注册已翻译函数（用于为后续函数提供调用上下文）
             self._register_translated_function(func_info, translated_code)
@@ -8427,7 +9317,7 @@ unsafe {
             # 翻译失败，记录详细信息
             logger.warning(f"[{func_name}] LLM 翻译返回空结果")
         return translated_code
-    
+
     def _inject_and_compile_with_repair(
         self,
         func_name: str,
@@ -8437,20 +9327,20 @@ unsafe {
     ) -> bool:
         """
         注入代码并编译，如果失败则进行修复
-        
+
         Args:
             func_name: 函数名
             func_info: 函数信息
             translated_code: 已翻译的代码
             skeleton_context: 骨架上下文
-            
+
         Returns:
             是否成功
         """
         # 1. 尝试注入并编译
         if self._try_inject_and_compile(func_name, func_info, translated_code, rollback_on_failure=False):
             return True
-        
+
         if getattr(func_info, "injection_failed", False):
             artifact = self._save_manual_fix_artifact(
                 func_name,
@@ -8500,6 +9390,28 @@ unsafe {
                     logger.debug(f"[C2Rust fallback] {func_name}: parallel injection_failed path failed (ignored): {e}")
             return False
 
+        initial_error_msg = ""
+        try:
+            initial_error_msg = self._get_compile_error() or ""
+        except Exception:
+            initial_error_msg = ""
+        initial_non_function_reason = self._classify_non_function_repair_error(initial_error_msg)
+        if initial_non_function_reason:
+            print(f"  ⚠️ 编译错误属于非函数体可修范围，停止当前函数 repair: {initial_non_function_reason}")
+            func_history_dir = self.repair_history_dir / func_name
+            func_history_dir.mkdir(parents=True, exist_ok=True)
+            error_file = func_history_dir / "non_function_compile_error.txt"
+            _atomic_write_text(error_file, initial_error_msg or "(无错误信息)")
+            return self._record_non_function_repair_stop(
+                func_name=func_name,
+                func_info=func_info,
+                translated_code=translated_code,
+                reason=initial_non_function_reason,
+                error_msg=initial_error_msg,
+                func_history_dir=func_history_dir,
+                error_file=error_file,
+            )
+
         # 1.5 按需类型/结构恢复（不消耗 LLM 修复次数）
         # 目标：先把缺失类型/常量/opaque struct 字段补齐，避免让 LLM 为“编译上下文缺失”改坏函数语义
         if self.type_recovery:
@@ -8545,19 +9457,20 @@ unsafe {
                 # 重新编译
                 if self._compile_project():
                     return True
-        
+
         # 2. 修复循环
         error_history = []
         repair_attempts_history = []
+        repair_stop_reason = ""
         func_history_dir = self.repair_history_dir / func_name
         func_history_dir.mkdir(parents=True, exist_ok=True)
 
         types_slice_extra_symbols: Set[str] = set()
         syntax_error_warned = False
-        
+
         for attempt in range(self.max_repair_attempts):
             print(f"  修复尝试 {attempt + 1}/{self.max_repair_attempts}...")
-            
+
             error_msg = self._get_compile_error()
 
             # 额外提示：语法错误通常没有 error[E...]，容易导致“错误码提取不到”
@@ -8568,7 +9481,7 @@ unsafe {
                     print("  ⚠️ 检测到可能的 Rust 语法错误（无 error[E...] 错误码），将优先按语法修复尝试。")
             except Exception:
                 pass
-            
+
             # 保存错误信息
             error_file = func_history_dir / f"attempt_{attempt + 1}_error.txt"
             _atomic_write_text(
@@ -8605,10 +9518,37 @@ unsafe {
                     error_msg = self._get_compile_error()
             except Exception as e:
                 logger.debug(f"[{func_name}] internal symbol resolver 修复失败: {e}")
-            
+
+            non_function_reason = self._classify_non_function_repair_error(error_msg)
+            if non_function_reason:
+                print(f"  ⚠️ 编译错误属于非函数体可修范围，停止当前函数 repair: {non_function_reason}")
+                return self._record_non_function_repair_stop(
+                    func_name=func_name,
+                    func_info=func_info,
+                    translated_code=translated_code,
+                    reason=non_function_reason,
+                    error_msg=error_msg,
+                    func_history_dir=func_history_dir,
+                    error_file=error_file,
+                    repair_attempts_history=repair_attempts_history
+                    + [
+                        {
+                            "attempt_num": attempt + 1,
+                            "error_msg": error_msg,
+                            "code_before": translated_code,
+                        }
+                    ],
+                )
+
             error_key = error_msg[:500] if error_msg else ""
-            if error_key in error_history[-3:] if len(error_history) >= 3 else False:
-                print(f"  检测到重复错误（历史记录已传递给LLM）...")
+            if self._should_stop_repair_for_repeated_error(error_history, error_key):
+                repair_stop_reason = "repeated_compile_error"
+                print("  ⚠️ 连续重复同一编译错误，停止当前函数 repair")
+                _atomic_write_text(
+                    func_history_dir / "repeated_error_stop.txt",
+                    f"reason=repeated_compile_error\nattempt={attempt + 1}\n",
+                )
+                break
             error_history.append(error_key)
 
             repair_attempts_history.append({
@@ -8616,7 +9556,7 @@ unsafe {
                 "error_msg": error_msg,
                 "code_before": translated_code,
             })
-            
+
             # 请求 LLM 修复
             # types.rs slice 扩展：根据 rustc 错误补齐缺失类型/常量符号
             try:
@@ -8634,23 +9574,23 @@ unsafe {
                 error_history=error_history[-3:],
                 repair_attempts_history=repair_attempts_history
             )
-            
+
             if repaired_code:
                 repaired_code_file = func_history_dir / f"attempt_{attempt + 1}_repaired_code.rs"
                 _atomic_write_text(repaired_code_file, repaired_code)
-                
+
                 if len(repair_attempts_history) > 0:
                     repair_attempts_history[-1]["code_after"] = repaired_code
-            
+
             if repaired_code and self._try_inject_and_compile(func_name, func_info, repaired_code, rollback_on_failure=False):
                 self.stats["repaired"] += 1
                 return True
-            
+
             if getattr(func_info, "injection_failed", False):
                 break
-            
+
             translated_code = repaired_code or translated_code
-        
+
         # 修复失败：保留翻译工件 + 回退到占位符（不为编译通过而“删内容”）
         final_error_msg = ""
         try:
@@ -8661,22 +9601,25 @@ unsafe {
             func_name,
             func_info,
             translated_code,
-            reason=f"repair_failed_after_{self.max_repair_attempts}",
+            reason=repair_stop_reason or f"repair_failed_after_{self.max_repair_attempts}",
             error_msg=final_error_msg,
+            repair_attempts_history=repair_attempts_history,
         )
         comment = self._build_manual_fix_comment(
             func_name,
             func_info,
-            reason=f"repair_failed_after_{self.max_repair_attempts}",
+            reason=repair_stop_reason or f"repair_failed_after_{self.max_repair_attempts}",
             artifact_path=artifact,
             error_msg=final_error_msg,
         )
 
-        # 关键改进：确保回退成功，如果普通回退失败则强制恢复整个文件
+        # 只允许回退当前失败函数；整文件恢复会抹掉同文件已成功翻译的函数。
         rollback_success = self._rollback_function_safe(func_name, func_info)
         if not rollback_success:
-            logger.error(f"回退函数 {func_name} 失败，尝试强制恢复整个文件")
-            self._force_restore_skeleton_file(func_info)
+            logger.error(
+                f"无法单独回退函数 {func_name}，已保留当前文件并记录 artifact；"
+                "禁止用 skeleton 覆盖整个文件"
+            )
 
         # 尽力在占位符函数上方落下注释，方便人工定位
         try:
@@ -8934,38 +9877,33 @@ unsafe {
         except Exception as e:
             logger.debug(f"[Oracle] knowledge auto-extract failed: {func_key}: {e}")
             return []
-    
+
     def _translate_function(self, func_info: FunctionInfo, skeleton_context: str) -> Optional[str]:
         """
         两步走翻译策略 (参考 SACTOR)
-        
+
         Phase 3.1: C to Unidiomatic Rust (语义等价优先)
           - 允许大量使用 unsafe、裸指针
           - 不需要处理复杂的生命周期和借用规则
           - 确保逻辑完全等价
-        
+
         Phase 3.2: Unidiomatic to Idiomatic Rust (安全性重构) [可选]
           - 将 unsafe 块移除
           - 将裸指针转换为 Reference 或 Option/Result
           - 只关注语法重构，不改变业务逻辑
         """
         from generate.generation import generation
-        
+
         print(f"  Phase 3.1 翻译...", end=" ", flush=True)
-        
-        # 附加多级上下文（语义切片 / 全局声明 / 用法示例）
+
+        # 附加多级上下文（依赖闭包 / 语义切片 / 全局声明 / 用法示例）
         context_prefix, context_meta = self._build_context_prefix(func_info)
         context_summary_path = None
         if context_meta and context_meta.get("context_blocks"):
             context_summary_path = self._save_context_summary(func_info, context_meta)
-        if context_prefix:
-            if skeleton_context:
-                skeleton_context = f"{context_prefix}\n\n{skeleton_context}"
-            else:
-                skeleton_context = context_prefix
 
-        # 检查并截断骨架上下文（防止超过模型最大上下文窗口）
-        if len(skeleton_context) > MAX_SKELETON_CONTEXT_CHARS:
+        # 只有显式设置 MAX_SKELETON_CONTEXT_CHARS 时才裁剪上下文。
+        if MAX_SKELETON_CONTEXT_CHARS is not None and len(skeleton_context) > MAX_SKELETON_CONTEXT_CHARS:
             skeleton_context = smart_truncate_context(skeleton_context, MAX_SKELETON_CONTEXT_CHARS)
 
         # 检查签名是否是 trait 方法（带 &self）
@@ -9000,13 +9938,12 @@ CRITICAL: These are OPAQUE types - you CANNOT access their struct fields directl
 **SOLUTION**: Use the accessor shim functions provided below to access fields.
 """
             else:
-                # 没有 accessor shims 时，提示返回默认值
+                # 没有 accessor shims 时，限制 fallback 只作用于不可读字段表达式本身。
                 opaque_type_warning += """
-- If C/C++ code accesses fields like `.child`, `.next`, `.string` on these types, return a safe default instead
-- For pointer return types: return `std::ptr::null_mut()`
-- For integer return types: return `0`
-- For boolean return types: return `0` (cJSON_bool)
-- For void functions: just return
+- If C/C++ code accesses fields like `.child`, `.next`, `.string`, first use any provided accessor shim or existing Rust API.
+- Do NOT collapse the whole function to a default return just because one field is opaque.
+- Preserve surrounding control flow, calls, pointer checks, and side effects.
+- If one unreadable field has no shim/equivalent, use the smallest local placeholder needed for that expression only.
 """
 
         # Phase 3.1: 生成语义正确但不地道的 Rust 代码（允许 unsafe）
@@ -9021,10 +9958,10 @@ OUTPUT FORMAT (STRICT):
 ## ⚠️ CRITICAL: AVOID THESE MISTAKES ⚠️
 1. **Option<fn> MUST unwrap**: `if let Some(f) = cb {{ unsafe {{ f(args) }} }}`
 2. **ALL ptr ops need unsafe**: `unsafe {{ *ptr = val; (*ptr).field; }}`
-3. **OPAQUE types (c_void) have NO fields** - return defaults instead
+3. **OPAQUE types (c_void) have NO fields** - use accessor shims or existing APIs when provided; otherwise keep fallback local to the unreadable expression
 4. **Pointer cast**: `ptr as *mut T` (NOT `ptr.cast_mut()` - doesn't exist!)
 5. **DO NOT invent externs for macros/inline/external APIs**: external symbols are declared in `compat.rs` (bindgen allowlist); macro/static inline are not stable link symbols.
-6. **DO NOT emit C macro names / header-only inline helper names**: input is a preprocessed `.i` (macros expanded). If you see a macro-like call, output the expanded expression or implement a local Rust helper (NOT an extern).
+	6. **DO NOT emit C macro names / header-only inline helper names**: input is a preprocessed `.i` (macros expanded). If helper logic is needed, inline the logic inside the target function body only; do NOT emit extra helper items or externs.
 
 ## ❌ NON-EXISTENT / WRONG SYNTAX - NEVER USE ❌
 - `ptr.cast_mut()` → Use `ptr as *mut T`
@@ -9035,7 +9972,7 @@ OUTPUT FORMAT (STRICT):
 ## RULES
 1. Match TARGET SIGNATURE exactly (pub fn / impl method / Drop)
 2. Use only skeleton types and existing `compat.rs` extern decls; DO NOT add ad-hoc `extern "C"` blocks
-3. OPAQUE types: can't access fields, use ptr arithmetic or defaults
+3. OPAQUE types: can't access fields; use accessor shims or existing APIs when provided and avoid whole-function default returns
 4. Wrap ALL ptr derefs in `unsafe {{ }}`
 5. Function ptrs: `Option<fn>` - must unwrap before call
 
@@ -9052,14 +9989,14 @@ OUTPUT FORMAT (STRICT):
 ## TYPE CHECKING (MUST COMPILE)
 - Every call MUST satisfy the provided Rust signatures (Target signature + \"Called Rust APIs\").
 - If types mismatch, add explicit casts/conversions (e.g. `as i32`, `as u32`, `as usize`, pointer casts).
-- Treat `size_t/ssize_t` as `usize/isize` in Rust; cast before arithmetic/comparisons to avoid E0308.
+- Use the actual `crate::types::size_t` / `ssize_t` aliases from `types.rs`; cast before arithmetic/comparisons to avoid E0308.
 
 ## SIZE_T / USIZE CONVERSION (CRITICAL - E0308 FIX)
-- `crate::types::size_t` is defined as `u64` by bindgen (on 64-bit systems)
-- But `libc` functions (malloc, realloc, memcpy, etc.) expect `usize`
+- `crate::types::size_t` may be `usize`, `u64`, or another target-specific alias. Do NOT assume `u64`.
+- `libc` functions (malloc, realloc, memcpy, etc.) expect `usize`
 - ALWAYS cast when calling libc: `libc::malloc(size as usize)`
 - ALWAYS cast strlen result: `(libc::strlen(ptr) + 1) as usize` for malloc
-- When assigning to size_t field: `(value as u64)` or `(value as crate::types::size_t)`
+- When assigning to size_t field: `(value as crate::types::size_t)`; do not hard-code `u64`
 
 ## RAW POINTER RULES (CRITICAL - E0599 FIX)
 - Raw pointers (`*mut T`, `*const T`) have NO methods like `.len()`, `.is_empty()`, etc.
@@ -9090,10 +10027,10 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
 
         # 如果签名是 trait 方法或析构函数，需要特殊处理
         target_signature = func_info.rust_signature
-        
+
         # 检查是否是 Drop trait 实现（析构函数）
         is_drop_impl = target_signature.startswith("impl Drop for")
-        
+
         if is_drop_impl:
             # 析构函数保持原样，不需要转换
             pass
@@ -9127,29 +10064,15 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                         if candidate.exists():
                             rag_file = candidate
                             break
-                # Fallback: if semantic reranker (Jina) output is missing (no GPU / skipped),
-                # use the BM25 (elastic_search_results) output which still contains
-                # `[EXTRACTED_KNOWLEDGE] ... [/EXTRACTED_KNOWLEDGE]` blocks.
-                if not rag_file.exists():
-                    elastic_dir = self.workspace_root / "rag" / "elastic_search_results" / str(self.project_name)
-                    elastic_candidates = [
-                        elastic_dir / f"{func_info.file_name}_{func_info.index}.txt",
-                        elastic_dir / f"{func_info.file_name}.txt",
-                        elastic_dir / f"{func_info.name}.txt",
-                    ]
-                    for candidate in elastic_candidates:
-                        if candidate.exists():
-                            rag_file = candidate
-                            break
                 if rag_file.exists():
                     try:
                         with open(rag_file, 'r', encoding='utf-8', errors='ignore') as f:
                             rag_content = f.read()
-                        
+
                         # 解析 RAG 文件（格式：C_Code, Function, Extracted_Knowledge, Unixcoder Score, 分隔符）
                         # 每个块对应一个检索到的候选代码对（按 reranker 排序）
                         rag_blocks = [b for b in rag_content.split("-" * 50) if b.strip()]
-                        
+
                         # 配置：
                         # - 默认保持旧行为：API_Mapping=10，Partial=2
                         # - 若设置 C2R_RAG_TOPK=k，则限制“注入的知识条目数”为 k（而不是前 k 个代码对）
@@ -9169,41 +10092,35 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                             # NOTE: 这里的 TOP_K_* 表示“最多注入多少条知识”，而不是“看前多少个代码对”。
                             TOP_K_API = 10  # 最多注入的 API_Mapping 条目数
                             TOP_K_PARTIAL = 2  # 最多注入的 Partial/Idiom 条目数
-                        
+
                         api_mappings = []
                         partial_patterns = []
-                        
+
                         # 遍历各块，按需提取知识
                         for block_idx, block in enumerate(rag_blocks):
                             # 已达到两类知识的上限，就无需继续扫描更多代码对（保持 prompt 尺寸稳定）
                             if len(api_mappings) >= TOP_K_API and len(partial_patterns) >= TOP_K_PARTIAL:
                                 break
-                            
+                            if "Extracted_Knowledge:" not in block:
+                                continue
+
                             try:
-                                # 提取 Extracted_Knowledge 部分（两种格式）：
-                                # - Jina reranker: `Extracted_Knowledge: <json> ... Unixcoder Score:`
-                                # - BM25 (elastic_search.py): `[EXTRACTED_KNOWLEDGE] <json> [/EXTRACTED_KNOWLEDGE]`
-                                knowledge_str = ""
-                                if "Extracted_Knowledge:" in block:
-                                    knowledge_str = block.split("Extracted_Knowledge:")[1].split("Unixcoder Score:")[0].strip()
-                                elif "[EXTRACTED_KNOWLEDGE]" in block:
-                                    knowledge_str = block.split("[EXTRACTED_KNOWLEDGE]")[1].split("[/EXTRACTED_KNOWLEDGE]")[0].strip()
-                                else:
-                                    continue
+                                # 提取 Extracted_Knowledge 部分
+                                knowledge_str = block.split("Extracted_Knowledge:")[1].split("Unixcoder Score:")[0].strip()
                                 if not knowledge_str:
                                     continue
-                                
+
                                 knowledge_list = json.loads(knowledge_str)
                                 # 确保是列表
                                 if isinstance(knowledge_list, dict):
                                     knowledge_list = [knowledge_list]
                                 elif not isinstance(knowledge_list, list):
                                     continue
-                                
+
                                 # 从每个块中提取所有相关知识
                                 for k in knowledge_list:
                                     k_type = k.get("knowledge_type", "Unknown")
-                                    
+
                                     # API_Mapping: 限制“知识条目数”（而不是代码对数）
                                     if k_type == "API_Mapping" and len(api_mappings) < TOP_K_API:
                                         c_api = k.get("c_api", "").strip()
@@ -9211,7 +10128,7 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                                         desc = k.get("description", "").strip()
                                         if c_api and rust_api:
                                             api_mappings.append((c_api, rust_api, desc))
-                                    
+
                                     # Partial/Idiom: 同样限制“知识条目数”
                                     elif k_type == "Partial" and len(partial_patterns) < TOP_K_PARTIAL:
                                         c_frag = k.get("c_fragment", "").strip()
@@ -9219,16 +10136,16 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                                         desc = k.get("description", "").strip()
                                         if c_frag and rust_frag:
                                             partial_patterns.append((c_frag, rust_frag, desc))
-                                    
+
                                     # 忽略 Full 和其他类型
-                            
+
                             except (json.JSONDecodeError, IndexError, ValueError) as e:
                                 logger.debug(f"解析知识失败 (块 {block_idx}): {e}")
                                 continue
-                        
+
                         # 格式化提取的知识
                         knowledge_hints = []
-                        
+
                         # 输出 API 映射（按“知识条目数”限制）
                         if api_mappings:
                             knowledge_hints.append(f"## API Mappings (top {TOP_K_API} items from RAG)")
@@ -9237,7 +10154,7 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                                     knowledge_hints.append(f"- `{c_api}` → `{rust_api}` ({desc})")
                                 else:
                                     knowledge_hints.append(f"- `{c_api}` → `{rust_api}`")
-                        
+
                         # 输出代码模式（按“知识条目数”限制）
                         if partial_patterns:
                             knowledge_hints.append(f"\n## Code Patterns (top {TOP_K_PARTIAL} items from RAG)")
@@ -9259,7 +10176,12 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                                         knowledge_hints.append(f"- C: `{c_preview}` → Rust: `{rust_preview}`")
 
                         if knowledge_hints:
-                            rag_knowledge = "\n\n## Extracted Translation Knowledge (from RAG)\n" + "\n".join(knowledge_hints)
+                            rag_notice = (
+                                "NOTE: RAG retrieved knowledge is optional and may be unrelated. "
+                                "Use it only when it matches the target C/C++ source, target Rust signature, "
+                                "dependency closure and types.rs. Source/signature/dependency/types facts override RAG."
+                            )
+                            rag_knowledge = "\n\n## Extracted Translation Knowledge (from RAG)\n" + rag_notice + "\n" + "\n".join(knowledge_hints)
                             # C2R: 记录 RAG 知识提取统计
                             logger.info(f"[RAG统计] 函数: {func_info.name}, API映射: {len(api_mappings)}, 代码模式: {len(partial_patterns)}, 总长度: {len(rag_knowledge)} 字符")
                     except Exception as e:
@@ -9311,17 +10233,6 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                         if candidate.exists():
                             rag_file = candidate
                             break
-                # Fallback to BM25 outputs when reranked results are missing.
-                if not rag_file.exists():
-                    elastic_dir = self.workspace_root / "rag" / "elastic_search_results" / str(self.project_name)
-                    for candidate in (
-                        elastic_dir / f"{func_info.file_name}_{func_info.index}.txt",
-                        elastic_dir / f"{func_info.file_name}.txt",
-                        elastic_dir / f"{func_info.name}.txt",
-                    ):
-                        if candidate.exists():
-                            rag_file = candidate
-                            break
 
                 if rag_file.exists():
                     try:
@@ -9333,14 +10244,10 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                             done_partial = (not need_pred_partial) or (len(partial_patterns) >= TOP_K_PARTIAL)
                             if done_api and done_partial:
                                 break
+                            if "Extracted_Knowledge:" not in block:
+                                continue
                             try:
-                                knowledge_str = ""
-                                if "Extracted_Knowledge:" in block:
-                                    knowledge_str = block.split("Extracted_Knowledge:")[1].split("Unixcoder Score:")[0].strip()
-                                elif "[EXTRACTED_KNOWLEDGE]" in block:
-                                    knowledge_str = block.split("[EXTRACTED_KNOWLEDGE]")[1].split("[/EXTRACTED_KNOWLEDGE]")[0].strip()
-                                else:
-                                    continue
+                                knowledge_str = block.split("Extracted_Knowledge:")[1].split("Unixcoder Score:")[0].strip()
                                 if not knowledge_str:
                                     continue
                                 knowledge_list = json.loads(knowledge_str)
@@ -9458,7 +10365,14 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
                 else:
                     header = "from " + "+".join(sources)
 
-                rag_knowledge = "\n\n## Extracted Translation Knowledge (" + header + ")\n" + "\n".join(knowledge_hints)
+                knowledge_notice = ""
+                if "RAG" in sources:
+                    knowledge_notice = (
+                        "NOTE: RAG retrieved knowledge is optional and may be unrelated. "
+                        "Use it only when it matches the target C/C++ source, target Rust signature, "
+                        "dependency closure and types.rs. Source/signature/dependency/types facts override RAG.\n"
+                    )
+                rag_knowledge = "\n\n## Extracted Translation Knowledge (" + header + ")\n" + knowledge_notice + "\n".join(knowledge_hints)
                 logger.info(
                     f"[Knowledge统计] 函数: {func_info.name}, api_mode={api_mode}, partial_mode={partial_mode}, "
                     f"API映射: {len(api_mappings)}, 代码模式: {len(partial_patterns)}, 总长度: {len(rag_knowledge)} 字符"
@@ -9466,7 +10380,7 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
 
         # 检查是否是析构函数
         is_drop_impl = target_signature.startswith("impl Drop for")
-        
+
         # 构建输出要求（泛化版本）
         if is_drop_impl:
             output_requirements = f"""## Output Requirements
@@ -9487,7 +10401,7 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
 1. Generate the COMPLETE constructor function
 2. The signature MUST match: `{target_signature}`
 3. Initialize all struct fields appropriately
-4. If some fields cannot be initialized, use Default::default() or safe defaults
+4. If some fields cannot be initialized, prefer real constructor/context values; use defaults only for fields that are actually unavailable
 5. Do NOT output any extra items (no helper fns/types/impl/mod/use)
 6. Keep output short: no long comments, no markdown fences/explanations
 7. Output ONLY the target constructor function definition"""
@@ -9503,61 +10417,55 @@ GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
         # 关键的类型处理指导已经在 system_prompt 的 CRITICAL RULES 中提供
         type_info_hint = ""
 
-        # 从依赖文件提取“被调函数签名”（C-level constness），减少调用点 *mut/*const 错误
-        callee_signature_hints = self._build_dependency_signature_hints(func_info)
-        inline_helper_hints = self._build_preprocessed_inline_helper_hints(func_info)
-        # Rust-level 被调函数签名（来自 signature_matches），进一步约束 *mut/*const/unsafe/返回类型
-        callee_rust_signature_hints = self._build_called_rust_signature_hints(func_info)
-        internal_callee_paths_hints = self._build_internal_callee_module_path_hints(func_info)
-        typed_constants_hints = self._build_typed_constants_hints(func_info)
-        c_field_access_hints = self._build_c_field_access_hints(func_info)
-        try:
-            c_pointer_contract_hints = self._build_c_pointer_contract_hints(func_info)
-        except Exception as e:
-            logger.debug(f"C pointer contract hints failed: {e}")
-            c_pointer_contract_hints = ""
+        # 依赖闭包已在 context_prefix 中统一注入高置信事实；低置信推断只写 manifest。
+        callee_signature_hints = ""
+        inline_helper_hints = ""
+        callee_rust_signature_hints = ""
+        internal_callee_paths_hints = ""
+        typed_constants_hints = ""
+        c_field_access_hints = ""
+        c_pointer_contract_hints = ""
+        build_truth_diagnostics = self._build_build_truth_diagnostics()
 
-        user_prompt = f"""Translate the following C/C++ function to Rust.
-{opaque_type_warning}{accessor_shim_hints}
-## Target Rust Function Signature (MUST use this exact signature)
-```rust
-{target_signature}
-```
+        function_evidence = "\n\n".join(
+            part.strip()
+            for part in [
+                build_truth_diagnostics,
+                context_prefix,
+                callee_signature_hints,
+                inline_helper_hints,
+                callee_rust_signature_hints,
+                internal_callee_paths_hints,
+                typed_constants_hints,
+                c_field_access_hints,
+                c_pointer_contract_hints,
+                "NOTE: The C/C++ source may be a slice from the build's preprocessed `.i` TU (macros expanded, inline bodies visible).",
+            ]
+            if part and part.strip()
+        )
 
-## C/C++ Source Code to Translate
-NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (macros expanded, inline bodies visible).
-```cpp
-{func_info.c_code}
-```
-{callee_signature_hints}
-{inline_helper_hints}
-{callee_rust_signature_hints}
-{internal_callee_paths_hints}
-{typed_constants_hints}
-{c_field_access_hints}
-{c_pointer_contract_hints}
-
-## Skeleton Context (available types and functions)
-```rust
-{skeleton_context}
-```
-{rag_knowledge}
-{output_requirements}"""
-
-        # 构建消息列表
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
+        # 构建消息列表：固定任务合同前置，动态证据按职责分槽。
+        messages, prompt_layout_meta = build_unit_translation_prompt(
+            system_prompt=system_prompt,
+            target_signature=target_signature,
+            c_code=func_info.c_code,
+            rust_context=skeleton_context,
+            function_evidence=function_evidence,
+            rag_knowledge=rag_knowledge,
+            output_requirements=output_requirements,
+            opaque_type_warning=opaque_type_warning,
+            accessor_shim_hints=accessor_shim_hints,
+            stable_rust_context_prefix_chars=self._stable_skeleton_context_prefix_chars(skeleton_context),
+        )
 
         # C2R: 详细的 prompt 组成部分统计
-        total_prompt_chars = len(system_prompt) + len(user_prompt)
-        estimated_tokens = estimate_tokens(system_prompt) + estimate_tokens(user_prompt)
+        total_prompt_chars = sum(len(m.get("content") or "") for m in messages)
+        estimated_tokens = sum(estimate_tokens(m.get("content") or "") for m in messages)
 
         # 记录各部分长度，方便调试
         logger.info(f"[Prompt统计] 函数: {func_info.name}")
         logger.info(f"[Prompt统计] system_prompt: {len(system_prompt)} 字符 (~{len(system_prompt)//4} tokens)")
-        logger.info(f"[Prompt统计] user_prompt: {len(user_prompt)} 字符 (~{len(user_prompt)//4} tokens)")
+        logger.info(f"[Prompt统计] messages: {len(messages)} 条")
         logger.info(f"[Prompt统计]   - skeleton_context: {len(skeleton_context)} 字符")
         logger.info(f"[Prompt统计]   - c_code: {len(func_info.c_code)} 字符")
         logger.info(f"[Prompt统计]   - rag_knowledge: {len(rag_knowledge) if rag_knowledge else 0} 字符")
@@ -9565,63 +10473,27 @@ NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (m
         logger.info(f"[Prompt统计]   - accessor_shim_hints: {len(accessor_shim_hints) if accessor_shim_hints else 0} 字符")
         logger.info(f"[Prompt统计] 总计: {total_prompt_chars} 字符 (~{estimated_tokens} tokens)")
 
-        # 检查总体 prompt 长度（防止超过模型最大上下文窗口）
-        # Qwen3-Coder-30B: 262144 tokens (256K)
-        # 模型最大 token 约 262144，预留 16384 给输出，所以输入最多约 245000 tokens (~980000 chars)
-        MAX_INPUT_TOKENS = 245000
-        if estimated_tokens > MAX_INPUT_TOKENS:
-            logger.error(f"[Prompt超限] 函数 {func_info.name}: ~{estimated_tokens} tokens > 最大 {MAX_INPUT_TOKENS} tokens")
-            logger.error(f"[Prompt超限] 需要截断 {estimated_tokens - MAX_INPUT_TOKENS} tokens (~{(estimated_tokens - MAX_INPUT_TOKENS) * 4} 字符)")
+        # 只有显式设置 MAX_TOTAL_PROMPT_CHARS 时才做字符硬门槛；超限直接失败，不静默裁剪。
+        if MAX_TOTAL_PROMPT_CHARS is not None and total_prompt_chars > MAX_TOTAL_PROMPT_CHARS:
+            logger.error(f"[Prompt超限] 函数 {func_info.name}: {total_prompt_chars} 字符 > 显式上限 {MAX_TOTAL_PROMPT_CHARS} 字符")
+            return None
 
-            # 计算需要减少的字符数
-            excess_tokens = estimated_tokens - MAX_INPUT_TOKENS
-            chars_to_reduce = excess_tokens * 4  # 约 4 字符/token
+        # 只有显式设置 C2R_MAX_INPUT_TOKENS 时才做 token 硬门槛；超限直接失败，不静默裁剪。
+        if MAX_INPUT_TOKENS is not None and estimated_tokens > MAX_INPUT_TOKENS:
+            logger.error(f"[Prompt超限] 函数 {func_info.name}: ~{estimated_tokens} tokens > 显式上限 {MAX_INPUT_TOKENS} tokens")
+            return None
 
-            # 截断骨架上下文
-            new_max = max(20000, len(skeleton_context) - chars_to_reduce)
-            logger.info(f"[Prompt截断] skeleton_context 从 {len(skeleton_context)} 截断到 {new_max} 字符")
-            skeleton_context_truncated = smart_truncate_context(skeleton_context, new_max)
-
-            # 重新构建 user_prompt
-            user_prompt = f"""Translate the following C/C++ function to Rust.
-{opaque_type_warning}{accessor_shim_hints}
-## Target Rust Function Signature (MUST use this exact signature)
-```rust
-{target_signature}
-```
-
-## C/C++ Source Code to Translate
-NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (macros expanded, inline bodies visible).
-```cpp
-{func_info.c_code}
-```
-{callee_signature_hints}
-{inline_helper_hints}
-{callee_rust_signature_hints}
-{internal_callee_paths_hints}
-{typed_constants_hints}
-{c_field_access_hints}
-{c_pointer_contract_hints}
-
-## Skeleton Context (available types and functions) [TRUNCATED due to length]
-```rust
-{skeleton_context_truncated}
-```
-{rag_knowledge}
-{output_requirements}"""
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ]
-            new_tokens = estimate_tokens(system_prompt) + estimate_tokens(user_prompt)
-            logger.info(f"[Prompt截断] 截断后: ~{new_tokens} tokens")
-        
         # 保存提示词
+        prompt_json_path = None
         try:
             from save_llm_prompts import save_llm_prompt, save_llm_prompt_text
+            func_key = f"{func_info.file_name}_{func_info.index}"
+            prompt_function_name = f"{func_key}_{func_info.name}"
             metadata = {
                 "target_signature": target_signature,
                 "file_name": func_info.file_name,
+                "func_key": func_key,
+                "function_index": func_info.index,
                 "opaque_types": list(self.opaque_types) if self.opaque_types else [],
                 "skeleton_context_length": len(skeleton_context),
                 "c_code_length": len(func_info.c_code),
@@ -9631,18 +10503,26 @@ NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (m
                 "typed_constants_hints_length": len(typed_constants_hints) if typed_constants_hints else 0,
                 "c_field_access_hints_length": len(c_field_access_hints) if c_field_access_hints else 0,
                 "c_pointer_contract_hints_length": len(c_pointer_contract_hints) if c_pointer_contract_hints else 0,
+                "build_truth_diagnostics_length": len(build_truth_diagnostics) if build_truth_diagnostics else 0,
                 "context_prefix_length": len(context_prefix) if context_prefix else 0,
                 "context_meta": context_meta,
-                "estimated_tokens": estimated_tokens
+                "estimated_tokens": estimated_tokens,
+                **prompt_layout_meta,
             }
+            dependency_closure_manifest = self._dependency_closure_manifest_by_func.get(func_key, "")
+            if dependency_closure_manifest:
+                metadata["dependency_closure_manifest"] = dependency_closure_manifest
+            truth_manifest = getattr(self, "_truth_manifest_by_func", {}).get(func_key, "")
+            if truth_manifest:
+                metadata["truth_manifest"] = truth_manifest
             if context_summary_path:
                 metadata["context_summary_file"] = str(context_summary_path)
-            save_llm_prompt(
+            prompt_json_path = save_llm_prompt(
                 messages=messages,
                 project_name=self.project_name,
                 llm_name=self.llm_name,
                 task_type="incremental_translate",
-                function_name=func_info.name,
+                function_name=prompt_function_name,
                 metadata=metadata,
                 output_dir=self.llm_prompts_dir
             )
@@ -9651,7 +10531,7 @@ NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (m
                 project_name=self.project_name,
                 llm_name=self.llm_name,
                 task_type="incremental_translate",
-                function_name=func_info.name,
+                function_name=prompt_function_name,
                 metadata=metadata,
                 output_dir=self.llm_prompts_dir
             )
@@ -9659,14 +10539,16 @@ NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (m
             logger.warning(f"保存提示词失败: {e}")
 
         try:
-            # 使用信号量控制 vLLM 并发请求数
+            # 使用信号量控制 LLM 并发请求数
             _vllm_semaphore.acquire()
             try:
-                response = generation(messages)
+                response = generation(messages, return_usage=True)
             finally:
                 _vllm_semaphore.release()
 
+            usage = {}
             if isinstance(response, dict):
+                usage = response.get("usage", {}) or {}
                 response = response.get("content", "")
 
             print("✓")
@@ -9682,6 +10564,7 @@ NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (m
                         [
                             f"=== LLM Response for {func_info.name} ===\n",
                             f"Length: {len(response) if response else 0} characters\n",
+                            f"Usage: {json.dumps(usage, ensure_ascii=False, sort_keys=True)}\n",
                             f"{'='*50}\n\n",
                             (response if response else "(empty response)"),
                         ]
@@ -9689,16 +10572,29 @@ NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (m
                 )
             except Exception as save_err:
                 logger.debug(f"保存响应失败: {save_err}")
-            
+            if usage:
+                logger.info(f"[Translate Usage] 函数: {func_info.name}, usage={json.dumps(usage, ensure_ascii=False, sort_keys=True)}")
+                try:
+                    if prompt_json_path and Path(prompt_json_path).is_file():
+                        payload = json.loads(Path(prompt_json_path).read_text(encoding="utf-8"))
+                        metadata_payload = payload.setdefault("metadata", {})
+                        metadata_payload["response_usage"] = usage
+                        Path(prompt_json_path).write_text(
+                            json.dumps(payload, ensure_ascii=False, indent=2),
+                            encoding="utf-8",
+                        )
+                except Exception as usage_err:
+                    logger.debug(f"回写翻译 usage 到 prompt JSON 失败: {usage_err}")
+
             # 提取代码
             extracted_code = self._extract_rust_code(response)
-            
+
             # 如果提取失败，记录详细信息
             if not extracted_code:
                 logger.warning(f"[{func_info.name}] 无法从响应中提取 Rust 代码")
                 logger.warning(f"  响应长度: {len(response) if response else 0}")
                 logger.warning(f"  响应开头: {response[:200] if response else '(空)'}")
-            
+
             return extracted_code
         except Exception as e:
             print("✗")
@@ -9727,7 +10623,7 @@ NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (m
             except (OSError, IOError, PermissionError):
                 pass
             return None
-    
+
     def _extract_rust_code(self, response: str) -> Optional[str]:
         """从 LLM 响应中提取 Rust 代码"""
         if not response:
@@ -9751,28 +10647,28 @@ NOTE: The source below may be a slice from the build’s preprocessed `.i` TU (m
             cleaned_lines.append(line)
         cleaned = "\n".join(cleaned_lines).strip()
         return cleaned if cleaned else None
-    
+
     def _refactor_to_idiomatic(self, func_info: FunctionInfo, unidiomatic_code: str) -> Optional[str]:
         """
         Phase 3.2: Unidiomatic to Idiomatic Rust (安全性重构)
-        
+
         将 Phase 3.1 生成的 unsafe 代码重构为地道的 Safe Rust
-        
+
         Args:
             func_info: 函数信息
             unidiomatic_code: Phase 3.1 生成的非地道代码
-            
+
         Returns:
             重构后的地道 Rust 代码，如果失败则返回原代码
         """
         from generate.generation import generation
-        
+
         # 检查是否需要重构（如果没有 unsafe，跳过）
         if 'unsafe' not in unidiomatic_code and '*mut' not in unidiomatic_code and '*const' not in unidiomatic_code:
             return unidiomatic_code  # 已经是安全代码，无需重构
-        
+
         print(f"  Phase 3.2 重构...", end=" ", flush=True)
-        
+
         # Phase 3.2: 上下文隔离 - 只使用 Rust 代码，不引入 C 代码
         # 这样 LLM 专注于 Rust->Rust 重构，避免 C 思维定势
         system_prompt = """You are a Rust expert specializing in safe code refactoring.
@@ -9830,7 +10726,7 @@ Output the refactored code in ```rust ... ``` block:"""
         ]
 
         try:
-            # 使用信号量控制 vLLM 并发请求数
+            # 使用信号量控制 LLM 并发请求数
             _vllm_semaphore.acquire()
             try:
                 response = generation(messages)
@@ -9855,11 +10751,11 @@ Output the refactored code in ```rust ... ``` block:"""
     def _analyze_compilation_errors(self, error_msg: str) -> List[str]:
         """
         解析 cargo check 错误并生成结构化的错误分析提示
-        
+
         返回: 错误提示列表
         """
         error_hints = []
-        
+
         if not error_msg:
             return error_hints
 
@@ -9875,11 +10771,11 @@ Output the refactored code in ```rust ... ``` block:"""
                 error_hints.append("   Also check for missing/extra braces, commas, quotes, and delimiters.")
         except Exception:
             pass
-        
+
         # 解析 Rust 错误代码（如 E0277, E0425, E0609 等）
         error_code_pattern = re.compile(r'error\[E(\d+)\]:\s*(.+)')
         error_codes_found = error_code_pattern.findall(error_msg)
-        
+
         # Rust 错误代码映射（扩展版）
         rust_error_explanations = {
             "0038": ("trait is not dyn compatible / object-safe",
@@ -9894,7 +10790,7 @@ Output the refactored code in ```rust ... ``` block:"""
                      "Type doesn't support this operator. Add #[derive(PartialEq)] for == or !=, #[derive(PartialOrd)] for < or >."),
             "0412": ("cannot find type in this scope",
                      "Type is not defined. Do NOT invent new type definitions in the output. Prefer using existing types from the skeleton/types.rs; "
-                     "otherwise treat it as an upstream types/TU gap and return safe defaults / TODOs."),
+                     "otherwise treat it as an upstream types/TU gap and keep the fallback local to the missing type use."),
             "0425": (
                 "cannot find value/function in this scope",
                 "CRITICAL: Symbol not found. If it is an internal callee, use the provided 'Internal Callees' mapping "
@@ -9915,7 +10811,7 @@ Output the refactored code in ```rust ... ``` block:"""
                      "CRITICAL: Cannot cast reference to raw pointer of different type. Use proper pointer conversion: "
                      "`&mut x as *mut _ as *mut TargetType` or `std::ptr::addr_of_mut!(x) as *mut TargetType`"),
             "0609": ("no field on type",
-                     "Cannot access struct field. If the type is opaque (defined as c_void), return a safe default instead."),
+                     "Cannot access struct field. If the type is opaque (defined as c_void), use an accessor shim/helper or replace only that field expression."),
             "0308": ("mismatched types",
                      "Type mismatch. Cast with `as` or use appropriate conversion methods. For integer types use `as i32`, `as u64`, etc."),
             "0382": ("use of moved value",
@@ -9947,7 +10843,7 @@ Output the refactored code in ```rust ... ``` block:"""
             "0624": ("cannot assign to immutable field",
                      "Field is immutable. Make the struct mutable or use interior mutability."),
         }
-        
+
         # 收集所有找到的错误代码
         found_errors = set()
         for error_code, error_desc in error_codes_found:
@@ -9957,7 +10853,7 @@ Output the refactored code in ```rust ... ``` block:"""
                 error_hints.append(f"## Error E{error_code}: {name}")
                 error_hints.append(f"   Details: {error_desc[:300]}")
                 error_hints.append(f"   Suggestion: {suggestion}")
-        
+
         # 提取具体的错误位置和内容
         location_pattern = re.compile(r'--> ([^:]+):(\d+):(\d+)')
         locations = location_pattern.findall(error_msg)
@@ -9965,7 +10861,7 @@ Output the refactored code in ```rust ... ``` block:"""
             error_hints.append(f"\n## Error Locations:")
             for file_path, line, col in locations[:3]:  # 只显示前3个
                 error_hints.append(f"   - {file_path}:{line}:{col}")
-        
+
         # 通用错误模式识别（如果没有找到错误代码）
         if not found_errors:
             if "cannot find" in error_msg.lower() or "not found" in error_msg.lower():
@@ -9978,20 +10874,18 @@ Output the refactored code in ```rust ... ``` block:"""
             if "borrow" in error_msg.lower() or "lifetime" in error_msg.lower():
                 error_hints.append("## Borrow/Lifetime issue")
                 error_hints.append("   Suggestion: Use raw pointers, .clone(), or restructure code.")
-        
+
         # 检测不透明类型相关错误
         if "field" in error_msg.lower() and ("struct" in error_msg.lower() or "type" in error_msg.lower()):
             for opaque_type in self.opaque_types:
                 if opaque_type.lower() in error_msg.lower():
                     error_hints.append(f"\n## CRITICAL: Opaque Type Access")
                     error_hints.append(f"   {opaque_type} is OPAQUE (defined as c_void). You CANNOT access its fields!")
-                    error_hints.append("   Return safe defaults instead:")
-                    error_hints.append("   - For `-> *mut T`: return `std::ptr::null_mut()`")
-                    error_hints.append("   - For `-> i32` or integer: return `0`")
-                    error_hints.append("   - For `-> bool`: return `false` or `0`")
-                    error_hints.append("   - For `()`: just return")
+                    error_hints.append("   Use accessor shims or existing APIs when available.")
+                    error_hints.append("   If none exists, replace only the unreadable field expression.")
+                    error_hints.append("   Preserve surrounding control flow, calls, pointer checks, and side effects.")
                     break
-        
+
         # 检测缺失类型错误
         if "0412" in found_errors:
             # 尝试提取缺失的类型名
@@ -10003,14 +10897,14 @@ Output the refactored code in ```rust ... ``` block:"""
                 error_hints.append("   Suggestion: Declare placeholder structs before your function:")
                 for t in unique_types[:3]:
                     error_hints.append(f"   `pub struct {t};`")
-        
+
         # 检测 E0449 错误（pub 在 trait impl 中）
         if "0449" in found_errors:
             error_hints.append("\n## CRITICAL FIX for E0449:")
             error_hints.append("   Remove ALL `pub` keywords from methods inside `impl Trait for Type` blocks!")
             error_hints.append("   WRONG: `impl Foo for Bar { pub fn method(&self) {} }`")
             error_hints.append("   CORRECT: `impl Foo for Bar { fn method(&self) {} }`")
-        
+
         # 检测 E0185 错误（&self 不匹配）
         if "0185" in found_errors:
             error_hints.append("\n## CRITICAL FIX for E0185:")
@@ -10018,7 +10912,7 @@ Output the refactored code in ```rust ... ``` block:"""
             error_hints.append("   Check the trait definition in the skeleton and match it EXACTLY.")
             error_hints.append("   If trait says `fn foo(arg: T)`, your impl must be `fn foo(arg: T)` (no &self)")
             error_hints.append("   If trait says `fn foo(&self, arg: T)`, your impl must be `fn foo(&self, arg: T)`")
-        
+
         # 检测 E0038 错误（trait 不是 object-safe）
         if "0038" in found_errors:
             error_hints.append("\n## CRITICAL FIX for E0038:")
@@ -10089,7 +10983,7 @@ Output the refactored code in ```rust ... ``` block:"""
                 error_hints.append("   - Is the type correct? Check skeleton types.rs")
                 error_hints.append("   - For pointer cast: use `ptr as *mut T` (not cast_mut)")
                 error_hints.append("   - For array/slice methods on raw ptr: cast to slice first")
-        
+
         # 检测函数调用语法错误
         if "expected" in error_msg.lower() and (":" in error_msg or "type" in error_msg.lower()):
             # 可能是函数调用语法错误
@@ -10098,7 +10992,7 @@ Output the refactored code in ```rust ... ``` block:"""
                 error_hints.append("   You may be using definition syntax in a function call.")
                 error_hints.append("   WRONG: `some_func(arg1: Type1, arg2: Type2)`")
                 error_hints.append("   CORRECT: `some_func(arg1, arg2)`")
-        
+
         return error_hints
 
     def _looks_like_rust_syntax_error(self, error_msg: str) -> bool:
@@ -10134,7 +11028,7 @@ Output the refactored code in ```rust ... ``` block:"""
             return True
 
         return False
-    
+
     def _get_repair_output_requirements(self, is_drop_impl: bool, is_impl_method: bool, is_constructor: bool, target_signature: str) -> str:
         """生成泛化的修复输出要求"""
         if is_drop_impl:
@@ -10143,34 +11037,34 @@ Output the refactored code in ```rust ... ``` block:"""
 3. For destructors:
    - If C/C++ destructor is empty/default, use: `fn drop(&mut self) {{}}`
    - If it releases resources, translate appropriately
-4. If you cannot access opaque type fields, just do nothing or return
-5. DO NOT delete major logic just to make it compile; if needed, add TODO + safe defaults explicitly
+4. If you cannot access opaque type fields, replace only the unreadable field expression when no shim/API exists
+5. DO NOT delete major logic just to make it compile; preserve control flow and side effects
 6. Output ONLY raw Rust code (no ``` fences, no explanations)
 7. Output EXACTLY ONE Rust item; keep it short; no extra helper items"""
         elif is_impl_method:
             return f"""1. Generate the COMPLETE method definition (WITH &self or &mut self)
 2. Use EXACTLY this signature: `{target_signature}`
 3. Do NOT output the enclosing `impl` block; do NOT output any extra items (no helper fns/types/mod/use)
-4. If you cannot implement the logic due to opaque types, return safe defaults
+4. If you cannot access opaque type fields, replace only the unreadable field expression when no shim/API exists
 5. Refer to the original C/C++ code to understand the intended behavior
-6. DO NOT delete major logic just to make it compile; if needed, add TODO + safe defaults explicitly
+6. DO NOT delete major logic just to make it compile; preserve control flow and side effects
 7. Output ONLY raw Rust code (no ``` fences, no explanations); keep it short"""
         elif is_constructor:
             return f"""1. Generate the COMPLETE constructor function
 2. Use EXACTLY this signature: `{target_signature}`
 3. Initialize all struct fields appropriately
-4. If some fields cannot be initialized, use Default::default() or safe defaults
+4. If some fields cannot be initialized, prefer real constructor/context values; use defaults only for fields that are actually unavailable
 5. Do NOT output any extra items (no helper fns/types/impl/mod/use)
-6. DO NOT delete initialization logic; if needed, add TODO + safe defaults explicitly
+6. DO NOT delete initialization logic; preserve any available initialization facts
 7. Output ONLY raw Rust code (no ``` fences, no explanations); keep it short"""
         else:
             return f"""1. Generate the COMPLETE fixed standalone function
 2. Use EXACTLY this signature: `{target_signature}`
-3. If you cannot implement the logic due to opaque types, return safe defaults
+3. If you cannot access opaque type fields, replace only the unreadable field expression when no shim/API exists
 4. Refer to the original C/C++ code to understand the intended behavior
 5. Do NOT output any extra items (no helper fns/types/impl/mod/use)
 6. DO NOT add &self parameter
-7. DO NOT delete major logic just to make it compile; if needed, add TODO + safe defaults explicitly
+7. DO NOT delete major logic just to make it compile; preserve control flow and side effects
 8. Output ONLY raw Rust code (no ``` fences, no explanations); keep it short"""
 
     @staticmethod
@@ -10231,7 +11125,7 @@ Output the refactored code in ```rust ... ``` block:"""
             prev = prev[:1500] + "\n/* ... truncated ... */"
 
         ctx = skeleton_context or ""
-        if len(ctx) > MAX_SKELETON_CONTEXT_CHARS:
+        if MAX_SKELETON_CONTEXT_CHARS is not None and len(ctx) > MAX_SKELETON_CONTEXT_CHARS:
             ctx = smart_truncate_context(ctx, MAX_SKELETON_CONTEXT_CHARS)
 
         system_prompt = (
@@ -10283,7 +11177,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
         except Exception as e:
             logger.debug(f"[InjectionRetry] LLM 重试失败 (attempt={attempt_num}, fn={func_name}): {e}")
             return None
-    
+
     def _try_inject_and_compile(
         self,
         func_name: str,
@@ -10293,17 +11187,17 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
     ) -> bool:
         """
         尝试注入代码并编译
-        
+
         参数:
             rollback_on_failure: 编译失败时是否回退到备份。
                                  在修复循环中设为 False，以便获取正确的编译错误。
                                  最终修复失败后再手动回退。
-        
+
         返回: 是否编译成功
         """
         # 1. 解析翻译结果
         from auto_test_rust import read_translated_function, find_and_replace_function_signature
-        
+
         # 提取目标函数名
         target_func_name = func_info.name
         if not target_func_name and func_info.rust_signature:
@@ -10381,47 +11275,47 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                         break
                     translated_code = regenerated
                     translated_function, imports, translated_for_injection = _prepare_injection_payload(translated_code)
-        
+
         # 2. 找到目标文件
         # 尝试两种文件名格式：src_xxx.rs 和 xxx.rs（向后兼容）
         rs_filename_with_prefix = "src_" + func_info.file_name + ".rs"
         rs_filename = func_info.file_name + ".rs"
         target_file = self.work_dir / "src" / rs_filename_with_prefix
-        
+
         if not target_file.exists():
             # 回退到不带前缀的格式（向后兼容）
             target_file = self.work_dir / "src" / rs_filename
             if not target_file.exists():
                 logger.error(f"目标文件不存在: {target_file} 或 {self.work_dir / 'src' / rs_filename_with_prefix}")
                 return False
-        
+
         # 3. 备份当前文件
         backup_content = target_file.read_text(encoding='utf-8', errors='ignore')
-        
+
         # 4. 注入代码
         try:
             with open(target_file, 'r', encoding='utf-8', errors='ignore') as f:
                 skeleton_code = f.read()
-            
+
             # 先清理可能存在的重复签名（修复重复 pub extern "C" 问题）
             duplicate_pattern = r'(pub\s+extern\s+"C"\s+){2,}'
             skeleton_code = re.sub(duplicate_pattern, r'pub extern "C" ', skeleton_code)
-            
+
             # 检查是否是 Drop trait 实现（析构函数）
             is_drop_impl = func_info.rust_signature.startswith("impl Drop for") if func_info.rust_signature else False
-            
+
             if is_drop_impl:
                 # 对于 Drop trait 实现，需要特殊处理
                 # 提取类名
                 class_name = func_info.rust_signature.split('for ')[1].split()[0] if 'for ' in func_info.rust_signature else func_name.split('_')[0].capitalize()
-                
+
                 # 查找是否已有 Drop 实现（更宽松的匹配，支持嵌套大括号）
                 # 使用非贪婪匹配和递归大括号匹配
                 drop_start_pattern = re.compile(
                     r'impl\s+Drop\s+for\s+' + re.escape(class_name) + r'\s*\{',
                     re.DOTALL
                 )
-                
+
                 match = drop_start_pattern.search(skeleton_code)
                 if match:
                     # 找到 Drop 实现开始，现在需要找到匹配的结束大括号
@@ -10436,7 +11330,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                             brace_count -= 1
                         idx += 1
                     end = idx
-                    
+
                     # 确保 translated_function 包含完整的 impl 块
                     if not translated_function.strip().startswith('impl'):
                         drop_impl = f"impl Drop for {class_name} {{\n    {translated_function}\n}}"
@@ -10544,18 +11438,23 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                     with open(target_file, 'w', encoding='utf-8') as f:
                         f.write(backup_content)
                     return False
-            
+
             # 添加导入
             if imports:
                 from auto_test_rust import add_import_to_translated_result
                 skeleton_code = add_import_to_translated_result(skeleton_code, imports)
-            
+
             # 自动检测并添加缺失的依赖
             skeleton_code = self._auto_add_missing_dependencies(skeleton_code)
-            
+            try:
+                from auto_test_rust import dedupe_top_level_imports
+                skeleton_code = dedupe_top_level_imports(skeleton_code)
+            except Exception:
+                pass
+
             with open(target_file, 'w', encoding='utf-8') as f:
                 f.write(skeleton_code)
-            
+
             # 4.5 关键修复：注入后验证文件语法是否正确
             # 使用 tree-sitter 解析。如果有严重语法错误：
             # - 在普通路径(rollback_on_failure=True)立即回退，避免污染项目
@@ -10567,7 +11466,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                         f.write(backup_content)
                     return False
                 logger.warning(f"注入后文件语法无效，将继续编译以获取 rustc 语法错误并尝试修复: {func_name}")
-                
+
         except Exception as e:
             logger.error(f"注入代码失败: {e}")
             import traceback
@@ -10579,9 +11478,30 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
             except (OSError, IOError, PermissionError):
                 pass
             return False
-        
+
         # 5. 编译测试
         success = self._compile_project()
+
+        # 机器可判定的重复 import 不应进入 LLM repair，也不应污染后续函数。
+        if not success:
+            try:
+                error_msg = self._get_compile_error()
+                if "error[E0252]" in (error_msg or ""):
+                    from auto_test_rust import dedupe_top_level_imports
+                    current_content = target_file.read_text(encoding='utf-8', errors='ignore')
+                    cleaned_content = dedupe_top_level_imports(current_content)
+                    if cleaned_content != current_content:
+                        target_file.write_text(cleaned_content, encoding='utf-8')
+                        success = self._compile_project()
+            except Exception as e:
+                logger.debug(f"[{func_name}] 重复 import 清理失败: {e}")
+
+        # rustc JSON 的 MachineApplicable 建议是编译器可判定的局部文本修复，先于 LLM repair 使用。
+        if not success:
+            try:
+                success = self._try_apply_rustc_json_suggestions(func_name, target_file)
+            except Exception as e:
+                logger.debug(f"[{func_name}] rustc JSON 建议修复失败: {e}")
 
         # Deterministic extern vars/consts backfill (Step 2.56): avoid LLM guessing for missing globals.
         if not success:
@@ -10598,16 +11518,16 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                             )
             except Exception as e:
                 logger.debug(f"[Step2.56] {func_name}: extern vars/const 补全失败（已忽略）: {e}")
-        
+
         if not success and rollback_on_failure:
             self._restore_function_from_backup(func_name, func_info, backup_content, target_file)
-        
+
         return success
-    
+
     def _auto_add_missing_dependencies(self, code: str) -> str:
         """
         自动检测代码中使用的外部 crate 并添加到 Cargo.toml
-        
+
         目前支持检测的 crate:
         - libc: 用于 C 类型和函数
         - openssl: 用于加密功能
@@ -10620,6 +11540,19 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
         - once_cell: 用于单次初始化
         - nix: 用于 Unix API
         """
+        # 默认禁止在函数注入阶段新增 registry 依赖。
+        # 原因：框架生成的 skeleton 已包含可用的基础依赖；若 LLM 输出偶然引用 openssl/rand/serde，
+        # 这里自动改 Cargo.toml 会把局部函数错误升级成 cargo registry/download 错误，阻断后续修复。
+        allow_new = os.environ.get("C2R_AUTO_ADD_MISSING_DEPENDENCIES", "0").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        )
+        if not allow_new:
+            return code
+
         # 常见 crate 的检测模式和依赖声明
         crate_patterns = {
             'libc': ('use libc', 'libc::'),
@@ -10634,7 +11567,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
             'once_cell': ('use once_cell', 'once_cell::'),
             'nix': ('use nix', 'nix::'),
         }
-        
+
         # crate 的版本声明
         crate_versions = {
             'libc': 'libc = "0.2"',
@@ -10649,22 +11582,22 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
             'once_cell': 'once_cell = "1.18"',
             'nix': 'nix = "0.27"',
         }
-        
+
         cargo_toml = self.work_dir / "Cargo.toml"
         if not cargo_toml.exists():
             return code
-        
+
         try:
             cargo_content = cargo_toml.read_text(encoding='utf-8')
             modified = False
-            
+
             for crate_name, patterns in crate_patterns.items():
                 # 检查代码中是否使用了该 crate
                 if any(pattern in code for pattern in patterns):
                     # 检查 Cargo.toml 中是否已有该依赖
                     if crate_name not in cargo_content:
                         version_decl = crate_versions.get(crate_name, f'{crate_name} = "*"')
-                        
+
                         if '[dependencies]' in cargo_content:
                             cargo_content = cargo_content.replace(
                                 '[dependencies]',
@@ -10672,18 +11605,18 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                             )
                         else:
                             cargo_content += f'\n[dependencies]\n{version_decl}\n'
-                        
+
                         modified = True
                         logger.info(f"已自动添加 {crate_name} 依赖到 Cargo.toml")
-            
+
             if modified:
                 cargo_toml.write_text(cargo_content, encoding='utf-8')
-                
+
         except Exception as e:
             logger.warning(f"自动添加依赖失败: {e}")
-        
+
         return code
-    
+
     def _postprocess_translated_code(self, code: str) -> str:
         """
         后处理翻译后的代码，移除常见问题
@@ -10704,7 +11637,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
         ]
         for pattern in invalid_type_patterns:
             code = re.sub(pattern, '', code)
-        
+
         # 2. （可选）保守兜底：修复 LLM 生成的无效函数体（把参数声明语法当作函数调用）
         #
         # 历史策略：直接将该函数体替换为 unimplemented!()，以“保证项目可编译”为第一优先级。
@@ -10723,7 +11656,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
             sanitize_invalid = False
         if sanitize_invalid:
             code = self._fix_invalid_function_bodies(code)
-        
+
         # 3. 清理多余空行
         code = re.sub(r'\n{3,}', '\n\n', code)
 
@@ -11031,33 +11964,33 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
 
         rewritten = "".join(out_parts)
         return rewritten
-    
+
     def _fix_invalid_function_bodies(self, code: str) -> str:
         """
         修复 LLM 生成的无效函数体，例如把参数声明语法当作函数调用
         """
         # 匹配函数定义，然后检查函数体是否有效
         fn_pattern = r'((?:pub\s+)?(?:unsafe\s+)?(?:extern\s+"C"\s+)?fn\s+\w+\s*\([^)]*\)\s*(?:->\s*[^{]+)?\s*)\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
-        
+
         def check_and_fix_body(match):
             fn_signature = match.group(1)
             fn_body = match.group(2)
-            
+
             # 检查函数体是否包含无效的参数声明语法
             # 模式：identifier: Type, 或 identifier: &Type
             invalid_body_pattern = r'^\s*\w+\s*\(\s*(?:\w+\s*:\s*[^,)]+,?\s*)+\)\s*$'
-            
+
             # 去除空白后检查
             body_stripped = fn_body.strip()
-            
+
             # 检查是否是无效的函数调用（参数带类型声明）
             # 例如: check_persist_policy(\n  token_id: u32,\n  policy: &Vec<PolicyInfo>,\n)
             lines = body_stripped.split('\n')
             has_invalid_syntax = False
-            
+
             # 首先检查是否包含 extern "C" { fn ... } FFI 声明（这是合法语法）
             has_ffi_declaration = 'extern "C"' in body_stripped or "extern 'C'" in body_stripped
-            
+
             for line in lines:
                 line = line.strip()
                 if not line or line.startswith('//'):
@@ -11078,15 +12011,15 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                     if not has_ffi_declaration:
                         has_invalid_syntax = True
                         break
-            
+
             if has_invalid_syntax:
                 # 尝试找到函数名
                 fn_name_match = re.search(r'fn\s+(\w+)', fn_signature)
                 fn_name = fn_name_match.group(1) if fn_name_match else 'unknown'
                 return f'{fn_signature}{{\n        // TODO: Fix invalid function body for {fn_name}\n        unimplemented!()\n    }}'
-            
+
             return match.group(0)
-        
+
         # 使用更简单的方法：逐行检查函数体
         lines = code.split('\n')
         result_lines = []
@@ -11094,7 +12027,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
         function_start = -1
         brace_count = 0
         current_function_lines = []
-        
+
         for i, line in enumerate(lines):
             if not in_function:
                 # 检查是否是函数开始
@@ -11113,11 +12046,11 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
             else:
                 current_function_lines.append(line)
                 brace_count += line.count('{') - line.count('}')
-                
+
                 if brace_count <= 0:
                     # 函数结束，检查函数体
                     fn_code = '\n'.join(current_function_lines)
-                    
+
                     # 检查是否有无效的参数声明语法
                     # 只检查函数体部分（去掉签名）
                     body_match = re.search(r'\{([\s\S]*)\}$', fn_code)
@@ -11126,7 +12059,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                         # 检查是否有 "param: Type," 模式在函数调用中
                         # 但要排除 extern "C" { fn xxx(...); } 这种合法的 FFI 声明
                         invalid_call = re.search(r'\w+\s*\(\s*\n?\s*\w+\s*:\s*[&*]?[\w<>:]+', body)
-                        
+
                         # 排除 FFI 声明的误判
                         is_ffi_declaration = False
                         if invalid_call:
@@ -11139,7 +12072,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                             # 也检查是否是函数定义（fn xxx(param: Type)）
                             elif re.search(r'fn\s+\w*$', context_before):
                                 is_ffi_declaration = True
-                        
+
                         if invalid_call and not is_ffi_declaration:
                             # 找到无效语法，替换整个函数体
                             fn_sig_match = re.match(r'([\s\S]*?)\{', fn_code)
@@ -11155,26 +12088,26 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                             result_lines.extend(current_function_lines)
                     else:
                         result_lines.extend(current_function_lines)
-                    
+
                     in_function = False
                     current_function_lines = []
-        
+
         # 处理未结束的函数（不应该发生）
         if current_function_lines:
             result_lines.extend(current_function_lines)
-        
+
         return '\n'.join(result_lines)
-    
+
     def _validate_rust_syntax(self, code: str) -> bool:
         """
         使用 tree-sitter 验证 Rust 代码语法是否有效
-        
+
         检测注入代码后是否破坏了文件的语法结构。
         主要检测：
         1. 语法错误节点 (ERROR)
         2. 不匹配的括号
         3. 孤立的代码片段（不在函数体内）
-        
+
         返回:
             True: 语法基本正确，可以继续编译
             False: 有严重语法错误，应该回退
@@ -11198,11 +12131,11 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
 
         try:
             tree = rust_parser.parse(bytes(code, 'utf-8'))
-            
+
             # 统计 ERROR 节点数量
             error_count = 0
             total_nodes = 0
-            
+
             def count_errors(node):
                 nonlocal error_count, total_nodes
                 total_nodes += 1
@@ -11212,17 +12145,17 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                     logger.debug(f"语法错误节点: 行 {node.start_point[0]+1}, 列 {node.start_point[1]}")
                 for child in node.children:
                     count_errors(child)
-            
+
             count_errors(tree.root_node)
-            
+
             # 如果 ERROR 节点超过一定比例，认为语法严重损坏
             # 阈值：超过 5% 或超过 3 个 ERROR 节点
             error_rate = error_count / max(total_nodes, 1)
-            
+
             if error_count > 3 or error_rate > 0.05:
                 logger.warning(f"语法验证失败: {error_count} 个错误节点 ({error_rate:.1%})")
                 return False
-            
+
             # 额外检查：检测孤立的代码片段（不在函数体内的语句）
             # 这通常是注入错误导致的
             root = tree.root_node
@@ -11241,14 +12174,14 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                     snippet = code[child.start_byte:min(child.end_byte, child.start_byte+50)]
                     logger.warning(f"发现孤立的代码片段 (类型: {child.type}): {snippet}...")
                     return False
-            
+
             return True
-            
+
         except Exception as e:
             logger.warning(f"语法验证异常: {e}")
             # 解析异常也视为语法错误
             return False
-    
+
     def _filter_valid_imports(self, imports: list) -> list:
         """
         过滤掉无效的导入语句
@@ -11256,7 +12189,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
         """
         if not imports:
             return imports
-        
+
         # 只过滤明显语法错误的导入，不针对特定项目
         valid_imports = []
         for imp in imports:
@@ -11265,24 +12198,24 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                 valid_imports.append(imp)
             elif imp.strip():  # 非空但格式不对，跳过
                 continue
-        
+
         return valid_imports if valid_imports else imports
-    
+
     def _compile_project(self) -> bool:
         """
         编译项目
-        
+
         使用 RUSTFLAGS 抑制 LLM 生成代码常见的无害警告：
         - unused_imports: LLM 倾向于添加"以防万一"的 use 语句
         - dead_code: 增量翻译中间状态，很多函数尚未被调用
-        
+
         这避免了"假阳性"失败，专注于真正的编译错误。
         """
         try:
             # 设置 RUSTFLAGS 抑制无害警告
             env = os.environ.copy()
             env["RUSTFLAGS"] = "-A unused_imports -A dead_code -A unused_variables -A unused_mut"
-            
+
             cmd = ["cargo", "check"]
             try:
                 from cargo_utils import with_cargo_jobs
@@ -11290,12 +12223,16 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
             except Exception:
                 pass
 
+            try:
+                compile_timeout = int(os.environ.get("C2R_CARGO_CHECK_TIMEOUT_SEC", "300") or "300")
+            except Exception:
+                compile_timeout = 300
             result = subprocess.run(
                 cmd,
                 cwd=self.work_dir,
                 capture_output=True,
                 text=True,
-                timeout=60,
+                timeout=compile_timeout,
                 env=env
             )
             # 检查是否有实际的编译错误（不仅仅是警告）
@@ -11307,25 +12244,224 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                 self._last_cargo_check_returncode = int(result.returncode)
             except Exception:
                 pass
-            
+
             # 如果退出码为0，肯定成功
             if result.returncode == 0:
                 return True
-            
+
             # 如果退出码非0，检查是否有实际的错误（error[E...]）
             has_error = bool(re.search(r'error\[E\d+\]:', output))
             has_finished = "Finished" in output
-            
+
             # 如果有 Finished 且没有错误，说明只有警告，视为成功
             if has_finished and not has_error:
                 return True
-            
+
             # 否则视为失败
+            return False
+        except subprocess.TimeoutExpired:
+            try:
+                compile_timeout = int(os.environ.get("C2R_CARGO_CHECK_TIMEOUT_SEC", "300") or "300")
+            except Exception:
+                compile_timeout = 300
+            timeout_msg = f"C2R_COMPILE_TIMEOUT: cargo check timed out after {compile_timeout}s"
+            try:
+                self._last_cargo_check_output = timeout_msg
+                self._last_cargo_check_returncode = 124
+            except Exception:
+                pass
+            logger.error(timeout_msg)
             return False
         except Exception as e:
             logger.error(f"编译失败: {e}")
             return False
-    
+
+    def _run_cargo_check_json(self) -> str:
+        """运行 cargo check JSON 诊断，供机器可判定修复使用。"""
+        try:
+            env = os.environ.copy()
+            env["RUSTFLAGS"] = "-A unused_imports -A dead_code -A unused_variables -A unused_mut"
+
+            cmd = ["cargo", "check", "--message-format=json"]
+            try:
+                from cargo_utils import with_cargo_jobs
+                cmd = with_cargo_jobs(cmd)
+            except Exception:
+                pass
+
+            try:
+                compile_timeout = int(os.environ.get("C2R_CARGO_CHECK_TIMEOUT_SEC", "300") or "300")
+            except Exception:
+                compile_timeout = 300
+            result = subprocess.run(
+                cmd,
+                cwd=self.work_dir,
+                capture_output=True,
+                text=True,
+                timeout=compile_timeout,
+                env=env,
+            )
+            output = (result.stdout or "") + "\n" + (result.stderr or "")
+            self._last_cargo_check_json_output = output
+            self._last_cargo_check_json_returncode = int(result.returncode)
+            return output
+        except subprocess.TimeoutExpired:
+            try:
+                compile_timeout = int(os.environ.get("C2R_CARGO_CHECK_TIMEOUT_SEC", "300") or "300")
+            except Exception:
+                compile_timeout = 300
+            output = f"C2R_COMPILE_TIMEOUT: cargo check --message-format=json timed out after {compile_timeout}s"
+            self._last_cargo_check_json_output = output
+            self._last_cargo_check_json_returncode = 124
+            logger.error(output)
+            return output
+        except Exception as e:
+            logger.debug(f"cargo JSON diagnostics 运行失败: {e}")
+            self._last_cargo_check_json_output = str(e)
+            self._last_cargo_check_json_returncode = 1
+            return str(e)
+
+    def _try_apply_rustc_json_suggestions(self, func_name: str, target_file: Path) -> bool:
+        """应用 rustc MachineApplicable 建议，并重新编译验证。"""
+        enable = os.environ.get("C2R_ENABLE_RUSTC_JSON_REPAIR", "1").strip().lower()
+        if enable in ("0", "false", "off", "no"):
+            return False
+        try:
+            from rustc_json_repair import apply_machine_applicable_edits
+        except Exception as exc:
+            logger.debug(f"[{func_name}] rustc JSON repair 不可用: {exc}")
+            return False
+
+        try:
+            cargo_json = self._run_cargo_check_json()
+            result = apply_machine_applicable_edits(
+                cargo_json,
+                project_root=self.work_dir,
+                target_files=[target_file],
+            )
+            self._last_rustc_json_repair_result = {
+                "func_name": func_name,
+                "target_file": str(target_file),
+                "changed_files": [str(path) for path in result.changed_files],
+                "edits_applied": result.edits_applied,
+                "edits_skipped": result.edits_skipped,
+            }
+            if not result.changed:
+                return False
+            logger.info(
+                f"[rustc-json] {func_name}: 应用 {result.edits_applied} 个 MachineApplicable 建议，"
+                f"跳过 {result.edits_skipped} 个"
+            )
+            return self._compile_project()
+        except Exception as exc:
+            logger.debug(f"[{func_name}] rustc JSON repair 失败（继续后续修复）: {exc}")
+            return False
+
+    def _classify_non_function_repair_error(self, error_msg: str) -> Optional[str]:
+        """识别当前函数体 LLM repair 无法解决的 cargo/workspace 错误。"""
+        text = (error_msg or "").lower()
+        if not text.strip():
+            return None
+        if "c2r_compile_timeout" in text or "timed out after" in text:
+            return "compile_timeout"
+        dependency_markers = (
+            "failed to get `libc` as a dependency",
+            "failed to get ",
+            "failed to download",
+            "download of ",
+            "no matching package named",
+            "unable to update registry",
+            "failed to load source for dependency",
+        )
+        if any(marker in text for marker in dependency_markers):
+            return "cargo_dependency_error"
+        workspace_markers = (
+            "could not find `cargo.toml`",
+            "failed to parse manifest",
+            "virtual manifest",
+            "package id specification",
+        )
+        if any(marker in text for marker in workspace_markers):
+            return "cargo_workspace_error"
+        return None
+
+    def _record_non_function_repair_stop(
+        self,
+        *,
+        func_name: str,
+        func_info: FunctionInfo,
+        translated_code: str,
+        reason: str,
+        error_msg: str,
+        func_history_dir: Path,
+        error_file: Optional[Path] = None,
+        repair_attempts_history: Optional[List[Dict[str, Any]]] = None,
+    ) -> bool:
+        """
+        处理 cargo/workspace/timeout 这类非函数体可修错误。
+
+        这些错误说明当前 `cargo check` 反馈不是目标函数体导致的；继续让 LLM repair
+        会浪费轮次并可能把完整译文回退成不可诊断的占位。这里保留译文和错误工件，
+        仅把当前函数恢复到 skeleton 基线，让后续函数和 post-repair agent 继续运行。
+        """
+        func_history_dir.mkdir(parents=True, exist_ok=True)
+        stop_lines = [
+            f"reason={reason}\n",
+        ]
+        if error_file is not None:
+            stop_lines.append(f"error_file={error_file}\n")
+        _atomic_write_text(func_history_dir / "non_function_repair_stop.txt", "".join(stop_lines))
+
+        artifact = self._save_manual_fix_artifact(
+            func_name,
+            func_info,
+            translated_code,
+            reason=reason,
+            error_msg=error_msg or "",
+            repair_attempts_history=repair_attempts_history or [],
+        )
+        comment = self._build_manual_fix_comment(
+            func_name,
+            func_info,
+            reason=reason,
+            artifact_path=artifact,
+            error_msg=error_msg or "",
+        )
+
+        rollback_success = self._rollback_function_safe(func_name, func_info)
+        if not rollback_success:
+            logger.error(
+                f"非函数体错误阻断后无法单独回退函数 {func_name}；"
+                "已保留当前文件和 manual-fix artifact，禁止整文件覆盖"
+            )
+
+        try:
+            self._inject_failure_comment(func_name, func_info, comment)
+            _atomic_write_text(func_history_dir / "failure_comment.txt", comment)
+        except Exception as e:
+            logger.debug(f"注入 non-function manual-fix 注释失败（忽略）: {e}")
+
+        try:
+            self._append_llm_failed_code_comment_below_function(
+                func_name=func_name,
+                func_info=func_info,
+                llm_code=translated_code,
+                artifact_path=artifact,
+                reason=reason,
+            )
+        except Exception:
+            pass
+
+        return False
+
+    def _should_stop_repair_for_repeated_error(self, error_history: List[str], error_key: str) -> bool:
+        """连续重复同一错误时停止当前函数 repair，避免打满所有轮次。"""
+        if not error_key:
+            return False
+        if len(error_history) < 2:
+            return False
+        return error_history[-1] == error_key and error_history[-2] == error_key
+
     def _get_compile_error(self) -> str:
         """获取编译错误信息（过滤掉无害警告）"""
         try:
@@ -11344,34 +12480,44 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                 except Exception:
                     pass
 
-                result = subprocess.run(
-                    cmd,
-                    cwd=self.work_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                    env=env,
-                )
+                try:
+                    compile_timeout = int(os.environ.get("C2R_CARGO_CHECK_TIMEOUT_SEC", "300") or "300")
+                except Exception:
+                    compile_timeout = 300
+                try:
+                    result = subprocess.run(
+                        cmd,
+                        cwd=self.work_dir,
+                        capture_output=True,
+                        text=True,
+                        timeout=compile_timeout,
+                        env=env,
+                    )
+                except subprocess.TimeoutExpired:
+                    output = f"C2R_COMPILE_TIMEOUT: cargo check timed out after {compile_timeout}s"
+                    self._last_cargo_check_output = output
+                    self._last_cargo_check_returncode = 124
+                    return output
                 output = result.stdout + result.stderr
                 try:
                     self._last_cargo_check_output = output
                     self._last_cargo_check_returncode = int(result.returncode)
                 except Exception:
                     pass
-            
+
             # 过滤掉警告，只保留错误
             lines = output.split('\n')
             error_lines = []
             in_error_block = False
-            
+
             for line in lines:
                 # 检测错误开始（包含无错误码的语法错误：`error: ...`）
                 if re.search(r'error\[E\d+\]:', line) or re.match(r'\s*error:', line):
                     in_error_block = True
                     error_lines.append(line)
                 # 检测错误块中的相关行（以 --> 或 ^ 开头，或包含 help:）
-                elif in_error_block and (line.strip().startswith('-->') or 
-                                         line.strip().startswith('^') or 
+                elif in_error_block and (line.strip().startswith('-->') or
+                                         line.strip().startswith('^') or
                                          'help:' in line or
                                          line.strip().startswith('|')):
                     error_lines.append(line)
@@ -11384,28 +12530,28 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                             error_lines.append(line)
                         else:
                             in_error_block = False
-            
+
             error_output = '\n'.join(error_lines)
-            
+
             # 如果没有找到错误，返回完整输出（可能包含警告）
             if not error_output.strip():
                 error_output = output
-            
+
             return error_output[:5000]  # 增加长度限制，保留更多错误信息
         except Exception as e:
             return str(e)
-    
+
     def _format_attempt_history(self, attempt: Dict, is_first: bool = False) -> str:
         """格式化单次修复尝试的历史信息"""
         prev_num = attempt.get("attempt_num", "?")
         prev_error = attempt.get("error_msg", "")
         prev_code_before = attempt.get("code_before", "")
         prev_code_after = attempt.get("code_after", "")  # 修复后的代码（如果有）
-        
+
         # Truncate long history items to avoid prompt blow-ups; configurable via env.
-        # Default: no truncation (0) to maximize repair context.
+        # 默认截断单条历史，完整信息已落 repair_history 文件。
         try:
-            max_chars = int(os.environ.get("C2R_REPAIR_HISTORY_ITEM_MAX_CHARS", "0") or "0")
+            max_chars = int(os.environ.get("C2R_REPAIR_HISTORY_ITEM_MAX_CHARS", "2000") or "2000")
         except Exception:
             max_chars = 0
         if max_chars < 0:
@@ -11421,19 +12567,19 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
         prev_error_truncated = _maybe_trunc(prev_error)
         prev_code_before_truncated = _maybe_trunc(prev_code_before)
         prev_code_after_truncated = _maybe_trunc(prev_code_after)
-        
+
         result = f"\n### Attempt {prev_num}"
         if is_first:
             result += " (Initial Translation)"
         result += ":\n"
-        
+
         result += f"**Code tried (that failed to compile):**\n```rust\n{prev_code_before_truncated}\n```\n"
         if prev_code_after:
             result += f"**Code after repair (still failed):**\n```rust\n{prev_code_after_truncated}\n```\n"
         result += f"**Error encountered:**\n```\n{prev_error_truncated}\n```\n"
-        
+
         return result
-    
+
     def _repair_function(
         self,
         func_info: FunctionInfo,
@@ -11444,28 +12590,30 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
         error_history: List[str] = None,
         repair_attempts_history: List[Dict] = None
     ) -> Optional[str]:
-        """修复函数 - 先尝试规则修复，失败再使用 LLM
+        """修复函数 - 先尝试规则修复，失败再使用 LLM。
 
-        支持两种模式（通过 C2R_REPAIR_USE_TRANSLATION_PROMPT 环境变量控制）：
-        1. 复用翻译 prompt（默认，推荐）：使用与翻译相同的完整 prompt，追加错误信息和历史记录
-           - 好处：保持翻译规则一致性，LLM 不会被不同 prompt 风格困惑
-        2. 专用修复 prompt：使用简化的修复 prompt
-           - 好处：prompt 更短，但可能丢失重要翻译规则
+        C2R_REPAIR_USE_TRANSLATION_PROMPT 只切换 system 规则画像：
+        1. 默认复用翻译阶段的完整规则，保持命名空间、指针和 FFI 约束一致。
+        2. 关闭后使用更短的修复规则，但 user prompt 仍由结构化 repair builder 统一生成。
         """
         from generate.generation import generation
 
-        # 检查是否复用翻译 prompt（默认启用）
+        # 检查是否复用翻译阶段的 system 规则画像（默认启用）。
         use_translation_prompt = (os.environ.get("C2R_REPAIR_USE_TRANSLATION_PROMPT", "1") or "1").strip().lower() in (
             "1", "true", "yes", "y", "on"
         )
 
-        # C2R: repair 阶段的骨架上下文统计和截断
+        # C2R: repair 阶段的骨架上下文统计；默认不裁剪。
         # 记录原始长度
         original_skeleton_len = len(skeleton_context) if skeleton_context else 0
         logger.info(f"[Repair统计] 函数: {func_info.name}, skeleton_context: {original_skeleton_len} 字符, use_translation_prompt: {use_translation_prompt}")
 
         try:
-            if skeleton_context and len(skeleton_context) > MAX_SKELETON_CONTEXT_CHARS:
+            if (
+                MAX_SKELETON_CONTEXT_CHARS is not None
+                and skeleton_context
+                and len(skeleton_context) > MAX_SKELETON_CONTEXT_CHARS
+            ):
                 logger.warning(
                     f"[Repair截断] 骨架上下文过长: {len(skeleton_context)} 字符 (~{len(skeleton_context)//4} tokens)"
                 )
@@ -11475,7 +12623,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                 skeleton_context = smart_truncate_context(skeleton_context, MAX_SKELETON_CONTEXT_CHARS)
         except Exception as e:
             logger.debug(f"repair 阶段骨架上下文截断失败: {e}")
-        
+
         # ============================================================
         # 阶段 1: 尝试规则修复（快速、确定性）
         # ============================================================
@@ -11484,17 +12632,17 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
             if fixed_code:
                 logger.info(f"[{func_info.name}] 规则修复成功: {fixer_name}")
                 return fixed_code
-        
+
         # ============================================================
         # 阶段 2: 规则修复失败，使用 LLM 修复
         # ============================================================
-        
+
         # 检查签名是否是 trait 方法或析构函数，转换为独立函数签名
         target_signature = func_info.rust_signature
-        
+
         # 检查是否是 Drop trait 实现（析构函数）
         is_drop_impl = target_signature.startswith("impl Drop for")
-        
+
         if is_drop_impl:
             # 析构函数保持原样，不需要转换
             pass
@@ -11503,19 +12651,19 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
             target_signature = target_signature.replace("&self, ", "").replace("&self,", "").replace("(&self)", "()")
             if not target_signature.startswith("pub "):
                 target_signature = "pub " + target_signature
-        
+
         # 增强错误分析：解析 Rust 错误代码并提供针对性建议
         error_hints = self._analyze_compilation_errors(error_msg)
         error_hints_str = "\n".join(error_hints) if error_hints else "- Analyze the error message carefully."
-        
+
         # 构建详细的修复历史提示（包含之前尝试的具体错误和代码）
         history_hint = ""
         if repair_attempts_history and len(repair_attempts_history) > 0:
             total_attempts = len(repair_attempts_history)
             history_hint = f"\n## Previous Repair Attempts\nYou have tried {total_attempts} time(s). Here are the attempts with their errors and code:\n"
-            
-            # Default: include ALL attempts to maximize repair context.
-            include_all = (os.environ.get("C2R_REPAIR_HISTORY_INCLUDE_ALL", "1") or "1").strip().lower() in (
+
+            # 默认只包含 attempt1 + 最近两次，完整历史保存在 repair_history。
+            include_all = (os.environ.get("C2R_REPAIR_HISTORY_INCLUDE_ALL", "0") or "0").strip().lower() in (
                 "1",
                 "true",
                 "yes",
@@ -11538,7 +12686,7 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
                 # Show all attempts.
                 for i, prev_attempt in enumerate(repair_attempts_history):
                     history_hint += self._format_attempt_history(prev_attempt, is_first=(i == 0))
-            
+
             # 只提供历史记录作为参考，不强制要求改变方法
             # 让 LLM 基于更多信息做出判断，而不是被迫尝试"不同的方法"
             history_hint += f"\n**Note:** The above shows your previous repair attempts and the errors they produced.\n"
@@ -11555,18 +12703,18 @@ REMINDER: Output ONLY the target function/method definition for `{func_name}`. N
 The following types are opaque (e.g., `type X = c_void`):
   {opaque_list}
 
-If you need to return values for these types:
-  - For `-> *mut OpaqueType`: return `std::ptr::null_mut()`
-  - For `-> i32` or integer: return `0`
-  - For `-> bool` or boolean: return `0`
-  - For `()`: just return
+When code touches fields of these types:
+  - Use accessor shims or existing Rust APIs when available.
+  - Preserve surrounding control flow, calls, pointer checks, and side effects.
+  - If one field has no shim/equivalent, replace only that unreadable expression with the smallest local placeholder needed to compile.
+  - Do not turn the whole function/method into a default return because a single field is opaque.
 """
 
         # 检查是否是 Drop trait 实现（析构函数）
         is_drop_impl = target_signature.startswith("impl Drop for")
         is_impl_method = "&self" in target_signature or "&mut self" in target_signature
         is_constructor = "fn new" in target_signature.lower() or "-> Self" in target_signature
-        
+
         # 通用语法规则提示
         syntax_rules = """
 OUTPUT FORMAT (STRICT):
@@ -11577,7 +12725,7 @@ OUTPUT FORMAT (STRICT):
 SYNTAX RULES (CRITICAL - READ CAREFULLY):
 - Function CALL syntax: `func(arg1, arg2)` - just pass variable names
 - Function DEFINITION syntax: `fn func(arg1: Type, arg2: Type)` - include types
-- WRONG call: `check_policy(token_id: u32, policy: &Vec<T>)` 
+- WRONG call: `check_policy(token_id: u32, policy: &Vec<T>)`
 - CORRECT call: `check_policy(token_id, policy)`
 - Function pointer fields: `Option<unsafe extern \"C\" fn(...) -> ...>` MUST unwrap:
   `if let Some(f) = cb { unsafe { f(args) } }`
@@ -11593,7 +12741,8 @@ NAMESPACE CONTRACT (CRITICAL):
 
 TYPE CHECKING (MUST COMPILE):
 - Every call MUST satisfy the provided Rust signatures; add explicit casts/conversions when needed.
-- Treat `size_t/ssize_t` as `usize/isize`; cast before arithmetic/comparisons to avoid E0308.
+- Use the actual `crate::types::size_t` / `ssize_t` aliases from `types.rs`; do not assume `usize/isize`.
+- Cast before arithmetic/comparisons to avoid E0308.
 """
 
         # External symbol policy: extern decls should be generated deterministically (bindgen allowlist),
@@ -11610,8 +12759,8 @@ TYPE CHECKING (MUST COMPILE):
 CRITICAL RULES:
 1. Generate a COMPLETE `impl Drop` block with `fn drop(&mut self)` method
 2. OPAQUE TYPES: Types defined as `type X = c_void` are opaque - you CANNOT access their fields
-3. If the error is about accessing struct fields on an opaque type, just do nothing or log
-4. Keep the implementation EXACTLY as specified: `{target_signature}`
+3. If the error is about accessing struct fields on an opaque type, keep side effects and replace only the unreadable field expression when no shim/API exists
+4. Keep the implementation EXACTLY as specified in the Required Rust Signature section
 5. For destructors:
    - If C/C++ destructor is empty/default, use: `fn drop(&mut self) {{}}`
    - If it releases resources, translate appropriately
@@ -11623,8 +12772,8 @@ CRITICAL RULES:
 CRITICAL RULES:
 1. Generate a method inside an impl block (WITH &self or &mut self parameter as required)
 2. OPAQUE TYPES: Types defined as `type X = c_void` are opaque - you CANNOT access their fields
-3. If the error is about accessing struct fields on an opaque type, return a safe default value
-4. Keep the method signature EXACTLY as specified: `{target_signature}`
+3. If the error is about accessing struct fields on an opaque type, keep side effects and replace only the unreadable field expression when no shim/API exists
+4. Keep the method signature EXACTLY as specified in the Required Rust Signature section
 5. This is an impl method, so &self parameter is REQUIRED
 6. Implement the logic DIRECTLY in the method body, do NOT call a non-existent standalone function
 {local_ffi_rule}
@@ -11635,8 +12784,8 @@ CRITICAL RULES:
 CRITICAL RULES:
 1. Generate a constructor function that returns Self
 2. Initialize all struct fields appropriately
-3. If some fields cannot be initialized, use Default::default() or safe defaults
-4. Keep the signature EXACTLY as specified: `{target_signature}`
+3. If some fields cannot be initialized, prefer real constructor/context values; use defaults only for fields that are actually unavailable
+4. Keep the signature EXACTLY as specified in the Required Rust Signature section
 {local_ffi_rule}
 {syntax_rules}"""
         else:
@@ -11645,18 +12794,44 @@ CRITICAL RULES:
 CRITICAL RULES:
 1. Generate a STANDALONE function with `pub fn` prefix (NOT a trait method)
 2. OPAQUE TYPES: Types defined as `type X = c_void` are opaque - you CANNOT access their fields
-3. If the error is about accessing struct fields on an opaque type, return a safe default value
-4. Keep the function signature EXACTLY as specified: `{target_signature}`
+3. If the error is about accessing struct fields on an opaque type, keep side effects and replace only the unreadable field expression when no shim/API exists
+4. Keep the function signature EXACTLY as specified in the Required Rust Signature section
 6. DO NOT add &self parameter
 {local_ffi_rule}
         {syntax_rules}"""
 
-        # 从依赖文件提取“被调函数签名”（C-level constness），减少调用点 *mut/*const 错误
-        callee_signature_hints = self._build_dependency_signature_hints(func_info)
-        inline_helper_hints = self._build_preprocessed_inline_helper_hints(func_info)
-        callee_rust_signature_hints = self._build_called_rust_signature_hints(func_info)
-        internal_callee_paths_hints = self._build_internal_callee_module_path_hints(func_info)
-        typed_constants_hints = self._build_typed_constants_hints(func_info)
+        dependency_closure_context = ""
+        dependency_closure_manifest = ""
+        truth_manifest_context = ""
+        truth_manifest_path = ""
+        try:
+            closure = build_dependency_closure(func_info, self)
+            func_key = f"{func_info.file_name}_{func_info.index}"
+            self._dependency_closure_manifest_by_func[func_key] = str(closure.manifest_path)
+            dependency_closure_context = closure.prompt_block
+            dependency_closure_manifest = str(closure.manifest_path)
+            truth_bundle = build_truth_manifest(
+                func_info,
+                self,
+                dependency_manifest=closure.manifest,
+                dependency_manifest_path=closure.manifest_path,
+            )
+            if not hasattr(self, "_truth_manifest_by_func") or not isinstance(getattr(self, "_truth_manifest_by_func", None), dict):
+                self._truth_manifest_by_func = {}
+            self._truth_manifest_by_func[func_key] = str(truth_bundle.manifest_path)
+            truth_manifest_context = truth_bundle.prompt_block
+            truth_manifest_path = str(truth_bundle.manifest_path)
+        except Exception as e:
+            logger.debug(f"repair 依赖闭包/truth manifest 构建失败 [{func_info.name}]: {e}")
+
+        # 依赖闭包已经统一区分 callable Rust API、解释性 C/C++ facts 和常量映射；
+        # repair prompt 不再重复注入旧式 hint，避免同一事实多种说法互相冲突。
+        callee_signature_hints = ""
+        inline_helper_hints = ""
+        callee_rust_signature_hints = ""
+        internal_callee_paths_hints = ""
+        typed_constants_hints = ""
+        build_truth_diagnostics = self._build_build_truth_diagnostics()
         c_field_access_hints = self._build_c_field_access_hints(func_info)
         try:
             c_pointer_contract_hints = self._build_c_pointer_contract_hints(func_info)
@@ -11665,11 +12840,10 @@ CRITICAL RULES:
             c_pointer_contract_hints = ""
 
         # ============================================================
-        # 根据 use_translation_prompt 选择 prompt 构建方式
+        # 根据 use_translation_prompt 选择 system 规则画像；user prompt 统一由 build_unit_repair_prompt 构建。
         # ============================================================
         if use_translation_prompt:
-            # 复用翻译 prompt：使用与 _translate_function 相同的完整 system_prompt
-            # 好处：保持翻译规则一致性，LLM 不会被不同 prompt 风格困惑
+            # 复用翻译阶段的完整 system 规则，避免 repair 阶段丢失关键编译约束。
             system_prompt = f"""You are a C/C++ to Rust translator. Generate code that COMPILES. Unsafe is OK.
 
 OUTPUT FORMAT (STRICT):
@@ -11680,10 +12854,10 @@ OUTPUT FORMAT (STRICT):
 ## ⚠️ CRITICAL: AVOID THESE MISTAKES ⚠️
 1. **Option<fn> MUST unwrap**: `if let Some(f) = cb {{ unsafe {{ f(args) }} }}`
 2. **ALL ptr ops need unsafe**: `unsafe {{ *ptr = val; (*ptr).field; }}`
-3. **OPAQUE types (c_void) have NO fields** - return defaults instead
+3. **OPAQUE types (c_void) have NO fields** - use accessor shims or existing APIs when provided; otherwise keep fallback local to the unreadable expression
 4. **Pointer cast**: `ptr as *mut T` (NOT `ptr.cast_mut()` - doesn't exist!)
 5. **DO NOT invent externs for macros/inline/external APIs**: external symbols are declared in `compat.rs` (bindgen allowlist); macro/static inline are not stable link symbols.
-6. **DO NOT emit C macro names / header-only inline helper names**: input is a preprocessed `.i` (macros expanded). If you see a macro-like call, output the expanded expression or implement a local Rust helper (NOT an extern).
+	6. **DO NOT emit C macro names / header-only inline helper names**: input is a preprocessed `.i` (macros expanded). If helper logic is needed, inline the logic inside the target function body only; do NOT emit extra helper items or externs.
 
 ## ❌ NON-EXISTENT / WRONG SYNTAX - NEVER USE ❌
 - `ptr.cast_mut()` → Use `ptr as *mut T`
@@ -11694,7 +12868,7 @@ OUTPUT FORMAT (STRICT):
 ## RULES
 1. Match TARGET SIGNATURE exactly (pub fn / impl method / Drop)
 2. Use only skeleton types and existing `compat.rs` extern decls; DO NOT add ad-hoc `extern "C"` blocks
-3. OPAQUE types: can't access fields, use ptr arithmetic or defaults
+3. OPAQUE types: can't access fields; use accessor shims or existing APIs when provided and avoid whole-function default returns
 4. Wrap ALL ptr derefs in `unsafe {{ }}`
 5. Function ptrs: `Option<fn>` - must unwrap before call
 
@@ -11711,14 +12885,14 @@ OUTPUT FORMAT (STRICT):
 ## TYPE CHECKING (MUST COMPILE)
 - Every call MUST satisfy the provided Rust signatures (Target signature + "Called Rust APIs").
 - If types mismatch, add explicit casts/conversions (e.g. `as i32`, `as u32`, `as usize`, pointer casts).
-- Treat `size_t/ssize_t` as `usize/isize` in Rust; cast before arithmetic/comparisons to avoid E0308.
+- Use the actual `crate::types::size_t` / `ssize_t` aliases from `types.rs`; cast before arithmetic/comparisons to avoid E0308.
 
 ## SIZE_T / USIZE CONVERSION (CRITICAL - E0308 FIX)
-- `crate::types::size_t` is defined as `u64` by bindgen (on 64-bit systems)
-- But `libc` functions (malloc, realloc, memcpy, etc.) expect `usize`
+- `crate::types::size_t` may be `usize`, `u64`, or another target-specific alias. Do NOT assume `u64`.
+- `libc` functions (malloc, realloc, memcpy, etc.) expect `usize`
 - ALWAYS cast when calling libc: `libc::malloc(size as usize)`
 - ALWAYS cast strlen result: `(libc::strlen(ptr) + 1) as usize` for malloc
-- When assigning to size_t field: `(value as u64)` or `(value as crate::types::size_t)`
+- When assigning to size_t field: `(value as crate::types::size_t)`; do not hard-code `u64`
 
 ## RAW POINTER RULES (CRITICAL - E0599 FIX)
 - Raw pointers (`*mut T`, `*const T`) have NO methods like `.len()`, `.is_empty()`, etc.
@@ -11747,125 +12921,54 @@ OUTPUT FORMAT (STRICT):
 
 GOAL: Make it compile. Idiomatic refactoring happens in Phase 3.2."""
 
-            # 构建复用翻译 prompt 的 user_prompt
-            # 使用翻译的结构，但追加当前错误代码、编译错误、历史记录
-            user_prompt = f"""Translate the following C/C++ function to Rust.
-{opaque_type_info}
-## Target Rust Function Signature (MUST use this exact signature)
-```rust
-{target_signature}
-```
-
-## C/C++ Source Code to Translate
-NOTE: The source below may be a slice from the build's preprocessed `.i` TU (macros expanded, inline bodies visible).
-```cpp
-{func_info.c_code}
-```
-{callee_signature_hints}
-{inline_helper_hints}
-{callee_rust_signature_hints}
-{internal_callee_paths_hints}
-{typed_constants_hints}
-{c_field_access_hints}
-{c_pointer_contract_hints}
-
-## Skeleton Context (available types and functions)
-```rust
-{skeleton_context}
-```
-
-## Output Requirements
-1. Output EXACTLY ONE Rust item: the complete target function definition
-2. The function signature MUST match: `{target_signature}`
-3. Do NOT output any extra items (no helper fns/types/impl/mod/use)
-4. Keep output short: no long comments, no markdown fences/explanations
-
-## ⚠️ REPAIR CONTEXT (Previous Attempt Had Errors)
-The following code was generated in a previous attempt but has compilation errors:
-```rust
-{current_code}
-```
-
-### Compilation Error
-```
-{error_msg}
-```
-
-### Error Analysis
-{error_hints_str}
-{history_hint}
-
-**Focus on fixing the specific errors above while keeping the translation correct.**
-"""
-
-        else:
-            # 使用原有的专用修复 prompt
-            user_prompt = f"""Fix the following Rust code that has compilation errors.
-
-## Original C/C++ Code (for reference)
-```cpp
-{func_info.c_code}
-```
-
-## Current Code (has errors)
-```rust
-{current_code}
-```
-
-## Compilation Error
-```
-{error_msg}
-```
-
-## Error Analysis
-{error_hints_str}
-{history_hint}
-
-## IMPORTANT: Missing Symbols (E0425 / E0422)
+        missing_symbol_policy = """## Missing Symbols (E0425 / E0422)
 If you see errors like "cannot find function `RAND_bytes`" / missing const / missing type:
-- Do NOT add guessed `extern "C"` declarations or no-op macro stubs to “make it compile”.
+- Do NOT add guessed `extern "C"` declarations or no-op macro stubs to make it compile.
 - These should be fixed by build-context/TU selection and regenerating `compat.rs` via bindgen allowlist.
-- Treat them as deterministic closure gaps (report), and focus fixes on other local compile errors.
+- Treat them as deterministic closure gaps, and focus fixes on other local compile errors."""
+        function_evidence = "\n\n".join(
+            part.strip()
+            for part in [
+                missing_symbol_policy,
+                build_truth_diagnostics,
+                dependency_closure_context,
+                truth_manifest_context,
+                callee_signature_hints,
+                inline_helper_hints,
+                callee_rust_signature_hints,
+                internal_callee_paths_hints,
+                typed_constants_hints,
+                c_field_access_hints,
+                c_pointer_contract_hints,
+            ]
+            if part and part.strip()
+        )
+        messages, prompt_layout_meta = build_unit_repair_prompt(
+            system_prompt=system_prompt,
+            target_signature=target_signature,
+            c_code=func_info.c_code,
+            current_code=current_code,
+            error_msg=error_msg,
+            error_analysis=error_hints_str,
+            rust_context=skeleton_context,
+            function_evidence=function_evidence,
+            output_requirements=self._get_repair_output_requirements(is_drop_impl, is_impl_method, is_constructor, target_signature),
+            history_hint=history_hint,
+            opaque_type_info=opaque_type_info,
+            stable_rust_context_prefix_chars=self._stable_skeleton_context_prefix_chars(skeleton_context),
+        )
 
-## REQUIRED Function Signature (MUST use exactly this)
-```rust
-{target_signature}
-```
-{callee_signature_hints}
-{inline_helper_hints}
-{callee_rust_signature_hints}
-{internal_callee_paths_hints}
-{typed_constants_hints}
-{c_field_access_hints}
-{c_pointer_contract_hints}
-{opaque_type_info}
-## Available Context (from skeleton)
-```rust
-{skeleton_context}
-```
-
-## Type Information Notes
-- Output must be EXACTLY ONE Rust item (the target function/method).
-- Do NOT define new helper types/aliases/imports/modules/extern blocks in the output.
-- If a type is missing (E0412), treat it as an upstream types/TU truth gap; return safe defaults or keep TODOs, but do NOT invent new type definitions here.
-- Use `::core::ffi::c_void` for void pointers; external C APIs come from `compat.rs`; globals come from `globals.rs`.
-
-## Output Requirements
-{self._get_repair_output_requirements(is_drop_impl, is_impl_method, is_constructor, target_signature)}
-"""
-
-        # 构建消息列表
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
         # 保存提示词
+        prompt_json_path = None
         try:
             from save_llm_prompts import save_llm_prompt, save_llm_prompt_text
+            func_key = f"{func_info.file_name}_{func_info.index}"
+            prompt_function_name = f"{func_key}_{func_info.name}_attempt_{attempt_num}"
             metadata = {
                 "target_signature": target_signature,
                 "file_name": func_info.file_name,
+                "func_key": func_key,
+                "function_index": func_info.index,
                 "attempt_num": attempt_num,
                 "error_msg_preview": error_msg[:500],
                 "opaque_types": list(self.opaque_types) if self.opaque_types else [],
@@ -11874,16 +12977,23 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
                 "callee_rust_signature_hints_length": len(callee_rust_signature_hints) if callee_rust_signature_hints else 0,
                 "internal_callee_paths_hints_length": len(internal_callee_paths_hints) if internal_callee_paths_hints else 0,
                 "typed_constants_hints_length": len(typed_constants_hints) if typed_constants_hints else 0,
+                "build_truth_diagnostics_length": len(build_truth_diagnostics) if build_truth_diagnostics else 0,
                 "c_field_access_hints_length": len(c_field_access_hints) if c_field_access_hints else 0,
                 "c_pointer_contract_hints_length": len(c_pointer_contract_hints) if c_pointer_contract_hints else 0,
-                "error_history_count": len(error_history) if error_history else 0
+                "error_history_count": len(error_history) if error_history else 0,
+                "estimated_tokens": sum(estimate_tokens(m.get("content") or "") for m in messages),
+                **prompt_layout_meta,
             }
-            save_llm_prompt(
+            if dependency_closure_manifest:
+                metadata["dependency_closure_manifest"] = dependency_closure_manifest
+            if truth_manifest_path:
+                metadata["truth_manifest"] = truth_manifest_path
+            prompt_json_path = save_llm_prompt(
                 messages=messages,
                 project_name=self.project_name,
                 llm_name=self.llm_name,
                 task_type="incremental_repair",
-                function_name=f"{func_info.name}_attempt_{attempt_num}",
+                function_name=prompt_function_name,
                 metadata=metadata,
                 output_dir=self.llm_prompts_dir
             )
@@ -11892,7 +13002,7 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
                 project_name=self.project_name,
                 llm_name=self.llm_name,
                 task_type="incremental_repair",
-                function_name=f"{func_info.name}_attempt_{attempt_num}",
+                function_name=prompt_function_name,
                 metadata=metadata,
                 output_dir=self.llm_prompts_dir
             )
@@ -11900,15 +13010,48 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
             logger.warning(f"保存提示词失败: {e}")
 
         try:
-            # 使用信号量控制 vLLM 并发请求数
+            # 使用信号量控制 LLM 并发请求数
             _vllm_semaphore.acquire()
             try:
-                response = generation(messages)
+                response = generation(messages, return_usage=True)
             finally:
                 _vllm_semaphore.release()
 
+            usage = {}
             if isinstance(response, dict):
+                usage = response.get("usage", {}) or {}
                 response = response.get("content", "")
+            if usage:
+                logger.info(f"[Repair Usage] 函数: {func_info.name}, attempt={attempt_num}, usage={json.dumps(usage, ensure_ascii=False, sort_keys=True)}")
+                try:
+                    response_dir = self.llm_prompts_dir / self.llm_name / "responses"
+                    response_dir.mkdir(parents=True, exist_ok=True)
+                    response_file = response_dir / f"{func_info.name}_attempt_{attempt_num}_repair_response.txt"
+                    _atomic_write_text(
+                        response_file,
+                        "".join(
+                            [
+                                f"=== LLM Repair Response for {func_info.name} attempt {attempt_num} ===\n",
+                                f"Length: {len(response) if response else 0} characters\n",
+                                f"Usage: {json.dumps(usage, ensure_ascii=False, sort_keys=True)}\n",
+                                f"{'='*50}\n\n",
+                                (response if response else "(empty response)"),
+                            ]
+                        ),
+                    )
+                except Exception as save_err:
+                    logger.debug(f"保存修复响应失败: {save_err}")
+                try:
+                    if prompt_json_path and Path(prompt_json_path).is_file():
+                        payload = json.loads(Path(prompt_json_path).read_text(encoding="utf-8"))
+                        metadata_payload = payload.setdefault("metadata", {})
+                        metadata_payload["response_usage"] = usage
+                        Path(prompt_json_path).write_text(
+                            json.dumps(payload, ensure_ascii=False, indent=2),
+                            encoding="utf-8",
+                        )
+                except Exception as usage_err:
+                    logger.debug(f"回写修复 usage 到 prompt JSON 失败: {usage_err}")
 
             print("✓")
             return self._extract_rust_code(response)
@@ -11991,20 +13134,20 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
     def _rollback_function(self, func_name: str, func_info: FunctionInfo):
         """
         回退函数到 skeleton 的原始占位符状态（unimplemented!() 等）
-        
+
         当所有修复尝试都失败后调用此方法，将函数恢复到骨架中的占位符版本
         注意：不再整个文件回退，而是只回退失败的函数
         """
         from auto_test_rust import find_and_replace_function_signature
-        
+
         # 尝试两种文件名格式：src_filename.rs 和 filename.rs
         rs_filename_with_prefix = "src_" + func_info.file_name + ".rs"
         rs_filename_without_prefix = func_info.file_name + ".rs"
-        
+
         # 确定 target_file
         target_file_with_prefix = self.work_dir / "src" / rs_filename_with_prefix
         target_file_without_prefix = self.work_dir / "src" / rs_filename_without_prefix
-        
+
         if target_file_with_prefix.exists():
             target_file = target_file_with_prefix
             rs_filename = rs_filename_with_prefix
@@ -12014,28 +13157,28 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
         else:
             logger.warning(f"回退失败：目标文件不存在 {target_file_with_prefix} 或 {target_file_without_prefix}")
             return
-        
+
         # 确定 skeleton_file
         skeleton_file = self.skeleton_dir / "src" / rs_filename
-        
+
         if not skeleton_file.exists():
             logger.warning(f"回退失败：骨架文件不存在 {skeleton_file}")
             return
-        
+
         try:
             # 读取骨架文件（包含占位符版本）
             skeleton_content = skeleton_file.read_text(encoding='utf-8', errors='ignore')
-            
+
             # 读取当前工作文件
             current_content = target_file.read_text(encoding='utf-8', errors='ignore')
-            
+
             # 先清理可能存在的重复签名（修复重复 pub extern "C" 问题）
             duplicate_pattern = r'(pub\s+extern\s+"C"\s+){2,}'
             current_content = re.sub(duplicate_pattern, r'pub extern "C" ', current_content)
-            
+
             # 从骨架中提取该函数的占位符版本
             placeholder_func = self._extract_function_block(skeleton_content, func_info)
-            
+
             # 如果找到占位符版本，进行替换
             if placeholder_func:
                 new_content, success = find_and_replace_function_signature(
@@ -12053,7 +13196,7 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
                         fn_match = re.search(r'fn\s+(\w+)', func_info.rust_signature)
                         if fn_match:
                             actual_func_name = fn_match.group(1)
-                    
+
                     if actual_func_name:
                         new_content, success = find_and_replace_function_signature(
                             current_content, f"fn {actual_func_name}", placeholder_func
@@ -12063,65 +13206,65 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
                                 f.write(new_content)
                             logger.info(f"已回退函数 {func_name} 到占位符版本（使用函数名匹配）")
                             return
-            
+
             # 如果所有策略都失败，记录警告但不覆盖整个文件
             # 这样可以保留其他已成功翻译的函数
             logger.warning(f"无法单独回退函数 {func_name}，保留当前状态（不覆盖整个文件）")
             # 注意：不再用骨架文件覆盖整个文件，以避免破坏其他已翻译的函数
-            
+
         except Exception as e:
             logger.error(f"回退函数 {func_name} 失败: {e}")
-    
+
     def _rollback_function_safe(self, func_name: str, func_info: FunctionInfo) -> bool:
         """
         安全回退函数到占位符版本，返回是否成功
-        
+
         与 _rollback_function 的区别：
         1. 返回布尔值表示是否成功
         2. 回退后验证文件语法是否正确
-        3. 如果验证失败，尝试强制恢复
+        3. 失败时保留原文件，绝不整文件恢复 skeleton
         """
         from auto_test_rust import find_and_replace_function_signature
-        
+
         # 尝试两种文件名格式：src_xxx.rs 和 xxx.rs（向后兼容）
         rs_filename_with_prefix = "src_" + func_info.file_name + ".rs"
         rs_filename = func_info.file_name + ".rs"
         target_file = self.work_dir / "src" / rs_filename_with_prefix
         skeleton_file = self.skeleton_dir / "src" / rs_filename_with_prefix
-        
+
         if not target_file.exists():
             target_file = self.work_dir / "src" / rs_filename
         if not skeleton_file.exists():
             skeleton_file = self.skeleton_dir / "src" / rs_filename
-        
+
         if not target_file.exists() or not skeleton_file.exists():
             logger.warning(f"回退失败：文件不存在 {target_file} 或 {skeleton_file}")
             return False
-        
+
         try:
             # 读取骨架文件（包含占位符版本）
             skeleton_content = skeleton_file.read_text(encoding='utf-8', errors='ignore')
-            
+
             # 读取当前工作文件
             current_content = target_file.read_text(encoding='utf-8', errors='ignore')
             backup_content = current_content  # 备份当前内容
-            
+
             # 先清理可能存在的重复签名
             duplicate_pattern = r'(pub\s+extern\s+"C"\s+){2,}'
             current_content = re.sub(duplicate_pattern, r'pub extern "C" ', current_content)
-            
+
             # 从骨架中提取该函数的占位符版本
             placeholder_func = self._extract_function_block(skeleton_content, func_info)
-            
+
             if not placeholder_func:
                 logger.warning(f"无法从骨架提取函数 {func_name} 的占位符版本")
                 return False
-            
+
             # 尝试替换
             new_content, success = find_and_replace_function_signature(
                 current_content, func_info.rust_signature or f"fn {func_info.name}", placeholder_func
             )
-            
+
             if not success:
                 # 尝试使用函数名匹配
                 actual_func_name = func_info.name
@@ -12129,72 +13272,175 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
                     fn_match = re.search(r'fn\s+(\w+)', func_info.rust_signature)
                     if fn_match:
                         actual_func_name = fn_match.group(1)
-                
+
                 if actual_func_name:
                     new_content, success = find_and_replace_function_signature(
                         current_content, f"fn {actual_func_name}", placeholder_func
                     )
-            
+
             if not success:
                 logger.warning(f"无法单独回退函数 {func_name}")
                 return False
-            
+
             # 验证替换后的语法
             if not self._validate_rust_syntax(new_content):
                 logger.warning(f"回退后文件语法无效，保留原内容: {func_name}")
                 with open(target_file, 'w', encoding='utf-8') as f:
                     f.write(backup_content)
                 return False
-            
+
             # 写入回退后的内容
             with open(target_file, 'w', encoding='utf-8') as f:
                 f.write(new_content)
-            
+
             logger.info(f"已回退函数 {func_name} 到占位符版本")
             return True
-            
+
         except Exception as e:
             logger.error(f"安全回退函数 {func_name} 失败: {e}")
             return False
-    
+
     def _force_restore_skeleton_file(self, func_info: FunctionInfo):
         """
-        强制恢复整个骨架文件
-        
-        当单个函数回退失败时，强制从骨架复制整个文件
-        这会丢失该文件中其他已翻译的函数，但确保文件语法正确
+        已禁用的危险操作：禁止用 skeleton 覆盖整个工作文件。
+
+        历史实现会在单函数回退失败时复制整个骨架文件，导致同文件已成功翻译的函数被抹回
+        unimplemented!()。如果还有调用方依赖该行为，应尽早暴露并修正调用方。
         """
-        # 尝试两种文件名格式：src_xxx.rs 和 xxx.rs（向后兼容）
-        rs_filename_with_prefix = "src_" + func_info.file_name + ".rs"
-        rs_filename = func_info.file_name + ".rs"
-        target_file = self.work_dir / "src" / rs_filename_with_prefix
-        skeleton_file = self.skeleton_dir / "src" / rs_filename_with_prefix
-        
-        if not target_file.exists():
-            target_file = self.work_dir / "src" / rs_filename
-        if not skeleton_file.exists():
-            skeleton_file = self.skeleton_dir / "src" / rs_filename
-        
-        if not skeleton_file.exists():
-            logger.error(f"骨架文件不存在: {skeleton_file}")
-            return
-        
+        raise RuntimeError(
+            f"整文件 skeleton 恢复已禁用，拒绝覆盖 {getattr(func_info, 'file_name', '')}.rs"
+        )
+
+    def _rust_file_for_function(self, func_info: FunctionInfo) -> Tuple[Path, str]:
+        """返回函数对应 Rust 文件的绝对路径和相对最终工程路径。"""
+        file_name = getattr(func_info, "file_name", "") or ""
+        prefixed_rel = Path("src") / f"src_{file_name}.rs"
+        plain_rel = Path("src") / f"{file_name}.rs"
+        prefixed = self.work_dir / prefixed_rel
+        plain = self.work_dir / plain_rel
+        if prefixed.exists() or not plain.exists():
+            return prefixed.resolve(), prefixed_rel.as_posix()
+        return plain.resolve(), plain_rel.as_posix()
+
+    def _collect_prompt_artifact_paths(self, func_name: str, func_info: FunctionInfo) -> List[str]:
+        """收集与函数相关的真实 LLM prompt 文件绝对路径。"""
+        prompt_dir = getattr(self, "llm_prompts_dir", None)
+        if prompt_dir is None:
+            return []
+        prompt_dir = Path(prompt_dir)
+        if not prompt_dir.exists():
+            return []
+
+        target_key = str(func_name or f"{getattr(func_info, 'file_name', '')}_{getattr(func_info, 'index', '')}").strip()
+        target_func_name = str(getattr(func_info, "name", "") or "").strip()
+        paths: List[Path] = []
+        json_matches: Set[Path] = set()
         try:
-            import shutil
-            # 先备份当前文件（避免“恢复骨架”导致已翻译内容丢失）
+            prompt_files = sorted(
+                path for path in prompt_dir.glob("*")
+                if path.is_file()
+                and path.suffix in {".json", ".txt"}
+                and (path.name.startswith("incremental_translate_") or path.name.startswith("incremental_repair_"))
+            )
+            for path in prompt_files:
+                if path.suffix != ".json":
+                    continue
+                try:
+                    payload = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
+                except Exception:
+                    continue
+                metadata = payload.get("metadata") if isinstance(payload, dict) else {}
+                metadata = metadata if isinstance(metadata, dict) else {}
+                prompt_func_key = str(metadata.get("func_key") or "").strip()
+                prompt_file_name = str(metadata.get("file_name") or "").strip()
+                prompt_func_name = str(payload.get("function_name") or "").strip() if isinstance(payload, dict) else ""
+                inferred_key = ""
+                if prompt_file_name and prompt_file_name == str(getattr(func_info, "file_name", "") or "") and target_func_name and prompt_func_name.startswith(target_func_name):
+                    inferred_key = target_key
+                if prompt_func_key == target_key or (not prompt_func_key and inferred_key == target_key):
+                    json_matches.add(path)
+                    paths.append(path.resolve())
+                    txt_peer = path.with_suffix(".txt")
+                    if txt_peer.exists() and txt_peer.is_file():
+                        paths.append(txt_peer.resolve())
+            if json_matches:
+                for path in prompt_files:
+                    if path.suffix != ".txt":
+                        continue
+                    try:
+                        text = path.read_text(encoding="utf-8", errors="ignore")
+                    except Exception:
+                        continue
+                    if re.search(rf'"func_key"\s*:\s*"{re.escape(target_key)}"', text):
+                        paths.append(path.resolve())
+            if json_matches:
+                return [str(path) for path in sorted(dict.fromkeys(paths))]
+
+            safe_func_name = "".join(c if c.isalnum() or c in ("_", "-") else "_" for c in target_func_name)
+            safe_func_key = "".join(c if c.isalnum() or c in ("_", "-") else "_" for c in target_key)
+            key_matches: List[Path] = []
+            name_matches: List[Path] = []
+            for path in prompt_files:
+                if safe_func_key and safe_func_key in path.name:
+                    key_matches.append(path.resolve())
+                elif safe_func_name and safe_func_name in path.name:
+                    name_matches.append(path.resolve())
+            if key_matches:
+                return [str(path) for path in sorted(dict.fromkeys(key_matches))]
+            # Legacy prompts without metadata had only the bare C function in the filename.
+            # Use that fallback only when it is a single unambiguous artifact.
+            if len(name_matches) == 1:
+                return [str(name_matches[0])]
+        except Exception:
+            return []
+        return []
+
+    def _write_attempt_artifacts(
+        self,
+        *,
+        entry_dir: Path,
+        repair_attempts_history: Optional[List[Dict[str, Any]]],
+    ) -> str:
+        """保存每次修复尝试的错误和代码版本，返回 manifest 路径。"""
+        if not repair_attempts_history:
+            return ""
+
+        attempts: List[Dict[str, Any]] = []
+        for idx, attempt in enumerate(repair_attempts_history, 1):
+            if not isinstance(attempt, dict):
+                continue
             try:
-                if target_file.exists():
-                    backup_dir = self.manual_fix_root / "_forced_restore"
-                    backup_dir.mkdir(parents=True, exist_ok=True)
-                    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    backup_path = backup_dir / f"{target_file.name}.{ts}.bak.rs"
-                    shutil.copy2(target_file, backup_path)
-            except Exception as e:
-                logger.debug(f"备份当前文件失败（继续强制恢复骨架）: {e}")
-            shutil.copy2(skeleton_file, target_file)
-            logger.warning(f"已强制恢复整个骨架文件: {rs_filename}")
-        except Exception as e:
-            logger.error(f"强制恢复骨架文件失败: {e}")
+                attempt_num = int(attempt.get("attempt_num") or idx)
+            except Exception:
+                attempt_num = idx
+            prefix = f"attempt_{attempt_num:02d}"
+            record: Dict[str, Any] = {"attempt_num": attempt_num}
+
+            error_msg = str(attempt.get("error_msg") or "")
+            if error_msg:
+                error_path = entry_dir / f"{prefix}_error.log"
+                error_path.write_text(error_msg, encoding="utf-8", errors="ignore")
+                record["error_path"] = str(error_path.resolve())
+
+            code_before = str(attempt.get("code_before") or "")
+            if code_before:
+                before_path = entry_dir / f"{prefix}_code_before.rs"
+                before_path.write_text(code_before, encoding="utf-8", errors="ignore")
+                record["code_before_path"] = str(before_path.resolve())
+
+            code_after = str(attempt.get("code_after") or "")
+            if code_after:
+                after_path = entry_dir / f"{prefix}_code_after.rs"
+                after_path.write_text(code_after, encoding="utf-8", errors="ignore")
+                record["code_after_path"] = str(after_path.resolve())
+
+            attempts.append(record)
+
+        if not attempts:
+            return ""
+        attempts_path = entry_dir / "attempts.json"
+        attempts_path.write_text(json.dumps({"attempts": attempts}, ensure_ascii=False, indent=2), encoding="utf-8")
+        return str(attempts_path.resolve())
 
     def _save_manual_fix_artifact(
         self,
@@ -12203,6 +13449,7 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
         rust_code: str,
         reason: str,
         error_msg: str = "",
+        repair_attempts_history: Optional[List[Dict[str, Any]]] = None,
     ) -> Optional[Path]:
         """
         将“未能自动注入/未能自动修复”的翻译结果落盘，供人工复检。
@@ -12215,19 +13462,39 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
 
             code_path = entry_dir / "translated_rust.rs"
             code_path.write_text(rust_code or "", encoding="utf-8", errors="ignore")
+            compile_error_path = ""
+            if error_msg:
+                err_path = entry_dir / "compile_error.log"
+                err_path.write_text(error_msg, encoding="utf-8", errors="ignore")
+                compile_error_path = str(err_path.resolve())
+
+            attempts_path = self._write_attempt_artifacts(
+                entry_dir=entry_dir,
+                repair_attempts_history=repair_attempts_history,
+            )
+            prompt_paths = self._collect_prompt_artifact_paths(func_name, func_info)
+            dependency_closure_manifest = getattr(self, "_dependency_closure_manifest_by_func", {}).get(func_name, "")
+            rust_file_path, rust_file_rel = self._rust_file_for_function(func_info)
 
             meta = {
-                "generated_at": datetime.now().isoformat(),
                 "project": self.project_name,
                 "llm": self.llm_name,
                 "func_key": func_name,
                 "c_func": getattr(func_info, "name", None),
-                "rust_signature": getattr(func_info, "rust_signature", None),
-                "rust_file": f"{getattr(func_info, 'file_name', '')}.rs" if getattr(func_info, "file_name", None) else None,
                 "reason": reason,
-                "error_truncated": (error_msg or "")[:4000],
-                "artifact_dir": str(entry_dir),
-                "rust_code_path": str(code_path),
+                "artifact_dir": str(entry_dir.resolve()),
+                "meta_path": str((entry_dir / "meta.json").resolve()),
+                "manual_fix_manifest_path": str(self.manual_fix_manifest_path.resolve()),
+                "failed_translation_path": str(code_path.resolve()),
+                "compile_error_path": compile_error_path,
+                "attempts_path": attempts_path,
+                "dependency_closure_manifest_path": dependency_closure_manifest,
+                "prompt_paths": prompt_paths,
+                "llm_prompts_dir": str(self.llm_prompts_dir.resolve()),
+                "repair_history_dir": str((self.repair_history_dir / func_name).resolve()),
+                "rust_file_rel": rust_file_rel,
+                "rust_file_path": str(rust_file_path),
+                "source_comment_marker": f"C2R_FAILED_TRANSLATION_BEGIN func_key: {func_name}",
             }
 
             (entry_dir / "meta.json").write_text(
@@ -12254,55 +13521,33 @@ If you see errors like "cannot find function `RAND_bytes`" / missing const / mis
         error_msg: str = "",
     ) -> str:
         """
-        生成“人工修复提示”注释。
-        注意：必须是纯 Rust 注释（//），避免破坏语法。
+        生成极简人工修复标记；详细诊断只保存在 artifact，不写入 Rust 源码。
         """
-        c_first_line = ""
-        try:
-            if getattr(func_info, "c_code", None):
-                c_first_line = str(func_info.c_code).splitlines()[0][:200]
-        except Exception:
-            c_first_line = ""
-
         parts: List[str] = [
             "// === C2R MANUAL FIX REQUIRED ===",
-            f"// reason: {reason}",
             f"// func_key: {func_name}",
-            f"// c_function: {getattr(func_info, 'name', '')}",
+            "// See repair_history/_manual_fix manifest for diagnostics and attempted versions.",
         ]
-        if getattr(func_info, "file_name", None):
-            parts.append(f"// rust_file: {getattr(func_info, 'file_name')}.rs")
-        if getattr(func_info, "rust_signature", None):
-            sig = str(func_info.rust_signature).replace("\n", " ")
-            parts.append(f"// rust_signature: {sig[:220]}{'...' if len(sig) > 220 else ''}")
-        if c_first_line:
-            parts.append(f"// c_first_line: {c_first_line}")
-        if artifact_path is not None:
-            parts.append(f"// saved_translation: {artifact_path}")
-        if error_msg:
-            parts.append("// last_error_truncated:")
-            for line in (error_msg.strip().splitlines()[:8] if error_msg else []):
-                parts.append(f"//   {line[:240]}")
         parts.append("// =================================")
         return "\n".join(parts) + "\n"
-    
+
     def _generate_failure_comment(self, func_name: str, func_info: FunctionInfo, error_history: List[str]) -> str:
         """
         当所有修复尝试都失败时，使用 LLM 生成注释解释函数内容，方便后续人工修复
-        
+
         返回: 生成的注释字符串
         """
         from generate.generation import generation
-        
+
         print(f"  生成失败注释...", end=" ", flush=True)
-        
+
         # 构建精简的错误摘要
         error_summary = ""
         if error_history:
             # 只取最后一个错误的前500字符
             last_error = error_history[-1] if error_history else ""
             error_summary = f"Last compilation error (truncated): {last_error[:500]}"
-        
+
         system_prompt = """You are a code documentation expert. Generate helpful comments for a function that failed to translate from C/C++ to Rust.
 
 Your task:
@@ -12346,7 +13591,7 @@ Output format (Rust comment):
         ]
 
         try:
-            # 使用信号量控制 vLLM 并发请求数
+            # 使用信号量控制 LLM 并发请求数
             _vllm_semaphore.acquire()
             try:
                 response = generation(messages)
@@ -12373,35 +13618,47 @@ Output format (Rust comment):
             print(f"✗ ({e})")
             logger.warning(f"生成失败注释失败: {e}")
             return self._generate_default_failure_comment(func_name, func_info)
-    
+
     def _generate_default_failure_comment(self, func_name: str, func_info: FunctionInfo) -> str:
         """生成默认的失败注释"""
         return f"""// TODO: Manual implementation needed
 // Function: {func_name}
 // Original C/C++ function: {func_info.name}
 // File: {func_info.file_name}.rs
-// 
+//
 // The automatic translation failed after multiple repair attempts.
 // Please review the original C/C++ code and implement manually.
 //
 // Original C/C++ signature (first line):
 // {func_info.c_code.split(chr(10))[0] if func_info.c_code else 'N/A'}"""
-    
+
     def _inject_failure_comment(self, func_name: str, func_info: FunctionInfo, comment: str):
         """
         将失败注释注入到骨架文件中对应函数的上方
         """
+        if not comment.strip():
+            return
+        # 默认不再把错误、路径、签名等诊断信息塞进 Rust 源码；这些信息已保存到
+        # repair_history/_manual_fix，并通过后置 repair agent 的 context 传递。
+        if os.environ.get("C2R_INSERT_MANUAL_FIX_COMMENT", "0").strip().lower() not in (
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        ):
+            return
         # 尝试两种文件名格式：src_xxx.rs 和 xxx.rs（向后兼容）
         rs_filename_with_prefix = "src_" + func_info.file_name + ".rs"
         rs_filename = func_info.file_name + ".rs"
         target_file = self.work_dir / "src" / rs_filename_with_prefix
-        
+
         if not target_file.exists():
             target_file = self.work_dir / "src" / rs_filename
             if not target_file.exists():
                 logger.warning(f"无法注入注释，文件不存在: {target_file} 或 {self.work_dir / 'src' / rs_filename_with_prefix}")
                 return
-        
+
         try:
             with open(target_file, 'r', encoding='utf-8', errors='ignore') as f:
                 code = f.read()
@@ -12410,19 +13667,19 @@ Output format (Rust comment):
             marker = f"func_key: {func_name}"
             if marker in code and "C2R MANUAL FIX REQUIRED" in code:
                 return
-            
+
             # 先清理可能存在的重复签名（修复重复 pub extern "C" 问题）
             # 匹配模式: pub extern "C" pub extern "C" ... (重复多次)
             duplicate_pattern = r'(pub\s+extern\s+"C"\s+){2,}'
             code = re.sub(duplicate_pattern, r'pub extern "C" ', code)
-            
+
             # 查找函数定义位置（更精确的匹配）
             # 匹配: pub extern "C" fn func_name 或 fn func_name
             func_pattern = re.compile(
                 r'(pub\s+extern\s+"C"\s+)?fn\s+' + re.escape(func_info.name) + r'\s*[<(]',
                 re.MULTILINE
             )
-            
+
             match = func_pattern.search(code)
             if match:
                 # 在函数定义前插入注释
@@ -12431,20 +13688,20 @@ Output format (Rust comment):
                 if not comment.endswith('\n'):
                     comment += '\n'
                 new_code = code[:insert_pos] + comment + code[insert_pos:]
-                
+
                 with open(target_file, 'w', encoding='utf-8') as f:
                     f.write(new_code)
-                
+
                 logger.info(f"已为 {func_name} 注入失败注释")
             else:
                 logger.debug(f"未找到函数定义，无法注入注释: {func_name}")
         except Exception as e:
             logger.warning(f"注入失败注释失败: {e}")
-    
+
     def _fill_trait_impl_methods(self):
         """
         通用方法：自动填充 trait impl 方法
-        
+
         如果对应的独立函数已翻译，让 trait 方法调用独立函数
         这样可以减少 unimplemented!() 的数量
         """
@@ -12453,14 +13710,14 @@ Output format (Rust comment):
         src_dir = self.work_dir / "src"
         if not src_dir.exists():
             return
-        
+
         for rs_file in src_dir.glob("*.rs"):
             try:
                 with open(rs_file, 'r', encoding='utf-8', errors='ignore') as f:
                     code = f.read()
-                
+
                 tree = rust_parser.parse(bytes(code, 'utf-8'))
-                
+
                 # 查找所有 impl 块中的方法
                 query = RUST_LANGUAGE.query("""
                     (impl_item
@@ -12473,10 +13730,10 @@ Output format (Rust comment):
                         )
                     )
                 """)
-                
+
                 captures = query.captures(tree.root_node)
                 method_info = {}  # method_name -> (body_node, trait_name)
-                
+
                 for node, capture_name in captures:
                     if capture_name == 'method_name':
                         method_name = code[node.start_byte:node.end_byte]
@@ -12484,25 +13741,25 @@ Output format (Rust comment):
                         method_node = node.parent
                         while method_node and method_node.type != 'function_item':
                             method_node = method_node.parent
-                        
+
                         if method_node:
                             body_node = None
                             for child in method_node.children:
                                 if child.type == 'block':
                                     body_node = child
                                     break
-                            
+
                             if body_node:
                                 body_text = code[body_node.start_byte:body_node.end_byte]
                                 # 检查是否是 unimplemented!()
                                 if 'unimplemented!' in body_text:
                                     method_info[method_name] = (body_node, method_node)
-                
+
                 # 查找对应的独立函数（一次只处理一个方法，避免偏移量问题）
                 modified = False
                 max_iterations = len(method_info)  # 最多处理所有方法
                 iteration = 0
-                
+
                 while method_info and iteration < max_iterations:
                     iteration += 1
                     # 重新解析代码（每次修改后都需要重新解析）
@@ -12522,10 +13779,10 @@ Output format (Rust comment):
                             )
                         )
                     """)
-                    
+
                     impl_captures = impl_query.captures(current_tree.root_node)
                     current_methods = {}  # method_name -> body_node
-                    
+
                     for node, capture_name in impl_captures:
                         if capture_name == 'method_name':
                             method_name = code[node.start_byte:node.end_byte]
@@ -12533,7 +13790,7 @@ Output format (Rust comment):
                             method_func_node = node.parent
                             while method_func_node and method_func_node.type != 'function_item':
                                 method_func_node = method_func_node.parent
-                            
+
                             if method_func_node:
                                 for child in method_func_node.children:
                                     if child.type == 'block':
@@ -12541,20 +13798,20 @@ Output format (Rust comment):
                                         if 'unimplemented!' in body_text:
                                             current_methods[method_name] = child
                                         break
-                    
+
                     if not current_methods:
                         break  # 没有更多需要处理的方法
-                    
+
                     # 查找对应的独立函数
                     standalone_query = RUST_LANGUAGE.query("""
                         (function_item
                             name: (identifier) @func_name
                         ) @func_def
                     """)
-                    
+
                     standalone_captures = standalone_query.captures(current_tree.root_node)
                     found_standalone = False
-                    
+
                     for method_name, body_node in current_methods.items():
                         for node, capture_name in standalone_captures:
                             if capture_name == 'func_name':
@@ -12564,7 +13821,7 @@ Output format (Rust comment):
                                     func_def_node = node.parent
                                     while func_def_node and func_def_node.type != 'function_item':
                                         func_def_node = func_def_node.parent
-                                    
+
                                     if func_def_node:
                                         parent = func_def_node.parent
                                         if parent and parent.type != 'impl_item':
@@ -12573,39 +13830,39 @@ Output format (Rust comment):
                                             method_func_node = body_node.parent
                                             while method_func_node and method_func_node.type != 'function_item':
                                                 method_func_node = method_func_node.parent
-                                            
+
                                             if method_func_node:
                                                 params_node = None
                                                 for child in method_func_node.children:
                                                     if child.type == 'parameters':
                                                         params_node = child
                                                         break
-                                                
+
                                                 if params_node:
                                                     params_text = code[params_node.start_byte:params_node.end_byte]
                                                     # 移除 &self 参数
                                                     params_text = re.sub(r'&self\s*,?\s*', '', params_text).strip()
                                                     if params_text.startswith('(') and params_text.endswith(')'):
                                                         params_text = params_text[1:-1]
-                                                    
+
                                                     # 构建调用语句
                                                     call_args = params_text if params_text else ""
                                                     new_body = f" {{\n        {method_name}({call_args})\n    }}"
-                                                    
+
                                                     # 替换 body
-                                                    code = (code[:body_node.start_byte] + 
-                                                           new_body + 
+                                                    code = (code[:body_node.start_byte] +
+                                                           new_body +
                                                            code[body_node.end_byte:])
                                                     modified = True
                                                     found_standalone = True
                                                     break
-                        
+
                         if found_standalone:
                             break  # 一次只处理一个方法
-                    
+
                     if not found_standalone:
                         break  # 没有找到对应的独立函数，停止处理
-                
+
                 if modified:
                     # 备份原文件
                     backup_code = code
@@ -12615,10 +13872,10 @@ Output format (Rust comment):
                     except:
                         # 解析失败，跳过
                         continue
-                    
+
                     with open(rs_file, 'w', encoding='utf-8') as f:
                         f.write(code)
-                    
+
                     # 重新编译验证
                     if self._compile_project():
                         print(f"  ✓ 已填充 {rs_file.name} 中的 trait impl 方法")
@@ -12626,37 +13883,132 @@ Output format (Rust comment):
                         # 回退
                         with open(rs_file, 'w', encoding='utf-8') as f:
                             f.write(backup_code)
-                            
+
             except Exception as e:
                 logger.debug(f"填充 trait impl 方法失败 ({rs_file.name}): {e}")
-    
+
     def _count_unimplemented_functions(self):
         """
-        统计仍然是 unimplemented!() 占位符的函数数量
-        
+        统计仍然是 unimplemented!() 占位符的一对一目标函数数量
+
         这是"功能完整性"检查：
         - 编译成功不等于功能完整
-        - 如果函数体仍是 unimplemented!()，说明翻译实际上失败了
+        - 只统计 func_file_to_rust_sig/signature_matches 覆盖的 Stage3 目标函数
+        - Stage C 从头文件额外生成的桩不是源文件一对一翻译结果，不计入功能完整率
         """
         unimplemented_count = 0
         src_dir = self.work_dir / "src"
-        
+
         if not src_dir.exists():
             return
-        
+
+        all_unimplemented = 0
         for rs_file in src_dir.glob("*.rs"):
             try:
                 content = rs_file.read_text(encoding='utf-8', errors='ignore')
-                # 统计 unimplemented!() 的数量
-                unimplemented_count += len(re.findall(r'unimplemented!\s*\(\s*\)', content))
+                all_unimplemented += len(re.findall(r'unimplemented!\s*\(\s*\)', content))
             except Exception as e:
                 logger.warning(f"读取文件 {rs_file} 失败: {e}")
-        
+
+        target_func_keys = self._target_func_keys_for_unimplemented_count()
+        if not target_func_keys:
+            unimplemented_count = all_unimplemented
+            self.stats["still_unimplemented_all_rs"] = all_unimplemented
+            self.stats["ignored_non_target_unimplemented"] = 0
+            self.stats["unimplemented_target_unmatched"] = 0
+            self.stats["unimplemented_count_scope"] = "all_rs_no_target_mapping"
+            logger.warning("未找到确定性目标函数集合，退回全量 .rs 占位符统计")
+        else:
+            unmatched = 0
+            for func_key in sorted(target_func_keys):
+                block = self._extract_target_function_block_for_count(func_key)
+                if block is None:
+                    unmatched += 1
+                    continue
+                if re.search(r'\bunimplemented!\s*\(\s*\)', block):
+                    unimplemented_count += 1
+            self.stats["still_unimplemented_all_rs"] = all_unimplemented
+            self.stats["ignored_non_target_unimplemented"] = max(0, all_unimplemented - unimplemented_count)
+            self.stats["unimplemented_target_unmatched"] = unmatched
+            self.stats["unimplemented_count_scope"] = "source_target_functions"
+
         self.stats["still_unimplemented"] = unimplemented_count
-        
+
         if unimplemented_count > 0:
             print(f"  ⚠️ 功能完整性检查: {unimplemented_count} 个函数仍是 unimplemented!() 占位符")
-    
+        ignored = int(self.stats.get("ignored_non_target_unimplemented", 0) or 0)
+        if ignored > 0:
+            print(f"  ℹ️ 已忽略 {ignored} 个非源文件一对一目标的占位符（如头文件额外桩）")
+
+    def _target_func_keys_for_unimplemented_count(self) -> Set[str]:
+        """返回功能完整率应统计的 Stage3 一对一目标函数 key。"""
+        mapping = getattr(self, "func_file_to_rust_sig", None) or {}
+        targets = {str(k) for k, v in mapping.items() if str(k or "").strip() and str(v or "").strip()}
+        if targets:
+            return targets
+        try:
+            return {p.stem for p in self.signature_dir.glob("*.txt") if p.is_file()}
+        except Exception:
+            return set()
+
+    def _extract_target_function_block_for_count(self, func_key: str) -> Optional[str]:
+        """按 func_key 定位目标 Rust 函数块，用于 target-only unimplemented 统计。"""
+        signature = str((getattr(self, "func_file_to_rust_sig", {}) or {}).get(func_key) or "").strip()
+        functions_by_key = getattr(self, "_functions_by_func_file", {}) or {}
+        func_info = functions_by_key.get(func_key)
+
+        if func_info is None:
+            module = str(func_key).rsplit("_", 1)[0] if "_" in str(func_key) else str(func_key)
+            name = self._extract_fn_name_from_signature(signature)
+            if not name:
+                return None
+            func_info = FunctionInfo(
+                name=name,
+                file_name=module,
+                index=0,
+                c_code="",
+                rust_signature=signature,
+                dependencies=set(),
+            )
+        elif signature and not str(getattr(func_info, "rust_signature", "") or "").strip():
+            func_info = copy.copy(func_info)
+            func_info.rust_signature = signature
+
+        candidate_files = self._rust_files_for_func_key(func_key, func_info)
+        for rs_file in candidate_files:
+            if not rs_file.exists():
+                continue
+            try:
+                content = rs_file.read_text(encoding="utf-8", errors="ignore")
+            except Exception as e:
+                logger.warning(f"读取目标函数文件失败 {rs_file}: {e}")
+                continue
+            block = self._extract_function_block(content, func_info)
+            if block is not None:
+                return block
+        logger.debug(f"统计占位符时未定位到目标函数块: {func_key}")
+        return None
+
+    def _rust_files_for_func_key(self, func_key: str, func_info: FunctionInfo) -> List[Path]:
+        """返回 func_key 可能对应的 Rust 模块文件路径，保持与骨架历史命名兼容。"""
+        src_dir = self.work_dir / "src"
+        names: List[str] = []
+        module = str(getattr(func_info, "file_name", "") or "").strip()
+        if module:
+            names.append(module)
+        if "_" in str(func_key):
+            names.append(str(func_key).rsplit("_", 1)[0])
+
+        candidates: List[Path] = []
+        seen: Set[Path] = set()
+        for name in names:
+            for filename in (f"{name}.rs", f"src_{name}.rs"):
+                path = src_dir / filename
+                if path not in seen:
+                    candidates.append(path)
+                    seen.add(path)
+        return candidates
+
     def _save_translation_stats(self):
         """保存翻译统计信息到 incremental_work 目录"""
         try:
@@ -12671,43 +14023,60 @@ Output format (Rust comment):
         except Exception as e:
             print(f"  ⚠ 警告: 保存统计信息失败: {e}")
             logger.warning(f"保存统计信息失败: {e}")
-    
+
+    def _save_canonical_compile_result(self, *, final_compile_ok: bool):
+        """保存项目级最终编译口径的 canonical result。"""
+        try:
+            result = build_compile_result(
+                run_id=getattr(self, "_run_id", f"{self.project_name}__{self.llm_name}"),
+                stats=self.stats,
+                work_dir=self.work_dir,
+                final_project_dir=self.final_project_dir,
+                final_compile_ok=final_compile_ok,
+            )
+            result_file = self.work_dir / "canonical_compile_result.json"
+            write_compile_result(result_file, result)
+            logger.info(f"canonical 编译结果已保存: {result_file}")
+        except Exception as e:
+            print(f"  ⚠ 警告: 保存 canonical 编译结果失败: {e}")
+            logger.warning(f"保存 canonical 编译结果失败: {e}")
+
     def _save_final_project(self):
         """保存最终项目"""
         print(f"  开始保存最终项目...")
         print(f"  工作目录: {self.work_dir}")
         print(f"  目标目录: {self.final_project_dir}")
         logger.info(f"开始保存最终项目: {self.work_dir} -> {self.final_project_dir}")
-        
+
         # 1. 验证工作目录是否存在且不为空
         if not self.work_dir.exists():
             print(f"  ❌ 错误: 工作目录不存在: {self.work_dir}")
             logger.error(f"工作目录不存在: {self.work_dir}")
             return False
-        
+
         # 检查工作目录是否为空
         src_dir = self.work_dir / "src"
         if not src_dir.exists():
             print(f"  ❌ 错误: 工作目录中缺少 src/ 目录: {self.work_dir}")
             logger.error(f"工作目录中缺少 src/ 目录: {self.work_dir}")
             return False
-        
+
         rs_files = list(src_dir.glob("*.rs"))
         if not rs_files:
             print(f"  ❌ 错误: 工作目录中没有 .rs 文件: {self.work_dir}")
             logger.error(f"工作目录中没有 .rs 文件: {self.work_dir}")
             return False
-        
+
         print(f"  找到 {len(rs_files)} 个 .rs 文件")
-        
+
         # 2. 确保目标目录的父目录存在
         self.final_project_dir.parent.mkdir(parents=True, exist_ok=True)
         print(f"  目标目录父目录: {self.final_project_dir.parent}")
-        
+
         # 3. 使用临时目录进行安全的复制操作
         temp_final_dir = self.final_project_dir.parent / f"{self.final_project_dir.name}.tmp"
         print(f"  临时目录: {temp_final_dir}")
-        
+
         try:
             # 先复制到临时目录
             if temp_final_dir.exists():
@@ -12715,7 +14084,7 @@ Output format (Rust comment):
                 shutil.rmtree(temp_final_dir)
             print(f"  复制工作目录到临时目录...")
             shutil.copytree(self.work_dir, temp_final_dir)
-            
+
             # 4. 验证复制是否成功（检查关键文件）
             temp_src_dir = temp_final_dir / "src"
             temp_rs_files = list(temp_src_dir.glob("*.rs"))
@@ -12725,9 +14094,9 @@ Output format (Rust comment):
                 if temp_final_dir.exists():
                     shutil.rmtree(temp_final_dir)
                 return False
-            
+
             print(f"  复制验证成功: {len(temp_rs_files)} 个 .rs 文件")
-            
+
             # 5. 如果复制成功，再删除旧目录并重命名
             if self.final_project_dir.exists():
                 # 备份旧目录（可选，用于调试）
@@ -12737,12 +14106,12 @@ Output format (Rust comment):
                 print(f"  备份旧目录到: {backup_dir}")
                 shutil.move(str(self.final_project_dir), str(backup_dir))
                 logger.info(f"已备份旧目录到: {backup_dir}")
-            
+
             # 将临时目录重命名为最终目录
             print(f"  将临时目录重命名为最终目录...")
             shutil.move(str(temp_final_dir), str(self.final_project_dir))
             print(f"  ✓ 目录重命名成功")
-            
+
         except Exception as e:
             print(f"  ❌ 保存最终项目失败: {e}")
             logger.error(f"保存最终项目失败: {e}", exc_info=True)
@@ -12753,15 +14122,15 @@ Output format (Rust comment):
                 except:
                     pass
             return False
-        
+
         # 6. 验证最终目录确实存在
         if not self.final_project_dir.exists():
             print(f"  ❌ 错误: 最终项目目录创建失败")
             logger.error(f"最终项目目录创建失败: {self.final_project_dir}")
             return False
-        
+
         print(f"  ✓ 最终项目目录已创建: {self.final_project_dir}")
-        
+
         # 7. 最终编译测试（在保存后的最终目录中编译）
         print(f"  开始最终编译测试...")
         original_work_dir = self.work_dir
@@ -12815,7 +14184,7 @@ Output format (Rust comment):
                         final_compile_error = self._get_compile_error()
         finally:
             self.work_dir = original_work_dir
-        
+
         # 8. 保存结果文件
         try:
             result_file = self.final_project_dir / "build_result.txt"
@@ -12839,11 +14208,11 @@ Output format (Rust comment):
         except Exception as e:
             print(f"  ⚠ 警告: 保存结果文件失败: {e}")
             logger.warning(f"保存结果文件失败: {e}")
-        
+
         print(f"  最终项目: {self.final_project_dir}")
         print(f"  编译结果: {'成功' if success else '失败'}")
         logger.info(f"最终项目保存完成: {self.final_project_dir}, 编译结果: {'成功' if success else '失败'}")
-        
+
         return True
 
 
@@ -12852,21 +14221,21 @@ def main():
     # 强制行缓冲，确保日志实时输出
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(line_buffering=True)
-        
+
     if len(sys.argv) < 3:
         print("用法: python3 incremental_translate.py <project_name> <llm_name> [max_repair_attempts]")
         sys.exit(1)
-    
+
     project_name = sys.argv[1]
     llm_name = sys.argv[2]
     max_repair_attempts = int(sys.argv[3]) if len(sys.argv) > 3 else 5
-    
+
     translator = IncrementalTranslator(
         project_name=project_name,
         llm_name=llm_name,
         max_repair_attempts=max_repair_attempts
     )
-    
+
     result = translator.run()
     # result: 2=完全成功, 1=部分成功, 0=失败
     # 退出码:

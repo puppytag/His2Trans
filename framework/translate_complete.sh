@@ -177,8 +177,10 @@ start_vllm() {
   fi
   DEPLOY_VLLM_SCRIPT="${DEPLOY_VLLM_SCRIPT:-}"
   if [ -z "$DEPLOY_VLLM_SCRIPT" ]; then
-    if [ -f "$SCRIPT_DIR/../rag_builder/qwen3_coder/deploy_4bit_AWQ.sh" ]; then
-      DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/../rag_builder/qwen3_coder/deploy_4bit_AWQ.sh"
+    if [ -f "$SCRIPT_DIR/qwen3_coder/deploy_4bit_AWQ.sh" ]; then
+      DEPLOY_VLLM_SCRIPT="$SCRIPT_DIR/qwen3_coder/deploy_4bit_AWQ.sh"
+    elif [ -f "/data/home/wangshb/qwen3_coder/deploy_4bit_AWQ.sh" ]; then
+      DEPLOY_VLLM_SCRIPT="/data/home/wangshb/qwen3_coder/deploy_4bit_AWQ.sh"
     else
       print_error "未找到 deploy_4bit_AWQ.sh，请设置 DEPLOY_VLLM_SCRIPT"
       return 1
@@ -220,8 +222,8 @@ if [ ! -f "workspace/rag/knowledge_base.json" ] || [ ! -f "workspace/rag/bm25_in
     print_warning "知识库文件不存在，需要先构建知识库"
     print_step "步骤 0: 构建知识库"
     
-    if [ ! -d "../rag_builder/qwen3_coder/filtered_code_pairs" ]; then
-        print_error "知识库源目录不存在: ../rag_builder/qwen3_coder/filtered_code_pairs"
+    if [ ! -d "../qwen3_coder/filtered_code_pairs" ]; then
+        print_error "知识库源目录不存在: ../qwen3_coder/filtered_code_pairs"
         exit 1
     fi
     
